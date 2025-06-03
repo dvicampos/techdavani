@@ -410,11 +410,6 @@ def delete_post(post_id):
         flash('Post no encontrado.')
         return redirect(url_for('dashboard'))
 
-    # Validar autor
-    if post['author'] != current_user.email:
-        flash('No tienes permiso para eliminar este post.')
-        return redirect(url_for('dashboard'))
-
     # Eliminar archivos asociados (archivos y cabecera)
     # Asumiendo que tus rutas de archivo son relativas, tipo: "davani-technology/2025-06-03/archivo.jpg"
     for file_field in ['file_url', 'cabecera']:
