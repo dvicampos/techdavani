@@ -1188,5 +1188,9 @@ def enviar():
 def gracias():
     return render_template('gracias.html')
 
+@app.route('/ads.txt')
+def ads():
+    return send_from_directory(os.path.abspath(os.path.dirname(__file__)), 'ads.txt')
+
 if __name__ == '__main__':
   app.run(host="0.0.0.0", port=5000, debug=True)
