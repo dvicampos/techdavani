@@ -246,7 +246,7 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
-
+UPLOAD_FOLDER = '/uploads'  
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
@@ -257,7 +257,6 @@ def allowed_file(filename):
 @app.route('/crear_post_negocio', methods=['GET', 'POST'])
 @login_required
 def crear_post_negocio():
-    # Verificar si el usuario existe en la base de datos
     user = mongo.db.users.find_one({'_id': ObjectId(current_user.id)})
     if user is None:
         flash('No se encontró el usuario.')
@@ -271,12 +270,11 @@ def crear_post_negocio():
         files = request.files.getlist('files')
         cabecera_file = request.files.get('cabecera')
 
-        # Obtener información del negocio para crear carpetas
         negocio = mongo.db.page_data.find_one({'_id': ObjectId(page_id)})
         slug_page = slugify(negocio['business_name']) if negocio else 'unknown'
         today = datetime.utcnow().strftime('%Y-%m-%d')
 
-        # Ruta final: static/uploads/{slug_page}/{YYYY-MM-DD}/
+        # Ruta fuera de static
         post_folder = os.path.join(app.config['UPLOAD_FOLDER'], slug_page, today)
         os.makedirs(post_folder, exist_ok=True)
 
@@ -286,9 +284,9 @@ def crear_post_negocio():
                 original_name = secure_filename(file.filename)
                 timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
                 filename = f"{timestamp}_{original_name}"
-                path = os.path.join(post_folder, filename)
-                file.save(path)
-                saved_files.append(f"{slug_page}/{today}/{filename}")  # Ruta relativa
+                file_path = os.path.join(post_folder, filename)
+                file.save(file_path)
+                saved_files.append(f"{slug_page}/{today}/{filename}")  # Ruta relativa para base de datos
 
         # Cabecera
         cabecera_filename = None
@@ -298,7 +296,7 @@ def crear_post_negocio():
             cabecera_filename = f"{timestamp}_{original_name}"
             cabecera_path = os.path.join(post_folder, cabecera_filename)
             cabecera_file.save(cabecera_path)
-            cabecera_filename = f"{slug_page}/{today}/{cabecera_filename}"  # Ruta relativa
+            cabecera_filename = f"{slug_page}/{today}/{cabecera_filename}"
 
         post = {
             'title': title,
@@ -346,7 +344,6 @@ def edit_post(post_id):
 
     user = mongo.db.users.find_one({'_id': ObjectId(current_user.id)})
 
-    # Solo permitir si es autor, admin, o dueño de la página
     es_autor = post.get('author') == current_user.email
     es_admin = current_user.role == 'admin'
     misma_page = user.get('page_id') == post.get('page_id')
@@ -364,17 +361,30 @@ def edit_post(post_id):
         file_url = post.get('file_url')
         cabecera = post.get('cabecera')
 
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            file.save(path)
-            file_url = f"/uploads/{filename}"
+        # Obtener carpeta de negocio
+        negocio = mongo.db.page_data.find_one({'_id': ObjectId(post.get('page_id'))})
+        slug_page = slugify(negocio['business_name']) if negocio else 'unknown'
+        today = datetime.utcnow().strftime('%Y-%m-%d')
+        upload_folder = os.path.join(app.config['UPLOAD_FOLDER'], slug_page, today)
+        os.makedirs(upload_folder, exist_ok=True)
 
+        # Adjuntos (archivo extra)
+        if file and allowed_file(file.filename):
+            original_name = secure_filename(file.filename)
+            timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+            filename = f"{timestamp}_{original_name}"
+            file_path = os.path.join(upload_folder, filename)
+            file.save(file_path)
+            file_url = f"{slug_page}/{today}/{filename}"
+
+        # Imagen de cabecera
         if cabecera_file and allowed_file(cabecera_file.filename):
-            cabecera_filename = secure_filename(cabecera_file.filename)
-            cabecera_path = os.path.join(app.config['UPLOAD_FOLDER'], cabecera_filename)
+            original_name = secure_filename(cabecera_file.filename)
+            timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+            cabecera_filename = f"{timestamp}_{original_name}"
+            cabecera_path = os.path.join(upload_folder, cabecera_filename)
             cabecera_file.save(cabecera_path)
-            cabecera = cabecera_filename
+            cabecera = f"{slug_page}/{today}/{cabecera_filename}"
 
         mongo.db.posts.update_one({'_id': ObjectId(post_id)}, {
             '$set': {
@@ -385,11 +395,10 @@ def edit_post(post_id):
             }
         })
 
-        flash('Post actualizado.')
+        flash('Post actualizado correctamente.')
         return redirect(url_for('dashboard'))
 
     return render_template('edit_post.html', post=post)
-
 
 
 @app.route('/delete_post/<post_id>')
@@ -528,19 +537,30 @@ def create_producto():
 
         # Manejo de imagen
         image_file = request.files['image']
-        filename = None
-        if image_file:
+        image_path = None
+        if image_file and image_file.filename != '':
+            slug = slugify(title)
+            today = datetime.utcnow().strftime('%Y-%m-%d')
+            folder = os.path.join(app.config['UPLOAD_FOLDER'], slug, today)
+            os.makedirs(folder, exist_ok=True)
+
             filename = secure_filename(image_file.filename)
-            image_path = os.path.join('static/uploads', filename)
-            image_file.save(image_path)
+            timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+            final_filename = f"{timestamp}_{filename}"
+            full_path = os.path.join(folder, final_filename)
+            image_file.save(full_path)
+
+            # Guardar ruta relativa
+            image_path = f"{slug}/{today}/{final_filename}"
 
         mongo.db.productos.insert_one({
             'title': title,
             'description': description,
             'price': price,
-            'image': f'uploads/{filename}' if filename else None,
+            'image': image_path,
             'page_id': page_id
         })
+
         flash('Producto creado correctamente.')
         return redirect(url_for('list_productos'))
 
@@ -560,15 +580,23 @@ def edit_producto(producto_id):
         description = request.form['description']
         price = float(request.form['price'])
 
-        # Manejo de imagen (opcional)
+        # Imagen nueva (si se carga)
         image_file = request.files.get('image')
-        image_path = producto.get('image')  # valor anterior
+        image_path = producto.get('image')  # mantener la anterior si no hay nueva
 
         if image_file and image_file.filename != '':
+            slug = slugify(title)
+            today = datetime.utcnow().strftime('%Y-%m-%d')
+            folder = os.path.join(app.config['UPLOAD_FOLDER'], slug, today)
+            os.makedirs(folder, exist_ok=True)
+
             filename = secure_filename(image_file.filename)
-            image_path = os.path.join('static/uploads', filename)
-            image_file.save(image_path)
-            image_path = f'uploads/{filename}'
+            timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+            final_filename = f"{timestamp}_{filename}"
+            full_path = os.path.join(folder, final_filename)
+            image_file.save(full_path)
+
+            image_path = f"{slug}/{today}/{final_filename}"
 
         mongo.db.productos.update_one(
             {'_id': ObjectId(producto_id)},
@@ -579,6 +607,7 @@ def edit_producto(producto_id):
                 'image': image_path
             }}
         )
+
         flash('Producto actualizado correctamente.')
         return redirect(url_for('list_productos'))
 
@@ -704,7 +733,7 @@ def create_page():
             image.save(full_path)
 
             # Ruta relativa para guardar en DB
-            image_path = f"uploads/{slug_empresa}/{today}/{final_filename}"
+            image_path = f"{slug_empresa}/{today}/{final_filename}"
 
         new_page = {
             'business_name': business_name,
