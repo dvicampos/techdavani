@@ -824,9 +824,9 @@ def manage_page():
         image_path = data['image'] if data and 'image' in data else None
 
         if image and image.filename != '':
-            slug_empresa = slugify(data['business_name'])
+            slug_empresa = slugify(data['business_name'] if data else business_name)
             today = datetime.utcnow().strftime('%Y-%m-%d')
-            folder_path = os.path.join(app.static_folder, 'uploads', slug_empresa, today)
+            folder_path = os.path.join(app.config['UPLOAD_FOLDER'], slug_empresa, today)
             os.makedirs(folder_path, exist_ok=True)
 
             filename = secure_filename(image.filename)
