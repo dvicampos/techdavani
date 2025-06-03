@@ -654,9 +654,7 @@ def delete_user(user_id):
 
 @app.route('/create_page', methods=['GET', 'POST'])
 def create_page():
-
     if request.method == 'POST':
-        # Campos básicos (añade o modifica según tus necesidades)
         business_name = request.form['business_name']
         description = request.form['description']
         category = request.form['category']
@@ -691,11 +689,19 @@ def create_page():
         image_path = None
 
         if image and image.filename != '':
+            slug_empresa = slugify(business_name)
+            today = datetime.utcnow().strftime('%Y-%m-%d')
+            folder_path = os.path.join(app.static_folder, 'uploads', slug_empresa, today)
+            os.makedirs(folder_path, exist_ok=True)
+
             filename = secure_filename(image.filename)
-            relative_path = os.path.join('uploads', filename)
-            full_path = os.path.join(app.static_folder, relative_path)
+            timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+            final_filename = f"{timestamp}_{filename}"
+            full_path = os.path.join(folder_path, final_filename)
             image.save(full_path)
-            image_path = relative_path.replace('\\', '/')
+
+            # Ruta relativa para guardar en DB
+            image_path = f"uploads/{slug_empresa}/{today}/{final_filename}"
 
         new_page = {
             'business_name': business_name,
@@ -723,12 +729,9 @@ def create_page():
             'image': image_path
         }
 
-        # Inserta la nueva página en la DB y obtén su id
         result = mongo.db.page_data.insert_one(new_page)
         page_id = result.inserted_id
-
         flash('Empresa creada exitosamente. Ahora registra el usuario administrador.')
-        # Redirige a registro pasando el page_id para asignar
         return redirect(url_for('register', page_id=str(page_id)))
 
     return render_template('create_page.html')
@@ -789,11 +792,18 @@ def manage_page():
         image_path = data['image'] if data and 'image' in data else None
 
         if image and image.filename != '':
+            slug_empresa = slugify(data['business_name'])
+            today = datetime.utcnow().strftime('%Y-%m-%d')
+            folder_path = os.path.join(app.static_folder, 'uploads', slug_empresa, today)
+            os.makedirs(folder_path, exist_ok=True)
+
             filename = secure_filename(image.filename)
-            relative_path = os.path.join('uploads', filename)
-            full_path = os.path.join(app.static_folder, relative_path)
+            timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+            final_filename = f"{timestamp}_{filename}"
+            full_path = os.path.join(folder_path, final_filename)
             image.save(full_path)
-            image_path = relative_path.replace('\\', '/')
+
+            image_path = f"uploads/{slug_empresa}/{today}/{final_filename}"
 
         new_data = {
             'business_name': business_name,
