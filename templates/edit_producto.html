@@ -19,7 +19,7 @@
     <input type="file" name="image" class="form-control">
     {% if producto.image %}
     <p>Imagen actual:</p>
-    <img src="{{ url_for('static', filename=producto.image) }}" alt="Imagen producto" width="100">
+    <img src="{{ url_for('uploaded_file', filename=producto.image) }}" alt="Imagen producto" width="100">
     {% endif %}
   </div>
   <button type="submit" class="btn btn-primary">Actualizar</button>

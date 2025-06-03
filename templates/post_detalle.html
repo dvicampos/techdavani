@@ -96,7 +96,7 @@
   <div class="card post-card">
     {% if post.cabecera %}
     <div class="position-relative">
-      <img src="{{ url_for('static', filename='uploads/' + post.cabecera) }}" class="post-image" alt="Cabecera del post">
+      <img src="{{ url_for('uploaded_file', filename=post.cabecera) }}" class="post-image" alt="Cabecera del post">
       <span class="badge badge-custom"><i class="bi bi-star-fill me-1"></i> Destacado</span>
     </div>
     {% endif %}
@@ -111,25 +111,25 @@
 
       {% if post.files %}
       <div class="row g-3 gallery">
-        {% for file in post.files %}
-        <div class="col-12 col-sm-6 col-md-4">
-          {% if file.endswith(('jpg', 'jpeg', 'png', 'gif')) %}
-          <img src="{{ url_for('static', filename='uploads/' ~ file) }}" alt="Imagen {{ loop.index }}" class="img-thumbnail">
-          {% elif file.endswith('mp4') %}
-          <video controls>
-            <source src="{{ url_for('static', filename='uploads/' ~ file) }}" type="video/mp4">
-          </video>
-          {% else %}
-          <a href="{{ url_for('static', filename='uploads/' ~ file) }}" target="_blank" class="btn btn-outline-secondary btn-sm w-100">Descargar {{ file }}</a>
-          {% endif %}
-        </div>
-        {% endfor %}
+          {% for file in post.files %}
+          <div class="col-12 col-sm-6 col-md-4">
+            {% if file.endswith(('jpg', 'jpeg', 'png', 'gif')) %}
+              <img src="{{ url_for('uploaded_file', filename=file) }}" alt="Imagen {{ loop.index }}" class="img-thumbnail">
+            {% elif file.endswith('mp4') %}
+              <video controls>
+                <source src="{{ url_for('uploaded_file', filename=file) }}" type="video/mp4">
+              </video>
+            {% else %}
+              <a href="{{ url_for('uploaded_file', filename=file) }}" target="_blank" class="btn btn-outline-secondary btn-sm w-100">Descargar {{ file }}</a>
+            {% endif %}
+          </div>
+          {% endfor %}
       </div>
       {% endif %}
 
       {% if post.file_url %}
       <div class="mt-4 text-center">
-        <a href="{{ url_for('static', filename=post.file_url) }}" target="_blank" class="btn btn-primary btn-lg">
+          <a href="{{ url_for('uploaded_file', filename=post.file_url) }}" target="_blank" class="btn btn-primary btn-lg">
           <i class="bi bi-download me-2"></i> Descargar archivo adjunto
         </a>
       </div>

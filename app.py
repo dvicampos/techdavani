@@ -78,9 +78,12 @@ def roles_required(*roles):
     return wrapper
 
 
-@app.route('/uploads/<filename>')
+app.config['UPLOAD_FOLDER'] = '/uploads'
+
+@app.route('/uploads/<path:filename>')
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
 
 @login_manager.user_loader
 def load_user(user_id):

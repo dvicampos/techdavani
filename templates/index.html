@@ -381,7 +381,7 @@
       <div class="col-md-4 mb-4">
         <div class="card iglesia-card h-100">
           {% if negocio.image %}
-          <img src="{{ url_for('static', filename=negocio.image) }}" class="iglesia-img" alt="Imagen de {{ negocio.business_name }}" />
+          <img src="{{ url_for('uploaded_file', filename=negocio.image) }}" class="iglesia-img" alt="Imagen de {{ negocio.business_name }}" />
           {% else %}
           <img src="{{ url_for('static', filename='images/default_image.png') }}" class="iglesia-img" alt="Imagen por defecto" />
           {% endif %}

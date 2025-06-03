@@ -7,7 +7,7 @@
         <div class="col-md-4 mb-4">
             <div class="card h-100 shadow-sm">
                 {% if producto.image %}
-                <img src="{{ url_for('static', filename=producto.image) }}" class="card-img-top" alt="Producto">
+                    <img src="{{ url_for('uploaded_file', filename=producto.image) }}" class="card-img-top" alt="Producto">
                 {% endif %}
                 <div class="card-body">
                     <h5 class="card-title">{{ producto.title }}</h5>

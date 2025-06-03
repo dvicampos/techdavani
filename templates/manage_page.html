@@ -324,8 +324,8 @@
             <label class="form-label">Imagen principal</label>
             <input type="file" name="image" class="form-control">
             {% if data and data.image %}
-            <img src="{{ url_for('static', filename=data.image) }}" alt="Imagen principal" class="img-thumbnail mt-2"
-                style="max-width:200px;">
+                <img src="{{ url_for('uploaded_file', filename=data.image) }}" alt="Imagen principal" class="img-thumbnail mt-2"
+                    style="max-width:200px;">
             {% endif %}
         </div>
 

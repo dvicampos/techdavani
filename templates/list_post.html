@@ -20,7 +20,7 @@
         {% endif %}
 
         {% if post.file_url %}
-        <p>📎 <a href="static{{ post.file_url }}" target="_blank">Ver archivo adjunto</a></p>
+            <p>📎 <a href="{{ url_for('uploaded_file', filename=post.file_url) }}" target="_blank">Ver archivo adjunto</a></p>
         {% endif %}
 
         <p><small>🕒 Publicado el: {{ post.date.strftime('%d/%m/%Y %H:%M') }}</small></p>

@@ -392,9 +392,7 @@
             <div class="row align-items-center">
                 <div class="col-md-4 mb-3 mb-md-0">
                     {% if page['image'] %}
-                        <img src="{{ url_for('static', filename=page['image']) }}"
-                            class="img-fluid rounded-circle shadow border border-3 border-white"
-                            style="max-width: 250px; height: 250px; object-fit: cover;">
+                        <img src="{{ url_for('uploaded_file', filename=page['image']) }}" class="img-fluid rounded-circle shadow border border-3 border-white" style="max-width: 250px; height: 250px; object-fit: cover;">
                     {% else %}
                         <img src="{{ url_for('static', filename='images/default_image.png') }}"
                             class="img-fluid rounded-circle shadow border border-3 border-white"
@@ -513,8 +511,7 @@
             <div class="col-md-4 mb-4">
                 <div class="card h-100 shadow-sm">
                     {% if post.cabecera %}
-                    <img src="{{ url_for('static', filename='uploads/' + post.cabecera) }}" class="card-img-top"
-                        alt="Imagen del post">
+                        <img src="{{ url_for('uploaded_file', filename=post.cabecera) }}" class="card-img-top" alt="Imagen del post">
                     {% endif %}
                     <div class="card-body d-flex flex-column">
                         <h5 class="card-title">{{ post.title }}</h5>
@@ -568,11 +565,11 @@
                 <div class="col-12 col-sm-6 col-md-4">
                     <div class="card h-100 shadow-sm">
                         {% if producto.image %}
-                        <img src="{{ url_for('static', filename=producto.image) }}" alt="{{ producto.title }}"
+                            <img src="{{ url_for('uploaded_file', filename=producto.image) }}" alt="{{ producto.title }}"
                             class="card-img-top img-zoom-trigger"
                             style="object-fit: cover; width: 100%; height: 250px; cursor: pointer;"
                             data-bs-toggle="modal" data-bs-target="#zoomModal"
-                            data-img-src="{{ url_for('static', filename=producto.image) }}">
+                            data-img-src="{{ url_for('uploaded_file', filename=producto.image) }}">
                         {% else %}
                         <img src="{{ url_for('static', filename='img/default-product.png') }}"
                             alt="Imagen no disponible" class="card-img-top img-zoom-trigger"

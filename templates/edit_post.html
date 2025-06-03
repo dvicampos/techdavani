@@ -12,7 +12,7 @@
 
         <p>Imagen de cabecera actual:</p>
         {% if post.cabecera %}
-            <img src="{{ url_for('static', filename='uploads/' + post.cabecera) }}" style="max-width: 300px;"><br>
+            <img src="{{ url_for('uploaded_file', filename=post.cabecera) }}" style="max-width: 300px;"><br>
         {% else %}
             <em>No hay imagen de cabecera.</em><br>
         {% endif %}

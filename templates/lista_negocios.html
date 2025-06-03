@@ -15,8 +15,8 @@
         {% for negocio in negocios %}
           <div class="col">
             <div class="card h-100 shadow-sm">
-              <img src="{{ url_for('static', filename=negocio.image) if negocio.image else url_for('static', filename='default.jpg') }}" 
-                   class="card-img-top" alt="Logo de {{ negocio.business_name }}" style="object-fit: cover; height: 200px;">
+              <img src="{{ url_for('uploaded_file', filename=negocio.image) if negocio.image else url_for('static', filename='default.jpg') }}" 
+                class="card-img-top" alt="Logo de {{ negocio.business_name }}" style="object-fit: cover; height: 200px;">
               <div class="card-body">
                 <h5 class="card-title">{{ negocio.business_name }}</h5>
                 <p class="card-text">{{ negocio.description[:100] }}...</p>
