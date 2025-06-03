@@ -405,10 +405,34 @@ def edit_post(post_id):
 @login_required
 def delete_post(post_id):
     post = mongo.db.posts.find_one({'_id': ObjectId(post_id)})
-    
-    if post and post['author'] == current_user.email:
-        mongo.db.posts.delete_one({'_id': ObjectId(post_id)})
-        flash('Post eliminado.')
+
+    if not post:
+        flash('Post no encontrado.')
+        return redirect(url_for('dashboard'))
+
+    # Validar autor
+    if post['author'] != current_user.email:
+        flash('No tienes permiso para eliminar este post.')
+        return redirect(url_for('dashboard'))
+
+    # Eliminar archivos asociados (archivos y cabecera)
+    # Asumiendo que tus rutas de archivo son relativas, tipo: "davani-technology/2025-06-03/archivo.jpg"
+    for file_field in ['file_url', 'cabecera']:
+        file_rel_path = post.get(file_field)
+        if file_rel_path:
+            # Construir ruta absoluta en disco
+            file_abs_path = os.path.join(app.config['UPLOAD_FOLDER'], file_rel_path)
+            # Comprobar si existe y eliminar
+            if os.path.exists(file_abs_path):
+                try:
+                    os.remove(file_abs_path)
+                except Exception as e:
+                    # Opcional: loggear error o avisar
+                    print(f"Error eliminando archivo {file_abs_path}: {e}")
+
+    # Borrar el post de la base de datos
+    mongo.db.posts.delete_one({'_id': ObjectId(post_id)})
+    flash('Post eliminado correctamente.')
     return redirect(url_for('dashboard'))
 
 
