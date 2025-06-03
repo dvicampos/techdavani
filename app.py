@@ -683,7 +683,7 @@ def delete_user(user_id):
     flash('Usuario eliminado correctamente.')
     return redirect(url_for('manage_users'))
 
-
+app.config['UPLOAD_FOLDER'] = '/uploads'
 @app.route('/create_page', methods=['GET', 'POST'])
 def create_page():
     if request.method == 'POST':
@@ -723,7 +723,7 @@ def create_page():
         if image and image.filename != '':
             slug_empresa = slugify(business_name)
             today = datetime.utcnow().strftime('%Y-%m-%d')
-            folder_path = os.path.join(app.static_folder, 'uploads', slug_empresa, today)
+            folder_path = os.path.join(app.config['UPLOAD_FOLDER'], slug_empresa, today)  # cambia aquí
             os.makedirs(folder_path, exist_ok=True)
 
             filename = secure_filename(image.filename)
@@ -732,8 +732,9 @@ def create_page():
             full_path = os.path.join(folder_path, final_filename)
             image.save(full_path)
 
-            # Ruta relativa para guardar en DB
+            # Ruta relativa para servir desde /uploads
             image_path = f"{slug_empresa}/{today}/{final_filename}"
+
 
         new_page = {
             'business_name': business_name,
