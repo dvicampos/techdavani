@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Global PyMes</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Roboto&display=swap" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <!-- SEO Básico -->
+  <meta name="description" content="Global PYMES es una plataforma mexicana gratuita creada por DavaniTechnology que impulsa negocios y emprendedores locales. Registra tu empresa, muestra tus productos y conecta con más clientes.">
+  <meta name="keywords" content="pymes, negocios locales, emprendedores, registro de empresas, marketplace mexicano, Global PYMES, DavaniTechnology, emprender gratis, crecer negocio, directorio empresarial">
+  <meta name="author" content="DavaniTechnology">
+
+  <!-- SEO Geolocalizado -->
+  <meta name="geo.region" content="MX">
+  <meta name="geo.placename" content="México">
+  <meta name="language" content="es">
+
+  <!-- Open Graph para compartir en redes -->
+  <meta property="og:title" content="Global PYMES | Impulsa tu negocio con DavaniTechnology">
+  <meta property="og:description" content="Únete gratis a Global PYMES, la plataforma mexicana que conecta negocios y clientes. ¡Crea tu página y destaca en Google!">
+  <meta property="og:image" content="https://technologydavani.com/static/images/logo.jpg"> <!-- Cambia esto por tu imagen real -->
+  <meta property="og:url" content="https://technologydavani.com"> <!-- Cambia por tu URL real -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Global PYMES">
+
+  <!-- Twitter Cards -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Global PYMES | Impulsa tu negocio con DavaniTechnology">
+  <meta name="twitter:description" content="Registra tu empresa gratis, muestra productos y recibe contacto directo. ¡Hecho en México por DavaniTechnology!">
+  <meta name="twitter:image" content="https://technologydavani.com/static/images/logo.jpg"> <!-- Cambia por tu imagen -->
+  <link rel="icon" href="{{ url_for('static', filename='images/logo.jpg') }}" type="image/png">
+
+  <!-- Robots -->
+  <meta name="robots" content="index, follow">
+
+  <style>
+    body {
+      background: #fff;
+      font-family: 'Roboto', sans-serif;
+      color: #2d3436;
+    }
+
+    .header {
+      padding: 4rem 1rem;
+      text-align: center;
+      background-image: url("{{ url_for('static', filename='images/fondo.jpg') }}");
+      background-size: cover;
+      background-position: center;
+      border-bottom: 4px solid #1f1a4f;
+      animation: fadeInDown 1s ease;
+      color: #fff;
+    }
+
+    .header h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 3.2rem;
+      font-weight: 700;
+    }
+
+    .header p {
+      font-size: 1.2rem;
+    }
+
+    .iglesia-card {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      border: none;
+      border-radius: 12px;
+      overflow: hidden;
+      animation: fadeInUp 1s ease;
+      background-color: #fffdf9;
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+    }
+
+    .iglesia-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 22px rgba(0, 0, 0, 0.15);
+    }
+
+    .iglesia-img {
+      height: 200px;
+      object-fit: cover;
+      width: 100%;
+    }
+
+    .card-title {
+      font-family: 'Playfair Display', serif;
+      color: #1f1a4f;
+      font-size: 1.25rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .fixed-image {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+    }
+
+    @keyframes fadeInDown {
+      from {
+        opacity: 0;
+        transform: translateY(-30px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    footer {
+      font-size: 0.9rem;
+    }
+
+    .btn-outline-primary {
+      border-color: #ffffff;
+      color: #ffffff;
+    }
+
+    .btn-outline-primary:hover {
+      background-color: #1f1a4f;
+      color: #fff;
+    }
+
+    .btn-outline-card {
+      background-color: #1f1a4f;
+      border-color: #fff;
+      color: #ffffff;
+    }
+    
+    .btn-outline-card:hover {
+      background-color: #fff;
+      border-color: #1f1a4f;
+      color: #1f1a4f;
+    }
+
+    .btn-auth {
+      font-size: 0.85rem;
+    }
+
+    /* Estilo para el buscador */
+    .search-bar {
+      width: 60%;
+      display: inline-block;
+      margin-right: 10px;
+    }
+
+    /* Estilo para el botón de búsqueda */
+    .search-btn {
+      width: 30%;
+      display: inline-block;
+      vertical-align: top;
+    }
+
+    /* Estilo para el botón de mostrar todas */
+    .show-all-btn {
+      margin-top: 20px;
+      display: block;
+      width: 50%;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .mtb-8{
+      margin-top: 8em;
+      margin-bottom: 8em;
+    }
+    .color-letra{
+      color: #1f1a4f;
+    }
+    .color-fondo{
+      background: #1f1a4f !important;
+      color: #fff;
+    }
+    .contact-form .form-control {
+        border-radius: 8px;
+        border-color: #ced4da;
+    }
+    .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+  </style>
+</head>
+
+<body>
+  <div class="header position-relative">
+    {% if current_user.is_authenticated %}
+      <div class="position-absolute top-0 end-0 m-3">
+        <a href="{{ url_for('dashboard') }}" class="btn btn-sm btn-success me-2">
+          Ir al Dashboard
+        </a>
+      </div>
+    {% else %}
+      <div class="position-absolute top-0 end-0 m-3 d-flex gap-2">
+        <a href="{{ url_for('login') }}" class="btn btn-sm btn-outline-info">
+          Iniciar sesión
+        </a>
+        <a href="{{ url_for('create_page') }}" class="btn btn-sm btn-outline-primary">
+          Registrarse
+        </a>
+      </div>
+    {% endif %}
+
+      <h1>Global PYMES</h1>
+      <p class="lead">Explora los diveros negocios de nuestra localidad</p>
+      
+      <!-- Contenedor para el buscador y botón -->
+      <!-- <form action="/" method="get" class="d-flex justify-content-center align-items-center">
+        <input type="text" name="q" placeholder="Buscar PYMES..." class="form-control search-bar" />
+        <button type="submit" class="btn btn-outline-primary search-btn">Buscar</button>
+      </form> -->
+      <!-- Formulario de búsqueda y filtros -->
+<form action="/#negocios" method="get" class="d-flex flex-wrap justify-content-center gap-2 mt-4">
+  <input type="text" name="q" placeholder="Buscar PYMES..." class="form-control search-bar" />
+
+  <!-- Filtro por categoría -->
+  <select name="category" class="form-select w-auto">
+    <option value="" selected disabled>Selecciona una categoría</option>
+    <!-- Alimentos y Bebidas -->
+    <option value="">Todos</option>
+    <option value="Restaurante">Restaurante</option>
+    <option value="Cafetería">Cafetería</option>
+    <option value="Bar">Bar</option>
+    <option value="Panadería">Panadería</option>
+    <option value="Comida rápida">Comida rápida</option>
+    <option value="Pastelería">Pastelería</option>
+
+    <!-- Comercio y Tiendas -->
+    <option value="Supermercado">Supermercado</option>
+    <option value="Tienda de ropa">Tienda de ropa</option>
+    <option value="Zapatería">Zapatería</option>
+    <option value="Ferretería">Ferretería</option>
+    <option value="Papelería">Papelería</option>
+    <option value="Tienda de regalos">Tienda de regalos</option>
+    <option value="Floristería">Floristería</option>
+    <option value="Joyería">Joyería</option>
+    <option value="Tienda de mascotas">Tienda de mascotas</option>
+    <option value="Librería">Librería</option>
+    <option value="Tienda de electrónica">Tienda de electrónica</option>
+
+    <!-- Salud y Belleza -->
+    <option value="Farmacia">Farmacia</option>
+    <option value="Consultorio médico">Consultorio médico</option>
+    <option value="Dentista">Dentista</option>
+    <option value="Salón de belleza">Salón de belleza</option>
+    <option value="Peluquería">Peluquería</option>
+    <option value="Spa">Spa</option>
+    <option value="Veterinaria">Veterinaria</option>
+
+    <!-- Servicios -->
+    <option value="Taller mecánico">Taller mecánico</option>
+    <option value="Lavandería">Lavandería</option>
+    <option value="Inmobiliaria">Inmobiliaria</option>
+    <option value="Agencia de viajes">Agencia de viajes</option>
+    <option value="Servicio de transporte">Servicio de transporte</option>
+    <option value="Mensajería">Mensajería</option>
+    <option value="Asesoría legal">Asesoría legal</option>
+    <option value="Contabilidad">Contabilidad</option>
+    <option value="Diseño gráfico">Diseño gráfico</option>
+    <option value="Estudio fotográfico">Estudio fotográfico</option>
+
+    <!-- Educación y Tecnología -->
+    <option value="Centro educativo">Centro educativo</option>
+    <option value="Escuela de idiomas">Escuela de idiomas</option>
+    <option value="Clases particulares">Clases particulares</option>
+    <option value="Servicios de TI">Servicios de TI</option>
+    <option value="Desarrollo web">Desarrollo web</option>
+    <option value="Marketing digital">Marketing digital</option>
+    <option value="Soporte técnico">Soporte técnico</option>
+
+    <!-- Ocio y Entretenimiento -->
+    <option value="Cine">Cine</option>
+    <option value="Gimnasio">Gimnasio</option>
+    <option value="Centro deportivo">Centro deportivo</option>
+    <option value="Sala de eventos">Sala de eventos</option>
+    <option value="Parque de diversiones">Parque de diversiones</option>
+    <option value="Streaming o medios">Streaming o medios</option>
+    <option value="Gaming o eSports">Gaming o eSports</option>
+
+    <!-- Otros -->
+    <option value="ONG / Asociación">ONG / Asociación</option>
+    <option value="Freelancer / Independiente">Freelancer / Independiente</option>
+    <option value="Otro">Otro</option>
+  </select>
+
+  <!-- Filtro por estado -->
+  <select name="state" class="form-select w-auto">
+    <option value="">Todos los estados</option>
+    <option value="Aguascalientes">Aguascalientes</option>
+    <option value="Baja California">Baja California</option>
+    <option value="Baja California Sur">Baja California Sur</option>
+    <option value="Campeche">Campeche</option>
+    <option value="Chiapas">Chiapas</option>
+    <option value="Chihuahua">Chihuahua</option>
+    <option value="Ciudad de México">Ciudad de México</option>
+    <option value="Coahuila">Coahuila</option>
+    <option value="Colima">Colima</option>
+    <option value="Durango">Durango</option>
+    <option value="Estado de México">Estado de México</option>
+    <option value="Guanajuato">Guanajuato</option>
+    <option value="Guerrero">Guerrero</option>
+    <option value="Hidalgo">Hidalgo</option>
+    <option value="Jalisco">Jalisco</option>
+    <option value="Michoacán">Michoacán</option>
+    <option value="Morelos">Morelos</option>
+    <option value="Nayarit">Nayarit</option>
+    <option value="Nuevo León">Nuevo León</option>
+    <option value="Oaxaca">Oaxaca</option>
+    <option value="Puebla">Puebla</option>
+    <option value="Querétaro">Querétaro</option>
+    <option value="Quintana Roo">Quintana Roo</option>
+    <option value="San Luis Potosí">San Luis Potosí</option>
+    <option value="Sinaloa">Sinaloa</option>
+    <option value="Sonora">Sonora</option>
+    <option value="Tabasco">Tabasco</option>
+    <option value="Tamaulipas">Tamaulipas</option>
+    <option value="Tlaxcala">Tlaxcala</option>
+    <option value="Veracruz">Veracruz</option>
+    <option value="Yucatán">Yucatán</option>
+    <option value="Zacatecas">Zacatecas</option>
+  </select>
+
+
+  <button type="submit" class="btn btn-outline-primary search-btn">Buscar</button>
+</form>
+
+
+    <!-- Botón para mostrar todas las empresas -->
+    <form action="/#negocios" method="get" class="show-all-btn">
+      <button type="submit" class="btn btn-outline-primary">Mostrar todas</button>
+    </form>
+  </div>
+
+  <div class="container text-center my-5 color-letra">
+    <h2 class="fw-bold mb-3">¡Únete a nuestra comunidad!</h2>
+    <h3 class="mb-3">Registra tu empresa y descubre nuevas oportunidades de negocio</h3>
+    <p class="mb-4">
+      Somos una plataforma <strong>mexicana</strong> comprometida con el crecimiento digital de negocios y emprendedores. 
+      Nuestro objetivo es brindarte un espacio dinámico donde puedas compartir información clave sobre tus servicios, 
+      mostrar tus productos, recibir reseñas de tus clientes y mantenerte en contacto directo a través de WhatsApp.
+    </p>
+
+    <div class="alert alert-success fw-bold fs-5 mx-auto" style="max-width: 600px;">
+      🎉 ¡Lo mejor de todo es que <span class="text-uppercase">es totalmente gratis</span>! 🎉
+    </div>
+
+    <a href="/create_page" class="btn btn-primary btn-lg mt-3">
+      Regístrate gratis ahora
+    </a>
+  </div>
+
+
+  <div class="container mt-4" id="negocios">
+    <h2 class="fw-bold mb-3 color-letra text-center">Negocios</h2>
+    <div class="row">
+      {% for negocio in negocios %}
+      <div class="col-md-4 mb-4">
+        <div class="card iglesia-card h-100">
+          {% if negocio.image %}
+          <img src="{{ url_for('static', filename=negocio.image) }}" class="iglesia-img" alt="Imagen de {{ negocio.business_name }}" />
+          {% else %}
+          <img src="{{ url_for('static', filename='images/default_image.png') }}" class="iglesia-img" alt="Imagen por defecto" />
+          {% endif %}
+          <div class="card-body text-center">
+            <h5 class="card-title">{{ negocio['business_name'] }}</h5>
+            <a href="{{ url_for('detalle_negocio', nombre=negocio['business_name']) }}" class="btn btn-outline-card mt-2">Visitar página</a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="col-12 text-center mt-4">
+    {% if total > per_page %}
+      <nav>
+        <ul class="pagination justify-content-center">
+          {% if page > 1 %}
+          <li class="page-item">
+            <a class="page-link" href="{{ url_for('index', q=request.args.q, category=request.args.category, state=request.args.state, page=page-1) }}#negocios">Anterior</a>
+          </li>
+          {% endif %}
+
+          {% for p in range(1, (total // per_page) + 2) %}
+          <li class="page-item {% if p == page %}active{% endif %}">
+            <a class="page-link" href="{{ url_for('index', q=request.args.q, category=request.args.category, state=request.args.state, page=p) }}#negocios">{{ p }}</a>
+          </li>
+          {% endfor %}
+
+          {% if page * per_page < total %}
+          <li class="page-item">
+            <a class="page-link" href="{{ url_for('index', q=request.args.q, category=request.args.category, state=request.args.state, page=page+1) }}#negocios">Siguiente</a>
+          </li>
+          {% endif %}
+        </ul>
+      </nav>
+    {% endif %}
+  </div>
+
+
+  <!-- Acerca de -->
+    <section class="py-5">
+        <div class="container text-center">
+            <h2 class="fw-bold mb-4 color-letra">Acerca de nosotros</h2>
+            <p class="text-muted fs-5">Somos jóvenes desarrolladores que buscan apoyar a nuestros clientes a hacer
+                realidad sus ideas, creando sitios web llamativos que impulsen sus negocios.</p>
+
+            <div class="row mt-5">
+                <div class="col-md-4 mb-4">
+                    <div class="p-4 shadow rounded bg-white h-100 color-fondo">
+                        <i class="material-icons text-primary fs-1 mb-3">chat</i>
+                        <h5 class="fw-bold">Comunicación</h5>
+                        <p>Comunicación constante 24/7 con nuestros clientes, resolviendo dudas y mostrando avances del
+                            proyecto.</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="p-4 shadow rounded bg-white h-100 color-fondo">
+                        <i class="material-icons text-success fs-1 mb-3">verified_user</i>
+                        <h5 class="fw-bold">Seguridad</h5>
+                        <p>Servicios 100% seguros, respaldados por profesionales que protegen tus datos y tu sitio.</p>
+                        <button class="btn btn-outline-success btn-sm mt-2 me-2" data-bs-toggle="popover" title="Misión"
+                            data-bs-content="Ayudar a empresas con soluciones automatizadas.">Misión</button>
+                        <button class="btn btn-outline-success btn-sm mt-2" data-bs-toggle="popover" title="Visión"
+                            data-bs-content="Ser la mejor opción en automatización de documentos.">Visión</button>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="p-4 shadow rounded bg-white h-100 color-fondo">
+                        <i class="material-icons text-danger fs-1 mb-3">fingerprint</i>
+                        <h5 class="fw-bold">Autenticidad</h5>
+                        <p>Desarrollamos productos únicos, hechos a la medida por profesionales capacitados para tu
+                            negocio.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <section class="py-5" id="contact">
+        <div class="container">
+            <h2 class="text-center fw-bold mb-4">Contacto</h2>
+            <p class="text-center text-muted mb-5">Envíanos tus dudas y te responderemos lo más pronto posible.</p>
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+            <div class="alert alert-info alert-dismissible fade show" role="alert">
+                {{ messages[0] }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endif %}
+            {% endwith %}
+            <form class="row g-3" method="POST" action="/enviar">
+                <div class="col-md-6"><input type="text" name="nombre" id="nombre" class="form-control rounded-pill"
+                        placeholder="Tu nombre o el de tu empresa"></div>
+                <div class="col-md-6"><input type="email" name="correo" id="correo" class="form-control rounded-pill"
+                        placeholder="Tu correo"></div>
+                <div class="col-12"><textarea name="mensaje" id="mensaje" class="form-control rounded-3" rows="4"
+                        placeholder="Tu mensaje..."></textarea></div>
+                <div class="col-12 text-center"><button type="submit" class="btn btn-primary btn-lg rounded-pill">Enviar</button></div>
+            </form>
+
+            <div class="row mt-5">
+                <div class="col-md-6">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-body">
+                            <h5>Correo electrónico</h5>
+                            <p><a href="mailto:technologydavani@gmail.com" class="text-decoration-none text-primary">technologydavani@gmail.com</a></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-body">
+                            <h5>Número telefónico</h5>
+                            <p><a href="tel:2461038844" class="text-decoration-none text-primary">246 103 8844</a></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="container my-5">
+  <h2 class="text-center mb-4">Preguntas frecuentes</h2>
+  <div class="accordion" id="faqAccordion">
+    
+    <div class="accordion-item">
+      <h2 class="accordion-header" id="faqHeading1">
+        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faqCollapse1" aria-expanded="true" aria-controls="faqCollapse1">
+          ¿Cuánto cuesta registrarse?
+        </button>
+      </h2>
+      <div id="faqCollapse1" class="accordion-collapse collapse show" aria-labelledby="faqHeading1" data-bs-parent="#faqAccordion">
+        <div class="accordion-body">
+          ¡Registrarse es completamente <strong>gratis</strong>! Queremos que cualquier negocio o emprendedor mexicano tenga acceso a nuevas oportunidades sin barreras económicas.
+        </div>
+      </div>
+    </div>
+    
+    <div class="accordion-item">
+      <h2 class="accordion-header" id="faqHeading2">
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqCollapse2" aria-expanded="false" aria-controls="faqCollapse2">
+          ¿Quiénes pueden registrarse?
+        </button>
+      </h2>
+      <div id="faqCollapse2" class="accordion-collapse collapse" aria-labelledby="faqHeading2" data-bs-parent="#faqAccordion">
+        <div class="accordion-body">
+          Cualquier <strong>negocio o emprendedor mexicano</strong> puede registrarse, sin importar su giro o tamaño. Apoyamos desde microempresas hasta marcas consolidadas.
+        </div>
+      </div>
+    </div>
+    
+    <div class="accordion-item">
+      <h2 class="accordion-header" id="faqHeading3">
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqCollapse3" aria-expanded="false" aria-controls="faqCollapse3">
+          ¿Qué puedo publicar en la plataforma?
+        </button>
+      </h2>
+      <div id="faqCollapse3" class="accordion-collapse collapse" aria-labelledby="faqHeading3" data-bs-parent="#faqAccordion">
+        <div class="accordion-body">
+          Puedes ingresar información clave de tu negocio, subir tus <strong>productos o servicios</strong>, crear <strong>blogs</strong>, compartir promociones y mucho más. Todo esto estará visible para que más personas te conozcan.
+        </div>
+      </div>
+    </div>
+
+    <div class="accordion-item">
+      <h2 class="accordion-header" id="faqHeading4">
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqCollapse4" aria-expanded="false" aria-controls="faqCollapse4">
+          ¿Los clientes pueden contactarme directamente?
+        </button>
+      </h2>
+      <div id="faqCollapse4" class="accordion-collapse collapse" aria-labelledby="faqHeading4" data-bs-parent="#faqAccordion">
+        <div class="accordion-body">
+          ¡Claro! Los visitantes pueden <strong>pedirte cotizaciones directas</strong> desde tu perfil, y te contactan fácilmente por <strong>WhatsApp</strong> sin salir del sitio.
+        </div>
+      </div>
+    </div>
+
+    <div class="accordion-item">
+      <h2 class="accordion-header" id="faqHeading5">
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqCollapse5" aria-expanded="false" aria-controls="faqCollapse5">
+          ¿Mi negocio aparece en Google?
+        </button>
+      </h2>
+      <div id="faqCollapse5" class="accordion-collapse collapse" aria-labelledby="faqHeading5" data-bs-parent="#faqAccordion">
+        <div class="accordion-body">
+          Sí, optimizamos tu perfil para que tenga <strong>posicionamiento SEO automático</strong>. Esto ayuda a que tu negocio aparezca en buscadores como Google sin que tengas que hacer nada adicional.
+        </div>
+      </div>
+    </div>
+
+    <div class="accordion-item">
+      <h2 class="accordion-header" id="faqHeading6">
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqCollapse6" aria-expanded="false" aria-controls="faqCollapse6">
+          ¿Esta plataforma es mexicana?
+        </button>
+      </h2>
+      <div id="faqCollapse6" class="accordion-collapse collapse" aria-labelledby="faqHeading6" data-bs-parent="#faqAccordion">
+        <div class="accordion-body">
+          Sí, somos una <strong>plataforma 100% mexicana</strong>, comprometida con el crecimiento digital de negocios y emprendedores en todo el país.
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+
+  <footer class="bg-dark text-white mt-5 pt-4 pb-3">
+        <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center">
+            <div class="mb-3 mb-md-0 text-center text-md-start">
+                <p class="mb-0">&copy; 2025 <strong>DavaniTechnology</strong>. Todos los derechos reservados.</p>
+                <small class="text-white">Sitio creado con el software <a href="https://davanitechnology.com/"
+                        target="_blank"
+                        class="text-info fw-semibold text-decoration-underline">DavaniTechnology</a></small>
+            </div>
+            <div class="text-center text-md-end">
+                <a href="https://www.facebook.com/profile.php?id=61561619890202" target="_blank" class="text-white me-3 fs-4" aria-label="Facebook">
+                    <i class="bi bi-facebook"></i>
+                </a>
+                <a href="https://www.tiktok.com/@technologydavani" target="_blank" class="text-white fs-4" aria-label="TikTok">
+                    <i class="bi bi-tiktok"></i>
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]');
+            [...popoverTriggerList].forEach(el => new bootstrap.Popover(el));
+        });
+    </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

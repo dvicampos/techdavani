@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{{ post.title }}</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet"/>
+  <style>
+    body {
+      background-color: {{ negocio['colors'] }};
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    .post-container {
+      max-width: 900px;
+      margin-top: 100px;
+      margin-bottom: 100px;
+    }
+
+    .post-card {
+      background: #fff;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+
+    .post-title {
+      font-size: 2rem;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    .post-meta {
+      font-size: 0.9rem;
+      color: #666;
+      margin-bottom: 1rem;
+    }
+
+    .post-content {
+      font-size: 1.1rem;
+      line-height: 1.8;
+      color: #333;
+    }
+
+    .post-image {
+      width: 100%;
+      max-height: 450px;
+      object-fit: cover;
+    }
+
+    .gallery img, .gallery video {
+      width: 100%;
+      height: 250px;
+      object-fit: cover;
+      border-radius: 10px;
+    }
+
+    .badge-custom {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      background-color: rgba(0, 0, 0, 0.7);
+      color: white;
+      font-size: 0.8rem;
+      padding: 6px 12px;
+      border-radius: 12px;
+    }
+
+    footer {
+      background: linear-gradient(to right, {{ negocio['color'] or '#343a40' }}, #000);
+      color: white;
+      padding: 2rem 0;
+    }
+
+    footer a {
+      color: #99e;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top shadow-sm"
+     style="background: linear-gradient(to right, {{ negocio['color'] or '#343a40' }}, #000);">
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="{{ url_for('detalle_negocio', nombre=negocio['business_name']) }}">{{ negocio['business_name'] }}</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+  </div>
+</nav>
+
+<!-- Post Content -->
+<div class="container post-container">
+  <div class="card post-card">
+    {% if post.cabecera %}
+    <div class="position-relative">
+      <img src="{{ url_for('static', filename='uploads/' + post.cabecera) }}" class="post-image" alt="Cabecera del post">
+      <span class="badge badge-custom"><i class="bi bi-star-fill me-1"></i> Destacado</span>
+    </div>
+    {% endif %}
+    <div class="card-body">
+      <h1 class="post-title">{{ post.title }}</h1>
+      <div class="post-meta">
+        Publicado por <strong>{{ post.author }}</strong> | {{ post.date.strftime('%d/%m/%Y %H:%M') }}
+      </div>
+      <div class="post-content mb-4">
+        {{ post.content }}
+      </div>
+
+      {% if post.files %}
+      <div class="row g-3 gallery">
+        {% for file in post.files %}
+        <div class="col-12 col-sm-6 col-md-4">
+          {% if file.endswith(('jpg', 'jpeg', 'png', 'gif')) %}
+          <img src="{{ url_for('static', filename='uploads/' ~ file) }}" alt="Imagen {{ loop.index }}" class="img-thumbnail">
+          {% elif file.endswith('mp4') %}
+          <video controls>
+            <source src="{{ url_for('static', filename='uploads/' ~ file) }}" type="video/mp4">
+          </video>
+          {% else %}
+          <a href="{{ url_for('static', filename='uploads/' ~ file) }}" target="_blank" class="btn btn-outline-secondary btn-sm w-100">Descargar {{ file }}</a>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% if post.file_url %}
+      <div class="mt-4 text-center">
+        <a href="{{ url_for('static', filename=post.file_url) }}" target="_blank" class="btn btn-primary btn-lg">
+          <i class="bi bi-download me-2"></i> Descargar archivo adjunto
+        </a>
+      </div>
+      {% endif %}
+
+      <div class="mt-4 text-center">
+        <a href="{{ url_for('detalle_negocio', nombre=negocio['business_name']) }}" class="btn btn-outline-dark">
+          <i class="bi bi-arrow-left-circle"></i> Volver a {{ negocio['business_name'] }}
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Footer -->
+<footer class="text-center mt-5">
+  <div class="container">
+    <p class="mb-1">&copy; 2025 <strong>{{ negocio['business_name'] }}</strong> - Todos los derechos reservados.</p>
+    <small>Creado por <a href="https://davanitechnology.com/" target="_blank">DavaniTechnology</a></small>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

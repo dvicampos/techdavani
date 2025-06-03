@@ -1,0 +1,28 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="text-center mb-4">Crear Aviso</h2>
+
+    <form action="{{ url_for('create_aviso') }}" method="POST">
+        <div class="mb-3">
+            <label for="title" class="form-label">Título:</label>
+            <input type="text" name="title" class="form-control" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="content" class="form-label">Contenido:</label>
+            <textarea name="content" rows="6" class="form-control" required></textarea>
+        </div>
+
+        <div class="text-center">
+            <button type="submit" class="btn btn-primary">Crear Aviso</button>
+        </div>
+    </form>
+    <div class="mt-4 text-center">
+        <a href="{{ url_for('dashboard')}}" class="btn btn-outline-dark">
+            <i class="bi bi-arrow-left-circle"></i> Regresar
+        </a>
+    </div>
+</div>
+{% endblock %}

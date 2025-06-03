@@ -1,0 +1,43 @@
+{% extends "layout.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<h1>📝 Mis Posts</h1>
+<a href="{{ url_for('crear_post_negocio') }}" class="btn btn-outline-secondary mb-2">+ Crear nuevo</a>
+
+{% if posts %}
+<ul style="list-style: none; padding: 0;">
+    {% for post in posts %}
+    <li style="border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 8px;">
+        <h3>{{ post.title }}</h3>
+
+        {% if post.get('author') %}
+        <p><strong>Autor:</strong> {{ post.author }}</p>
+        {% endif %}
+
+        {% if post.content %}
+        <p>{{ post.content[:150] }}{% if post.content|length > 150 %}...{% endif %}</p>
+        {% endif %}
+
+        {% if post.file_url %}
+        <p>📎 <a href="static{{ post.file_url }}" target="_blank">Ver archivo adjunto</a></p>
+        {% endif %}
+
+        <p><small>🕒 Publicado el: {{ post.date.strftime('%d/%m/%Y %H:%M') }}</small></p>
+        {% if current_user.role == 'admin' %}
+        <a href="{{ url_for('edit_post', post_id=post._id) }}">✏️ Editar</a> |
+        <a href="{{ url_for('delete_post', post_id=post._id) }}" onclick="return confirm('¿Seguro que quieres eliminar este post?')">🗑️ Eliminar</a>
+        {% endif %}
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+<p>No has creado ningún post aún.</p>
+{% endif %}
+
+<div class="mt-4 text-center">
+        <a href="{{ url_for('dashboard')}}" class="btn btn-outline-dark">
+          <i class="bi bi-arrow-left-circle"></i> Regresar
+        </a>
+</div>
+{% endblock %}

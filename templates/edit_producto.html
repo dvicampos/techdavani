@@ -1,0 +1,33 @@
+{% extends "layout.html" %}
+{% block content %}
+<h2 class="mb-4">🛍️ Editar producto</h2>
+<form method="POST" enctype="multipart/form-data">
+  <div class="mb-3">
+    <label>Título</label>
+    <input type="text" name="title" class="form-control" value="{{ producto.title }}" required>
+  </div>
+  <div class="mb-3">
+    <label>Descripción</label>
+    <textarea name="description" class="form-control" required>{{ producto.description }}</textarea>
+  </div>
+  <div class="mb-3">
+    <label>Precio</label>
+    <input type="number" name="price" step="0.01" class="form-control" value="{{ producto.price }}" required>
+  </div>
+  <div class="mb-3">
+    <label>Imagen (opcional)</label>
+    <input type="file" name="image" class="form-control">
+    {% if producto.image %}
+    <p>Imagen actual:</p>
+    <img src="{{ url_for('static', filename=producto.image) }}" alt="Imagen producto" width="100">
+    {% endif %}
+  </div>
+  <button type="submit" class="btn btn-primary">Actualizar</button>
+</form>
+
+<div class="mt-4 text-center">
+    <a href="{{ url_for('dashboard')}}" class="btn btn-outline-dark">
+        <i class="bi bi-arrow-left-circle"></i> Regresar
+    </a>
+</div>
+{% endblock %}

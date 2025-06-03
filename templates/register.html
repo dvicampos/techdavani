@@ -1,0 +1,51 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container d-flex justify-content-center align-items-center" style="min-height: 90vh;">
+    <div class="card shadow-lg border-0 rounded-4 p-4 w-100" style="max-width: 500px;">
+        <div class="card-body">
+            <h2 class="card-title text-center mb-4 text-primary">
+                <i class="fa fa-user-plus me-2"></i>Registro
+            </h2>
+
+            <div class="alert alert-warning text-center" role="alert">
+                <i class="fa fa-envelope me-1"></i>
+                Para activar tu cuenta, debes confirmar tu correo electrónico.
+            </div>
+
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+            <div class="alert alert-info alert-dismissible fade show" role="alert">
+                {{ messages[0] }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endif %}
+            {% endwith %}
+
+            <form method="POST">
+                <div class="mb-3">
+                    <label for="nombre" class="form-label">Nombre completo</label>
+                    <input type="text" class="form-control shadow-sm" name="nombre" required>
+                </div>
+                <div class="mb-3">
+                    <label for="email" class="form-label">Correo electrónico</label>
+                    <input type="email" class="form-control shadow-sm" name="email" required>
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Contraseña</label>
+                    <input type="password" class="form-control shadow-sm" name="password" required>
+                </div>
+                <input type="hidden" name="role" value="admin">
+
+                <input type="hidden" name="page_id" value="{{ page_id }}">
+
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary btn-lg shadow-sm">
+                        <i class="fa fa-user-plus me-1"></i> Registrarse
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

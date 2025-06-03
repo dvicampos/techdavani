@@ -1,0 +1,47 @@
+{% extends "layout.html" %}
+
+{% block title %}Gestión de Usuarios{% endblock %}
+
+{% block content %}
+<h1 style="text-align: center; margin-bottom: 20px;">Usuarios registrados</h1>
+<a href="/admin/register_user" class="btn btn-sm btn-outline-success top-0 end-0 mb-2">Registro</a>
+<table style="width: 100%; border-collapse: collapse; margin: auto; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
+    <thead style="background-color: #f2f2f2;">
+        <tr>
+            <th style="padding: 10px; border: 1px solid #ccc;">Email</th>
+            <th style="padding: 10px; border: 1px solid #ccc;">Rol</th>
+            <th style="padding: 10px; border: 1px solid #ccc;">Confirmado</th>
+            {% if current_user.role == 'admin' %}
+            <th style="padding: 10px; border: 1px solid #ccc;">Acciones</th>
+            {% endif %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for user in users %}
+        <tr>
+            <td style="padding: 10px; border: 1px solid #ccc;">{{ user.email }}</td>
+            <td style="padding: 10px; border: 1px solid #ccc;">{{ user.role }}</td>
+            <td style="padding: 10px; border: 1px solid #ccc;">
+                {% if user.confirmed %}
+                    <span style="color: green;">Sí</span>
+                {% else %}
+                    <span style="color: red;">No</span>
+                {% endif %}
+            </td>
+            {% if current_user.role == 'admin' %}
+            <td style="padding: 10px; border: 1px solid #ccc;">
+                <a href="{{ url_for('edit_user', user_id=user._id) }}" style="color: #007BFF; text-decoration: none;">Editar</a> |
+                <a href="{{ url_for('delete_user', user_id=user._id) }}" style="color: #dc3545; text-decoration: none;" onclick="return confirm('¿Estás seguro de que quieres eliminar este usuario?');">Eliminar</a>
+            </td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div class="mt-4 text-center">
+    <a href="{{ url_for('dashboard')}}" class="btn btn-outline-dark">
+        <i class="bi bi-arrow-left-circle"></i> Regresar
+    </a>
+</div>
+{% endblock %}

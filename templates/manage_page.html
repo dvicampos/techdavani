@@ -1,0 +1,340 @@
+{% extends "layout.html" %}
+
+{% block title %}Administrar Página{% endblock %}
+
+{% block content %}
+<style>
+    .religious-bg {
+        background: linear-gradient(to bottom, #f3f0e5, #fffaf0);
+        padding: 2rem;
+        border-radius: 1rem;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        animation: fadeIn 1s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .form-label {
+        font-weight: bold;
+        color: #6a4f4b;
+    }
+</style>
+
+<div class="religious-bg">
+    <h2><i class="bi bi-file-earmark-fill"></i>Administrar página de mi empresa</h2>
+
+    {% if data %}
+    <p class="mt-2">
+        <strong>Link de la página:</strong>
+        <a href="{{ url_for('detalle_negocio', nombre=data.business_name) }}" target="_blank"
+            class="btn btn-outline-primary btn-sm">
+            <i class="fa fa-link me-1"></i> {{ request.host_url ~ 'negocio/' ~ data.business_name }}
+        </a>
+    </p>
+    {% endif %}
+
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <div class="alert alert-info">{{ messages[0] }}</div>
+    {% endif %}
+    {% endwith %}
+
+    <form method="POST" enctype="multipart/form-data">
+        <!-- Nombre del negocio -->
+        <div class="mb-3">
+            <label class="form-label">Nombre del negocio</label>
+            <input type="text" name="business_name" class="form-control"
+                value="{{ data.business_name if data else '' }}" required>
+        </div>
+
+        <!-- Slogan -->
+        <div class="mb-3">
+            <label class="form-label">Slogan o frase llamativa</label>
+            <input type="text" name="slogan" class="form-control" value="{{ data.slogan if data else '' }}">
+        </div>
+
+        <!-- Descripción -->
+        <div class="mb-3">
+            <label class="form-label">Descripción</label>
+            <textarea name="description" rows="4" class="form-control"
+                required>{{ data.description if data else '' }}</textarea>
+        </div>
+
+        <!-- Categoría del negocio -->
+        <div class="mb-3">
+            <label class="form-label">Categoría del negocio</label>
+            <select name="category" class="form-select" required>
+                <option value="" disabled {% if not data or not data.category %}selected{% endif %}>Selecciona una
+                    categoría</option>
+
+                <!-- Alimentos y Bebidas -->
+                <option value="Restaurante" {% if data and data.category=='Restaurante' %}selected{% endif %}>
+                    Restaurante</option>
+                <option value="Cafetería" {% if data and data.category=='Cafetería' %}selected{% endif %}>Cafetería
+                </option>
+                <option value="Bar" {% if data and data.category=='Bar' %}selected{% endif %}>Bar</option>
+                <option value="Panadería" {% if data and data.category=='Panadería' %}selected{% endif %}>Panadería
+                </option>
+                <option value="Comida rápida" {% if data and data.category=='Comida rápida' %}selected{% endif %}>Comida
+                    rápida</option>
+                <option value="Pastelería" {% if data and data.category=='Pastelería' %}selected{% endif %}>Pastelería
+                </option>
+
+                <!-- Comercio y Tiendas -->
+                <option value="Supermercado" {% if data and data.category=='Supermercado' %}selected{% endif %}>
+                    Supermercado</option>
+                <option value="Tienda de ropa" {% if data and data.category=='Tienda de ropa' %}selected{% endif %}>
+                    Tienda de ropa</option>
+                <option value="Zapatería" {% if data and data.category=='Zapatería' %}selected{% endif %}>Zapatería
+                </option>
+                <option value="Ferretería" {% if data and data.category=='Ferretería' %}selected{% endif %}>Ferretería
+                </option>
+                <option value="Papelería" {% if data and data.category=='Papelería' %}selected{% endif %}>Papelería
+                </option>
+                <option value="Tienda de regalos" {% if data and data.category=='Tienda de regalos' %}selected{% endif
+                    %}>Tienda de regalos</option>
+                <option value="Floristería" {% if data and data.category=='Floristería' %}selected{% endif %}>
+                    Floristería</option>
+                <option value="Joyería" {% if data and data.category=='Joyería' %}selected{% endif %}>Joyería</option>
+                <option value="Tienda de mascotas" {% if data and data.category=='Tienda de mascotas' %}selected{% endif
+                    %}>Tienda de mascotas</option>
+                <option value="Librería" {% if data and data.category=='Librería' %}selected{% endif %}>Librería
+                </option>
+                <option value="Tienda de electrónica" {% if data and data.category=='Tienda de electrónica' %}selected{%
+                    endif %}>Tienda de electrónica</option>
+
+                <!-- Salud y Belleza -->
+                <option value="Farmacia" {% if data and data.category=='Farmacia' %}selected{% endif %}>Farmacia
+                </option>
+                <option value="Consultorio médico" {% if data and data.category=='Consultorio médico' %}selected{% endif
+                    %}>Consultorio médico</option>
+                <option value="Dentista" {% if data and data.category=='Dentista' %}selected{% endif %}>Dentista
+                </option>
+                <option value="Salón de belleza" {% if data and data.category=='Salón de belleza' %}selected{% endif %}>
+                    Salón de belleza</option>
+                <option value="Peluquería" {% if data and data.category=='Peluquería' %}selected{% endif %}>Peluquería
+                </option>
+                <option value="Spa" {% if data and data.category=='Spa' %}selected{% endif %}>Spa</option>
+                <option value="Veterinaria" {% if data and data.category=='Veterinaria' %}selected{% endif %}>
+                    Veterinaria</option>
+
+                <!-- Servicios -->
+                <option value="Taller mecánico" {% if data and data.category=='Taller mecánico' %}selected{% endif %}>
+                    Taller mecánico</option>
+                <option value="Lavandería" {% if data and data.category=='Lavandería' %}selected{% endif %}>Lavandería
+                </option>
+                <option value="Inmobiliaria" {% if data and data.category=='Inmobiliaria' %}selected{% endif %}>
+                    Inmobiliaria</option>
+                <option value="Agencia de viajes" {% if data and data.category=='Agencia de viajes' %}selected{% endif
+                    %}>Agencia de viajes</option>
+                <option value="Servicio de transporte" {% if data and data.category=='Servicio de transporte'
+                    %}selected{% endif %}>Servicio de transporte</option>
+                <option value="Mensajería" {% if data and data.category=='Mensajería' %}selected{% endif %}>Mensajería
+                </option>
+                <option value="Asesoría legal" {% if data and data.category=='Asesoría legal' %}selected{% endif %}>
+                    Asesoría legal</option>
+                <option value="Contabilidad" {% if data and data.category=='Contabilidad' %}selected{% endif %}>
+                    Contabilidad</option>
+                <option value="Diseño gráfico" {% if data and data.category=='Diseño gráfico' %}selected{% endif %}>
+                    Diseño gráfico</option>
+                <option value="Estudio fotográfico" {% if data and data.category=='Estudio fotográfico' %}selected{%
+                    endif %}>Estudio fotográfico</option>
+
+                <!-- Educación y Tecnología -->
+                <option value="Centro educativo" {% if data and data.category=='Centro educativo' %}selected{% endif %}>
+                    Centro educativo</option>
+                <option value="Escuela de idiomas" {% if data and data.category=='Escuela de idiomas' %}selected{% endif
+                    %}>Escuela de idiomas</option>
+                <option value="Clases particulares" {% if data and data.category=='Clases particulares' %}selected{%
+                    endif %}>Clases particulares</option>
+                <option value="Servicios de TI" {% if data and data.category=='Servicios de TI' %}selected{% endif %}>
+                    Servicios de TI</option>
+                <option value="Desarrollo web" {% if data and data.category=='Desarrollo web' %}selected{% endif %}>
+                    Desarrollo web</option>
+                <option value="Marketing digital" {% if data and data.category=='Marketing digital' %}selected{% endif
+                    %}>Marketing digital</option>
+                <option value="Soporte técnico" {% if data and data.category=='Soporte técnico' %}selected{% endif %}>
+                    Soporte técnico</option>
+
+                <!-- Ocio y Entretenimiento -->
+                <option value="Cine" {% if data and data.category=='Cine' %}selected{% endif %}>Cine</option>
+                <option value="Gimnasio" {% if data and data.category=='Gimnasio' %}selected{% endif %}>Gimnasio
+                </option>
+                <option value="Centro deportivo" {% if data and data.category=='Centro deportivo' %}selected{% endif %}>
+                    Centro deportivo</option>
+                <option value="Sala de eventos" {% if data and data.category=='Sala de eventos' %}selected{% endif %}>
+                    Sala de eventos</option>
+                <option value="Parque de diversiones" {% if data and data.category=='Parque de diversiones' %}selected{%
+                    endif %}>Parque de diversiones</option>
+                <option value="Streaming o medios" {% if data and data.category=='Streaming o medios' %}selected{% endif
+                    %}>Streaming o medios</option>
+                <option value="Gaming o eSports" {% if data and data.category=='Gaming o eSports' %}selected{% endif %}>
+                    Gaming o eSports</option>
+
+                <!-- Otros -->
+                <option value="ONG / Asociación" {% if data and data.category=='ONG / Asociación' %}selected{% endif %}>
+                    ONG / Asociación</option>
+                <option value="Freelancer / Independiente" {% if data and data.category=='Freelancer / Independiente'
+                    %}selected{% endif %}>Freelancer / Independiente</option>
+                <option value="Otro" {% if data and data.category=='Otro' %}selected{% endif %}>Otro</option>
+            </select>
+        </div>
+
+
+        <!-- Fecha de fundación -->
+        <div class="mb-3">
+            <label class="form-label">Fecha de fundación</label>
+            <input type="date" name="founding_date" class="form-control"
+                value="{{ data.founding_date if data else '' }}">
+        </div>
+
+        <!-- Teléfono -->
+        <div class="mb-3">
+            <label class="form-label">Teléfono</label>
+            <input type="text" name="phone" class="form-control" value="{{ data.phone if data else '' }}">
+        </div>
+
+        <!-- WhatsApp -->
+        <div class="mb-3">
+            <label class="form-label">WhatsApp</label>
+            <input type="text" name="whatsapp" class="form-control" value="{{ data.whatsapp if data else '' }}">
+        </div>
+
+        <!-- Correo electrónico -->
+        <div class="mb-3">
+            <label class="form-label">Correo electrónico</label>
+            <input type="email" name="email" class="form-control" value="{{ data.email if data else '' }}">
+        </div>
+
+        <!-- Sitio web -->
+        <div class="mb-3">
+            <label class="form-label">Sitio web</label>
+            <input type="url" name="website" class="form-control" value="{{ data.website if data else '' }}">
+        </div>
+
+        <!-- Dirección -->
+        <div class="mb-3">
+            <label class="form-label">Dirección completa</label>
+            <input type="text" name="address" class="form-control" value="{{ data.address if data else '' }}">
+        </div>
+
+        <!-- Código Postal -->
+        <div class="mb-3">
+            <label class="form-label">Código Postal</label>
+            <input type="text" name="postal_code" class="form-control" value="{{ data.postal_code if data else '' }}">
+        </div>
+
+        <!-- Ciudad -->
+        <div class="mb-3">
+            <label class="form-label">Ciudad</label>
+            <input type="text" name="city" class="form-control" value="{{ data.city if data else '' }}">
+        </div>
+
+        <!-- Estado/Provincia -->
+        <div class="mb-3">
+            <label class="form-label">Estado / Provincia</label>
+            <select name="state" class="form-control" required>
+                <option value="">Selecciona un estado</option>
+                {% set estados = [
+                'Aguascalientes', 'Baja California', 'Baja California Sur', 'Campeche',
+                'Chiapas', 'Chihuahua', 'Ciudad de México', 'Coahuila', 'Colima', 'Durango',
+                'Estado de México', 'Guanajuato', 'Guerrero', 'Hidalgo', 'Jalisco', 'Michoacán',
+                'Morelos', 'Nayarit', 'Nuevo León', 'Oaxaca', 'Puebla', 'Querétaro', 'Quintana Roo',
+                'San Luis Potosí', 'Sinaloa', 'Sonora', 'Tabasco', 'Tamaulipas', 'Tlaxcala',
+                'Veracruz', 'Yucatán', 'Zacatecas'
+                ] %}
+                {% for estado in estados %}
+                <option value="{{ estado }}" {% if data and data.state==estado %}selected{% endif %}>{{ estado }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+
+        <!-- Google Maps (URL o coordenadas) -->
+        <div class="mb-3">
+            <label class="form-label">Ubicación en Google Maps (URL o coordenadas)</label>
+            <input type="text" name="google_maps" class="form-control" value="{{ data.google_maps if data else '' }}">
+        </div>
+
+        <!-- Horario de atención -->
+        <div class="mb-3">
+            <label class="form-label">Horario de atención</label>
+            <input type="text" name="operating_hours" class="form-control"
+                value="{{ data.operating_hours if data else '' }}">
+        </div>
+
+        <!-- Servicios ofrecidos -->
+        <div class="mb-3">
+            <label class="form-label">Servicios ofrecidos</label>
+            <textarea name="services" rows="3" class="form-control">{{ data.services if data else '' }}</textarea>
+            <small class="form-text text-muted">Separar los servicios con comas.</small>
+        </div>
+
+        <!-- Métodos de pago -->
+        <div class="mb-3">
+            <label class="form-label">Métodos de pago</label>
+            <input type="text" name="payment_methods" class="form-control"
+                value="{{ data.payment_methods if data else '' }}" placeholder="Ej: Efectivo, Tarjeta, Transferencia">
+        </div>
+
+        <!-- ¿Ofrece entrega a domicilio? -->
+        <div class="mb-3 form-check">
+            <input class="form-check-input" type="checkbox" name="delivery_available" id="delivery_available" {% if data
+                and data.delivery_available %}checked{% endif %}>
+            <label class="form-check-label" for="delivery_available">
+                ¿Ofrece entrega a domicilio?
+            </label>
+        </div>
+
+        <!-- Redes sociales -->
+        <div class="mb-3">
+            <label class="form-label">Facebook</label>
+            <input type="url" name="facebook" class="form-control" value="{{ data.facebook if data else '' }}">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Instagram</label>
+            <input type="url" name="instagram" class="form-control" value="{{ data.instagram if data else '' }}">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">TikTok</label>
+            <input type="url" name="tiktok" class="form-control" value="{{ data.tiktok if data else '' }}">
+        </div>
+
+        <!-- Color principal -->
+        <div class="mb-3">
+            <label class="form-label">Color principal</label><br>
+            <input type="color" name="color" class="form-control-color" value="{{ data.color if data else '#8e44ad' }}">
+        </div>
+
+        <!-- Imagen principal -->
+        <div class="mb-3">
+            <label class="form-label">Imagen principal</label>
+            <input type="file" name="image" class="form-control">
+            {% if data and data.image %}
+            <img src="{{ url_for('static', filename=data.image) }}" alt="Imagen principal" class="img-thumbnail mt-2"
+                style="max-width:200px;">
+            {% endif %}
+        </div>
+
+        <button class="btn btn-success"><i class="fa fa-save me-1"></i>Guardar</button>
+    </form>
+    <div class="mt-4 text-center">
+        <a href="{{ url_for('dashboard')}}" class="btn btn-outline-dark">
+            <i class="bi bi-arrow-left-circle"></i> Regresar
+        </a>
+    </div>
+</div>
+{% endblock %}

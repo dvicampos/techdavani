@@ -1,0 +1,45 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-center flex-grow-1">📢 Avisos Recientes</h2>
+        {% if current_user.role != 'usuario' %}
+            <a href="{{ url_for('create_aviso') }}" class="btn btn-success">+ Crear Aviso</a>
+        {% endif %}
+    </div>
+
+    {% if avisos %}
+        <div class="row row-cols-1 row-cols-md-2 g-4">
+            {% for aviso in avisos %}
+            <div class="col">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ aviso.title }}</h5>
+                        <p class="card-text">{{ aviso.content | truncate(150) }}</p>
+                    </div>
+                    <div class="card-footer text-muted d-flex justify-content-between align-items-center">
+                        <small>🕒 {{ aviso.date.strftime('%d/%m/%Y %H:%M') }}</small>
+                        {% if current_user.role == 'admin' %}
+                        <div>
+                            <a href="{{ url_for('edit_aviso', aviso_id=aviso._id) }}" class="btn btn-sm btn-outline-warning me-1">Editar</a>
+                            <a href="{{ url_for('delete_aviso', aviso_id=aviso._id) }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Seguro que deseas eliminar este aviso?')">Eliminar</a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info text-center mt-5" role="alert">
+            No hay avisos disponibles por el momento.
+        </div>
+    {% endif %}
+</div>
+<div class="mt-4 text-center">
+        <a href="{{ url_for('dashboard')}}" class="btn btn-outline-dark">
+          <i class="bi bi-arrow-left-circle"></i> Regresar
+        </a>
+</div>
+{% endblock %}

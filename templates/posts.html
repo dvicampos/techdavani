@@ -1,0 +1,32 @@
+{% extends "layout.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+  <div class="container">
+    <h2>Publicaciones</h2>
+    {% for post in posts %}
+      <div class="card my-3">
+        <div class="card-body">
+          <h5>{{ post.title }}</h5>
+          <small class="text-muted">Publicado el {{ post.date.strftime('%d/%m/%Y %H:%M') }}</small>
+          <p class="mt-3">{{ post.content }}</p>
+          {% for file in post.files %}
+            {% if file.endswith(('jpg', 'jpeg', 'png', 'gif')) %}
+              <img src="{{ url_for('static', filename='uploads/' ~ file) }}" class="img-fluid my-2">
+            {% elif file.endswith('mp4') %}
+              <video controls class="w-100 my-2">
+                <source src="{{ url_for('static', filename='uploads/' ~ file) }}" type="video/mp4">
+              </video>
+            {% else %}
+              <a href="{{ url_for('static', filename='uploads/' ~ file) }}" target="_blank" class="btn btn-sm btn-outline-secondary d-block my-1">
+                Descargar {{ file }}
+              </a>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% endblock %}
+

@@ -1,0 +1,43 @@
+{% extends "layout.html" %}
+
+{% block title %}Editar Usuario{% endblock %}
+
+{% block content %}
+<div style="max-width: 500px; margin: 0 auto; padding: 20px; background-color: #fafafa; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
+    <h2 style="text-align: center; margin-bottom: 20px;">Editar Usuario</h2>
+
+    <form method="POST">
+        <div style="margin-bottom: 15px;">
+            <label style="font-weight: bold;">Email:</label>
+            <p style="margin: 5px 0;">{{ user.email }}</p>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <label for="role" style="font-weight: bold;">Rol:</label>
+            <select id="role" name="role" style="width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #ccc;">
+                <option value="user" {% if user.role == 'user' %}selected{% endif %}>Usuario</option>
+                <option value="moderador" {% if user.role == 'moderador' %}selected{% endif %}>Moderador</option>
+                <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Admin</option>
+            </select>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label style="font-weight: bold;">
+                <input type="checkbox" name="confirmed" {% if user.confirmed %}checked{% endif %} style="margin-right: 5px;">
+                Confirmado
+            </label>
+        </div>
+
+        <div style="text-align: center;">
+            <button type="submit" style="padding: 10px 20px; background-color: #007BFF; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                Guardar Cambios
+            </button>
+        </div>
+    </form>
+    <div class="mt-4 text-center">
+        <a href="{{ url_for('dashboard')}}" class="btn btn-outline-dark">
+            <i class="bi bi-arrow-left-circle"></i> Regresar
+        </a>
+    </div>
+</div>
+{% endblock %}

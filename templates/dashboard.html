@@ -1,0 +1,107 @@
+{% extends "layout.html" %}
+
+{% block title %}Global PYMES{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Bienvenido, <strong>{{ current_user.nombre }}</strong></h2>
+
+    <div class="row mt-5">
+        {% if current_user.role == 'admin' %}
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">👥 Gestionar usuarios</h5>
+                    <p class="card-text">Agrega, edita o elimina usuarios del sistema.</p>
+                    <a href="{{ url_for('manage_users') }}" class="btn btn-primary">Ir</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">🛠 Gestionar página</h5>
+                    <p class="card-text">Edita la información de tu página asignada.</p>
+                    <a href="{{ url_for('manage_page') }}" class="btn btn-primary">Ir</a>
+                </div>
+            </div>
+        </div>
+
+        {% endif %}
+
+         {% if current_user.role == 'admin' or current_user.role == 'moderador' %}
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">📝 Crear blog</h5>
+                    <p class="card-text">Publica una nueva entrada en tu blog.</p>
+                    <a href="{{ url_for('crear_post_negocio') }}" class="btn btn-success">Crear</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">📢 Crear aviso</h5>
+                    <p class="card-text">Publica un aviso para tu comunidad.</p>
+                    <a href="{{ url_for('create_aviso') }}" class="btn btn-warning">Crear</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">🛒 Crear producto</h5>
+                    <p class="card-text">Agrega un nuevo producto con imagen, descripción y precio.</p>
+                    <a href="{{ url_for('create_producto') }}" class="btn btn-info text-white">Crear</a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">📚 Ver publicaciones</h5>
+                    <p class="card-text">Consulta y gestiona tus publicaciones.</p>
+                    <a href="{{ url_for('list_post') }}" class="btn btn-secondary">Ver</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">📋 Ver avisos</h5>
+                    <p class="card-text">Revisa todos los avisos publicados.</p>
+                    <a href="{{ url_for('list_avisos') }}" class="btn btn-secondary">Ver</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">📦 Ver productos</h5>
+                    <p class="card-text">Consulta y administra tus productos disponibles.</p>
+                    <a href="{{ url_for('list_productos') }}" class="btn btn-secondary">Ver</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">⭐ Ver reseñas</h5>
+                    <p class="card-text">Consulta las reseñas.</p>
+                    <a href="{{ url_for('admin_reseñas') }}" class="btn btn-secondary">Ver</a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

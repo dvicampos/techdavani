@@ -1,0 +1,51 @@
+{% extends "layout.html" %}
+
+{% block title %}Crear Blog{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <h2 class="card-title text-center mb-4">Crear nuevo blog</h2>
+
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          <div class="alert alert-info text-center">
+            {{ messages[0] }}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <form method="POST" enctype="multipart/form-data">
+        <div class="mb-3">
+          <label for="title" class="form-label">Título del Blog</label>
+          <input type="text" name="title" id="title" class="form-control" placeholder="Ingresa un título atractivo..." required>
+        </div>
+        
+        <label for="cabecera">Imagen de cabecera</label><br>
+        <input type="file" name="cabecera" accept="image/*"><br><br>
+
+        <div class="mb-3">
+          <label for="content" class="form-label">Contenido</label>
+          <textarea name="content" id="content" rows="6" class="form-control" placeholder="Comparte tus ideas aquí..." required></textarea>
+        </div>
+
+        <div class="mb-3">
+          <label for="files" class="form-label">Adjuntar archivos</label>
+          <input type="file" name="files" id="files" multiple class="form-control">
+          <div class="form-text">Puedes subir imágenes, videos, PDF o documentos Word.</div>
+        </div>
+
+        <div class="text-center">
+          <button class="btn btn-success px-5">Publicar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <div class="mt-4 text-center">
+      <a href="{{ url_for('dashboard')}}" class="btn btn-outline-dark">
+          <i class="bi bi-arrow-left-circle"></i> Regresar
+      </a>
+  </div>
+</div>
+{% endblock %}

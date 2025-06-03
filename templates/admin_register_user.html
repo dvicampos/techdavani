@@ -1,0 +1,53 @@
+{% extends "layout.html" %}
+
+{% block title %}Global PYMES{% endblock %}
+
+{% block content %}
+<div class="container mt-5" style="max-width: 500px;">
+  <h2 class="mb-4 text-center">Registrar nuevo usuario</h2>
+  
+  <div class="alert alert-info text-center" role="alert">
+    Después de registrarse, el usuario debe <strong>confirmar su correo electrónico</strong> para activar la cuenta.
+  </div>
+
+  <form method="POST" action="{{ url_for('admin_register_user') }}">
+    <div class="mb-3">
+      <label for="nombre" class="form-label">Nombre completo</label>
+      <input type="text" class="form-control" id="nombre" name="nombre" placeholder="Nombre completo" required>
+    </div>
+
+    <div class="mb-3">
+      <label for="email" class="form-label">Correo electrónico</label>
+      <input type="email" class="form-control" id="email" name="email" placeholder="Correo electrónico" required>
+    </div>
+
+    <div class="mb-3">
+      <label for="password" class="form-label">Contraseña</label>
+      <input type="password" class="form-control" id="password" name="password" placeholder="Contraseña" required>
+    </div>
+
+    <div class="mb-4">
+      <label for="role" class="form-label">Rol de usuario</label>
+      <select class="form-select" id="role" name="role" required>
+        <option value="" selected disabled>Selecciona rol</option>
+        <option value="admin">Administrador</option>
+        <option value="moderador">Moderador</option>
+        <option value="usuario">Usuario</option>
+      </select>
+    </div>
+    <div class="alert alert-info" role="alert" style="white-space: pre-line;">
+        <strong>Roles y permisos:</strong>
+        <strong>Administrador:</strong> Acceso total a todo, incluyendo edición de página y usuarios.
+        <strong>Moderador:</strong> Puede hacer casi todo, excepto editar la página principal y gestionar usuarios.
+        <strong>Usuario:</strong> Solo puede ver la información creada, sin permisos para editar o crear contenido.
+    </div>
+
+    <button type="submit" class="btn btn-primary w-100">Registrar usuario</button>
+  </form>
+  <div class="mt-4 text-center">
+        <a href="{{ url_for('dashboard')}}" class="btn btn-outline-dark">
+            <i class="bi bi-arrow-left-circle"></i> Regresar
+        </a>
+    </div>
+</div>
+{% endblock %}

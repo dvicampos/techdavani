@@ -1,0 +1,216 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+<h1>Crear Empresa / Página</h1>
+<form method="POST" enctype="multipart/form-data">
+    <!-- Campos básicos -->
+    <div class="mb-3">
+        <label class="form-label">Nombre de la empresa</label>
+        <input type="text" name="business_name" class="form-control" required />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Descripción</label>
+        <textarea name="description" rows="3" class="form-control" required></textarea>
+    </div>
+
+    <div class="mb-3">
+        <label for="category" class="form-label">Categoría</label>
+        <select name="category" id="category" class="form-select" required>
+            <option value="" selected disabled>Selecciona una categoría</option>
+
+            <!-- Alimentos y Bebidas -->
+            <option value="Restaurante">Restaurante</option>
+            <option value="Cafetería">Cafetería</option>
+            <option value="Bar">Bar</option>
+            <option value="Panadería">Panadería</option>
+            <option value="Comida rápida">Comida rápida</option>
+            <option value="Pastelería">Pastelería</option>
+
+            <!-- Comercio y Tiendas -->
+            <option value="Supermercado">Supermercado</option>
+            <option value="Tienda de ropa">Tienda de ropa</option>
+            <option value="Zapatería">Zapatería</option>
+            <option value="Ferretería">Ferretería</option>
+            <option value="Papelería">Papelería</option>
+            <option value="Tienda de regalos">Tienda de regalos</option>
+            <option value="Floristería">Floristería</option>
+            <option value="Joyería">Joyería</option>
+            <option value="Tienda de mascotas">Tienda de mascotas</option>
+            <option value="Librería">Librería</option>
+            <option value="Tienda de electrónica">Tienda de electrónica</option>
+
+            <!-- Salud y Belleza -->
+            <option value="Farmacia">Farmacia</option>
+            <option value="Consultorio médico">Consultorio médico</option>
+            <option value="Dentista">Dentista</option>
+            <option value="Salón de belleza">Salón de belleza</option>
+            <option value="Peluquería">Peluquería</option>
+            <option value="Spa">Spa</option>
+            <option value="Veterinaria">Veterinaria</option>
+
+            <!-- Servicios -->
+            <option value="Taller mecánico">Taller mecánico</option>
+            <option value="Lavandería">Lavandería</option>
+            <option value="Inmobiliaria">Inmobiliaria</option>
+            <option value="Agencia de viajes">Agencia de viajes</option>
+            <option value="Servicio de transporte">Servicio de transporte</option>
+            <option value="Mensajería">Mensajería</option>
+            <option value="Asesoría legal">Asesoría legal</option>
+            <option value="Contabilidad">Contabilidad</option>
+            <option value="Diseño gráfico">Diseño gráfico</option>
+            <option value="Estudio fotográfico">Estudio fotográfico</option>
+
+            <!-- Educación y Tecnología -->
+            <option value="Centro educativo">Centro educativo</option>
+            <option value="Escuela de idiomas">Escuela de idiomas</option>
+            <option value="Clases particulares">Clases particulares</option>
+            <option value="Servicios de TI">Servicios de TI</option>
+            <option value="Desarrollo web">Desarrollo web</option>
+            <option value="Marketing digital">Marketing digital</option>
+            <option value="Soporte técnico">Soporte técnico</option>
+
+            <!-- Ocio y Entretenimiento -->
+            <option value="Cine">Cine</option>
+            <option value="Gimnasio">Gimnasio</option>
+            <option value="Centro deportivo">Centro deportivo</option>
+            <option value="Sala de eventos">Sala de eventos</option>
+            <option value="Parque de diversiones">Parque de diversiones</option>
+            <option value="Streaming o medios">Streaming o medios</option>
+            <option value="Gaming o eSports">Gaming o eSports</option>
+
+            <!-- Otros -->
+            <option value="ONG / Asociación">ONG / Asociación</option>
+            <option value="Freelancer / Independiente">Freelancer / Independiente</option>
+            <option value="Otro">Otro</option>
+        </select>
+    </div>
+
+
+    <div class="mb-3">
+        <label class="form-label">Eslogan</label>
+        <input type="text" name="slogan" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Fecha de fundación</label>
+        <input type="date" name="founding_date" class="form-control" />
+    </div>
+
+    <!-- Contacto y ubicación -->
+    <div class="mb-3">
+        <label class="form-label">Teléfono</label>
+        <input type="text" name="phone" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">WhatsApp</label>
+        <input type="text" name="whatsapp" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Correo electrónico</label>
+        <input type="email" name="email" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Sitio web</label>
+        <input type="url" name="website" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Dirección</label>
+        <input type="text" name="address" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Código postal</label>
+        <input type="text" name="postal_code" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Ciudad</label>
+        <input type="text" name="city" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Estado</label>
+        <select name="state" class="form-control" required>
+            <option value="">Selecciona un estado</option>
+            {% set estados = [
+            'Aguascalientes', 'Baja California', 'Baja California Sur', 'Campeche',
+            'Chiapas', 'Chihuahua', 'Ciudad de México', 'Coahuila', 'Colima', 'Durango',
+            'Estado de México', 'Guanajuato', 'Guerrero', 'Hidalgo', 'Jalisco', 'Michoacán',
+            'Morelos', 'Nayarit', 'Nuevo León', 'Oaxaca', 'Puebla', 'Querétaro', 'Quintana Roo',
+            'San Luis Potosí', 'Sinaloa', 'Sonora', 'Tabasco', 'Tamaulipas', 'Tlaxcala',
+            'Veracruz', 'Yucatán', 'Zacatecas'
+            ] %}
+            {% for estado in estados %}
+            <option>{{ estado }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+
+
+    <div class="mb-3">
+        <label class="form-label">Google Maps (embed/link)</label>
+        <input type="text" name="google_maps" class="form-control" />
+    </div>
+
+    <!-- Redes sociales -->
+    <div class="mb-3">
+        <label class="form-label">Facebook</label>
+        <input type="url" name="facebook" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Instagram</label>
+        <input type="url" name="instagram" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">TikTok</label>
+        <input type="url" name="tiktok" class="form-control" />
+    </div>
+
+    <!-- Operación y servicios -->
+    <div class="mb-3">
+        <label class="form-label">Horario de operación</label>
+        <input type="text" name="operating_hours" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Servicios (separados por coma o descripción)</label>
+        <textarea name="services" rows="3" class="form-control"></textarea>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Métodos de pago</label>
+        <input type="text" name="payment_methods" class="form-control" />
+    </div>
+
+    <div class="mb-3 form-check">
+        <input type="checkbox" name="delivery_available" class="form-check-input" id="delivery_available" />
+        <label for="delivery_available" class="form-check-label">¿Cuenta con servicio a domicilio?</label>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Imagen principal</label>
+        <input type="file" name="image" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Color principal</label><br>
+        <input type="color" name="color" class="form-control-color">
+    </div>
+
+    <button class="btn btn-primary">Crear empresa</button>
+</form>
+<div class="mt-4 text-center">
+    <a href="{{ url_for('dashboard')}}" class="btn btn-outline-dark">
+        <i class="bi bi-arrow-left-circle"></i> Regresar
+    </a>
+</div>
+{% endblock %}

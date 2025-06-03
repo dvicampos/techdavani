@@ -1,0 +1,31 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container my-5">
+    <h2 class="mb-4">🛍️ Productos</h2>
+    <div class="row">
+        {% for producto in productos %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                {% if producto.image %}
+                <img src="{{ url_for('static', filename=producto.image) }}" class="card-img-top" alt="Producto">
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ producto.title }}</h5>
+                    <p class="card-text">{{ producto.description }}</p>
+                    <p class="fw-bold text-success">$ {{ producto.price }}</p>
+                    <a href="{{ url_for('edit_producto', producto_id=producto._id) }}" class="btn btn-sm btn-warning">Editar</a>
+                    <form action="{{ url_for('delete_producto', producto_id=producto._id) }}" method="POST" style="display:inline;">
+                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('¿Estás seguro de eliminar este producto?')">Eliminar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <div class="mt-4 text-center">
+        <a href="{{ url_for('dashboard')}}" class="btn btn-outline-dark">
+          <i class="bi bi-arrow-left-circle"></i> Regresar
+        </a>
+    </div>
+</div>
+{% endblock %}

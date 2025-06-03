@@ -1,0 +1,41 @@
+{% extends "layout.html" %}
+{% block content %}
+  <div class="container mt-5">
+    <h2>Reseñas Recibidas</h2>
+
+    {% if reseñas %}
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Comentario</th>
+            <th>Estrellas</th>
+            <th>Fecha</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in reseñas %}
+            <tr>
+              <td>{{ r.nombre }}</td>
+              <td>{{ r.comentario }}</td>
+              <td>
+                {% for i in range(r.estrellas) %}★{% endfor %}
+                {% for i in range(5 - r.estrellas) %}☆{% endfor %}
+              </td>
+              <td>{{ r.fecha.strftime('%d/%m/%Y') }}</td>
+              <td>
+                <form action="{{ url_for('delete_review', review_id=r._id) }}" method="post" onsubmit="return confirm('¿Eliminar esta reseña?')">
+                    <button class="btn btn-sm btn-danger">Eliminar</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="text-muted">No hay reseñas aún.</p>
+    {% endif %}
+  </div>
+{% endblock %}
+
