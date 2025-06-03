@@ -835,7 +835,6 @@ def manage_page():
             full_path = os.path.join(folder_path, final_filename)
             image.save(full_path)
 
-            # image_path = f"uploads/{slug_empresa}/{today}/{final_filename}"
             image_path = f"{slug_empresa}/{today}/{final_filename}"
 
 
