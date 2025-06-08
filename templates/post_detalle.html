@@ -155,7 +155,10 @@
 <!-- Modal para imagen -->
 <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content bg-dark">
+    <div class="modal-content bg-dark position-relative">
+      <!-- Botón de cerrar -->
+      <button type="button" class="btn-close btn-close-white position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+
       <div class="modal-body p-0">
         <img src="" id="modalImage" class="img-fluid w-100 rounded" alt="Imagen ampliada">
       </div>
