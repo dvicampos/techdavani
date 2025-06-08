@@ -114,7 +114,7 @@
           {% for file in post.files %}
           <div class="col-12 col-sm-6 col-md-4">
             {% if file.endswith(('jpg', 'jpeg', 'png', 'gif')) %}
-              <img src="{{ url_for('uploaded_file', filename=file) }}" alt="Imagen {{ loop.index }}" class="img-thumbnail">
+              <img src="{{ url_for('uploaded_file', filename=file) }}" alt="Imagen {{ loop.index }}" class="img-thumbnail shadow-sm" loading="lazy">
             {% elif file.endswith('mp4') %}
               <video controls>
                 <source src="{{ url_for('uploaded_file', filename=file) }}" type="video/mp4">
@@ -152,6 +152,32 @@
   </div>
 </footer>
 
+<!-- Modal para imagen -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content bg-dark">
+      <div class="modal-body p-0">
+        <img src="" id="modalImage" class="img-fluid w-100 rounded" alt="Imagen ampliada">
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const modal = new bootstrap.Modal(document.getElementById('imageModal'));
+    const modalImg = document.getElementById('modalImage');
+
+    document.querySelectorAll('.gallery img').forEach(img => {
+      img.style.cursor = 'zoom-in';
+      img.addEventListener('click', () => {
+        modalImg.src = img.src;
+        modal.show();
+      });
+    });
+  });
+</script>
+
 </body>
 </html>
