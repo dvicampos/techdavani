@@ -553,6 +553,7 @@ def create_producto():
         title = request.form['title']
         description = request.form['description']
         price = float(request.form['price'])
+        show_price = 'show_price' in request.form
 
         # Manejo de imagen
         image_file = request.files['image']
@@ -577,7 +578,8 @@ def create_producto():
             'description': description,
             'price': price,
             'image': image_path,
-            'page_id': page_id
+            'page_id': page_id,
+            'show_price': show_price
         })
 
         flash('Producto creado correctamente.')
@@ -598,6 +600,7 @@ def edit_producto(producto_id):
         title = request.form['title']
         description = request.form['description']
         price = float(request.form['price'])
+        show_price = 'show_price' in request.form
 
         # Imagen nueva (si se carga)
         image_file = request.files.get('image')
@@ -623,7 +626,8 @@ def edit_producto(producto_id):
                 'title': title,
                 'description': description,
                 'price': price,
-                'image': image_path
+                'image': image_path,
+                'show_price': show_price
             }}
         )
 

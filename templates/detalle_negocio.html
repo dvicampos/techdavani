@@ -585,6 +585,14 @@
                             <p class="card-text text-muted small mb-2">{{ producto.description }}</p>
                             {% endif %}
 
+                            {% if producto.show_price %}
+                            <div class="mb-2">
+                                <span class="badge bg-success text-white fw-semibold" style="font-size: 0.9rem;">
+                                    Precio: ${{ "%.2f"|format(producto.price) }}
+                                </span>
+                            </div>
+                            {% endif %}
+
                             <div class="mt-auto">
                                 <label for="prod_{{ loop.index }}" class="form-label small mb-1">Cantidad:</label>
                                 <input type="number" class="form-control form-control-sm" id="prod_{{ loop.index }}"
@@ -592,6 +600,7 @@
                                     placeholder="0" aria-label="Cantidad para {{ producto.title }}">
                             </div>
                         </div>
+
                     </div>
                 </div>
 

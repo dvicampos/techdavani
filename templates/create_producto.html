@@ -15,6 +15,10 @@
             <label for="price" class="form-label">Precio</label>
             <input type="number" name="price" step="0.01" class="form-control" required>
         </div>
+        <label>
+            <input type="checkbox" name="show_price" {% if producto and producto.get('show_price') %}checked{% endif %}>
+            Mostrar precio
+        </label>
         <div class="mb-3">
             <label for="image" class="form-label">Imagen</label>
             <input type="file" name="image" class="form-control">
