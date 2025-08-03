@@ -13,7 +13,6 @@ from functools import wraps
 import os
 import re
 from dotenv import load_dotenv
-import os
 
 load_dotenv()
 RECAPTCHA_SECRET_KEY = os.getenv("RECAPTCHA_SECRET_KEY")
@@ -1181,8 +1180,6 @@ def delete_review(review_id):
 @app.context_processor
 def inject_recaptcha_key():
     return dict(RECAPTCHA_SITE_KEY=os.getenv("RECAPTCHA_SITE_KEY"))
-print(f"Clave pública usada: {os.getenv('RECAPTCHA_SITE_KEY')}")
-
 
 @app.route('/enviar', methods=['POST'])
 def enviar():
