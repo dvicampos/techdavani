@@ -12,6 +12,12 @@ from bson.objectid import ObjectId
 from functools import wraps
 import os
 import re
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+RECAPTCHA_SECRET_KEY = os.getenv("RECAPTCHA_SECRET_KEY")
+
 
 
 def slugify(text):
@@ -1067,7 +1073,6 @@ def lista_blogs_negocio(nombre):
             .skip((page - 1) * per_page).limit(per_page)
         )
 
-    # Total de posts para calcular la paginación
     total_posts = mongo.db.posts.count_documents({'page_id': negocio['_id']})
 
     return render_template(
@@ -1173,38 +1178,29 @@ def delete_review(review_id):
 
     return redirect(url_for('admin_reseñas'))
 
-# @app.route('/enviar', methods=['POST'])
-# def enviar():
-#     nombre = request.form.get('nombre')
-#     correo = request.form.get('correo')
-#     mensaje = request.form.get('mensaje')
-
-#     if not nombre or not correo or not mensaje:
-#         flash('Por favor completa todos los campos.', 'error')
-#         return redirect(request.referrer or url_for('index'))
-
-#     # Puedes agregar validaciones extra aquí si lo deseas
-
-#     data = {
-#         'nombre': nombre,
-#         'correo': correo,
-#         'mensaje': mensaje
-#     }
-
-#     # Guardar en la colección "mensajes"
-#     mongo.db.mensajes.insert_one(data)
-
-#     flash('¡Mensaje enviado correctamente!', 'success')
-#     return redirect(url_for('gracias'))
-
 @app.route('/enviar', methods=['POST'])
 def enviar():
     nombre = request.form.get('nombre')
     correo = request.form.get('correo')
     mensaje = request.form.get('mensaje')
+    captcha_response = request.form.get('g-recaptcha-response')
 
     if not nombre or not correo or not mensaje:
         flash('Por favor completa todos los campos.', 'error')
+        return redirect(request.referrer or url_for('index'))
+
+    # Validar reCAPTCHA
+    if not captcha_response:
+        flash('Por favor verifica que no eres un robot.', 'danger')
+        return redirect(request.referrer or url_for('index'))
+
+    verify_url = 'https://www.google.com/recaptcha/api/siteverify'
+    payload = {'secret': RECAPTCHA_SECRET_KEY, 'response': captcha_response}
+    r = requests.post(verify_url, data=payload)
+    result = r.json()
+
+    if not result.get('success'):
+        flash('Verificación de reCAPTCHA fallida. Intenta de nuevo.', 'danger')
         return redirect(request.referrer or url_for('index'))
 
     # Guardar en la colección "mensajes"
@@ -1214,7 +1210,7 @@ def enviar():
         'mensaje': mensaje
     })
 
-    # Enviar correo a technologydavani@gmail.com
+    # Enviar correo
     try:
         msg = Message(
             subject=f"📩 Nuevo mensaje de contacto - {nombre}",
@@ -1229,8 +1225,6 @@ def enviar():
         Mensaje:
         {mensaje}
         """
-
-        # Opcional: versión HTML
         msg.html = render_template_string("""
         <h3>📩 Nuevo mensaje de contacto</h3>
         <p><strong>Nombre:</strong> {{ nombre }}</p>
@@ -1249,7 +1243,6 @@ def enviar():
         print(f"Error al enviar correo: {e}")
         flash('Hubo un problema al enviar tu mensaje. Intenta de nuevo más tarde.', 'danger')
         return redirect(request.referrer or url_for('index'))
-
 
 @app.route('/gracias')
 def gracias():
