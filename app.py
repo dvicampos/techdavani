@@ -1178,6 +1178,12 @@ def delete_review(review_id):
 
     return redirect(url_for('admin_reseñas'))
 
+@app.context_processor
+def inject_recaptcha_key():
+    return dict(RECAPTCHA_SITE_KEY=os.getenv("RECAPTCHA_SITE_KEY"))
+print(f"Clave pública usada: {os.getenv('RECAPTCHA_SITE_KEY')}")
+
+
 @app.route('/enviar', methods=['POST'])
 def enviar():
     nombre = request.form.get('nombre')
