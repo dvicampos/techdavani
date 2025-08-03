@@ -13,6 +13,7 @@ from functools import wraps
 import os
 import re
 from dotenv import load_dotenv
+import requests
 
 load_dotenv()
 RECAPTCHA_SECRET_KEY = os.getenv("RECAPTCHA_SECRET_KEY")
