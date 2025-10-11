@@ -101,6 +101,122 @@ def load_user(user_id):
 def has_role(role):
     return current_user.role == role
 
+# helpers de “licencia / addons”
+def page_has_purchase(page_id, addon_slug):
+    return mongo.db.purchases.count_documents({
+        "page_id": ObjectId(page_id),
+        "addon_slug": addon_slug,
+        "status": "approved"
+    }) > 0
+
+def set_page_license_lifetime(page_id):
+    mongo.db.page_data.update_one(
+        {"_id": ObjectId(page_id)},
+        {"$set": {"license": "lifetime", "license_activated_at": datetime.utcnow()}}
+    )
+
+def require_lifetime(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        if not current_user.is_authenticated:
+            return redirect(url_for('login'))
+        user = mongo.db.users.find_one({'_id': ObjectId(current_user.id)})
+        if not user or not user.get('page_id'):
+            return redirect(url_for('create_page'))
+        page_id = user['page_id']
+        if not page_has_purchase(page_id, "lifetime"):
+            flash('Activa tu licencia de por vida para continuar.')
+            return redirect(url_for('pay_lifetime', page_id=str(page_id)))
+        return fn(*args, **kwargs)
+    return wrapper
+
+
+from datetime import date
+
+def get_env_bool(name, default='false'):
+    return os.getenv(name, default).strip().lower() == 'true'
+
+def compute_coupon_price():
+    price = float(os.getenv('LIFETIME_PRICE', '5490'))
+
+    coupon_active = get_env_bool('COUPON_ACTIVE', 'false')
+    code = os.getenv('COUPON_CODE', '').strip()
+    dtype = (os.getenv('COUPON_DISCOUNT_TYPE', 'percent') or 'percent').strip().lower()
+    value = float(os.getenv('COUPON_VALUE', '0') or 0)
+    expiry_raw = os.getenv('COUPON_EXPIRY', '').strip()
+
+    # Validación de fecha (si viene)
+    valid_by_date = True
+    if expiry_raw:
+        try:
+            y, m, d = [int(x) for x in expiry_raw.split('-')]
+            valid_by_date = date.today() <= date(y, m, d)
+        except Exception:
+            valid_by_date = True  # si está mal la fecha, no bloqueamos
+
+    show_coupon = coupon_active and code and value > 0 and valid_by_date
+
+    discount_amount = 0.0
+    if show_coupon:
+        if dtype == 'percent':
+            discount_amount = round(price * (value / 100.0), 2)
+        elif dtype == 'fixed':
+            discount_amount = round(min(value, price), 2)
+
+    final_price = round(max(price - discount_amount, 0), 2)
+
+    return {
+        "base_price": price,
+        "show_coupon": show_coupon,
+        "coupon": {
+            "code": code,
+            "type": dtype,            # "percent" o "fixed"
+            "value": value,
+            "discount_amount": discount_amount,
+            "expiry": expiry_raw or None
+        },
+        "final_price": final_price
+    }
+
+@app.context_processor
+def inject_pricing():
+    pricing = compute_coupon_price()
+    return dict(
+        LIFETIME_PRICE=pricing["base_price"],
+        SHOW_COUPON=pricing["show_coupon"],
+        COUPON=pricing["coupon"],
+        FINAL_PRICE=pricing["final_price"]
+    )
+
+def resolve_lifetime_price_for_checkout(coupon_param: str | None):
+    """
+    Devuelve (unit_price, applied_coupon_dict)
+    - unit_price: float final para MP
+    - applied_coupon_dict: info del cupón aplicado o None
+    """
+    pricing = compute_coupon_price()
+
+    base_price = float(pricing["base_price"])
+    show_coupon = pricing["show_coupon"]
+    env_code = pricing["coupon"]["code"] if pricing["coupon"] else ""
+    discount_amount = float(pricing["coupon"]["discount_amount"]) if pricing["coupon"] else 0.0
+
+    # ¿El usuario pasó ?coupon=... y coincide con el de .env y está vigente?
+    apply = bool(show_coupon and coupon_param and coupon_param.strip().upper() == env_code.upper())
+
+    if apply and discount_amount > 0:
+        final_price = round(max(base_price - discount_amount, 0), 2)
+        applied = {
+            "code": env_code,
+            "type": pricing["coupon"]["type"],
+            "value": pricing["coupon"]["value"],
+            "discount_amount": discount_amount
+        }
+        return final_price, applied
+
+    # Sin cupón válido → precio base
+    return round(base_price, 2), None
+
 @app.route('/', methods=['GET'])
 def index():
     page = int(request.args.get('page', 1))
@@ -261,6 +377,7 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @app.route('/crear_post_negocio', methods=['GET', 'POST'])
+@require_lifetime
 @login_required
 def crear_post_negocio():
     user = mongo.db.users.find_one({'_id': ObjectId(current_user.id)})
@@ -322,6 +439,7 @@ def crear_post_negocio():
 
 
 @app.route('/list_post')
+@require_lifetime
 @login_required
 def list_post():
     try:
@@ -340,6 +458,7 @@ def list_post():
     return render_template('list_post.html', posts=posts)
 
 @app.route('/edit_post/<post_id>', methods=['GET', 'POST'])
+@require_lifetime
 @login_required
 def edit_post(post_id):
     post = mongo.db.posts.find_one({'_id': ObjectId(post_id)})
@@ -408,6 +527,7 @@ def edit_post(post_id):
 
 
 @app.route('/delete_post/<post_id>')
+@require_lifetime
 @login_required
 def delete_post(post_id):
     post = mongo.db.posts.find_one({'_id': ObjectId(post_id)})
@@ -438,12 +558,14 @@ def delete_post(post_id):
 
 
 @app.route('/posts')
+@require_lifetime
 @login_required
 def posts():
     posts = list(mongo.db.posts.find().sort('date', -1))
     return render_template('posts.html', posts=posts)
 
 @app.route('/dashboard')
+@require_lifetime
 @login_required
 def dashboard():
     user = mongo.db.users.find_one({'_id': ObjectId(current_user.id)})
@@ -452,6 +574,7 @@ def dashboard():
 
 # AVISOS
 @app.route('/avisos')
+@require_lifetime
 @login_required
 def list_avisos():
     user = mongo.db.users.find_one({'_id': ObjectId(current_user.id)})
@@ -467,6 +590,7 @@ def list_avisos():
 
 # Ruta para crear un nuevo aviso
 @app.route('/create_aviso', methods=['GET', 'POST'])
+@require_lifetime
 @login_required
 def create_aviso():
     user = mongo.db.users.find_one({'_id': ObjectId(current_user.id)})
@@ -495,6 +619,7 @@ def create_aviso():
 
 # Ruta para editar un aviso
 @app.route('/edit_aviso/<aviso_id>', methods=['GET', 'POST'])
+@require_lifetime
 @login_required
 def edit_aviso(aviso_id):
     aviso = mongo.db.avisos.find_one({'_id': ObjectId(aviso_id)})
@@ -521,6 +646,7 @@ def edit_aviso(aviso_id):
 
 # Ruta para eliminar un aviso
 @app.route('/delete_aviso/<aviso_id>')
+@require_lifetime
 @login_required
 def delete_aviso(aviso_id):
     aviso = mongo.db.avisos.find_one({'_id': ObjectId(aviso_id)})
@@ -531,6 +657,7 @@ def delete_aviso(aviso_id):
 
 # productos
 @app.route('/productos')
+@require_lifetime
 @login_required
 def list_productos():
     user = mongo.db.users.find_one({'_id': ObjectId(current_user.id)})
@@ -546,6 +673,7 @@ from werkzeug.utils import secure_filename
 import os
 
 @app.route('/create_producto', methods=['GET', 'POST'])
+@require_lifetime
 @login_required
 def create_producto():
     user = mongo.db.users.find_one({'_id': ObjectId(current_user.id)})
@@ -594,6 +722,7 @@ def create_producto():
     return render_template('create_producto.html')
 
 @app.route('/edit_producto/<producto_id>', methods=['GET', 'POST'])
+@require_lifetime
 @login_required
 def edit_producto(producto_id):
     producto = mongo.db.productos.find_one({'_id': ObjectId(producto_id)})
@@ -643,6 +772,7 @@ def edit_producto(producto_id):
     return render_template('edit_producto.html', producto=producto)
 
 @app.route('/delete_producto/<producto_id>', methods=['POST'])
+@require_lifetime
 @login_required
 def delete_producto(producto_id):
     producto = mongo.db.productos.find_one({'_id': ObjectId(producto_id)})
@@ -657,6 +787,7 @@ def delete_producto(producto_id):
 
 
 @app.route('/admin/users')
+@require_lifetime
 @login_required
 @roles_required('admin')
 def manage_users():
@@ -675,6 +806,7 @@ def manage_users():
     return render_template('manage_users.html', users=users)
 
 @app.route('/admin/users/edit/<user_id>', methods=['GET', 'POST'])
+@require_lifetime
 @login_required
 @roles_required('admin')
 def edit_user(user_id):
@@ -712,6 +844,183 @@ def delete_user(user_id):
     flash('Usuario eliminado correctamente.')
     return redirect(url_for('manage_users'))
 
+import json
+
+MP_PREFS_URL = "https://api.mercadopago.com/checkout/preferences"
+MP_PAYMENTS_URL = "https://api.mercadopago.com/v1/payments/"
+
+def mp_headers():
+    return {
+        "Authorization": f"Bearer {os.getenv('MP_ACCESS_TOKEN')}",
+        "Content-Type": "application/json"
+    }
+
+@app.route('/pay/lifetime')
+@login_required
+def pay_lifetime():
+    page_id = request.args.get('page_id')
+    if not page_id:
+        flash('Falta page_id')
+        return redirect(url_for('create_page'))
+
+    if page_has_purchase(page_id, "lifetime"):
+        flash('Licencia ya activa. 🎉')
+        return redirect(url_for('dashboard'))
+
+    # Leer cupón desde la URL (?coupon=LANZAMIENTO) – la vista ya lo manda cuando corresponde
+    coupon_param = request.args.get('coupon', '').strip() or None
+
+    # Resolver precio final y cupon aplicado (si procede)
+    unit_price, applied_coupon = resolve_lifetime_price_for_checkout(coupon_param)
+
+    success_url = os.getenv("MP_SUCCESS_URL")
+    failure_url = os.getenv("MP_FAILURE_URL")
+    webhook_url = os.getenv("MP_WEBHOOK_URL")
+
+    # (Opcional) etiqueta el cupón en el título del ítem para identificarlo en MP
+    item_title = "Licencia de por vida"
+    if applied_coupon:
+        item_title += f" (cupón: {applied_coupon['code']})"
+
+    payload = {
+        "items": [{
+            "title": item_title,
+            "quantity": 1,
+            "currency_id": "MXN",
+            "unit_price": float(f"{unit_price:.2f}")  # asegúrate que va con 2 decimales
+        }],
+        "auto_return": "approved",
+        "back_urls": {
+            "success": success_url,
+            "failure": failure_url,
+            "pending": success_url
+        },
+        "notification_url": webhook_url,
+        # Mantén tu reference igual para no romper el webhook:
+        "external_reference": f"{current_user.id}|{page_id}|lifetime"
+    }
+
+    # Si quieres dejar rastro "formal" del cupón en la preferencia (no siempre lo expone MP en el webhook),
+    # puedes usar "metadata" (si tu cuenta/SDK lo soporta):
+    if applied_coupon:
+        payload["metadata"] = {
+            "coupon_code": applied_coupon["code"],
+            "coupon_type": applied_coupon["type"],
+            "coupon_value": applied_coupon["value"],
+            "discount_amount": applied_coupon["discount_amount"]
+        }
+
+    try:
+        r = requests.post(MP_PREFS_URL, headers=mp_headers(), data=json.dumps(payload))
+        pref = r.json()
+        init_point = pref.get("init_point") or pref.get("sandbox_init_point")
+        if not init_point:
+            print("MP preference response:", pref)
+            flash('No se pudo iniciar el pago.')
+            return redirect(url_for('dashboard'))
+        return redirect(init_point)
+    except Exception as e:
+        print("MP error:", e)
+        flash('Error creando la preferencia de pago.')
+        return redirect(url_for('dashboard'))
+  
+@app.route('/mp/webhook', methods=['POST', 'GET'])
+def mp_webhook():
+    try:
+        # MP puede mandar info por query o por JSON body
+        data = request.get_json(silent=True) or {}
+        query = request.args.to_dict()
+
+        payment_id = (
+            (data.get('data') or {}).get('id') or
+            query.get('data.id') or
+            data.get('id') or
+            query.get('id')
+        )
+        type_ = data.get('type') or query.get('type') or query.get('topic')
+
+        if type_ != 'payment' or not payment_id:
+            return "ignored", 200
+
+        # Consulta del pago
+        pay_r = requests.get(MP_PAYMENTS_URL + str(payment_id), headers=mp_headers())
+        pay = pay_r.json()
+
+        status = pay.get('status')
+        external_reference = pay.get('external_reference', '')
+        # external_reference: "<user_id>|<page_id>|<addon_slug>"
+        try:
+            uid, page_id, addon_slug = external_reference.split('|', 2)
+        except:
+            uid, page_id, addon_slug = None, None, None
+
+        # Guardamos registro de pago
+        mongo.db.purchases.update_one(
+            {"provider": "mercado_pago", "mp_payment_id": str(payment_id)},
+            {"$set": {
+                "provider": "mercado_pago",
+                "mp_payment_id": str(payment_id),
+                "status": status,
+                "amount": (pay.get('transaction_amount') or 0),
+                "currency": pay.get('currency_id'),
+                "payer": (pay.get('payer') or {}),
+                "external_reference": external_reference,
+                "addon_slug": addon_slug,
+                "page_id": ObjectId(page_id) if page_id else None,
+                "user_id": ObjectId(uid) if uid else None,
+                "paid_at": datetime.utcnow()
+            }},
+            upsert=True
+        )
+
+        # Si aprobado, activamos
+        if status == 'approved' and addon_slug == 'lifetime' and page_id:
+            set_page_license_lifetime(page_id)
+
+        return "ok", 200
+    except Exception as e:
+        print("Webhook error:", e)
+        return "error", 500
+
+@app.route('/mp/success')
+def mp_success():
+    flash('Pago recibido. Si no ves cambios inmediatos, se aplicarán en segundos. 🎉')
+    return redirect(url_for('dashboard'))
+
+@app.route('/mp/failure')
+def mp_failure():
+    flash('El pago no se completó. Puedes intentar de nuevo.', 'danger')
+    return redirect(url_for('dashboard'))
+
+@app.route('/checkout/addon/<slug>')
+@login_required
+def checkout_addon(slug):
+    page_id = mongo.db.users.find_one({'_id': ObjectId(current_user.id)}).get('page_id')
+    addon = mongo.db.addons.find_one({"slug": slug, "enabled": True})
+    if not addon:
+        flash('Add-on no disponible.')
+        return redirect(url_for('dashboard'))
+
+    payload = {
+        "items": [{
+            "title": addon['name'],
+            "quantity": 1,
+            "currency_id": "MXN",
+            "unit_price": int(addon['price_mxn'])
+        }],
+        "auto_return": "approved",
+        "back_urls": {
+            "success": os.getenv("MP_SUCCESS_URL"),
+            "failure": os.getenv("MP_FAILURE_URL"),
+            "pending": os.getenv("MP_SUCCESS_URL")
+        },
+        "notification_url": os.getenv("MP_WEBHOOK_URL"),
+        "external_reference": f"{current_user.id}|{page_id}|{slug}"
+    }
+    r = requests.post(MP_PREFS_URL, headers=mp_headers(), data=json.dumps(payload))
+    pref = r.json()
+    return redirect(pref.get("init_point") or pref.get("sandbox_init_point") or url_for('dashboard'))
+
 app.config['UPLOAD_FOLDER'] = '/uploads'
 @app.route('/create_page', methods=['GET', 'POST'])
 def create_page():
@@ -732,7 +1041,10 @@ def create_page():
         city = request.form['city']
         state = request.form['state']
         color = request.form['color']
-        google_maps = request.form['google_maps']
+
+        # ⚠️ NUEVO: leer coordenadas del formulario (hidden inputs)
+        lat = request.form.get('lat')
+        lng = request.form.get('lng')
 
         # Redes sociales
         facebook = request.form['facebook']
@@ -752,7 +1064,7 @@ def create_page():
         if image and image.filename != '':
             slug_empresa = slugify(business_name)
             today = datetime.utcnow().strftime('%Y-%m-%d')
-            folder_path = os.path.join(app.config['UPLOAD_FOLDER'], slug_empresa, today)  # cambia aquí
+            folder_path = os.path.join(app.config['UPLOAD_FOLDER'], slug_empresa, today)
             os.makedirs(folder_path, exist_ok=True)
 
             filename = secure_filename(image.filename)
@@ -761,9 +1073,13 @@ def create_page():
             full_path = os.path.join(folder_path, final_filename)
             image.save(full_path)
 
-            # Ruta relativa para servir desde /uploads
             image_path = f"{slug_empresa}/{today}/{final_filename}"
 
+        def _safe_float(v):
+            try:
+                return float(v)
+            except:
+                return None
 
         new_page = {
             'business_name': business_name,
@@ -780,7 +1096,8 @@ def create_page():
             'city': city,
             'state': state,
             'color': color,
-            'google_maps': google_maps,
+            'lat': _safe_float(lat),
+            'lng': _safe_float(lng),
             'facebook': facebook,
             'instagram': instagram,
             'tiktok': tiktok,
@@ -799,9 +1116,11 @@ def create_page():
     return render_template('create_page.html')
 
 @app.route('/manage_page', methods=['GET', 'POST'])
+@require_lifetime
 @login_required
 @roles_required('admin')
 def manage_page():
+    # (roles_required ya valida admin, este if extra es opcional)
     if current_user.role != 'admin':
         flash('Acceso denegado.')
         return redirect(url_for('dashboard'))
@@ -816,41 +1135,52 @@ def manage_page():
         flash('No tienes una página asignada')
         return redirect(url_for('dashboard'))
 
+    # page_id suele ser ObjectId; si lo tuvieras como string, usa ObjectId(page_id)
     data = mongo.db.page_data.find_one({'_id': page_id})
 
     if request.method == 'POST':
-        # Información básica
+        # --- Información básica
         business_name = request.form['business_name']
-        description = request.form['description']
-        category = request.form['category']  # Ej: Restaurante, Taller, Papelería
-        slogan = request.form['slogan']
+        description   = request.form['description']
+        category      = request.form['category']
+        slogan        = request.form['slogan']
         founding_date = request.form['founding_date']
 
-        # Contacto y ubicación
-        phone = request.form['phone']
-        whatsapp = request.form['whatsapp']
-        email = request.form['email']
-        website = request.form['website']
-        address = request.form['address']
-        postal_code = request.form['postal_code']
-        city = request.form['city']
-        state = request.form['state']
-        color = request.form['color']
-        google_maps = request.form['google_maps']
+        # --- Contacto y ubicación
+        phone        = request.form['phone']
+        whatsapp     = request.form['whatsapp']
+        email        = request.form['email']
+        website      = request.form['website']
+        address      = request.form.get('address')
+        postal_code  = request.form['postal_code']
+        city         = request.form['city']
+        state        = request.form['state']
+        color        = request.form['color']
+        lat_raw      = request.form.get('lat')
+        lng_raw      = request.form.get('lng')
 
-        # Redes sociales
+        def _safe_float(v):
+            try:
+                return float(v)
+            except:
+                return None
+
+        lat = _safe_float(lat_raw) if lat_raw else (data.get('lat') if data else None)
+        lng = _safe_float(lng_raw) if lng_raw else (data.get('lng') if data else None)
+
+        # --- Redes sociales
         facebook = request.form['facebook']
         instagram = request.form['instagram']
         tiktok = request.form['tiktok']
 
-        # Operación y servicios
-        operating_hours = request.form['operating_hours']
-        services = request.form['services']  # Lista separada por comas o textarea
-        payment_methods = request.form['payment_methods']  # Ej: efectivo, tarjeta, transferencia
+        # --- Operación y servicios
+        operating_hours  = request.form['operating_hours']
+        services         = request.form['services']
+        payment_methods  = request.form['payment_methods']
         delivery_available = 'delivery_available' in request.form
 
-        # Multimedia
-        image = request.files['image']
+        # --- Imagen (opcional)
+        image = request.files.get('image')
         image_path = data['image'] if data and 'image' in data else None
 
         if image and image.filename != '':
@@ -867,43 +1197,45 @@ def manage_page():
 
             image_path = f"{slug_empresa}/{today}/{final_filename}"
 
-
+        # --- Armar payload (sin google_maps y sin keys duplicadas)
         new_data = {
-            'business_name': business_name,
-            'description': description,
-            'category': category,
-            'slogan': slogan,
-            'founding_date': founding_date,
-            'phone': phone,
-            'whatsapp': whatsapp,
-            'email': email,
-            'website': website,
-            'address': address,
-            'postal_code': postal_code,
-            'city': city,
-            'state': state,
-            'color': color,
-            'google_maps': google_maps,
-            'facebook': facebook,
-            'instagram': instagram,
-            'tiktok': tiktok,
+            'business_name':  business_name,
+            'description':    description,
+            'category':       category,
+            'slogan':         slogan,
+            'founding_date':  founding_date,
+            'phone':          phone,
+            'whatsapp':       whatsapp,
+            'email':          email,
+            'website':        website,
+            'address':        address,
+            'postal_code':    postal_code,
+            'city':           city,
+            'state':          state,
+            'color':          color,
+            'lat':            lat,
+            'lng':            lng,
+            'facebook':       facebook,
+            'instagram':      instagram,
+            'tiktok':         tiktok,
             'operating_hours': operating_hours,
-            'services': services,
+            'services':        services,
             'payment_methods': payment_methods,
             'delivery_available': delivery_available,
-            'image': image_path
+            'image':            image_path
         }
 
         if data:
             mongo.db.page_data.update_one({'_id': page_id}, {'$set': new_data})
         else:
+            # si no existía, asegúrate de guardar _id=page_id si es tu modelo
+            new_data['_id'] = page_id
             mongo.db.page_data.insert_one(new_data)
 
         flash('Perfil del negocio actualizado exitosamente.')
         return redirect(url_for('dashboard'))
 
     return render_template('manage_page.html', data=data)
-
 
 @app.route('/negocio/<nombre>', methods=['GET', 'POST'])
 def detalle_negocio(nombre):
@@ -1148,6 +1480,7 @@ def sitemap():
     return Response(xml, mimetype='application/xml')
 
 @app.route('/admin/reseñas')
+@require_lifetime
 @login_required
 def admin_reseñas():
     user = mongo.db.users.find_one({'_id': ObjectId(current_user.id)})
@@ -1161,6 +1494,7 @@ def admin_reseñas():
     return render_template('admin_reseñas.html', reseñas=reseñas)
 
 @app.route('/admin/reviews/delete/<review_id>', methods=['POST'])
+@require_lifetime
 @login_required
 def delete_review(review_id):
     try:

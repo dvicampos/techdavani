@@ -255,6 +255,17 @@
             color: #ffffff;
             background-color: #030137;
         }
+        :root{
+    --brand: {{ "'" ~ (page['color'] if page['color'] else '#343a40') ~ "'" }};
+  }
+  body{font-family:"Segoe UI",sans-serif;background:#f5f5f5;}
+  .header{background: linear-gradient(to right, var(--brand), #000); color:#fff; padding:50px 20px; border-bottom:4px solid #ddd;}
+  .btn-outline-primary{border-color:var(--brand); color:var(--brand);}
+  .btn-outline-primary:hover{background:var(--brand); color:#fff;}
+  .noticias-section{background: var(--brand);}
+  .aviso-banner{background:#030137;color:#fff;border:1px solid #fff;}
+  /* Mapa */
+  #map{height:320px;border-radius:12px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.08);}
     </style>
 </head>
 
@@ -448,13 +459,44 @@
                         <p><i class="fas fa-flag me-2 text-primary"></i><strong>Estado:</strong> {{ page.state }}</p>
                         <p><i class="far fa-clock me-2 text-primary"></i><strong>Horario:</strong> {{
                             page.operating_hours }}</p>
-                        <p><i class="fas fa-map me-2 text-primary"></i><strong>Google Maps:</strong>
-                            <a href="{{ page.google_maps }}" target="_blank">Ver ubicación</a>
+                        {% set has_coords = page.get('lat') is not none and page.get('lng') is not none %}
+                        <div class="mt-3">
+                        <p class="mb-2"><i class="fas fa-location-dot me-2 text-primary"></i>
+                            <strong>Ubicación en mapa:</strong>
                         </p>
+
+                        {% if has_coords %}
+                            <div id="map" class="mb-3"></div>
+                            <div class="d-flex gap-2 flex-wrap">
+                            <a class="btn btn-outline-primary btn-sm"
+                                target="_blank"
+                                href="https://www.google.com/maps/dir/?api=1&destination={{ page.lat }},{{ page.lng }}">
+                                Cómo llegar (Google)
+                            </a>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-warning mb-2">
+                            Aún no hay coordenadas guardadas para este negocio.
+                            </div>
+                            <div class="d-flex gap-2 flex-wrap">
+                            {% if page.address %}
+                                <a class="btn btn-outline-primary btn-sm"
+                                target="_blank"
+                                href="https://www.google.com/maps/search/?api=1&query={{ page.address | urlencode }}">
+                                Buscar dirección en Google Maps
+                                </a>
+                                <a class="btn btn-outline-primary btn-sm"
+                                target="_blank"
+                                href="https://www.openstreetmap.org/search?query={{ page.address | urlencode }}">
+                                Buscar en OpenStreetMap
+                                </a>
+                            {% endif %}
+                            </div>
+                        {% endif %}
+                        </div>
                     </div>
                 </div>
             </div>
-
         </div>
     </section>
 
@@ -801,6 +843,40 @@
             });
         });
     </script>
+    <!-- Leaflet (gratis, sin API key) -->
+    <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+    />
+    <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+    ></script>
+
+    <script>
+    (function(){
+        const lat = {{ page.get('lat') if page.get('lat') is not none else 'null' }};
+        const lng = {{ page.get('lng') if page.get('lng') is not none else 'null' }};
+        if (lat !== null && lng !== null) {
+        const map = L.map('map', { scrollWheelZoom: false }).setView([lat, lng], 16);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
+        }).addTo(map);
+
+        const marker = L.marker([lat, lng]).addTo(map);
+        marker.bindPopup(`<strong>{{ page['business_name']|e }}</strong><br>{{ (page['address'] or '')|e }}`).openPopup();
+
+        // Ajuste si el contenedor cambia de tamaño (por ejemplo al abrir pestañas, etc.)
+        setTimeout(() => { map.invalidateSize(); }, 300);
+        }
+    })();
+    </script>
+
 
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">

@@ -152,12 +152,24 @@
         </select>
     </div>
 
+        <!-- Google Maps (URL o coordenadas) -->
+        <div class="mb-3">
+            <label class="form-label">Dirección (opcional)</label>
+            <input type="text" id="address" name="address" class="form-control"
+                    value="{{ (data.address if data else '') or '' }}" placeholder="Calle, colonia, ciudad…">
+            <small class="text-muted">También puedes escribir y luego afinar con el mapa.</small>
+        </div>
 
+        <div class="mb-3">
+        <label class="form-label d-flex justify-content-between align-items-center">
+            Ubicación en el mapa
+            <small class="text-muted">Haz clic para colocar/ajustar el pin</small>
+        </label>
+        <div id="map" style="height: 360px; border-radius: 12px; overflow: hidden;"></div>
+        </div>
 
-    <div class="mb-3">
-        <label class="form-label">Google Maps (embed/link)</label>
-        <input type="text" name="google_maps" class="form-control" />
-    </div>
+        <input type="hidden" id="lat" name="lat" value="{{ (data.lat if data else '') or '' }}">
+        <input type="hidden" id="lng" name="lng" value="{{ (data.lng if data else '') or '' }}">
 
     <!-- Redes sociales -->
     <div class="mb-3">
@@ -213,4 +225,84 @@
         <i class="bi bi-arrow-left-circle"></i> Regresar
     </a>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  // Valores iniciales
+  const latInput = document.getElementById('lat');
+  const lngInput = document.getElementById('lng');
+  const addrInput = document.getElementById('address');
+
+  // Centro por defecto (México)
+  const defaultLat = latInput.value ? parseFloat(latInput.value) : 23.6345;
+  const defaultLng = lngInput.value ? parseFloat(lngInput.value) : -102.5528;
+  const defaultZoom = latInput.value && lngInput.value ? 14 : 5;
+
+  // Crear mapa
+  const map = L.map('map').setView([defaultLat, defaultLng], defaultZoom);
+
+  // Capa de tiles (usa OSM pública; para producción pesada, usa un proveedor dedicado)
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution:
+      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  }).addTo(map);
+
+  // Marcador (si hay coordenadas guardadas)
+  let marker = null;
+  function placeMarker(lat, lng) {
+    if (!marker) {
+      marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+      marker.on('dragend', function(e) {
+        const { lat, lng } = e.target.getLatLng();
+        latInput.value = lat.toFixed(6);
+        lngInput.value = lng.toFixed(6);
+      });
+    } else {
+      marker.setLatLng([lat, lng]);
+    }
+    latInput.value = lat.toFixed(6);
+    lngInput.value = lng.toFixed(6);
+  }
+
+  if (latInput.value && lngInput.value) {
+    placeMarker(parseFloat(latInput.value), parseFloat(lngInput.value));
+  }
+
+  // Click en mapa → colocar/ajustar pin
+  map.on('click', function(e) {
+    placeMarker(e.latlng.lat, e.latlng.lng);
+  });
+
+  // Geocoder (Nominatim)
+  const geocoder = L.Control.geocoder({
+    defaultMarkGeocode: false
+  })
+  .on('markgeocode', function(result) {
+    const center = result.geocode.center;
+    map.setView(center, 16);
+    placeMarker(center.lat, center.lng);
+    // llena address si viene algo útil
+    if (result.geocode && result.geocode.name) {
+      addrInput.value = result.geocode.name;
+    }
+  })
+  .addTo(map);
+
+  // Si el usuario escribe dirección y presiona Enter, buscarla
+  addrInput && addrInput.addEventListener('keydown', function(e){
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (addrInput.value.trim().length > 0 && geocoder && geocoder.options.geocoder) {
+        geocoder.options.geocoder.geocode(addrInput.value, function(results) {
+          if (results && results.length) {
+            const r = results[0];
+            map.setView(r.center, 16);
+            placeMarker(r.center.lat, r.center.lng);
+          }
+        });
+      }
+    }
+  });
+});
+</script>
 {% endblock %}
