@@ -12,8 +12,8 @@
   <link rel="icon" href="{{ url_for('static', filename='images/logo.jpg') }}" type="image/png">
 
   <!-- SEO -->
-  <meta name="description" content="Crea la web de tu negocio con pago único y activa funciones extra con micro-mejoras. Productos, reseñas, WhatsApp, SEO y Mercado Pago. Hecho en México.">
-  <meta name="keywords" content="pago único, pymes, tienda simple, catálogo, reseñas, Mercado Pago, plugins, Global PYMES, DavaniTechnology">
+  <meta name="description" content="Crea la web de tu negocio con pago único. Productos, reseñas, WhatsApp, SEO y Mercado Pago. Hecho en México.">
+  <meta name="keywords" content="pago único, pymes, tienda simple, catálogo, reseñas, Mercado Pago, Global PYMES, DavaniTechnology">
   <meta name="author" content="DavaniTechnology">
   <meta name="geo.region" content="MX">
   <meta name="geo.placename" content="México">
@@ -22,7 +22,7 @@
 
   <!-- OG -->
   <meta property="og:title" content="Global PYMES — Tu web completa con pago único">
-  <meta property="og:description" content="Paga una sola vez, obtén tu web completa y agrega funciones con micro-mejoras. Mercado Pago incluido.">
+  <meta property="og:description" content="Paga una sola vez y obtén tu web completa: catálogo, reseñas, WhatsApp, SEO y Mercado Pago.">
   <meta property="og:image" content="https://technologydavani.com/static/images/logo.jpg">
   <meta property="og:url" content="https://technologydavani.com">
   <meta property="og:type" content="website">
@@ -74,7 +74,6 @@
       <ul class="navbar-nav ms-auto align-items-lg-center gap-2">
         <li class="nav-item"><a class="nav-link" href="#features">Características</a></li>
         <li class="nav-item"><a class="nav-link" href="#price">Pago único</a></li>
-        <li class="nav-item"><a class="nav-link" href="#addons">Micro-mejoras</a></li>
         <li class="nav-item"><a class="nav-link" href="#faq">FAQ</a></li>
 
         {% if current_user.is_authenticated %}
@@ -105,10 +104,10 @@
     <span class="badge badge-soft rounded-pill px-3 py-2 mb-3">
       Hecho en México · Mercado Pago integrado · SEO automático
     </span>
-    <h1 class="mb-3">Tu web completa con <u>pago único</u> y mejoras a la carta</h1>
+    <h1 class="mb-3">Tu web completa con <u>pago único</u>, sin mensualidades</h1>
     <p class="lead mb-4">
-      Muestra tus productos, recibe reseñas, cotizaciones por WhatsApp y cobra con Mercado Pago. 
-      Paga una sola vez y agrega <strong>micro-mejoras</strong> (temas, módulos) cuando las necesites.
+      Muestra tus productos, recibe reseñas y cotizaciones por WhatsApp y cobra con Mercado Pago. 
+      Paga una sola vez y administra todo desde un panel sencillo.
     </p>
 
     <div class="d-flex flex-wrap justify-content-center gap-2">
@@ -132,7 +131,7 @@
 <section id="features" class="py-5">
   <div class="container">
     <h2 class="section-title text-center mb-4">¿Qué incluye Global PYMES?</h2>
-    <p class="text-center text-muted mb-5">Todo lo esencial para operar simple, vender fácil y crecer con el tiempo.</p>
+    <p class="text-center text-muted mb-5">Todo lo esencial para operar simple, vender fácil y crecer a tu ritmo.</p>
 
     <div class="row g-4 grid-feature">
       <div class="col-md-4">
@@ -161,7 +160,7 @@
         <div class="card h-100 p-4">
           <div class="icon-pill mb-3"><i class="bi bi-credit-card-2-front"></i></div>
           <h5 class="fw-bold">Mercado Pago</h5>
-          <p>Checkout Pro listo para <strong>pago único</strong> de licencia y micro-pagos de mejoras.</p>
+          <p>Checkout Pro listo para el <strong>pago único</strong> de tu licencia, sin complicaciones.</p>
         </div>
       </div>
       <div class="col-md-4">
@@ -173,9 +172,9 @@
       </div>
       <div class="col-md-4">
         <div class="card h-100 p-4">
-          <div class="icon-pill mb-3"><i class="bi bi-plugin"></i></div>
-          <h5 class="fw-bold">Micro-mejoras</h5>
-          <p>Compra temas y módulos a la carta: diseños premium, galerías, agendas, formularios avanzados y más.</p>
+          <div class="icon-pill mb-3"><i class="bi bi-palette2"></i></div>
+          <h5 class="fw-bold">Personalización</h5>
+          <p>Colores, logotipo y contenido a tu medida. Administra todo desde un panel simple.</p>
         </div>
       </div>
     </div>
@@ -191,7 +190,7 @@
           <span class="badge rounded-pill text-bg-success w-fit mb-3">Pago único de por vida</span>
           <h3 class="mb-3">Activa tu licencia y olvídate de mensualidades</h3>
           <p class="mb-4">Acceso permanente al panel, catálogo, reseñas, SEO y Mercado Pago integrado. 
-            Agrega <strong>micro-mejoras</strong> cuando las necesites.</p>
+            Sin suscripciones, sin letra chiquita.</p>
 
           <!-- CUPÓN -->
           {% if SHOW_COUPON %}
@@ -252,59 +251,12 @@
           <h5 class="mb-3">¿Cómo funciona?</h5>
           <div class="mb-2"><strong>1)</strong> Crea tu página con los datos básicos de tu negocio.</div>
           <div class="mb-2"><strong>2)</strong> Activa tu licencia con <em>pago único</em> vía Mercado Pago.</div>
-          <div class="mb-4"><strong>3)</strong> Personaliza y agrega micro-mejoras cuando las necesites.</div>
+          <div class="mb-4"><strong>3)</strong> Personaliza contenido y comienza a vender.</div>
 
           <div class="alert alert-info mb-0">
             <i class="bi bi-info-circle me-1"></i>
             Tu panel se desbloquea automáticamente cuando el pago se aprueba (vía webhook).
           </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ADDONS -->
-<section id="addons" class="py-5">
-  <div class="container">
-    <h2 class="section-title text-center mb-4">Micro-mejoras (plugins)</h2>
-    <p class="text-center text-muted mb-5">Compra funciones adicionales sin cambiar de plataforma.</p>
-
-    <div class="row g-4">
-      <div class="col-md-4">
-        <div class="card h-100 p-4">
-          <div class="d-flex align-items-center justify-content-between mb-2">
-            <h6 class="fw-bold mb-0">Tema Premium Aurora</h6>
-            <span class="badge text-bg-secondary">desde $399</span>
-          </div>
-          <p class="mb-3">Diseño moderno con hero animado, grids y CTA flotantes.</p>
-          <a href="{{ url_for('checkout_addon', slug='theme-aurora') }}" class="btn btn-ghost w-100">
-            <i class="bi bi-plugin me-1"></i> Comprar tema
-          </a>
-        </div>
-      </div>
-      <div class="col-md-4">
-        <div class="card h-100 p-4">
-          <div class="d-flex align-items-center justify-content-between mb-2">
-            <h6 class="fw-bold mb-0">Formulario Pro</h6>
-            <span class="badge text-bg-secondary">desde $249</span>
-          </div>
-          <p class="mb-3">Campos personalizados, archivos adjuntos y auto-respuesta por correo.</p>
-          <a href="{{ url_for('checkout_addon', slug='form-pro') }}" class="btn btn-ghost w-100">
-            <i class="bi bi-plugin me-1"></i> Comprar módulo
-          </a>
-        </div>
-      </div>
-      <div class="col-md-4">
-        <div class="card h-100 p-4">
-          <div class="d-flex align-items-center justify-content-between mb-2">
-            <h6 class="fw-bold mb-0">Galería & Video</h6>
-            <span class="badge text-bg-secondary">desde $199</span>
-          </div>
-          <p class="mb-3">Carruseles responsive, lightbox y soporte para clips cortos.</p>
-          <a href="{{ url_for('checkout_addon', slug='media-gallery') }}" class="btn btn-ghost w-100">
-            <i class="bi bi-plugin me-1"></i> Comprar módulo
-          </a>
         </div>
       </div>
     </div>
@@ -339,7 +291,7 @@
         <div class="card h-100 p-4 text-start">
           <div class="icon-pill mb-3"><i class="bi bi-fingerprint"></i></div>
           <h5 class="fw-bold">Autenticidad</h5>
-          <p>Desarrollos a la medida, listos para crecer con plugins y temas.</p>
+          <p>Desarrollos a la medida, listos para crecer cuando lo necesites.</p>
         </div>
       </div>
     </div>
@@ -394,19 +346,13 @@
     <div class="accordion-item">
       <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#faq2">¿Qué incluye la licencia?</button></h2>
       <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-        <div class="accordion-body">Acceso permanente al panel, catálogo, reseñas, SEO, WhatsApp y <strong>Mercado Pago</strong> para pagos de licencia y micro-mejoras.</div>
-      </div>
-    </div>
-    <div class="accordion-item">
-      <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#faq3">¿Qué son las micro-mejoras?</button></h2>
-      <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-        <div class="accordion-body">Módulos o temas que compras una vez (ej. Tema premium, Formulario Pro, Galería). Se activan automáticamente al aprobar el pago.</div>
+        <div class="accordion-body">Acceso permanente al panel, catálogo, reseñas, SEO, WhatsApp y <strong>Mercado Pago</strong> para activar la licencia.</div>
       </div>
     </div>
     <div class="accordion-item">
       <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#faq4">¿Cómo se procesa el pago?</button></h2>
       <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-        <div class="accordion-body">Con <strong>Mercado Pago</strong> (Checkout Pro). Al aprobarse, el sistema activa la licencia o el plugin mediante webhook.</div>
+        <div class="accordion-body">Con <strong>Mercado Pago</strong> (Checkout Pro). Al aprobarse, el sistema activa la licencia mediante webhook.</div>
       </div>
     </div>
   </div>
