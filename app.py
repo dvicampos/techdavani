@@ -97,8 +97,6 @@ def roles_required(*roles):
     return wrapper
 
 
-app.config['UPLOAD_FOLDER'] = '/uploads'
-
 @app.route('/uploads/<path:filename>')
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
@@ -380,10 +378,6 @@ def login():
 def logout():
     logout_user()
     return redirect(url_for('login'))
-
-UPLOAD_FOLDER = '/uploads'  
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 def allowed_file(filename):
     return '.' in filename and \
