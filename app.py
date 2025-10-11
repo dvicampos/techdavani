@@ -32,6 +32,19 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'mp4', 'pdf', 'doc', 'docx'}
 load_dotenv()
 
 app = Flask(__name__)
+# === Paths seguros para Render ===
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Si tienes un Disk en Render, define UPLOAD_DIR en el panel (p.ej. /var/data/uploads)
+UPLOAD_DIR = os.getenv("UPLOAD_DIR")
+
+# Fallback temporal (no persistente) si no hay Disk configurado:
+if not UPLOAD_DIR:
+    UPLOAD_DIR = "/tmp/uploads"
+
+app.config["UPLOAD_FOLDER"] = UPLOAD_DIR
+os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
+
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 app.config['MONGO_URI'] = os.getenv('MONGO_URI')
 
