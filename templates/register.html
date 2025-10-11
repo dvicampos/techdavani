@@ -2,50 +2,228 @@
 
 {% block content %}
 <div class="container d-flex justify-content-center align-items-center" style="min-height: 90vh;">
-    <div class="card shadow-lg border-0 rounded-4 p-4 w-100" style="max-width: 500px;">
-        <div class="card-body">
-            <h2 class="card-title text-center mb-4 text-primary">
-                <i class="fa fa-user-plus me-2"></i>Registro
-            </h2>
+  <div class="card shadow-lg border-0 rounded-4 p-4 w-100" style="max-width: 500px;">
+    <div class="card-body">
+      <h2 class="card-title text-center mb-4 text-primary">
+        <i class="fa fa-user-plus me-2"></i>Registro
+      </h2>
 
-            <div class="alert alert-warning text-center" role="alert">
-                <i class="fa fa-envelope me-1"></i>
-                Para activar tu cuenta, debes confirmar tu correo electrónico.
-            </div>
+      <div class="alert alert-warning text-center" role="alert">
+        <i class="fa fa-envelope me-1"></i>
+        Para activar tu cuenta, debes confirmar tu correo electrónico.
+      </div>
 
-            {% with messages = get_flashed_messages() %}
-            {% if messages %}
-            <div class="alert alert-info alert-dismissible fade show" role="alert">
-                {{ messages[0] }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-            {% endif %}
-            {% endwith %}
+      {% with messages = get_flashed_messages() %}
+      {% if messages %}
+      <div class="alert alert-info alert-dismissible fade show" role="alert">
+        {{ messages[0] }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+      {% endif %}
+      {% endwith %}
 
-            <form method="POST">
-                <div class="mb-3">
-                    <label for="nombre" class="form-label">Nombre completo</label>
-                    <input type="text" class="form-control shadow-sm" name="nombre" required>
-                </div>
-                <div class="mb-3">
-                    <label for="email" class="form-label">Correo electrónico</label>
-                    <input type="email" class="form-control shadow-sm" name="email" required>
-                </div>
-                <div class="mb-3">
-                    <label for="password" class="form-label">Contraseña</label>
-                    <input type="password" class="form-control shadow-sm" name="password" required>
-                </div>
-                <input type="hidden" name="role" value="admin">
-
-                <input type="hidden" name="page_id" value="{{ page_id }}">
-
-                <div class="d-grid">
-                    <button type="submit" class="btn btn-primary btn-lg shadow-sm">
-                        <i class="fa fa-user-plus me-1"></i> Registrarse
-                    </button>
-                </div>
-            </form>
+      <form method="POST" id="registerForm" novalidate>
+        <div class="mb-3">
+          <label for="nombre" class="form-label">Nombre completo</label>
+          <input type="text" class="form-control shadow-sm" id="nombre" name="nombre" required>
+          <div class="invalid-feedback">Escribe tu nombre.</div>
         </div>
+
+        <div class="mb-3">
+          <label for="email" class="form-label">Correo electrónico</label>
+          <input type="email" class="form-control shadow-sm" id="email" name="email" required>
+          <div class="invalid-feedback">Escribe un correo válido.</div>
+        </div>
+
+        <div class="mb-3">
+          <label for="password" class="form-label">Contraseña</label>
+          <input type="password" class="form-control shadow-sm" id="password" name="password" required minlength="6">
+          <div class="invalid-feedback">La contraseña debe tener al menos 6 caracteres.</div>
+        </div>
+
+        <input type="hidden" name="role" value="admin">
+        <input type="hidden" name="page_id" value="{{ page_id }}">
+
+        <!-- Aceptación de TyC -->
+        <div class="form-check mb-3">
+          <input class="form-check-input" type="checkbox" value="on" id="accept_tos" name="accept_tos">
+          <label class="form-check-label" for="accept_tos">
+            He leído y acepto los
+            <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal">Términos y Condiciones</a>
+            y el <a href="#" data-bs-toggle="modal" data-bs-target="#privacyModal">Aviso de Privacidad</a>.
+          </label>
+          <div class="invalid-feedback d-block" id="tosFeedback" style="display:none;">
+            Debes aceptar los Términos y Condiciones para continuar.
+          </div>
+        </div>
+
+        <div class="d-grid">
+          <button type="submit" id="submitBtn" class="btn btn-primary btn-lg shadow-sm" disabled>
+            <i class="fa fa-user-plus me-1"></i> Registrarse
+          </button>
+        </div>
+      </form>
     </div>
+  </div>
 </div>
+
+<!-- Modal: Términos y Condiciones -->
+<div class="modal fade" id="termsModal" tabindex="-1" aria-labelledby="termsTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg">
+    <div class="modal-content rounded-4">
+      <div class="modal-header">
+        <h5 class="modal-title" id="termsTitle">Términos y Condiciones de la Plataforma</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <p><strong>Última actualización:</strong> 01/10/2025</p>
+        <p>
+          Bienvenido/a. Estos Términos regulan el uso de la plataforma “Global PYMES”. Al crear una cuenta,
+          aceptas cumplirlos. Si no estás de acuerdo, no debes usar el servicio.
+        </p>
+
+        <h6>1. Cuenta y verificación</h6>
+        <ul>
+          <li>Debes proporcionar información veraz y mantener segura tu contraseña.</li>
+          <li>Podemos solicitar verificación por correo electrónico.</li>
+        </ul>
+
+        <h6>2. Contenido del usuario</h6>
+        <ul>
+          <li>Eres titular de tus contenidos (textos, imágenes, logos). Nos concedes una licencia limitada
+              para alojarlos y mostrarlos en tu web.</li>
+          <li>No publiques contenido ilegal, difamatorio, que infrinja derechos de terceros o normativas aplicables.</li>
+        </ul>
+
+        <h6>3. Pagos y facturación</h6>
+        <ul>
+          <li>La activación de licencia es de pago único. Procesamos pagos con Mercado Pago.</li>
+          <li>No almacenamos datos completos de tarjetas en nuestros servidores.</li>
+        </ul>
+
+        <h6>4. Uso permitido</h6>
+        <ul>
+          <li>No intentes vulnerar la seguridad, realizar ingeniería inversa ni usar la plataforma con fines ilegales.</li>
+        </ul>
+
+        <h6>5. Disponibilidad y soporte</h6>
+        <ul>
+          <li>Buscamos alta disponibilidad, pero el servicio puede verse afectado por mantenimiento o causas externas.</li>
+          <li>Incluimos soporte básico y actualizaciones razonables.</li>
+        </ul>
+
+        <h6>6. Propiedad intelectual</h6>
+        <ul>
+          <li>El software, marca y diseño de la plataforma pertenecen a sus respectivos titulares.</li>
+        </ul>
+
+        <h6>7. Limitación de responsabilidad</h6>
+        <ul>
+          <li>La plataforma se ofrece “tal cual”. En la medida máxima permitida por ley, no somos responsables
+              por daños indirectos o pérdida de ganancias derivadas del uso.</li>
+        </ul>
+
+        <h6>8. Terminación</h6>
+        <ul>
+          <li>Podemos suspender o cancelar cuentas que incumplan estos Términos o la ley.</li>
+        </ul>
+
+        <h6>9. Cambios</h6>
+        <ul>
+          <li>Podemos actualizar estos Términos. Notificaremos cambios relevantes por medios razonables.</li>
+        </ul>
+
+        <h6>10. Contacto</h6>
+        <p>Soporte: technologydavani@gmail.com</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">Cerrar</button>
+        <button type="button" class="btn btn-primary" data-bs-dismiss="modal"
+                onclick="document.getElementById('accept_tos').checked = true; document.getElementById('accept_tos').dispatchEvent(new Event('change'));">
+          Acepto los Términos
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Aviso de Privacidad -->
+<div class="modal fade" id="privacyModal" tabindex="-1" aria-labelledby="privacyTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg">
+    <div class="modal-content rounded-4">
+      <div class="modal-header">
+        <h5 class="modal-title" id="privacyTitle">Aviso de Privacidad</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <p><strong>Resumen:</strong> Tratamos tus datos para crear tu cuenta, proveer el servicio,
+           enviar comunicaciones operativas y mejorar la plataforma. Puedes ejercer derechos de acceso,
+           rectificación, cancelación y oposición (ARCO) escribiendo a technologydavani@gmail.com.</p>
+
+        <h6>Datos que recabamos</h6>
+        <ul>
+          <li>Identificación (nombre), contacto (correo), y los que nos compartas en tu web.</li>
+        </ul>
+
+        <h6>Finalidades</h6>
+        <ul>
+          <li>Proveer y mantener el servicio; seguridad (verificación y prevención de fraude).</li>
+        </ul>
+
+        <h6>Conservación y seguridad</h6>
+        <ul>
+          <li>Conservamos datos el tiempo necesario para prestar el servicio y por obligaciones legales.</li>
+          <li>Aplicamos medidas razonables de seguridad técnica y organizativa.</li>
+        </ul>
+
+        <h6>Compartición</h6>
+        <ul>
+          <li>Con proveedores tecnológicos (p. ej., hosting, correo, pasarela de pagos) bajo contratos de encargo.</li>
+        </ul>
+
+        <h6>Tus derechos</h6>
+        <ul>
+          <li>Puedes solicitar acceso/rectificación/cancelación/oposición enviando un correo a soporte.</li>
+        </ul>
+
+        <h6>Actualizaciones</h6>
+        <p>Podemos actualizar este Aviso; publicaremos la versión vigente en la plataforma.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">Cerrar</button>
+        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Entendido</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Habilitar botón sólo si se acepta TyC + pequeña validación visual -->
+<script>
+  (function () {
+    const form = document.getElementById('registerForm');
+    const checkbox = document.getElementById('accept_tos');
+    const submitBtn = document.getElementById('submitBtn');
+    const tosFeedback = document.getElementById('tosFeedback');
+
+    function updateState() {
+      const ok = checkbox.checked;
+      submitBtn.disabled = !ok;
+      tosFeedback.style.display = ok ? 'none' : 'block';
+    }
+
+    checkbox.addEventListener('change', updateState);
+    updateState();
+
+    // Validación básica BS5
+    form.addEventListener('submit', function (e) {
+      if (!checkbox.checked) {
+        e.preventDefault();
+        e.stopPropagation();
+        updateState();
+        checkbox.focus();
+      }
+      form.classList.add('was-validated');
+    }, false);
+  })();
+</script>
 {% endblock %}

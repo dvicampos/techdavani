@@ -254,6 +254,11 @@ def index():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
+
+        if request.form.get('accept_tos') != 'on':
+            flash('Debes aceptar los Términos y Condiciones para registrarte.')
+            return redirect(url_for('register', page_id=request.form.get('page_id')))
+        
         nombre = request.form['nombre']
         email = request.form['email']
         password = generate_password_hash(request.form['password'])
