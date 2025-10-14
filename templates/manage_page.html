@@ -4,432 +4,553 @@
 
 {% block content %}
 <style>
-    .religious-bg {
-        background: linear-gradient(to bottom, #f3f0e5, #fffaf0);
-        padding: 2rem;
-        border-radius: 1rem;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-        animation: fadeIn 1s ease-in-out;
-    }
+  :root{
+    /* Paleta tipo Shopify/Xiaomi: neutros + acento configurable */
+    --brand: {{ data.color if data and data.color else '#0ea5e9' }}; /* cyan/sky moderno */
+    --ink-900:#0f172a; --ink-700:#334155; --ink-500:#64748b;
+    --line:#e5e7eb; --line-strong:#d1d5db;
+    --bg:#fafafa; --card:#ffffff;
+    --radius:14px; --shadow:0 12px 32px rgba(2,6,23,.06);
+    --ring: 0 0 0 .2rem rgba(14,165,233,.15);
+  }
 
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(-20px);
-        }
+  /* Lienzo / encabezado */
+  .admin-hero{
+    background: linear-gradient(180deg, #f6f7fb 0%, #fff 60%);
+    border:1px solid var(--line);
+    border-radius: 16px;
+    padding: 18px 20px;
+    box-shadow: var(--shadow);
+  }
+  .hero-title{ font-weight:800; color: var(--ink-900); letter-spacing:.2px; }
+  .brand-pill{ width:96px; height:10px; border-radius:999px; background: var(--brand); box-shadow: inset 0 0 0 2px rgba(0,0,0,.04); }
+  .avatar-preview{ width:72px; height:72px; border-radius:12px; object-fit:cover; border:1px solid var(--line); background:#fff; }
 
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
+  /* Tarjeta principal */
+  .admin-card{ background: var(--card); border:1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
 
-    .form-label {
-        font-weight: bold;
-        color: #6a4f4b;
-    }
+  /* Tabs estilo settings Shopify */
+  .settings-tabs .nav-link{
+    border:1px solid var(--line); border-radius: 10px; color: var(--ink-700); background:#fff; font-weight:700;
+  }
+  .settings-tabs .nav-link:hover{ border-color: var(--line-strong); }
+  .settings-tabs .nav-link.active{
+    color: var(--ink-900); border-color: var(--brand); box-shadow: var(--ring); background: #f8fdff;
+  }
+
+  /* Forms */
+  .form-label{ color: var(--ink-700); font-weight:700; }
+  .form-control, .form-select, .form-control-color{
+    background:#fff !important; color: var(--ink-900) !important; border:1px solid var(--line) !important; border-radius:10px; min-height: 42px;
+  }
+  .form-control::placeholder{ color:#94a3b8; }
+  .form-control:focus, .form-select:focus{ border-color: var(--brand) !important; box-shadow: var(--ring); }
+  .hint{ color: var(--ink-500); font-size:.9rem; }
+
+  .section-note{ color: var(--ink-500); border-top:1px dashed var(--line); padding-top:.6rem; margin-top:.2rem; }
+
+  /* Template grid */
+  .tpl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;}
+  .tpl-card{
+    position:relative; background:#fff; border:1px solid var(--line); border-radius:12px; padding:14px;
+    transition: box-shadow .12s ease, transform .12s ease, border-color .12s ease; cursor:pointer;
+  }
+  .tpl-card:hover{ transform: translateY(-2px); box-shadow: 0 16px 28px rgba(2,6,23,.08); border-color: var(--line-strong); }
+  .tpl-card input{ position:absolute; inset:0; opacity:0; cursor:pointer; }
+  .tpl-card .dot{
+    position:absolute; right:12px; top:12px; width:16px; height:16px; border-radius:999px; border:2px solid var(--line-strong); background:#fff;
+  }
+  .tpl-card input:checked ~ .dot{ border-color: var(--brand); background: radial-gradient(var(--brand) 55%, #fff 56%); }
+
+  /* Mini preview “screenshot” */
+  .tpl-preview{
+    border:1px solid var(--line); border-radius:10px; overflow:hidden;
+    background:#fff; height:170px; display:flex; flex-direction:column;
+  }
+  .tpl-preview .ph-hero{
+    padding:10px 12px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:8px;
+    background: linear-gradient(180deg, rgba(0,0,0,.02), rgba(0,0,0,0));
+  }
+  .tpl-preview .pill{ width:70px; height:8px; border-radius:999px; background: var(--brand); }
+  .tpl-preview .title{ font-weight:800; font-size:13px; color:#111827; }
+  .tpl-preview .slogan{ font-size:11px; color:#6b7280; }
+  .tpl-preview .body{ padding:10px 12px; display:grid; grid-template-columns:1fr; gap:8px; }
+  .tpl-preview .chip{ display:inline-block; font-size:10px; border:1px solid var(--line); border-radius:999px; padding:2px 8px; color:#334155; background:#fff; }
+  .tpl-preview .btn{ display:inline-block; padding:6px 10px; font-size:11px; border-radius:8px; background:var(--brand); color:#fff; text-decoration:none; }
+
+  /* Variantes por estilo */
+  /* classico */
+  .tpl--classico .ph-hero{ background: linear-gradient(180deg, rgba(0,0,0,.02), transparent), #fff; }
+  /* brutal */
+  .tpl--brutal{ border-width:2px; }
+  .tpl--brutal .ph-hero{ border-bottom:2px solid #111827; background:#fff; }
+  .tpl--brutal .title{ font-size:14px; text-transform:uppercase; letter-spacing:.5px; }
+  .tpl--brutal .chip{ border:2px solid #111827; border-radius:6px; }
+  .tpl--brutal .btn{ border:2px solid #111827; color:#111827; background:transparent; }
+  /* dark (preview interna) */
+  .tpl--dark{ background:#0f141b; border-color:#1f2937; }
+  .tpl--dark .ph-hero{ background:#0b1117; border-bottom-color:#1f2937; }
+  .tpl--dark .title{ color:#e5e7eb; }
+  .tpl--dark .slogan{ color:#94a3b8; }
+  .tpl--dark .chip{ background:#0f141b; color:#cbd5e1; border-color:#233044; }
+  .tpl--dark .btn{ background: var(--brand); color:#0b1117; }
+
+  /* Botones */
+  .btn-outline-secondary{ border-color: var(--line); }
+  .btn-outline-secondary:hover{ background:#f4f6f8; }
+  .btn-success{ background: var(--brand); border-color: var(--brand); box-shadow: 0 8px 18px rgba(14,165,233,.25); }
+  .btn-success:hover{ filter: brightness(.96); }
+
+  /* Mapa */
+  #map{ height: 340px; border-radius:12px; border:1px solid var(--line); overflow:hidden; }
+
+  .bottom-space{ height: 20px; }
+
+  /* ===== DARK MODE ===== */
+  :root[data-theme="dark"]{
+    --ink-900:#e5e7eb; --ink-700:#cbd5e1; --ink-500:#94a3b8;
+    --bg:#0b0f14; --card:#0f141b;
+    --line:#1f2937; --line-strong:#334155;
+    --ring: 0 0 0 .2rem rgba(14,165,233,.25);
+  }
+  :root[data-theme="dark"] .admin-hero{ background: linear-gradient(180deg, #0d1117 0%, #0f141b 60%); }
+  :root[data-theme="dark"] .settings-tabs .nav-link{ background:#0f141b; color:var(--ink-700); }
+  :root[data-theme="dark"] .settings-tabs .nav-link.active{ background:#0b1720; color:var(--ink-900); }
+  :root[data-theme="dark"] .form-control,
+  :root[data-theme="dark"] .form-select,
+  :root[data-theme="dark"] .form-control-color{
+    background:#0b1117 !important; color:#e5e7eb !important; border-color: var(--line) !important;
+  }
+  :root[data-theme="dark"] .tpl-card{ background:#0f141b; }
+  :root[data-theme="dark"] .btn-outline-secondary:hover{ background:#111827; }
 </style>
 
-<div class="religious-bg">
-    <h2><i class="bi bi-file-earmark-fill"></i>Administrar página de mi empresa</h2>
-
-    {% if data %}
-    <p class="mt-2">
-        <strong>Link de la página:</strong>
-        <a href="{{ url_for('detalle_negocio', nombre=data.business_name) }}" target="_blank"
-            class="btn btn-outline-primary btn-sm">
-            <i class="fa fa-link me-1"></i> {{ request.host_url ~ 'negocio/' ~ data.business_name }}
-        </a>
-    </p>
-    {% endif %}
-
-    {% with messages = get_flashed_messages() %}
-    {% if messages %}
-    <div class="alert alert-info">{{ messages[0] }}</div>
-    {% endif %}
-    {% endwith %}
-
-    <form method="POST" enctype="multipart/form-data">
-        <!-- Nombre del negocio -->
-        <div class="mb-3">
-            <label class="form-label">Nombre del negocio</label>
-            <input type="text" name="business_name" class="form-control"
-                value="{{ data.business_name if data else '' }}" required>
-        </div>
-
-        <!-- Slogan -->
-        <div class="mb-3">
-            <label class="form-label">Slogan o frase llamativa</label>
-            <input type="text" name="slogan" class="form-control" value="{{ data.slogan if data else '' }}">
-        </div>
-
-        <!-- Descripción -->
-        <div class="mb-3">
-            <label class="form-label">Descripción</label>
-            <textarea name="description" rows="4" class="form-control"
-                required>{{ data.description if data else '' }}</textarea>
-        </div>
-
-        <!-- Categoría del negocio -->
-        <div class="mb-3">
-            <label class="form-label">Categoría del negocio</label>
-            <select name="category" class="form-select" required>
-                <option value="" disabled {% if not data or not data.category %}selected{% endif %}>Selecciona una
-                    categoría</option>
-
-                <!-- Alimentos y Bebidas -->
-                <option value="Restaurante" {% if data and data.category=='Restaurante' %}selected{% endif %}>
-                    Restaurante</option>
-                <option value="Cafetería" {% if data and data.category=='Cafetería' %}selected{% endif %}>Cafetería
-                </option>
-                <option value="Bar" {% if data and data.category=='Bar' %}selected{% endif %}>Bar</option>
-                <option value="Panadería" {% if data and data.category=='Panadería' %}selected{% endif %}>Panadería
-                </option>
-                <option value="Comida rápida" {% if data and data.category=='Comida rápida' %}selected{% endif %}>Comida
-                    rápida</option>
-                <option value="Pastelería" {% if data and data.category=='Pastelería' %}selected{% endif %}>Pastelería
-                </option>
-
-                <!-- Comercio y Tiendas -->
-                <option value="Supermercado" {% if data and data.category=='Supermercado' %}selected{% endif %}>
-                    Supermercado</option>
-                <option value="Tienda de ropa" {% if data and data.category=='Tienda de ropa' %}selected{% endif %}>
-                    Tienda de ropa</option>
-                <option value="Zapatería" {% if data and data.category=='Zapatería' %}selected{% endif %}>Zapatería
-                </option>
-                <option value="Ferretería" {% if data and data.category=='Ferretería' %}selected{% endif %}>Ferretería
-                </option>
-                <option value="Papelería" {% if data and data.category=='Papelería' %}selected{% endif %}>Papelería
-                </option>
-                <option value="Tienda de regalos" {% if data and data.category=='Tienda de regalos' %}selected{% endif
-                    %}>Tienda de regalos</option>
-                <option value="Floristería" {% if data and data.category=='Floristería' %}selected{% endif %}>
-                    Floristería</option>
-                <option value="Joyería" {% if data and data.category=='Joyería' %}selected{% endif %}>Joyería</option>
-                <option value="Tienda de mascotas" {% if data and data.category=='Tienda de mascotas' %}selected{% endif
-                    %}>Tienda de mascotas</option>
-                <option value="Librería" {% if data and data.category=='Librería' %}selected{% endif %}>Librería
-                </option>
-                <option value="Tienda de electrónica" {% if data and data.category=='Tienda de electrónica' %}selected{%
-                    endif %}>Tienda de electrónica</option>
-
-                <!-- Salud y Belleza -->
-                <option value="Farmacia" {% if data and data.category=='Farmacia' %}selected{% endif %}>Farmacia
-                </option>
-                <option value="Consultorio médico" {% if data and data.category=='Consultorio médico' %}selected{% endif
-                    %}>Consultorio médico</option>
-                <option value="Dentista" {% if data and data.category=='Dentista' %}selected{% endif %}>Dentista
-                </option>
-                <option value="Salón de belleza" {% if data and data.category=='Salón de belleza' %}selected{% endif %}>
-                    Salón de belleza</option>
-                <option value="Peluquería" {% if data and data.category=='Peluquería' %}selected{% endif %}>Peluquería
-                </option>
-                <option value="Spa" {% if data and data.category=='Spa' %}selected{% endif %}>Spa</option>
-                <option value="Veterinaria" {% if data and data.category=='Veterinaria' %}selected{% endif %}>
-                    Veterinaria</option>
-
-                <!-- Servicios -->
-                <option value="Taller mecánico" {% if data and data.category=='Taller mecánico' %}selected{% endif %}>
-                    Taller mecánico</option>
-                <option value="Lavandería" {% if data and data.category=='Lavandería' %}selected{% endif %}>Lavandería
-                </option>
-                <option value="Inmobiliaria" {% if data and data.category=='Inmobiliaria' %}selected{% endif %}>
-                    Inmobiliaria</option>
-                <option value="Agencia de viajes" {% if data and data.category=='Agencia de viajes' %}selected{% endif
-                    %}>Agencia de viajes</option>
-                <option value="Servicio de transporte" {% if data and data.category=='Servicio de transporte'
-                    %}selected{% endif %}>Servicio de transporte</option>
-                <option value="Mensajería" {% if data and data.category=='Mensajería' %}selected{% endif %}>Mensajería
-                </option>
-                <option value="Asesoría legal" {% if data and data.category=='Asesoría legal' %}selected{% endif %}>
-                    Asesoría legal</option>
-                <option value="Contabilidad" {% if data and data.category=='Contabilidad' %}selected{% endif %}>
-                    Contabilidad</option>
-                <option value="Diseño gráfico" {% if data and data.category=='Diseño gráfico' %}selected{% endif %}>
-                    Diseño gráfico</option>
-                <option value="Estudio fotográfico" {% if data and data.category=='Estudio fotográfico' %}selected{%
-                    endif %}>Estudio fotográfico</option>
-
-                <!-- Educación y Tecnología -->
-                <option value="Centro educativo" {% if data and data.category=='Centro educativo' %}selected{% endif %}>
-                    Centro educativo</option>
-                <option value="Escuela de idiomas" {% if data and data.category=='Escuela de idiomas' %}selected{% endif
-                    %}>Escuela de idiomas</option>
-                <option value="Clases particulares" {% if data and data.category=='Clases particulares' %}selected{%
-                    endif %}>Clases particulares</option>
-                <option value="Servicios de TI" {% if data and data.category=='Servicios de TI' %}selected{% endif %}>
-                    Servicios de TI</option>
-                <option value="Desarrollo web" {% if data and data.category=='Desarrollo web' %}selected{% endif %}>
-                    Desarrollo web</option>
-                <option value="Marketing digital" {% if data and data.category=='Marketing digital' %}selected{% endif
-                    %}>Marketing digital</option>
-                <option value="Soporte técnico" {% if data and data.category=='Soporte técnico' %}selected{% endif %}>
-                    Soporte técnico</option>
-
-                <!-- Ocio y Entretenimiento -->
-                <option value="Cine" {% if data and data.category=='Cine' %}selected{% endif %}>Cine</option>
-                <option value="Gimnasio" {% if data and data.category=='Gimnasio' %}selected{% endif %}>Gimnasio
-                </option>
-                <option value="Centro deportivo" {% if data and data.category=='Centro deportivo' %}selected{% endif %}>
-                    Centro deportivo</option>
-                <option value="Sala de eventos" {% if data and data.category=='Sala de eventos' %}selected{% endif %}>
-                    Sala de eventos</option>
-                <option value="Parque de diversiones" {% if data and data.category=='Parque de diversiones' %}selected{%
-                    endif %}>Parque de diversiones</option>
-                <option value="Streaming o medios" {% if data and data.category=='Streaming o medios' %}selected{% endif
-                    %}>Streaming o medios</option>
-                <option value="Gaming o eSports" {% if data and data.category=='Gaming o eSports' %}selected{% endif %}>
-                    Gaming o eSports</option>
-
-                <!-- Otros -->
-                <option value="ONG / Asociación" {% if data and data.category=='ONG / Asociación' %}selected{% endif %}>
-                    ONG / Asociación</option>
-                <option value="Freelancer / Independiente" {% if data and data.category=='Freelancer / Independiente'
-                    %}selected{% endif %}>Freelancer / Independiente</option>
-                <option value="Otro" {% if data and data.category=='Otro' %}selected{% endif %}>Otro</option>
-            </select>
-        </div>
-
-
-        <!-- Fecha de fundación -->
-        <div class="mb-3">
-            <label class="form-label">Fecha de fundación</label>
-            <input type="date" name="founding_date" class="form-control"
-                value="{{ data.founding_date if data else '' }}">
-        </div>
-
-        <!-- Teléfono -->
-        <div class="mb-3">
-            <label class="form-label">Teléfono</label>
-            <input type="text" name="phone" class="form-control" value="{{ data.phone if data else '' }}">
-        </div>
-
-        <!-- WhatsApp -->
-        <div class="mb-3">
-            <label class="form-label">WhatsApp</label>
-            <input type="text" name="whatsapp" class="form-control" value="{{ data.whatsapp if data else '' }}">
-        </div>
-
-        <!-- Correo electrónico -->
-        <div class="mb-3">
-            <label class="form-label">Correo electrónico</label>
-            <input type="email" name="email" class="form-control" value="{{ data.email if data else '' }}">
-        </div>
-
-        <!-- Sitio web -->
-        <div class="mb-3">
-            <label class="form-label">Sitio web</label>
-            <input type="url" name="website" class="form-control" value="{{ data.website if data else '' }}">
-        </div>
-
-        <!-- Dirección -->
-        <div class="mb-3">
-            <label class="form-label">Dirección completa</label>
-            <input type="text" name="address" class="form-control" value="{{ data.address if data else '' }}">
-        </div>
-
-        <!-- Código Postal -->
-        <div class="mb-3">
-            <label class="form-label">Código Postal</label>
-            <input type="text" name="postal_code" class="form-control" value="{{ data.postal_code if data else '' }}">
-        </div>
-
-        <!-- Ciudad -->
-        <div class="mb-3">
-            <label class="form-label">Ciudad</label>
-            <input type="text" name="city" class="form-control" value="{{ data.city if data else '' }}">
-        </div>
-
-        <!-- Estado/Provincia -->
-        <div class="mb-3">
-            <label class="form-label">Estado / Provincia</label>
-            <select name="state" class="form-control" required>
-                <option value="">Selecciona un estado</option>
-                {% set estados = [
-                'Aguascalientes', 'Baja California', 'Baja California Sur', 'Campeche',
-                'Chiapas', 'Chihuahua', 'Ciudad de México', 'Coahuila', 'Colima', 'Durango',
-                'Estado de México', 'Guanajuato', 'Guerrero', 'Hidalgo', 'Jalisco', 'Michoacán',
-                'Morelos', 'Nayarit', 'Nuevo León', 'Oaxaca', 'Puebla', 'Querétaro', 'Quintana Roo',
-                'San Luis Potosí', 'Sinaloa', 'Sonora', 'Tabasco', 'Tamaulipas', 'Tlaxcala',
-                'Veracruz', 'Yucatán', 'Zacatecas'
-                ] %}
-                {% for estado in estados %}
-                <option value="{{ estado }}" {% if data and data.state==estado %}selected{% endif %}>{{ estado }}
-                </option>
-                {% endfor %}
-            </select>
-        </div>
-
-
-        <!-- Google Maps (URL o coordenadas) -->
-        <div class="mb-3">
-            <label class="form-label">Dirección (opcional)</label>
-            <input type="text" id="address" name="address" class="form-control"
-                    value="{{ (data.address if data else '') or '' }}" placeholder="Calle, colonia, ciudad…">
-            <small class="text-muted">También puedes escribir y luego afinar con el mapa.</small>
-        </div>
-
-        <div class="mb-3">
-        <label class="form-label d-flex justify-content-between align-items-center">
-            Ubicación en el mapa
-            <small class="text-muted">Haz clic para colocar/ajustar el pin</small>
-        </label>
-        <div id="map" style="height: 360px; border-radius: 12px; overflow: hidden;"></div>
-        </div>
-
-        <input type="hidden" id="lat" name="lat" value="{{ (data.lat if data else '') or '' }}">
-        <input type="hidden" id="lng" name="lng" value="{{ (data.lng if data else '') or '' }}">
-
-
-        <!-- Horario de atención -->
-        <div class="mb-3">
-            <label class="form-label">Horario de atención</label>
-            <input type="text" name="operating_hours" class="form-control"
-                value="{{ data.operating_hours if data else '' }}">
-        </div>
-
-        <!-- Servicios ofrecidos -->
-        <div class="mb-3">
-            <label class="form-label">Servicios ofrecidos</label>
-            <textarea name="services" rows="3" class="form-control">{{ data.services if data else '' }}</textarea>
-            <small class="form-text text-muted">Separar los servicios con comas.</small>
-        </div>
-
-        <!-- Métodos de pago -->
-        <div class="mb-3">
-            <label class="form-label">Métodos de pago</label>
-            <input type="text" name="payment_methods" class="form-control"
-                value="{{ data.payment_methods if data else '' }}" placeholder="Ej: Efectivo, Tarjeta, Transferencia">
-        </div>
-
-        <!-- ¿Ofrece entrega a domicilio? -->
-        <div class="mb-3 form-check">
-            <input class="form-check-input" type="checkbox" name="delivery_available" id="delivery_available" {% if data
-                and data.delivery_available %}checked{% endif %}>
-            <label class="form-check-label" for="delivery_available">
-                ¿Ofrece entrega a domicilio?
-            </label>
-        </div>
-
-        <!-- Redes sociales -->
-        <div class="mb-3">
-            <label class="form-label">Facebook</label>
-            <input type="url" name="facebook" class="form-control" value="{{ data.facebook if data else '' }}">
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">Instagram</label>
-            <input type="url" name="instagram" class="form-control" value="{{ data.instagram if data else '' }}">
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">TikTok</label>
-            <input type="url" name="tiktok" class="form-control" value="{{ data.tiktok if data else '' }}">
-        </div>
-
-        <!-- Color principal -->
-        <div class="mb-3">
-            <label class="form-label">Color principal</label><br>
-            <input type="color" name="color" class="form-control-color" value="{{ data.color if data else '#8e44ad' }}">
-        </div>
-
-        <!-- Imagen principal -->
-        <div class="mb-3">
-            <label class="form-label">Imagen principal</label>
-            <input type="file" name="image" class="form-control">
-            {% if data and data.image %}
-                <img src="{{ url_for('uploaded_file', filename=data.image) }}" alt="Imagen principal" class="img-thumbnail mt-2"
-                    style="max-width:200px;">
-            {% endif %}
-        </div>
-
-        <button class="btn btn-success"><i class="fa fa-save me-1"></i>Guardar</button>
-    </form>
-    <div class="mt-4 text-center">
-        <a href="{{ url_for('dashboard')}}" class="btn btn-outline-dark">
-            <i class="bi bi-arrow-left-circle"></i> Regresar
-        </a>
+<div class="admin-hero mb-4">
+  <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+    <div class="d-flex align-items-center gap-3">
+      <div class="brand-pill"></div>
+      <h2 class="hero-title m-0">Administrar página</h2>
     </div>
+    <div class="d-flex align-items-center gap-2">
+      <button id="themeToggle" type="button" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-moon-stars me-1"></i> Modo noche
+      </button>
+      {% if data %}
+        {% if data.image %}
+          <img class="avatar-preview" src="{{ url_for('uploaded_file', filename=data.image) }}" alt="logo">
+        {% endif %}
+        <a href="{{ url_for('detalle_negocio', nombre=data.business_name) }}" target="_blank" class="btn btn-outline-secondary btn-sm">
+          <i class="bi bi-link-45deg me-1"></i> Ver página
+        </a>
+      {% endif %}
+    </div>
+  </div>
 </div>
+
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <div class="alert alert-info admin-card p-3 mb-3">{{ messages[0] }}</div>
+  {% endif %}
+{% endwith %}
+
+<form method="POST" enctype="multipart/form-data" class="admin-card p-3 p-md-4">
+
+  <!-- NAV -->
+  <ul class="nav nav-pills settings-tabs gap-2 mb-3" id="adminTabs" role="tablist">
+    <li class="nav-item" role="presentation"><button class="nav-link active" id="tab-general" data-bs-toggle="pill" data-bs-target="#pane-general" type="button"><i class="bi bi-building"></i> General</button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link" id="tab-contacto" data-bs-toggle="pill" data-bs-target="#pane-contacto" type="button"><i class="bi bi-geo-alt"></i> Contacto & Ubicación</button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link" id="tab-operacion" data-bs-toggle="pill" data-bs-target="#pane-operacion" type="button"><i class="bi bi-clock-history"></i> Operación</button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link" id="tab-social" data-bs-toggle="pill" data-bs-target="#pane-social" type="button"><i class="bi bi-hash"></i> Redes</button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link" id="tab-brand" data-bs-toggle="pill" data-bs-target="#pane-brand" type="button"><i class="bi bi-palette2"></i> Branding</button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link" id="tab-template" data-bs-toggle="pill" data-bs-target="#pane-template" type="button"><i class="bi bi-layers"></i> Template</button></li>
+  </ul>
+
+  <div class="tab-content">
+    <!-- GENERAL -->
+    <div class="tab-pane fade show active" id="pane-general" role="tabpanel" aria-labelledby="tab-general">
+      <div class="row g-3">
+        <div class="col-md-7">
+          <label class="form-label">Nombre del negocio</label>
+          <input type="text" name="business_name" class="form-control" value="{{ data.business_name if data else '' }}" required>
+        </div>
+        <div class="col-md-5">
+          <label class="form-label">Slogan</label>
+          <input type="text" name="slogan" class="form-control" value="{{ data.slogan if data else '' }}">
+        </div>
+        <div class="col-12">
+          <label class="form-label">Descripción</label>
+          <textarea name="description" rows="4" class="form-control" placeholder="Cuenta qué hacen, tono, valores…" required>{{ data.description if data else '' }}</textarea>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Categoría</label>
+          <select name="category" class="form-select" required>
+            <option value="" disabled {% if not data or not data.category %}selected{% endif %}>Selecciona…</option>
+            <optgroup label="Alimentos y Bebidas">
+              <option value="Restaurante" {% if data and data.category=='Restaurante' %}selected{% endif %}>Restaurante</option>
+              <option value="Cafetería" {% if data and data.category=='Cafetería' %}selected{% endif %}>Cafetería</option>
+              <option value="Bar" {% if data and data.category=='Bar' %}selected{% endif %}>Bar</option>
+              <option value="Panadería" {% if data and data.category=='Panadería' %}selected{% endif %}>Panadería</option>
+              <option value="Comida rápida" {% if data and data.category=='Comida rápida' %}selected{% endif %}>Comida rápida</option>
+              <option value="Pastelería" {% if data and data.category=='Pastelería' %}selected{% endif %}>Pastelería</option>
+            </optgroup>
+            <optgroup label="Comercio y Tiendas">
+              <option value="Supermercado" {% if data and data.category=='Supermercado' %}selected{% endif %}>Supermercado</option>
+              <option value="Tienda de ropa" {% if data and data.category=='Tienda de ropa' %}selected{% endif %}>Tienda de ropa</option>
+              <option value="Zapatería" {% if data and data.category=='Zapatería' %}selected{% endif %}>Zapatería</option>
+              <option value="Ferretería" {% if data and data.category=='Ferretería' %}selected{% endif %}>Ferretería</option>
+              <option value="Papelería" {% if data and data.category=='Papelería' %}selected{% endif %}>Papelería</option>
+              <option value="Tienda de regalos" {% if data and data.category=='Tienda de regalos' %}selected{% endif %}>Tienda de regalos</option>
+              <option value="Floristería" {% if data and data.category=='Floristería' %}selected{% endif %}>Floristería</option>
+              <option value="Joyería" {% if data and data.category=='Joyería' %}selected{% endif %}>Joyería</option>
+              <option value="Tienda de mascotas" {% if data and data.category=='Tienda de mascotas' %}selected{% endif %}>Tienda de mascotas</option>
+              <option value="Librería" {% if data and data.category=='Librería' %}selected{% endif %}>Librería</option>
+              <option value="Tienda de electrónica" {% if data and data.category=='Tienda de electrónica' %}selected{% endif %}>Tienda de electrónica</option>
+            </optgroup>
+            <optgroup label="Salud y Belleza">
+              <option value="Farmacia" {% if data and data.category=='Farmacia' %}selected{% endif %}>Farmacia</option>
+              <option value="Consultorio médico" {% if data and data.category=='Consultorio médico' %}selected{% endif %}>Consultorio médico</option>
+              <option value="Dentista" {% if data and data.category=='Dentista' %}selected{% endif %}>Dentista</option>
+              <option value="Salón de belleza" {% if data and data.category=='Salón de belleza' %}selected{% endif %}>Salón de belleza</option>
+              <option value="Peluquería" {% if data and data.category=='Peluquería' %}selected{% endif %}>Peluquería</option>
+              <option value="Spa" {% if data and data.category=='Spa' %}selected{% endif %}>Spa</option>
+              <option value="Veterinaria" {% if data and data.category=='Veterinaria' %}selected{% endif %}>Veterinaria</option>
+            </optgroup>
+            <optgroup label="Servicios">
+              <option value="Taller mecánico" {% if data and data.category=='Taller mecánico' %}selected{% endif %}>Taller mecánico</option>
+              <option value="Lavandería" {% if data and data.category=='Lavandería' %}selected{% endif %}>Lavandería</option>
+              <option value="Inmobiliaria" {% if data and data.category=='Inmobiliaria' %}selected{% endif %}>Inmobiliaria</option>
+              <option value="Agencia de viajes" {% if data and data.category=='Agencia de viajes' %}selected{% endif %}>Agencia de viajes</option>
+              <option value="Servicio de transporte" {% if data and data.category=='Servicio de transporte' %}selected{% endif %}>Servicio de transporte</option>
+              <option value="Mensajería" {% if data and data.category=='Mensajería' %}selected{% endif %}>Mensajería</option>
+              <option value="Asesoría legal" {% if data and data.category=='Asesoría legal' %}selected{% endif %}>Asesoría legal</option>
+              <option value="Contabilidad" {% if data and data.category=='Contabilidad' %}selected{% endif %}>Contabilidad</option>
+              <option value="Diseño gráfico" {% if data and data.category=='Diseño gráfico' %}selected{% endif %}>Diseño gráfico</option>
+              <option value="Estudio fotográfico" {% if data and data.category=='Estudio fotográfico' %}selected{% endif %}>Estudio fotográfico</option>
+            </optgroup>
+            <optgroup label="Educación y Tecnología">
+              <option value="Centro educativo" {% if data and data.category=='Centro educativo' %}selected{% endif %}>Centro educativo</option>
+              <option value="Escuela de idiomas" {% if data and data.category=='Escuela de idiomas' %}selected{% endif %}>Escuela de idiomas</option>
+              <option value="Clases particulares" {% if data and data.category=='Clases particulares' %}selected{% endif %}>Clases particulares</option>
+              <option value="Servicios de TI" {% if data and data.category=='Servicios de TI' %}selected{% endif %}>Servicios de TI</option>
+              <option value="Desarrollo web" {% if data and data.category=='Desarrollo web' %}selected{% endif %}>Desarrollo web</option>
+              <option value="Marketing digital" {% if data and data.category=='Marketing digital' %}selected{% endif %}>Marketing digital</option>
+              <option value="Soporte técnico" {% if data and data.category=='Soporte técnico' %}selected{% endif %}>Soporte técnico</option>
+            </optgroup>
+            <optgroup label="Ocio y Entretenimiento">
+              <option value="Cine" {% if data and data.category=='Cine' %}selected{% endif %}>Cine</option>
+              <option value="Gimnasio" {% if data and data.category=='Gimnasio' %}selected{% endif %}>Gimnasio</option>
+              <option value="Centro deportivo" {% if data and data.category=='Centro deportivo' %}selected{% endif %}>Centro deportivo</option>
+              <option value="Sala de eventos" {% if data and data.category=='Sala de eventos' %}selected{% endif %}>Sala de eventos</option>
+              <option value="Parque de diversiones" {% if data and data.category=='Parque de diversiones' %}selected{% endif %}>Parque de diversiones</option>
+              <option value="Streaming o medios" {% if data and data.category=='Streaming o medios' %}selected{% endif %}>Streaming o medios</option>
+              <option value="Gaming o eSports" {% if data and data.category=='Gaming o eSports' %}selected{% endif %}>Gaming o eSports</option>
+            </optgroup>
+            <optgroup label="Otros">
+              <option value="ONG / Asociación" {% if data and data.category=='ONG / Asociación' %}selected{% endif %}>ONG / Asociación</option>
+              <option value="Freelancer / Independiente" {% if data and data.category=='Freelancer / Independiente' %}selected{% endif %}>Freelancer / Independiente</option>
+              <option value="Otro" {% if data and data.category=='Otro' %}selected{% endif %}>Otro</option>
+            </optgroup>
+          </select>
+          <div class="section-note">Organizado por categorías, estilo panel de ajustes.</div>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Fecha de fundación</label>
+          <input type="date" name="founding_date" class="form-control" value="{{ data.founding_date if data else '' }}">
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTACTO & UBICACIÓN -->
+    <div class="tab-pane fade" id="pane-contacto" role="tabpanel" aria-labelledby="tab-contacto">
+      <div class="row g-3">
+        <div class="col-md-4"><label class="form-label">Teléfono</label><input type="text" name="phone" class="form-control" value="{{ data.phone if data else '' }}"></div>
+        <div class="col-md-4"><label class="form-label">WhatsApp</label><input type="text" name="whatsapp" class="form-control" value="{{ data.whatsapp if data else '' }}"></div>
+        <div class="col-md-4"><label class="form-label">Email</label><input type="email" name="email" class="form-control" value="{{ data.email if data else '' }}"></div>
+
+        <div class="col-md-8">
+          <label class="form-label">Sitio web</label>
+          <input type="url" name="website" class="form-control" value="{{ data.website if data else '' }}" placeholder="https://…">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Código Postal</label>
+          <input type="text" name="postal_code" class="form-control" value="{{ data.postal_code if data else '' }}">
+        </div>
+
+        <div class="col-12">
+          <label class="form-label">Dirección</label>
+          <input type="text" id="address" name="address" class="form-control" value="{{ (data.address if data else '') or '' }}" placeholder="Calle, colonia, ciudad…">
+          <div class="hint mt-1">Afina con el mapa: clic para colocar/arrastrar el pin.</div>
+        </div>
+
+        <div class="col-md-6"><label class="form-label">Ciudad</label><input type="text" name="city" class="form-control" value="{{ data.city if data else '' }}"></div>
+        <div class="col-md-6">
+          <label class="form-label">Estado</label>
+          <select name="state" class="form-select" required>
+            <option value="">Selecciona un estado</option>
+            {% set estados = ['Aguascalientes','Baja California','Baja California Sur','Campeche','Chiapas','Chihuahua','Ciudad de México','Coahuila','Colima','Durango','Estado de México','Guanajuato','Guerrero','Hidalgo','Jalisco','Michoacán','Morelos','Nayarit','Nuevo León','Oaxaca','Puebla','Querétaro','Quintana Roo','San Luis Potosí','Sinaloa','Sonora','Tabasco','Tamaulipas','Tlaxcala','Veracruz','Yucatán','Zacatecas'] %}
+            {% for estado in estados %}<option value="{{ estado }}" {% if data and data.state==estado %}selected{% endif %}>{{ estado }}</option>{% endfor %}
+          </select>
+        </div>
+
+        <div class="col-12">
+          <label class="form-label d-flex justify-content-between">Ubicación en el mapa <small class="hint m-0">Clic para colocar/ajustar</small></label>
+          <div id="map"></div>
+          <input type="hidden" id="lat" name="lat" value="{{ (data.lat if data else '') or '' }}">
+          <input type="hidden" id="lng" name="lng" value="{{ (data.lng if data else '') or '' }}">
+        </div>
+      </div>
+    </div>
+
+    <!-- OPERACIÓN -->
+    <div class="tab-pane fade" id="pane-operacion" role="tabpanel" aria-labelledby="tab-operacion">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Horario de atención</label>
+          <input type="text" name="operating_hours" class="form-control" value="{{ data.operating_hours if data else '' }}" placeholder="L–V 9:00–18:00, S 10:00–14:00">
+        </div>
+        <div class="col-md-6 d-flex align-items-end">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="delivery_available" id="delivery_available" {% if data and data.delivery_available %}checked{% endif %}>
+            <label class="form-check-label" for="delivery_available">Ofrecemos entrega/envíos</label>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Servicios ofrecidos</label>
+          <textarea id="servicesInput" name="services" rows="3" class="form-control" placeholder="Bordado, Enmarcado, Personalización… (separa por coma)">{{ data.services if data else '' }}</textarea>
+          <div class="hint mt-1">Se mostrarán como lista en la página pública.</div>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Métodos de pago</label>
+          <input id="paymentInput" type="text" name="payment_methods" class="form-control" value="{{ data.payment_methods if data else '' }}" placeholder="Efectivo, Tarjeta, Transferencia">
+          <div class="hint mt-1">Separa con comas. Ej: Efectivo, Tarjeta, Transferencia.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REDES -->
+    <div class="tab-pane fade" id="pane-social" role="tabpanel" aria-labelledby="tab-social">
+      <div class="row g-3">
+        <div class="col-md-4"><label class="form-label">Facebook</label><input type="url" name="facebook" class="form-control" value="{{ data.facebook if data else '' }}"></div>
+        <div class="col-md-4"><label class="form-label">Instagram</label><input type="url" name="instagram" class="form-control" value="{{ data.instagram if data else '' }}"></div>
+        <div class="col-md-4"><label class="form-label">TikTok</label><input type="url" name="tiktok" class="form-control" value="{{ data.tiktok if data else '' }}"></div>
+      </div>
+    </div>
+
+    <!-- BRANDING -->
+    <div class="tab-pane fade" id="pane-brand" role="tabpanel" aria-labelledby="tab-brand">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label">Color principal</label>
+          <div class="d-flex align-items-center gap-3">
+            <input type="color" id="brandColor" name="color" class="form-control form-control-color p-0" value="{{ data.color if data else '#0ea5e9' }}">
+            <div class="brand-pill flex-grow-1" style="height:10px;"></div>
+          </div>
+          <div class="hint mt-1">Afecta acentos, bordes activos y botón guardar.</div>
+        </div>
+
+        <div class="col-md-8">
+          <label class="form-label">Imagen principal (logo/portada)</label>
+          <input type="file" id="imageInput" name="image" class="form-control">
+          <div class="d-flex align-items-center gap-3 mt-2">
+            {% if data and data.image %}
+              <img id="imagePreview" src="{{ url_for('uploaded_file', filename=data.image) }}" class="rounded border" style="width:140px; height:140px; object-fit:cover;">
+            {% else %}
+              <img id="imagePreview" src="{{ url_for('static', filename='images/default_image.png') }}" class="rounded border" style="width:140px; height:140px; object-fit:cover;">
+            {% endif %}
+            <span class="hint">Vista previa</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TEMPLATE -->
+    <div class="tab-pane fade" id="pane-template" role="tabpanel" aria-labelledby="tab-template">
+      <div class="mb-2 fw-bold" style="color:var(--ink-900)">HTML por defecto (estilo)</div>
+      <p class="hint mb-3">Elige la apariencia pública. Se guardará como tu plantilla por defecto.</p>
+
+      <div class="tpl-grid">
+        {% for key, file in default_html_whitelist.items() %}
+          {% set nice = 'Clásico' if key=='classico' else 'Neo-Brutalista' if key=='brutal' else 'Dark' if key=='dark' else key|capitalize %}
+          <label class="tpl-card" data-key="{{ key }}">
+            <input type="radio" name="default_html" value="{{ key }}" {% if default_html_key == key %}checked{% endif %}>
+            <div class="dot"></div>
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <div class="fw-bold" style="color:var(--ink-900)">{{ nice }}</div>
+              <span class="text-muted small">{{ file }}</span>
+            </div>
+
+            <!-- Mini preview -->
+            <div class="tpl-preview tpl--{{ key }}">
+              <div class="ph-hero">
+                <div class="pill"></div>
+                <div>
+                  <div class="title" data-role="title">Mi Negocio</div>
+                  <div class="slogan" data-role="slogan">“Slogan aquí”</div>
+                </div>
+              </div>
+              <div class="body">
+                <div>
+                  <span class="chip" data-role="service1">Servicio 1</span>
+                  <span class="chip" data-role="service2">Servicio 2</span>
+                </div>
+                <a href="#" class="btn" data-role="cta">WhatsApp</a>
+              </div>
+            </div>
+          </label>
+        {% endfor %}
+      </div>
+
+      <small class="hint d-block mt-2">Tip: prueba temporalmente con <code>?tpl=brutal</code> en la URL.</small>
+    </div>
+  </div>
+
+  <div class="d-flex justify-content-end gap-2 mt-4">
+    <a href="{{ url_for('dashboard')}}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left-circle"></i> Regresar</a>
+    <button class="btn btn-success"><i class="bi bi-save2 me-1"></i> Guardar</button>
+  </div>
+</form>
+
+<div class="bottom-space"></div>
+
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-  // Valores iniciales
-  const latInput = document.getElementById('lat');
-  const lngInput = document.getElementById('lng');
-  const addrInput = document.getElementById('address');
+  // Actualiza acento en vivo
+  (function(){
+    const input = document.getElementById('brandColor');
+    if(!input) return;
+    const root = document.documentElement;
+    input.addEventListener('input', e=>{
+      root.style.setProperty('--brand', e.target.value || '#0ea5e9');
+      renderAllTplPreviews(); // refresca miniaturas
+    });
+  })();
 
-  // Centro por defecto (México)
-  const defaultLat = latInput.value ? parseFloat(latInput.value) : 23.6345;
-  const defaultLng = lngInput.value ? parseFloat(lngInput.value) : -102.5528;
-  const defaultZoom = latInput.value && lngInput.value ? 14 : 5;
+  // Preview imagen
+  (function(){
+    const file = document.getElementById('imageInput');
+    const img  = document.getElementById('imagePreview');
+    if(!file || !img) return;
+    file.addEventListener('change', ()=>{
+      const f = file.files?.[0]; if(!f) return;
+      img.src = URL.createObjectURL(f);
+    });
+  })();
 
-  // Crear mapa
-  const map = L.map('map').setView([defaultLat, defaultLng], defaultZoom);
+  // MAPA (Leaflet básico)
+  document.addEventListener('DOMContentLoaded', function () {
+    const latInput = document.getElementById('lat');
+    const lngInput = document.getElementById('lng');
 
-  // Capa de tiles (usa OSM pública; para producción pesada, usa un proveedor dedicado)
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution:
-      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-  }).addTo(map);
+    const defaultLat = latInput?.value ? parseFloat(latInput.value) : 23.6345;
+    const defaultLng = lngInput?.value ? parseFloat(lngInput.value) : -102.5528;
+    const defaultZoom = (latInput?.value && lngInput?.value) ? 14 : 5;
 
-  // Marcador (si hay coordenadas guardadas)
-  let marker = null;
-  function placeMarker(lat, lng) {
-    if (!marker) {
-      marker = L.marker([lat, lng], { draggable: true }).addTo(map);
-      marker.on('dragend', function(e) {
-        const { lat, lng } = e.target.getLatLng();
-        latInput.value = lat.toFixed(6);
-        lngInput.value = lng.toFixed(6);
-      });
-    } else {
-      marker.setLatLng([lat, lng]);
-    }
-    latInput.value = lat.toFixed(6);
-    lngInput.value = lng.toFixed(6);
-  }
+    const mapEl = document.getElementById('map');
+    if(!mapEl) return;
+    const map = L.map('map').setView([defaultLat, defaultLng], defaultZoom);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution:'&copy; OpenStreetMap' }).addTo(map);
 
-  if (latInput.value && lngInput.value) {
-    placeMarker(parseFloat(latInput.value), parseFloat(lngInput.value));
-  }
-
-  // Click en mapa → colocar/ajustar pin
-  map.on('click', function(e) {
-    placeMarker(e.latlng.lat, e.latlng.lng);
-  });
-
-  // Geocoder (Nominatim)
-  const geocoder = L.Control.geocoder({
-    defaultMarkGeocode: false
-  })
-  .on('markgeocode', function(result) {
-    const center = result.geocode.center;
-    map.setView(center, 16);
-    placeMarker(center.lat, center.lng);
-    // llena address si viene algo útil
-    if (result.geocode && result.geocode.name) {
-      addrInput.value = result.geocode.name;
-    }
-  })
-  .addTo(map);
-
-  // Si el usuario escribe dirección y presiona Enter, buscarla
-  addrInput && addrInput.addEventListener('keydown', function(e){
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      if (addrInput.value.trim().length > 0 && geocoder && geocoder.options.geocoder) {
-        geocoder.options.geocoder.geocode(addrInput.value, function(results) {
-          if (results && results.length) {
-            const r = results[0];
-            map.setView(r.center, 16);
-            placeMarker(r.center.lat, r.center.lng);
-          }
+    let marker = null;
+    function placeMarker(lat, lng) {
+      if (!marker) {
+        marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+        marker.on('dragend', function(e) {
+          const { lat, lng } = e.target.getLatLng();
+          if(latInput) latInput.value = lat.toFixed(6);
+          if(lngInput) lngInput.value = lng.toFixed(6);
         });
+      } else {
+        marker.setLatLng([lat, lng]);
       }
+      if(latInput) latInput.value = lat.toFixed(6);
+      if(lngInput) lngInput.value = lng.toFixed(6);
     }
-  });
-});
-</script>
 
+    if (latInput?.value && lngInput?.value) placeMarker(parseFloat(latInput.value), parseFloat(lngInput.value));
+    map.on('click', function(e) { placeMarker(e.latlng.lat, e.latlng.lng); });
+  });
+
+  // ===== Tema (claro/oscuro) con persistencia =====
+  (function(){
+    const root = document.documentElement;
+    const btn  = document.getElementById('themeToggle');
+    const saved = localStorage.getItem('admin_theme') || 'light';
+    if(saved === 'dark'){ root.setAttribute('data-theme','dark'); root.style.setProperty('--invert','1'); }
+    btn?.addEventListener('click', ()=>{
+      const nowDark = root.getAttribute('data-theme') !== 'dark';
+      root.setAttribute('data-theme', nowDark ? 'dark' : 'light');
+      root.style.setProperty('--invert', nowDark ? '1' : '0');
+      localStorage.setItem('admin_theme', nowDark ? 'dark' : 'light');
+      renderAllTplPreviews(); // miniaturas respetan tema
+    });
+  })();
+
+  // ===== MINI PREVIEW DE TEMPLATES EN TARJETAS =====
+  function readVal(name){
+    const el = document.querySelector(`[name="${name}"]`);
+    return el ? (el.type==='checkbox' ? el.checked : (el.value||'')).toString().trim() : '';
+  }
+  function readList(name){
+    return (readVal(name)||'').split(/[,|\n]/g).map(s=>s.trim()).filter(Boolean);
+  }
+
+  function renderTplPreview(card){
+    const key = card.getAttribute('data-key'); // classico | brutal | dark | ...
+    const preview = card.querySelector('.tpl-preview'); if(!preview) return;
+
+    // datos actuales
+    const name   = readVal('business_name') || 'Mi Negocio';
+    const slogan = readVal('slogan');
+    const services = readList('services');
+    const wapp   = readVal('whatsapp');
+
+    // aplica nombre/slogan
+    preview.classList.toggle('tpl--dark', key==='dark');
+    preview.querySelector('[data-role="title"]').textContent = name;
+    preview.querySelector('[data-role="slogan"]').textContent = slogan ? `“${slogan}”` : ' ';
+
+    // chips
+    const body = preview.querySelector('.body');
+    const chipsWrap = document.createElement('div');
+    chipsWrap.innerHTML = (services.slice(0,2).map(s=>`<span class="chip">${s}</span>`).join('')) || `
+      <span class="chip">Servicio 1</span> <span class="chip">Servicio 2</span>
+    `;
+
+    // CTA
+    const cta = document.createElement('a');
+    cta.className = 'btn';
+    cta.href = wapp ? `https://wa.me/${wapp.replace(/\s/g,'')}` : '#';
+    cta.target = '_blank';
+    cta.textContent = wapp ? 'WhatsApp' : 'Ver más';
+
+    // reset body
+    body.innerHTML = '';
+    body.appendChild(chipsWrap);
+    body.appendChild(cta);
+
+    // estilos específicos por key
+    preview.classList.remove('tpl--classico','tpl--brutal','tpl--dark');
+    preview.classList.add(`tpl--${key}`);
+  }
+
+  function renderAllTplPreviews(){
+    document.querySelectorAll('.tpl-card').forEach(renderTplPreview);
+  }
+
+  // Render inicial
+  document.addEventListener('DOMContentLoaded', renderAllTplPreviews);
+
+  // Re-render al escribir/cambiar
+  ['business_name','slogan','services','whatsapp','color','delivery_available']
+    .forEach(n=>{
+      const el = document.querySelector(`[name="${n}"]`);
+      if(!el) return;
+      const ev = (el.tagName==='SELECT' || el.type==='checkbox') ? 'change':'input';
+      el.addEventListener(ev, renderAllTplPreviews);
+    });
+
+</script>
 {% endblock %}

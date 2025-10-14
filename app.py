@@ -14,6 +14,7 @@ import os
 import re
 from dotenv import load_dotenv
 import requests
+from jinja2 import TemplateNotFound
 
 load_dotenv()
 RECAPTCHA_SECRET_KEY = os.getenv("RECAPTCHA_SECRET_KEY")
@@ -1127,12 +1128,19 @@ def create_page():
 
     return render_template('create_page.html')
 
+
+DEFAULT_HTML_TEMPLATES = {
+    "base": "detalle_negocio.html",
+    "classico": "public/page_core.html",
+    "brutal":  "public/page_public_crafts.html",
+    "restaurante": "public/restaurant.html",
+}
+
 @app.route('/manage_page', methods=['GET', 'POST'])
 @require_lifetime
 @login_required
 @roles_required('admin')
 def manage_page():
-    # (roles_required ya valida admin, este if extra es opcional)
     if current_user.role != 'admin':
         flash('Acceso denegado.')
         return redirect(url_for('dashboard'))
@@ -1147,7 +1155,6 @@ def manage_page():
         flash('No tienes una página asignada')
         return redirect(url_for('dashboard'))
 
-    # page_id suele ser ObjectId; si lo tuvieras como string, usa ObjectId(page_id)
     data = mongo.db.page_data.find_one({'_id': page_id})
 
     if request.method == 'POST':
@@ -1159,37 +1166,39 @@ def manage_page():
         founding_date = request.form['founding_date']
 
         # --- Contacto y ubicación
-        phone        = request.form['phone']
-        whatsapp     = request.form['whatsapp']
-        email        = request.form['email']
-        website      = request.form['website']
-        address      = request.form.get('address')
-        postal_code  = request.form['postal_code']
-        city         = request.form['city']
-        state        = request.form['state']
-        color        = request.form['color']
-        lat_raw      = request.form.get('lat')
-        lng_raw      = request.form.get('lng')
+        phone       = request.form['phone']
+        whatsapp    = request.form['whatsapp']
+        email       = request.form['email']
+        website     = request.form['website']
+        address     = request.form.get('address')
+        postal_code = request.form['postal_code']
+        city        = request.form['city']
+        state       = request.form['state']
+        color       = request.form['color']
+        lat_raw     = request.form.get('lat')
+        lng_raw     = request.form.get('lng')
 
         def _safe_float(v):
-            try:
-                return float(v)
-            except:
-                return None
-
+            try: return float(v)
+            except: return None
         lat = _safe_float(lat_raw) if lat_raw else (data.get('lat') if data else None)
         lng = _safe_float(lng_raw) if lng_raw else (data.get('lng') if data else None)
 
         # --- Redes sociales
-        facebook = request.form['facebook']
+        facebook  = request.form['facebook']
         instagram = request.form['instagram']
-        tiktok = request.form['tiktok']
+        tiktok    = request.form['tiktok']
 
         # --- Operación y servicios
-        operating_hours  = request.form['operating_hours']
-        services         = request.form['services']
-        payment_methods  = request.form['payment_methods']
+        operating_hours    = request.form['operating_hours']
+        services           = request.form['services']
+        payment_methods    = request.form['payment_methods']
         delivery_available = 'delivery_available' in request.form
+
+        # --- NUEVO: HTML por defecto
+        chosen_default_html = request.form.get('default_html') or 'classico'
+        if chosen_default_html not in DEFAULT_HTML_TEMPLATES:
+            chosen_default_html = 'classico'  # fallback seguro
 
         # --- Imagen (opcional)
         image = request.files.get('image')
@@ -1209,7 +1218,6 @@ def manage_page():
 
             image_path = f"{slug_empresa}/{today}/{final_filename}"
 
-        # --- Armar payload (sin google_maps y sin keys duplicadas)
         new_data = {
             'business_name':  business_name,
             'description':    description,
@@ -1234,39 +1242,52 @@ def manage_page():
             'services':        services,
             'payment_methods': payment_methods,
             'delivery_available': delivery_available,
-            'image':            image_path
+            'image':            image_path,
+            'default_html':     chosen_default_html  # 👈 se guarda solo la clave
         }
 
         if data:
             mongo.db.page_data.update_one({'_id': page_id}, {'$set': new_data})
         else:
-            # si no existía, asegúrate de guardar _id=page_id si es tu modelo
             new_data['_id'] = page_id
             mongo.db.page_data.insert_one(new_data)
 
         flash('Perfil del negocio actualizado exitosamente.')
         return redirect(url_for('dashboard'))
 
-    return render_template('manage_page.html', data=data)
+    # valor seleccionado (si no hay, usa 'classico')
+    selected_default_html = (data or {}).get('default_html', 'classico')
+
+    return render_template(
+        'manage_page.html',
+        data=data,
+        default_html_key=selected_default_html,
+        default_html_whitelist=DEFAULT_HTML_TEMPLATES
+    )
 
 @app.route('/negocio/<nombre>', methods=['GET', 'POST'])
 def detalle_negocio(nombre):
     negocio = mongo.db.page_data.find_one({'business_name': nombre})
-    negocios = mongo.db.page_data.find()
+    negocios = mongo.db.page_data.find()  # si lo usas en sidebars, etc.
 
     if not negocio:
         flash('Negocio no encontrado.')
         return redirect(url_for('index'))
 
-    posts = list(mongo.db.posts.find({'page_id': negocio['_id']}).limit(3))
-    avisos = list(mongo.db.avisos.find({'page_id': negocio['_id']}))
+    # Colecciones asociadas
+    posts     = list(mongo.db.posts.find({'page_id': negocio['_id']}).limit(3))
+    avisos    = list(mongo.db.avisos.find({'page_id': negocio['_id']}))
     productos = list(mongo.db.productos.find({'page_id': negocio['_id']}))
-    reseñas = list(mongo.db.reseñas.find({'page_id': negocio['_id']}))
+    reseñas   = list(mongo.db.reseñas.find({'page_id': negocio['_id']}))
 
+    # Alta de reseña (POST)
     if request.method == 'POST':
         nombre_usuario = request.form.get('nombre')
-        comentario = request.form.get('comentario')
-        estrellas = int(request.form.get('estrellas', 0))
+        comentario     = request.form.get('comentario')
+        try:
+            estrellas = int(request.form.get('estrellas', 0))
+        except (TypeError, ValueError):
+            estrellas = 0
 
         if nombre_usuario and comentario and estrellas:
             mongo.db.reseñas.insert_one({
@@ -1279,17 +1300,38 @@ def detalle_negocio(nombre):
             flash("Gracias por tu reseña 🙌")
             return redirect(url_for('detalle_negocio', nombre=nombre))
 
-    return render_template(
-        'detalle_negocio.html',
+    # ---- Normalizar a listas para evitar usar filtros no disponibles en Jinja ----
+    def _to_list(val):
+        """Acepta list o string con comas y devuelve lista limpia de strings."""
+        if isinstance(val, list):
+            return [str(x).strip() for x in val if str(x).strip()]
+        if isinstance(val, str):
+            return [x.strip() for x in val.split(',') if x.strip()]
+        return []
+
+    services_list = _to_list(negocio.get('services', ''))
+    pm_list       = _to_list(negocio.get('payment_methods', ''))
+
+    # ===== Elegir plantilla por default_html o override via ?tpl= =====
+    tpl_key = request.args.get('tpl') or negocio.get('default_html') or 'classico'
+    template_name = DEFAULT_HTML_TEMPLATES.get(tpl_key, DEFAULT_HTML_TEMPLATES['classico'])
+
+    ctx = dict(
         page=negocio,
         negocios=negocios,
         posts=posts,
         avisos=avisos,
         productos=productos,
-        reseñas=reseñas
+        reseñas=reseñas,
+        services_list=services_list,   # <-- para chips
+        pm_list=pm_list                # <-- para chips
     )
 
-
+    try:
+        return render_template(template_name, **ctx)
+    except TemplateNotFound:
+        # Fallback duro
+        return render_template(DEFAULT_HTML_TEMPLATES['classico'], **ctx)
 
 @app.route('/negocios')
 def lista_negocios():

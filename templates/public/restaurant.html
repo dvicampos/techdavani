@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Meta SEO -->
+  <title>{{ page.get('business_name','Restaurante') }}</title>
+  <meta name="description" content="{{ page.get('slogan') or page.get('description','')[:160] }}">
+  <meta name="keywords" content="{{ page.get('category','Restaurante') }}, comida, menú, reservaciones">
+  <meta name="author" content="{{ page.get('business_name','') }}">
+
+  <!-- OG / Twitter -->
+  <meta property="og:title" content="{{ page.get('business_name','Restaurante') }}">
+  <meta property="og:description" content="{{ page.get('slogan') or page.get('description','')[:200] }}">
+  <meta property="og:image" content="{{ url_for('static', filename=page.get('image') or 'images/default.png', _external=True) }}">
+  <meta property="og:url" content="{{ request.url }}">
+  <meta property="og:type" content="restaurant">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <!-- Favicon / CSS -->
+  <link rel="icon" href="{{ url_for('static', filename='images/logo.jpg') }}" type="image/png">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+  <style>
+    :root{
+      --brand: {{ "'" ~ (page.get('color') or '#c2410c') ~ "'" }};
+      --ink-900:#0f172a; --ink-700:#334155; --ink-500:#64748b;
+      --line:#e5e7eb; --card:#ffffff; --bg:#fafafa;
+      --radius:14px;
+      --shadow:0 12px 28px rgba(2,6,23,.06);
+    }
+    @media (prefers-color-scheme: dark){
+      :root{ --ink-900:#e5e7eb; --ink-700:#cbd5e1; --ink-500:#94a3b8; --bg:#0b0f14; --card:#0f141b; --line:#1f2937; }
+    }
+
+    html{scroll-behavior:smooth;}
+    body{font-family: ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial; background:var(--bg); color:var(--ink-900);}
+
+    /* NAV */
+    .navbar{ background: linear-gradient(90deg, var(--brand), #000); }
+    .navbar .nav-link{ color:#ffffffcc; font-weight:600; }
+    .navbar .nav-link:hover, .navbar .nav-link.active{ color:#fff; }
+
+    /* HERO */
+    .hero{
+      background: radial-gradient(1000px 400px at -10% -20%, color-mix(in oklab, var(--brand) 25%, #fff 75%) 0%, transparent 55%),
+                  linear-gradient(180deg,#fff 0%, #f7fafc 100%);
+      border-bottom:1px solid var(--line);
+    }
+    .badge-pill{ background: var(--brand); height:10px; width:110px; border-radius:999px; display:inline-block; }
+    .hero-avatar{
+      inline-size:min(220px,45vw);
+      block-size:min(220px,45vw);
+      object-fit:cover;
+      border-radius:999px;
+      border:3px solid #fff;
+      box-shadow:0 10px 28px rgba(2,6,23,.15);
+    }
+
+    /* UTIL */
+    .section-title{ font-weight:800; letter-spacing:.2px; }
+    .card-soft{ background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); }
+    .chip{ display:inline-block; padding:.25rem .6rem; border:1px solid var(--line); border-radius:999px; font-weight:600; color:var(--ink-700); font-size:.85rem; }
+
+    .btn-brand{ background:var(--brand)!important; border-color:var(--brand)!important; color:#fff!important; font-weight:700; }
+    .btn-brand:hover{ filter:brightness(.96); color:#fff; }
+    .btn-brand-outline{ border-color:var(--brand)!important; color:var(--brand)!important; }
+    .btn-brand-outline:hover{ background:var(--brand)!important; color:#fff!important; }
+
+    /* MENÚ */
+    .menu-item{ display:flex; gap:12px; align-items:flex-start; padding:12px; border-bottom:1px dashed var(--line);}
+    .menu-item:last-child{ border-bottom:0; }
+    .menu-thumb{ width:84px; height:84px; border-radius:12px; object-fit:cover; border:1px solid var(--line); background:#fff; }
+    .menu-title{ font-weight:800; }
+    .menu-price{ font-weight:800; color:var(--brand); }
+
+    /* AVISOS */
+    .aviso-bar{ background: linear-gradient(90deg, var(--brand), #000); color:#fff; }
+    .aviso-pill{ background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.25); padding:.35rem .75rem; border-radius:999px; }
+
+    /* MAPA */
+    #map{ height: 320px; border-radius:14px; overflow:hidden; box-shadow:0 8px 22px rgba(2,6,23,.08); border:1px solid var(--line); }
+
+    /* BLOGS (posts) */
+    .post-card img{
+      width:100%; object-fit:cover;
+      aspect-ratio: 16 / 9;
+    }
+    @supports not (aspect-ratio: 16 / 9){
+      .post-card img{ height: 180px; }
+    }
+    .post-btn{ margin-top:auto; }
+
+    /* RESEÑAS */
+    .star{ color:#fbbf24; }
+
+    /* Floating WhatsApp */
+    .floating-wa{
+      position: fixed; bottom: 18px; right: 18px; z-index: 1050;
+      background:#25D366; color:#fff; border-radius:999px; padding:.65rem .85rem; box-shadow:0 10px 30px rgba(37,211,102,.35);
+    }
+    .floating-wa:hover{ color:#fff; filter:brightness(.95); }
+
+    footer{ background: linear-gradient(90deg, var(--brand), #000); color:#fff; }
+
+    /* ====== RESPONSIVE TUNING ====== */
+    @media (max-width: 991.98px){
+      .menu-thumb{ width:72px; height:72px; }
+      .menu-item{ padding:10px; }
+    }
+    @media (max-width: 767.98px){
+      .navbar-brand{ font-size:1.05rem; }
+      .chip{ font-size:.8rem; }
+      .section-title{ font-size:1.25rem; }
+      .btn-brand, .btn-brand-outline{ width:100%; }
+      .post-btn .btn{ width:100%; }       /* Botón de blogs full-width en móvil */
+      .menu-title{ font-size:1rem; }
+      .menu-price{ font-size:1rem; }
+    }
+    @media (min-width: 1200px){
+      .container{ max-width: 1120px; }
+    }
+  </style>
+
+  <!-- JSON-LD -->
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"Restaurant",
+    "name": {{ page.get('business_name','"Restaurante"')|tojson }},
+    "description": {{ (page.get('description') or page.get('slogan') or '')|tojson }},
+    "servesCuisine": {{ (page.get('category') or 'Comida')|tojson }},
+    "image": {{ url_for('static', filename=page.get('image') or 'images/default.png', _external=True)|tojson }},
+    "telephone": {{ (page.get('phone') or '')|tojson }},
+    "address": {
+      "@type":"PostalAddress",
+      "streetAddress": {{ (page.get('address') or '')|tojson }},
+      "addressLocality": {{ (page.get('city') or '')|tojson }},
+      "addressRegion": {{ (page.get('state') or '')|tojson }},
+      "postalCode": {{ (page.get('postal_code') or '')|tojson }},
+      "addressCountry": "MX"
+    },
+    "url": {{ request.url|tojson }}
+  }
+  </script>
+</head>
+<body data-bs-spy="scroll" data-bs-target="#mainNavbar" data-bs-offset="80" tabindex="0">
+
+  <!-- NAV -->
+  <nav id="mainNavbar" class="navbar navbar-expand-lg navbar-dark fixed-top shadow-sm">
+    <div class="container">
+      <a class="navbar-brand fw-bold" href="/">{{ page.get('business_name','Restaurante') }}</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navcollapse" aria-label="Abrir navegación">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div id="navcollapse" class="collapse navbar-collapse">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item"><a class="nav-link" href="#menu">Menú</a></li>
+          <li class="nav-item"><a class="nav-link" href="#reservas">Reservas</a></li>
+          <li class="nav-item"><a class="nav-link" href="#info">Información</a></li>
+          <li class="nav-item"><a class="nav-link" href="#ubicacion">Ubicación</a></li>
+          <li class="nav-item"><a class="nav-link" href="#reseñas">Reseñas</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <header class="hero pt-6" style="padding-top:92px;">
+    <div class="container py-4 py-md-5">
+      <div class="row align-items-center g-4">
+        <div class="col-md-4 text-center">
+          {% if page.get('image') %}
+            <img loading="lazy" src="{{ url_for('uploaded_file', filename=page['image']) }}" class="hero-avatar" alt="Logo {{ page.get('business_name','') }}">
+          {% else %}
+            <img loading="lazy" src="{{ url_for('static', filename='images/default_image.png') }}" class="hero-avatar" alt="Logo del negocio">
+          {% endif %}
+        </div>
+        <div class="col-md-8">
+          <span class="badge-pill mb-2"></span>
+          <h1 class="display-6 fw-extrabold mb-2">{{ page.get('business_name','Restaurante') }}</h1>
+          {% if page.get('slogan') %}<p class="lead text-muted fst-italic">{{ page['slogan'] }}</p>{% endif %}
+          <div class="d-flex flex-wrap gap-2 mt-3">
+            {% for tag in (page.get('services','') or '').split(',') if tag.strip() %}
+              <span class="chip">{{ tag.strip() }}</span>
+            {% endfor %}
+          </div>
+          <div class="mt-3 d-flex flex-wrap gap-2">
+            {% if page.get('whatsapp') %}
+              <a class="btn btn-brand" href="https://wa.me/{{ page.whatsapp | replace(' ','') }}" target="_blank" rel="noopener"><i class="bi bi-whatsapp me-1"></i>Reservar por WhatsApp</a>
+            {% endif %}
+            {% if page.get('phone') %}
+              <a class="btn btn-brand-outline" href="tel:{{ page.phone }}"><i class="bi bi-telephone me-1"></i>Llamar</a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- AVISOS -->
+  <div class="aviso-bar py-2">
+    <div class="container">
+      <div id="avisosCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="4500">
+        <div class="carousel-inner text-center">
+          {% if avisos and avisos|length>0 %}
+            {% for a in avisos %}
+            <div class="carousel-item {% if loop.first %}active{% endif %}">
+              <span class="aviso-pill">
+                <i class="bi bi-megaphone me-2"></i><strong>{{ a.title }}</strong> — {{ a.content }}
+                {% if a.date %}<small class="ms-2">{{ a.date.strftime("%d/%m/%Y") }}</small>{% endif %}
+              </span>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="carousel-item active">
+              <span class="aviso-pill"><i class="bi bi-megaphone me-2"></i>¡Bienvenid@s! Prueba nuestras especialidades del chef.</span>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MENÚ -->
+  <section id="menu" class="container my-5">
+    <div class="d-flex align-items-end justify-content-between mb-3">
+      <h2 class="section-title m-0">🍽️ Menú</h2>
+      {% if page.get('whatsapp') %}
+      <a class="btn btn-brand btn-sm d-none d-md-inline-flex" href="#reservas"><i class="bi bi-calendar-check me-1"></i>Reservar</a>
+      {% endif %}
+    </div>
+
+    {% if productos and productos|length>0 %}
+      {# Agrupar por categoría #}
+      {% set categorias = {} %}
+      {% for p in productos %}
+        {% set cat = (p.get('category') or 'Platillos') %}
+        {% if cat not in categorias %}{% set _ = categorias.update({cat: []}) %}{% endif %}
+        {% set _ = categorias[cat].append(p) %}
+      {% endfor %}
+
+      <div class="row g-4">
+        {% for categoria, items in categorias.items() %}
+        <!-- xs:12 / md:6 / xl:4 (mejor densidad en grandes pantallas) -->
+        <div class="col-12 col-md-6 col-xl-4">
+          <div class="card-soft p-3 h-100">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h5 class="m-0">{{ categoria }}</h5>
+            </div>
+
+            {% for producto in items %}
+            <div class="menu-item">
+              {% if producto.get('image') %}
+                <img class="menu-thumb" loading="lazy" src="{{ url_for('uploaded_file', filename=producto.image) }}" alt="{{ producto.title }}">
+              {% else %}
+                <img class="menu-thumb" loading="lazy" src="{{ url_for('static', filename='img/default-product.png') }}" alt="Imagen">
+              {% endif %}
+
+              <div class="flex-grow-1">
+                <div class="d-flex justify-content-between align-items-start gap-2">
+                  <div>
+                    <div class="menu-title">{{ producto.title }}</div>
+                    {% if producto.get('description') %}<div class="text-muted small">{{ producto.description }}</div>{% endif %}
+                  </div>
+                  {% if producto.get('show_price') %}
+                    <div class="menu-price ms-2 text-nowrap">${{ "%.2f"|format(producto.price) }}</div>
+                  {% endif %}
+                </div>
+                {% if producto.get('tags') %}
+                  <div class="mt-1">
+                    {% for t in producto.tags.split(',') if t.strip() %}
+                      <span class="chip me-1">{{ t.strip() }}</span>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="alert alert-warning">Aún no hay productos cargados.</div>
+    {% endif %}
+  </section>
+
+  <!-- RESERVAS -->
+  <section id="reservas" class="container my-5">
+    <h2 class="section-title mb-3">📆 Reservas</h2>
+    <div class="card-soft p-3 p-md-4">
+      {% if page.get('whatsapp') %}
+      <form id="reservaForm" class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label">Fecha</label>
+          <input type="date" class="form-control" id="res_date" required>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Hora</label>
+          <input type="time" class="form-control" id="res_time" required>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Personas</label>
+          <input type="number" class="form-control" id="res_people" min="1" value="2" required>
+        </div>
+        <div class="col-12">
+          <label class="form-label">Notas (opcional)</label>
+          <input type="text" class="form-control" id="res_notes" placeholder="Ej. mesa cerca de ventana, aniversario…">
+        </div>
+        <div class="col-12">
+          <button type="submit" class="btn btn-brand w-100 w-md-auto"><i class="bi bi-whatsapp me-1"></i> Solicitar por WhatsApp</button>
+        </div>
+      </form>
+      {% else %}
+        <div class="alert alert-info m-0">Agrega tu número de WhatsApp en el panel para activar reservas.</div>
+      {% endif %}
+    </div>
+  </section>
+
+  <!-- INFORMACIÓN + UBICACIÓN -->
+  <section id="info" class="container my-5">
+    <h2 class="section-title mb-3">📝 Información</h2>
+    <div class="row g-4">
+      <div class="col-md-6">
+        <div class="card-soft h-100 p-3">
+          <p><i class="fa-solid fa-align-left me-2 text-primary"></i><strong>Quiénes somos:</strong> {{ page.get('description','') }}</p>
+          <p><i class="fa-solid fa-utensils me-2 text-primary"></i><strong>Cocina:</strong> {{ page.get('category','Restaurante') }}</p>
+          {% if page.get('operating_hours') %}
+          <p><i class="fa-regular fa-clock me-2 text-primary"></i><strong>Horario:</strong> {{ page['operating_hours'] }}</p>
+          {% endif %}
+          {% if page.get('payment_methods') %}
+          <p><i class="fa-regular fa-credit-card me-2 text-primary"></i><strong>Pagos:</strong> {{ page['payment_methods'] }}</p>
+          {% endif %}
+          {% if page.get('delivery_available') %}
+          <p><i class="fa-solid fa-truck me-2 text-primary"></i><strong>Entrega a domicilio:</strong> Sí</p>
+          {% endif %}
+        </div>
+      </div>
+      <div class="col-md-6" id="ubicacion">
+        <div class="card-soft h-100 p-3">
+          <p class="mb-1"><i class="fa-solid fa-location-dot me-2 text-primary"></i><strong>Dirección</strong></p>
+          <p class="text-muted mb-2">{{ page.get('address','') }}, {{ page.get('city','') }}, {{ page.get('state','') }} {{ page.get('postal_code','') }}</p>
+          {% set has_coords = page.get('lat') is not none and page.get('lng') is not none %}
+          {% if has_coords %}
+            <div id="map" class="mb-2"></div>
+            <div class="d-flex gap-2 flex-wrap">
+              <a class="btn btn-brand-outline btn-sm" target="_blank" href="https://www.google.com/maps/dir/?api=1&destination={{ page.lat }},{{ page.lng }}"><i class="bi bi-geo-alt me-1"></i>Cómo llegar</a>
+            </div>
+          {% else %}
+            <div class="alert alert-warning">Aún no hay coordenadas guardadas.</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PUBLICACIONES -->
+  {% if posts and posts|length>0 %}
+  <section class="container my-5">
+    <h2 class="section-title mb-3">📰 Novedades</h2>
+    <div class="row g-3">
+      {% for post in posts[:3] %}
+      <div class="col-12 col-sm-6 col-lg-4 d-flex">
+        <article class="card-soft post-card d-flex flex-column w-100">
+          {% if post.get('cabecera') %}
+            <img loading="lazy" src="{{ url_for('uploaded_file', filename=post.cabecera) }}" alt="Imagen de {{ post.title }}">
+          {% endif %}
+          <div class="p-3 d-flex flex-column flex-grow-1">
+            <h6 class="fw-bold mb-1">{{ post.title }}</h6>
+            <p class="text-muted small mb-3">{{ post.content[:110] }}...</p>
+            <div class="post-btn mt-auto">
+              <a href="{{ url_for('ver_post', post_id=post._id) }}" class="btn btn-brand w-100">
+                Leer más
+              </a>
+            </div>
+          </div>
+        </article>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- RESEÑAS -->
+  <section id="reseñas" class="container my-5">
+    <h2 class="section-title mb-3">⭐ Reseñas</h2>
+    <div class="card-soft p-3 p-md-4 mb-4">
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          <div class="alert alert-info mb-3">
+            {% for message in messages %}<div>{{ message }}</div>{% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+      <form method="POST" class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Tu nombre</label>
+          <input type="text" name="nombre" class="form-control" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Calificación</label>
+          <div id="starRating" class="fs-4">
+            {% for i in range(1,6) %}<i class="bi bi-star-fill text-secondary me-1 star-icon" data-value="{{ i }}"></i>{% endfor %}
+          </div>
+          <input type="hidden" name="estrellas" id="estrellas" value="0" required>
+        </div>
+        <div class="col-12">
+          <label class="form-label">Comentario</label>
+          <textarea name="comentario" class="form-control" rows="3" required></textarea>
+        </div>
+        <div class="col-12"><button class="btn btn-brand w-100 w-md-auto">Enviar reseña</button></div>
+      </form>
+    </div>
+
+    {% if reseñas and reseñas|length>0 %}
+    <div class="row g-3">
+      {% for r in reseñas %}
+      <div class="col-12 col-md-6">
+        <div class="card-soft h-100 p-3">
+          <div class="d-flex justify-content-between align-items-center">
+            <h6 class="m-0">{{ r.nombre }}</h6>
+            <div>
+              {% for i in range(1,6) %}
+                {% if i <= r.estrellas %}<i class="bi bi-star-fill star"></i>{% else %}<i class="bi bi-star text-secondary"></i>{% endif %}
+              {% endfor %}
+            </div>
+          </div>
+          <p class="mt-2 mb-1">{{ r.comentario }}</p>
+          <small class="text-muted">{{ r.fecha.strftime('%d/%m/%Y') }}</small>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+      <p class="text-muted">Aún no hay reseñas.</p>
+    {% endif %}
+  </section>
+
+  <!-- WhatsApp flotante -->
+  {% if page.get('whatsapp') %}
+  <a class="floating-wa" href="https://wa.me/{{ page.whatsapp | replace(' ','') }}" target="_blank" aria-label="WhatsApp">
+    <i class="bi bi-whatsapp fs-4"></i>
+  </a>
+  {% endif %}
+
+  <!-- FOOTER -->
+  <footer class="mt-5 py-4">
+    <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center">
+      <div class="mb-2 mb-md-0">© {{ now().year if now else 2025 }} <strong>{{ page.get('business_name','Restaurante') }}</strong></div>
+      <div class="d-flex gap-3">
+        {% if page.get('facebook') %}<a class="text-white" href="{{ page.facebook }}" target="_blank" aria-label="Facebook"><i class="bi bi-facebook"></i></a>{% endif %}
+        {% if page.get('instagram') %}<a class="text-white" href="{{ page.instagram }}" target="_blank" aria-label="Instagram"><i class="bi bi-instagram"></i></a>{% endif %}
+        {% if page.get('tiktok') %}<a class="text-white" href="{{ page.tiktok }}" target="_blank" aria-label="TikTok"><i class="bi bi-tiktok"></i></a>{% endif %}
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+  <script>
+  // Reseñas: estrellas
+  (function(){
+    const stars = document.querySelectorAll('.star-icon');
+    const input = document.getElementById('estrellas');
+    stars.forEach(s=>{
+      s.addEventListener('click', ()=>{
+        const v = parseInt(s.dataset.value);
+        input.value = v;
+        stars.forEach(i=>{
+          const n = parseInt(i.dataset.value);
+          i.classList.remove('text-warning','text-secondary');
+          i.classList.add(n<=v ? 'text-warning' : 'text-secondary');
+        });
+      });
+    });
+  })();
+
+  // Reserva por WhatsApp
+  (function(){
+    const form = document.getElementById('reservaForm');
+    if(!form) return;
+    form.addEventListener('submit', (e)=>{
+      e.preventDefault();
+      const d = document.getElementById('res_date').value;
+      const t = document.getElementById('res_time').value;
+      const p = document.getElementById('res_people').value || '2';
+      const notes = document.getElementById('res_notes').value || '';
+      const to = "{{ (page.get('whatsapp') or '') | replace(' ','') }}";
+      if(!to){ alert('No hay WhatsApp configurado.'); return; }
+      let msg = `Hola, quiero reservar mesa:%0A- Fecha: ${d}%0A- Hora: ${t}%0A- Personas: ${p}`;
+      if(notes) msg += `%0A- Notas: ${encodeURIComponent(notes)}`;
+      const url = `https://wa.me/${to}?text=${msg}`;
+      window.open(url, '_blank');
+    });
+  })();
+
+  // Mapa (Leaflet)
+  (function(){
+    const lat = {{ page.get('lat') if page.get('lat') is not none else 'null' }};
+    const lng = {{ page.get('lng') if page.get('lng') is not none else 'null' }};
+    if(lat!==null && lng!==null){
+      const map = L.map('map', {scrollWheelZoom:false}).setView([lat,lng], 16);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19, attribution:'&copy; OpenStreetMap'}).addTo(map);
+      const marker = L.marker([lat,lng]).addTo(map).bindPopup({{ page.get('business_name','"Restaurante"')|tojson }});
+      setTimeout(()=>map.invalidateSize(), 300);
+    }
+  })();
+  </script>
+</body>
+</html>
