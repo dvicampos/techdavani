@@ -123,6 +123,49 @@
   }
   :root[data-theme="dark"] .tpl-card{ background:#0f141b; }
   :root[data-theme="dark"] .btn-outline-secondary:hover{ background:#111827; }
+  /* Reemplaza tu .tpl-grid actual por esto */
+.tpl-grid{
+  display:grid;
+  grid-template-columns: 1fr;        /* móvil: 1 columna (100%) */
+  gap:16px;
+}
+
+/* >= 992px (desktop): 2 columnas (50% cada una) */
+@media (min-width: 992px){
+  .tpl-grid{
+    grid-template-columns: 1fr 1fr;
+    gap:20px;
+  }
+}
+/* Tarjeta */
+.tpl-card{
+  position:relative; background:#fff; border:1px solid var(--line);
+  border-radius:12px; padding:14px; transition:.12s; cursor:pointer;
+}
+
+/* Contenedor del iframe: ancho siempre 100%, alto adaptable */
+.tpl-preview{
+  position:relative;
+  width:100%;
+  border:1px solid var(--line);
+  border-radius:10px; overflow:hidden; background:#fff;
+  /* alto: mínimo 220px, ideal 34vw (mitad del viewport en 2 cols), máximo 420px */
+  height: clamp(220px, 34vw, 420px);
+}
+
+/* En móviles (1 columna), subimos un poco el alto ideal para que se luzca más */
+@media (max-width: 991.98px){
+  .tpl-preview{
+    height: clamp(260px, 56vw, 520px);
+  }
+}
+
+/* Iframe ocupa todo el contenedor */
+.tpl-iframe{
+  width:100%; height:100%; border:0;
+  pointer-events:none; /* evita clicks dentro de la miniatura */
+}
+
 </style>
 
 <div class="admin-hero mb-4">
@@ -374,34 +417,37 @@
 
       <div class="tpl-grid">
         {% for key, file in default_html_whitelist.items() %}
-          {% set nice = 'Clásico' if key=='classico' else 'Neo-Brutalista' if key=='brutal' else 'Dark' if key=='dark' else key|capitalize %}
-          <label class="tpl-card" data-key="{{ key }}">
-            <input type="radio" name="default_html" value="{{ key }}" {% if default_html_key == key %}checked{% endif %}>
-            <div class="dot"></div>
-            <div class="d-flex align-items-center justify-content-between mb-2">
-              <div class="fw-bold" style="color:var(--ink-900)">{{ nice }}</div>
-              <span class="text-muted small">{{ file }}</span>
-            </div>
+  {% set nice = 'Clásico' if key=='classico' else 'Neo-Brutalista' if key=='brutal' else 'Dark' if key=='dark' else key|capitalize %}
+  <label class="tpl-card" data-key="{{ key }}">
+    <input type="radio" name="default_html" value="{{ key }}" {% if default_html_key == key %}checked{% endif %}>
+    <div class="dot"></div>
 
-            <!-- Mini preview -->
-            <div class="tpl-preview tpl--{{ key }}">
-              <div class="ph-hero">
-                <div class="pill"></div>
-                <div>
-                  <div class="title" data-role="title">Mi Negocio</div>
-                  <div class="slogan" data-role="slogan">“Slogan aquí”</div>
-                </div>
-              </div>
-              <div class="body">
-                <div>
-                  <span class="chip" data-role="service1">Servicio 1</span>
-                  <span class="chip" data-role="service2">Servicio 2</span>
-                </div>
-                <a href="#" class="btn" data-role="cta">WhatsApp</a>
-              </div>
-            </div>
-          </label>
-        {% endfor %}
+    <div class="d-flex align-items-center justify-content-between mb-2">
+      <div class="fw-bold" style="color:var(--ink-900)">{{ nice }}</div>
+      <span class="text-muted small">{{ file }}</span>
+    </div>
+
+    <!-- Mini preview (iframe real) -->
+    <div class="tpl-preview" style="position:relative; overflow:hidden;">
+      <iframe class="tpl-iframe"
+              title="Preview {{ nice }}"
+              loading="lazy"
+              referrerpolicy="no-referrer"
+              sandbox="allow-scripts allow-same-origin"
+              style="width:100%; height:100%; border:0; pointer-events:none; transform:scale(1); transform-origin:top left;"
+              data-src="{{ url_for('detalle_negocio', nombre=data.business_name) }}?tpl={{ key }}&preview=1">
+      </iframe>
+    </div>
+
+    <div class="d-flex gap-2 mt-2">
+      <button type="button" class="btn btn-outline-secondary btn-sm js-reload"><i class="bi bi-arrow-clockwise"></i> Recargar</button>
+      <button type="button" class="btn btn-success btn-sm" onclick="this.closest('.tpl-card').querySelector('input[type=radio]').checked = true;">
+        <i class="bi bi-check2-circle"></i> Usar
+      </button>
+    </div>
+  </label>
+{% endfor %}
+
       </div>
 
       <small class="hint d-block mt-2">Tip: prueba temporalmente con <code>?tpl=brutal</code> en la URL.</small>
@@ -415,6 +461,129 @@
 </form>
 
 <div class="bottom-space"></div>
+<script>
+  // --- Recolecta datos actuales del formulario
+  function formPreviewData(){
+    const read = n => {
+      const el = document.querySelector(`[name="${n}"]`);
+      if(!el) return '';
+      return el.type==='checkbox' ? (el.checked ? 'sí' : 'no') : (el.value||'');
+    };
+    const list = n => (read(n)||'').split(/[,|\n]/g).map(s=>s.trim()).filter(Boolean);
+
+    return {
+      name:   read('business_name') || 'Mi Negocio',
+      slogan: read('slogan') || '',
+      color:  read('color') || '#0ea5e9',
+      services: list('services').slice(0,6),
+      whatsapp: read('whatsapp')
+    };
+  }
+
+  // --- Lazy-load de iframes (cuando entran al viewport)
+  (function lazyLoadTplIframes(){
+    const iframes = document.querySelectorAll('.tpl-iframe');
+    if(!iframes.length) return;
+
+    const io = new IntersectionObserver((entries)=>{
+      entries.forEach(entry=>{
+        if(entry.isIntersecting){
+          const ifr = entry.target;
+          if(!ifr.src){
+            ifr.src = ifr.getAttribute('data-src') + '&ts=' + Date.now(); // cache-bust
+            ifr.onload = () => sendPreviewDataToIframe(ifr, formPreviewData());
+          }
+        }
+      });
+    }, {rootMargin:'200px 0px'});
+
+    iframes.forEach(ifr => io.observe(ifr));
+  })();
+
+  // --- Envía datos al iframe por postMessage
+  function sendPreviewDataToIframe(ifr, payload){
+    try{
+      if(!ifr || !ifr.contentWindow) return;
+      ifr.contentWindow.postMessage({
+        type: 'admin-preview-update',
+        payload
+      }, '*'); // mismo origen -> podrías poner tu origen exacto
+    }catch(e){}
+  }
+
+  // --- Debounce para no spamear mensajes
+  function debounce(fn, ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
+  const broadcast = debounce(()=>{
+    const data = formPreviewData();
+    document.querySelectorAll('.tpl-iframe').forEach(ifr=>{
+      if (ifr.src) sendPreviewDataToIframe(ifr, data);
+    });
+  }, 200);
+
+  // --- Re-envía al cambiar campos relevantes
+  ['business_name','slogan','services','whatsapp','color']
+    .forEach(n=>{
+      const el = document.querySelector(`[name="${n}"]`);
+      if(!el) return;
+      const ev = (el.tagName==='SELECT' || el.type==='checkbox') ? 'change' : 'input';
+      el.addEventListener(ev, broadcast);
+    });
+
+  // --- Botón "Recargar" por tarjeta (re-pinta el iframe)
+  document.querySelectorAll('.tpl-card .js-reload').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const card = btn.closest('.tpl-card');
+      const ifr  = card.querySelector('.tpl-iframe');
+      if(!ifr) return;
+      const base = ifr.getAttribute('data-src');
+      ifr.src = base + '&ts=' + Date.now();
+      ifr.onload = () => sendPreviewDataToIframe(ifr, formPreviewData());
+    });
+  });
+</script>
+<script>
+(function(){
+  // Solo activar en modo preview
+  const isPreview = /[?&]preview=1\b/.test(location.search);
+  if(!isPreview) return;
+
+  // Hook para actualizar UI en vivo desde el admin
+  window.addEventListener('message', (e)=>{
+    const msg = e.data || {};
+    if(msg.type !== 'admin-preview-update') return;
+    const { name, slogan, color, services, whatsapp } = msg.payload || {};
+
+    // 1) Color/acento (usa tu variable CSS si la tienes)
+    try{
+      document.documentElement.style.setProperty('--brand', color || '#0ea5e9');
+    }catch(_){}
+
+    // 2) Título y slogan (ajusta selectores a tu markup real)
+    const titleEl  = document.querySelector('[data-role="title"], h1, .page-title');
+    const sloganEl = document.querySelector('[data-role="slogan"], .slogan, .subtitle');
+    if(titleEl && name)  titleEl.textContent  = name;
+    if(sloganEl) sloganEl.textContent = slogan ? '“'+slogan+'”' : '';
+
+    // 3) Servicios (si tienes un contenedor)
+    const svcWrap = document.querySelector('[data-role="services"], .services, .services-list');
+    if(svcWrap){
+      svcWrap.innerHTML = '';
+      (services || []).forEach(s=>{
+        const chip = document.createElement('span');
+        chip.className = 'chip';
+        chip.textContent = s;
+        svcWrap.appendChild(chip);
+      });
+    }
+
+    // 4) CTA WhatsApp (si existe)
+    const wa = document.querySelector('[data-role="cta-whatsapp"], a[href^="https://wa.me"]');
+    if(wa && whatsapp){
+      wa.setAttribute('href', 'https://wa.me/' + (whatsapp||'').replace(/\s/g,''));
+    }
+  });
+})();
+</script>
 
 <script>
   // Actualiza acento en vivo
