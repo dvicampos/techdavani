@@ -72,19 +72,96 @@ def unauthorized_callback():
     flash("Debes iniciar sesión para acceder a esta página.")
     return redirect(url_for('login'))
 
+# --- User model (reemplazar tu clase User por esta) ---
 class User(UserMixin):
     def __init__(self, user_data):
-        self._id = str(user_data['_id'])  # almacena el _id como string
+        self._id = str(user_data['_id'])
         self.email = user_data['email']
         self.nombre = user_data['nombre']
         self.password = user_data['password']
-        self.role = user_data.get('role')
-        self.page_id = user_data.get('page_id')
+        self.role = user_data.get('role', 'admin')
+        # legacy:
+        self.page_id_legacy = user_data.get('page_id')
+        # nuevo:
+        self.page_ids = user_data.get('page_ids', [])
+        self.current_page_id = user_data.get('current_page_id') or user_data.get('page_id')
 
     @property
     def id(self):
         return self._id
+
+from flask import session
+
+def get_current_page_id():
+    if not current_user.is_authenticated:
+        return None
+
+    def as_oid(v):
+        try:
+            return ObjectId(str(v))
+        except Exception:
+            return None
+
+    # prioridad: session -> user.current_page_id -> user.page_id (legacy)
+    sid = session.get('current_page_id')
+    if sid:
+        oid = as_oid(sid)
+        if oid:
+            return oid
+
+    u = mongo.db.users.find_one({'_id': ObjectId(current_user.id)})
+    if not u:
+        return None
+
+    if u.get('current_page_id'):
+        oid = as_oid(u['current_page_id'])
+        if oid:
+            return oid
+    if u.get('page_id'):
+        oid = as_oid(u['page_id'])
+        if oid:
+            return oid
+    # último recurso: primer page_ids
+    for pid in (u.get('page_ids') or []):
+        oid = as_oid(pid)
+        if oid:
+            return oid
+    return None
+
+def set_current_page_id(page_id):
+    session['current_page_id'] = str(page_id)
+    mongo.db.users.update_one({'_id': ObjectId(current_user.id)},
+                              {'$set': {'current_page_id': ObjectId(str(page_id))}})
+
+def ensure_user_page_lists(user_id: str, page_id: ObjectId):
+    """Asegura que el usuario tenga page_ids[] y current_page_id set."""
+    u = mongo.db.users.find_one({'_id': ObjectId(user_id)})
+    updates = {}
+    page_ids = list(u.get('page_ids', []))
+    if page_id not in page_ids:
+        page_ids.append(page_id)
+        updates['page_ids'] = page_ids
+    if not u.get('current_page_id'):
+        updates['current_page_id'] = page_id
+    if updates:
+        mongo.db.users.update_one({'_id': ObjectId(user_id)}, {'$set': updates})
      
+from pymongo import ASCENDING
+
+def unique_slug_for_page(base_text: str) -> str:
+    base = slugify(base_text) or "sitio"
+    slug = base
+    n = 2
+    while mongo.db.page_data.count_documents({"slug": slug}) > 0:
+        slug = f"{base}-{n}"
+        n += 1
+    return slug
+
+# índice único para que no haya choques (se crea 1 sola vez)
+try:
+    mongo.db.page_data.create_index([("slug", ASCENDING)], unique=True, name="slug_unique_idx")
+except Exception as e:
+    print("Index slug_unique_idx:", e)
 
 def roles_required(*roles):
     def wrapper(fn):
@@ -97,6 +174,21 @@ def roles_required(*roles):
         return decorated_view
     return wrapper
 
+def require_active_subscription(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        if not current_user.is_authenticated:
+            return redirect(url_for('login'))
+        page_id = get_current_page_id()
+        if not page_id:
+            flash('Crea o selecciona un sitio para continuar.')
+            return redirect(url_for('create_page'))
+
+        if not site_has_active_subscription(page_id):
+            flash('Activa tu suscripción mensual para continuar.')
+            return redirect(url_for('billing_portal'))
+        return fn(*args, **kwargs)
+    return wrapper
 
 @app.route('/uploads/<path:filename>')
 def uploaded_file(filename):
@@ -142,6 +234,31 @@ def require_lifetime(fn):
         return fn(*args, **kwargs)
     return wrapper
 
+def site_has_active_subscription(page_id: ObjectId):
+    sub = mongo.db.subscriptions.find_one({
+        "page_id": page_id,
+        "status": {"$in": ["authorized", "active", "charged"]}  # estados “vivos”
+    })
+    return bool(sub)
+
+def require_subscription_or_lifetime(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        if not current_user.is_authenticated:
+            return redirect(url_for('login'))
+        page_id = get_current_page_id()
+        if not page_id:
+            flash('Crea o selecciona un sitio para continuar.')
+            return redirect(url_for('create_page'))
+
+        has_life = page_has_purchase(str(page_id), "lifetime")
+        has_subs = site_has_active_subscription(page_id)
+
+        if not (has_life or has_subs):
+            flash('Activa tu suscripción mensual o la licencia de por vida.')
+            return redirect(url_for('billing_portal'))  # ver ruta abajo
+        return fn(*args, **kwargs)
+    return wrapper
 
 from datetime import date
 
@@ -189,6 +306,284 @@ def compute_coupon_price():
         },
         "final_price": final_price
     }
+
+from flask import g
+
+def current_site(required=True):
+    """Resuelve el sitio desde:
+    1) kwargs['slug'] si la ruta lo trae → fija current_page_id
+    2) session/current_user (get_current_page_id)
+    Inyecta g.page, g.page_id, g.page_slug. Si required y no hay, redirige a /sites.
+    """
+    def deco(fn):
+        @wraps(fn)
+        def wrap(*args, **kwargs):
+            page = None
+            # 1) si la ruta tiene slug, úsalo como fuente de verdad
+            slug = kwargs.get('slug')
+            if slug:
+                page = get_page_by_slug(slug)
+                if page:
+                    set_current_page_id(page['_id'])
+
+            # 2) si no hubo slug o no existía, intenta por session/usuario
+            if not page:
+                pid = get_current_page_id()
+                if pid:
+                    page = mongo.db.page_data.find_one({'_id': pid})
+
+            if required and not page:
+                flash('Crea o selecciona un sitio para continuar.')
+                return redirect(url_for('sites'))
+
+            if page:
+                page = ensure_page_has_slug(page)
+
+            g.page = page
+            g.page_id = page and page['_id']
+            g.page_slug = page and page['slug']
+            return fn(*args, **kwargs)
+        return wrap
+    return deco
+
+@app.context_processor
+def site_helpers():
+    def url_for_site(endpoint, **params):
+        """Atajo: agrega slug actual si el endpoint lo requiere."""
+        slug = getattr(g, 'page_slug', None)
+        if slug:
+            params.setdefault('slug', slug)
+        return url_for(endpoint, **params)
+
+    return dict(
+        current_page=lambda: getattr(g, 'page', None),
+        url_for_site=url_for_site
+    )
+
+@app.route('/switch/slug/<slug>')
+@login_required
+def switch_site_slug(slug):
+    page = get_page_by_slug(slug)
+    if not page:
+        flash('Sitio no encontrado.')
+        return redirect(url_for('sites'))
+
+    # valida pertenencia
+    u = mongo.db.users.find_one({'_id': ObjectId(current_user.id)})
+    owned_ids = {str(x) for x in (u.get('page_ids') or [])}
+    owned_ids.add(str(u.get('page_id') or ''))
+    if str(page['_id']) not in owned_ids:
+        flash('No puedes acceder a ese sitio.')
+        return redirect(url_for('sites'))
+
+    set_current_page_id(page['_id'])
+    page = ensure_page_has_slug(page)
+    return redirect(url_for('dashboard_slug', slug=page['slug']))
+
+@app.context_processor
+def inject_sites():
+    pages, current = [], ""
+    try:
+        if getattr(current_user, "is_authenticated", False):
+            u = mongo.db.users.find_one({'_id': ObjectId(current_user.id)})
+            ids = set()
+            def add(v):
+                try:
+                    if v: ids.add(ObjectId(str(v)))
+                except: pass
+            for pid in (u.get('page_ids') or []): add(pid)
+            add(u.get('page_id'))  # legacy
+
+            pages = list(mongo.db.page_data.find({'_id': {'$in': list(ids)}}))
+            for p in pages:
+                if not p.get('slug'):
+                    mongo.db.page_data.update_one({'_id': p['_id']}, {'$set': {'slug': slugify(p.get('business_name','sitio'))}})
+                    p['slug'] = slugify(p.get('business_name','sitio'))
+
+            cid = get_current_page_id()
+            current = str(cid) if cid else ""
+    except Exception:
+        pass
+    return dict(pages=pages, current=current)
+
+@app.route('/billing')
+@login_required
+def billing_portal():
+    page_id = get_current_page_id()
+    page = mongo.db.page_data.find_one({'_id': page_id}) if page_id else None
+    sub = mongo.db.subscriptions.find_one({"page_id": page_id})
+    return render_template('billing.html', page=page, sub=sub)
+
+MP_PREAPPROVALS_URL = "https://api.mercadopago.com/preapproval"
+
+def get_env_str(name: str, default: str = "") -> str:
+    v = os.getenv(name)
+    return v.strip() if v is not None else default
+
+def get_env_int(name: str, default: int = 0) -> int:
+    try:
+        return int(os.getenv(name, str(default)).strip())
+    except Exception:
+        return default
+
+def get_env_float(name: str, default: float = 0.0) -> float:
+    try:
+        return float(os.getenv(name, str(default)).strip())
+    except Exception:
+        return default
+
+def get_subscription_config():
+    """Lee todos los datos del plan de suscripción desde .env."""
+    return {
+        "name": get_env_str("SUBSCRIPTION_NAME", "Suscripción Mensual MyPymes"),
+        "price": get_env_float("SUBSCRIPTION_PRICE", 499.0),
+        "currency": get_env_str("SUBSCRIPTION_CURRENCY", "MXN"),
+        "frequency": get_env_int("SUBSCRIPTION_FREQUENCY", 1),
+        "frequency_type": get_env_str("SUBSCRIPTION_FREQUENCY_TYPE", "months"),
+        "success_url": get_env_str("MP_SUCCESS_URL", ""),   # fallback lo haremos abajo
+        "failure_url": get_env_str("MP_FAILURE_URL", ""),
+    }
+
+@app.context_processor
+def inject_subscription_plan():
+    return dict(SUB_PLAN=get_subscription_config())
+
+@app.route('/pay/subscription')
+@login_required
+def pay_subscription():
+    import json, logging
+    logging.basicConfig(level=logging.INFO)
+
+    cfg = get_subscription_config()
+
+    page_id = get_current_page_id()
+    if not page_id:
+        flash('Selecciona un sitio para continuar.')
+        return redirect(url_for('billing_portal'))
+
+    # Evitar duplicar si ya tiene lifetime o suscripción activa
+    if page_has_purchase(str(page_id), "lifetime"):
+        flash('Tu sitio ya tiene licencia de por vida activa.')
+        return redirect(url_for('dashboard'))
+
+    if site_has_active_subscription(page_id):
+        flash('Tu suscripción ya está activa.')
+        return redirect(url_for('dashboard'))
+
+    # URLs de retorno
+    back_url = cfg["success_url"] or url_for('billing_portal', _external=True)
+
+    # Motivo que verá el usuario en MP
+    reason = f'{cfg["name"]} — ${int(cfg["price"])} {cfg["currency"]}/mes'
+
+    payload = {
+        "reason": reason,
+        "payer_email": current_user.email,   # 👈 recomendado por MP
+        "auto_recurring": {
+            "frequency": cfg["frequency"],
+            "frequency_type": cfg["frequency_type"],  # "months" o "days"
+            "transaction_amount": cfg["price"],
+            "currency_id": cfg["currency"]
+        },
+        "back_url": back_url,
+        "status": "pending",
+        "external_reference": f"{current_user.id}|{str(page_id)}|subscription"
+    }
+
+    try:
+        r = requests.post(
+            MP_PREAPPROVALS_URL,
+            headers=mp_headers(),
+            json=payload,
+            timeout=20
+        )
+        data = r.json() if r.headers.get('Content-Type','').startswith('application/json') else {}
+        init_point = (
+            data.get("init_point")
+            or data.get("sandbox_init_point")
+            or data.get("preapproval_url")
+            or data.get("preapproval_link")
+        )
+
+        if r.status_code >= 400 or not init_point:
+            logging.error("MP preapproval error %s: %s", r.status_code, data)
+            msg = data.get("message") or "Respuesta inválida de Mercado Pago."
+            cause = data.get("cause")
+            if isinstance(cause, list) and cause:
+                msg += f" ({cause[0].get('code')} - {cause[0].get('description')})"
+            flash(f"No se pudo iniciar la suscripción: {msg}", "danger")
+            return redirect(url_for('billing_portal'))
+
+        mongo.db.subscriptions.update_one(
+            {"page_id": page_id},
+            {"$set": {
+                "page_id": page_id,
+                "user_id": ObjectId(current_user.id),
+                "provider": "mercado_pago",
+                "preapproval_id": data.get("id"),
+                "status": data.get("status", "pending"),
+                "raw": data,
+                "last_event": datetime.utcnow()
+            }},
+            upsert=True
+        )
+        return redirect(init_point)
+
+    except Exception as e:
+        logging.exception("Excepción creando preapproval")
+        flash(f"Error creando la suscripción: {e}", "danger")
+        return redirect(url_for('billing_portal'))
+
+@app.route('/mp/sub_webhook', methods=['POST', 'GET'])
+def mp_sub_webhook():
+    try:
+        data = request.get_json(silent=True) or {}
+        query = request.args.to_dict()
+
+        # MP manda eventos distintos; extrae el ID del preapproval
+        pre_id = (data.get('id') or query.get('id') or
+                  (data.get('resource') or '').split('/')[-1])
+
+        if not pre_id:
+            return "ignored", 200
+
+        # Lee el preapproval completo
+        pre_r = requests.get(f"{MP_PREAPPROVALS_URL}/{pre_id}", headers=mp_headers())
+        pre = pre_r.json()
+
+        status = pre.get('status')  # expected: authorized/paused/cancelled/...
+        external_reference = pre.get('external_reference', '')
+        try:
+            uid, page_id, kind = external_reference.split('|', 2)
+        except:
+            uid, page_id, kind = None, None, None
+
+        # Actualiza registro
+        mongo.db.subscriptions.update_one(
+            {"preapproval_id": pre_id},
+            {"$set": {
+                "status": status,
+                "last_event": datetime.utcnow(),
+                "raw": pre,
+                "page_id": ObjectId(page_id) if page_id else None,
+                "user_id": ObjectId(uid) if uid else None
+            }},
+            upsert=True
+        )
+        return "ok", 200
+    except Exception as e:
+        print("Sub webhook error:", e)
+        return "error", 500
+
+def get_page_by_slug(slug: str):
+    return mongo.db.page_data.find_one({"slug": slug})
+
+def ensure_page_has_slug(page):
+    if page and not page.get('slug'):
+        new_slug = unique_slug_for_page(page.get('business_name', 'sitio'))
+        mongo.db.page_data.update_one({'_id': page['_id']}, {'$set': {'slug': new_slug}})
+        page['slug'] = new_slug
+    return page
 
 @app.context_processor
 def inject_pricing():
@@ -254,100 +649,139 @@ def index():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    if request.method == 'POST':
-
-        if request.form.get('accept_tos') != 'on':
-            flash('Debes aceptar los Términos y Condiciones para registrarte.')
-            return redirect(url_for('register', page_id=request.form.get('page_id')))
-        
-        nombre = request.form['nombre']
-        email = request.form['email']
-        password = generate_password_hash(request.form['password'])
-        role = request.form['role']
-        page_id = request.form['page_id']
-
-        user = mongo.db.users.find_one({'email': email})
-        if user:
-            flash('Este correo ya existe')
-            return redirect(url_for('register', page_id=page_id))
-
-        mongo.db.users.insert_one({
-            'nombre': nombre,
-            'email': email,
-            'password': password,
-            'confirmed': False,
-            'role': role,
-            'page_id': ObjectId(page_id)
-        })
-
-        # Enviar email de confirmación (como ya lo haces)
-        token = s.dumps(email, salt='email-confirm')
-        confirm_url = url_for('confirm_email', token=token, _external=True)
-        html = render_template('confirm_email.html', confirm_url=confirm_url)
-
-        msg = Message('Confirma tu correo', sender=app.config['MAIL_USERNAME'], recipients=[email])
-        msg.html = html
-        mail.send(msg)
-
-        flash('Revisa tu correo para confirmar tu cuenta')
-        return redirect(url_for('manage_users'))
-
-    # Solo mostrar el formulario si hay un page_id
-    page_id = request.args.get('page_id')
+    # Debe venir con ?page_id=...
+    page_id = request.args.get('page_id') if request.method == 'GET' else request.form.get('page_id')
     if not page_id:
         flash('No se puede registrar un usuario sin una empresa asociada')
         return redirect(url_for('create_page'))
 
-    return render_template('register.html', page_id=page_id)
+    # Validar que la empresa exista
+    try:
+        page_oid = ObjectId(page_id)
+    except Exception:
+        flash('ID de empresa inválido.')
+        return redirect(url_for('create_page'))
 
+    page = mongo.db.page_data.find_one({'_id': page_oid})
+    if not page:
+        flash('Empresa no encontrada.')
+        return redirect(url_for('create_page'))
+
+    if request.method == 'POST':
+        if request.form.get('accept_tos') != 'on':
+            flash('Debes aceptar los Términos y Condiciones para registrarte.')
+            return redirect(url_for('register', page_id=page_id))
+
+        nombre = request.form['nombre'].strip()
+        email = request.form['email'].strip().lower()
+        raw_password = request.form['password']
+
+        if not nombre or not email or not raw_password:
+            flash('Completa todos los campos.')
+            return redirect(url_for('register', page_id=page_id))
+
+        # ¿Existe ya el correo?
+        if mongo.db.users.find_one({'email': email}):
+            flash('Este correo ya existe')
+            return redirect(url_for('register', page_id=page_id))
+
+        # Primer usuario de la empresa = admin, siguientes = editor
+        existing_count = mongo.db.users.count_documents({'page_id': page_oid})
+        assigned_role = 'admin' if existing_count == 0 else 'editor'
+
+        # Crear usuario
+        user_doc = {
+            'nombre': nombre,
+            'email': email,
+            'password': generate_password_hash(raw_password),
+            'confirmed': False,
+            'role': assigned_role,
+            'page_id': page_oid,               # legacy
+            'page_ids': [page_oid],            # nuevo
+            'current_page_id': page_oid        # dejarlo activo
+        }
+        ins = mongo.db.users.insert_one(user_doc)
+        user_doc['_id'] = ins.inserted_id
+
+        # Fijar current_page_id también en sesión
+        set_current_page_id(page_oid)
+
+        # Enviar confirmación
+        try:
+            token = s.dumps(email, salt='email-confirm')
+            confirm_url = url_for('confirm_email', token=token, _external=True)
+            html = render_template('confirm_email.html', confirm_url=confirm_url)
+            msg = Message('Confirma tu correo', sender=app.config['MAIL_USERNAME'], recipients=[email])
+            msg.html = html
+            mail.send(msg)
+            flash('Revisa tu correo para confirmar tu cuenta.')
+        except Exception as _e:
+            # No bloquees el onboarding por el correo; solo informa.
+            flash('No se pudo enviar el correo de confirmación ahora mismo. Podrás reintentar desde tu perfil.', 'warning')
+
+        # Loguear al usuario recién creado para que pueda pagar
+        login_user(User(user_doc))
+        ensure_user_page_lists(current_user.id, page_oid)
+
+        # Ir directo a Facturación / Suscripción
+        return redirect(url_for('billing_portal'))
+
+    # GET: pintar formulario con page_id fijo
+    return render_template('register.html', page_id=str(page_id))
 
 @app.route('/admin/register_user', methods=['GET', 'POST'])
 @login_required
 def admin_register_user():
-    # Validar que el usuario actual sea admin
+    # Solo admins pueden crear usuarios
     if current_user.role != 'admin':
         flash('No tienes permiso para acceder a esta página.')
         return redirect(url_for('index'))
 
-    # Obtener el page_id del usuario logueado (admin)
-    page_id = current_user.page_id  # Aquí depende cómo tengas guardado el page_id en current_user
+    page_id = get_current_page_id()
+    if not page_id:
+        flash('Selecciona o crea un sitio.')
+        return redirect(url_for('sites'))
 
     if request.method == 'POST':
-        nombre = request.form['nombre']
-        email = request.form['email']
-        password = generate_password_hash(request.form['password'])
-        role = request.form['role']
+        nombre = request.form['nombre'].strip()
+        email = request.form['email'].strip().lower()
+        raw_password = request.form['password']
+        requested_role = request.form['role'].strip()  # 'admin' o 'editor'
 
-        # Verificar si el usuario ya existe
-        user = mongo.db.users.find_one({'email': email})
-        if user:
+        if mongo.db.users.find_one({'email': email}):
             flash('Este correo ya existe')
             return redirect(url_for('admin_register_user'))
 
-        # Insertar nuevo usuario asociado a la misma empresa (page_id)
-        mongo.db.users.insert_one({
+        # Si ya hay un admin en esta empresa, forzar 'editor'
+        already_admin = mongo.db.users.find_one({'page_id': page_id, 'role': 'admin'})
+        final_role = requested_role if not already_admin else 'editor'
+
+        user_doc = {
             'nombre': nombre,
             'email': email,
-            'password': password,
+            'password': generate_password_hash(raw_password),
             'confirmed': False,
-            'role': role,
-            'page_id': ObjectId(page_id)
-        })
+            'role': final_role,
+            'page_id': page_id,
+            'page_ids': [page_id],
+            'current_page_id': page_id
+        }
+        mongo.db.users.insert_one(user_doc)
 
-        # Enviar email de confirmación
-        token = s.dumps(email, salt='email-confirm')
-        confirm_url = url_for('confirm_email', token=token, _external=True)
-        html = render_template('confirm_email.html', confirm_url=confirm_url)
-
-        msg = Message('Confirma tu correo', sender=app.config['MAIL_USERNAME'], recipients=[email])
-        msg.html = html
-        mail.send(msg)
+        try:
+            token = s.dumps(email, salt='email-confirm')
+            confirm_url = url_for('confirm_email', token=token, _external=True)
+            html = render_template('confirm_email.html', confirm_url=confirm_url)
+            msg = Message('Confirma tu correo', sender=app.config['MAIL_USERNAME'], recipients=[email])
+            msg.html = html
+            mail.send(msg)
+        except Exception:
+            pass
 
         flash('Usuario registrado. Revisa el correo para confirmar la cuenta.')
         return redirect(url_for('manage_users'))
 
-    # En GET, mostrar el formulario, sin page_id porque ya lo sabemos
-    return render_template('admin_register_user.html', page_id=page_id)
+    return render_template('admin_register_user.html', page_id=str(page_id))
 
 @app.route('/confirm/<token>')
 def confirm_email(token):
@@ -390,7 +824,7 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @app.route('/crear_post_negocio', methods=['GET', 'POST'])
-@require_lifetime
+@require_active_subscription
 @login_required
 def crear_post_negocio():
     user = mongo.db.users.find_one({'_id': ObjectId(current_user.id)})
@@ -452,7 +886,8 @@ def crear_post_negocio():
 
 
 @app.route('/list_post')
-@require_lifetime
+@require_active_subscription
+@current_site(required=True)
 @login_required
 def list_post():
     try:
@@ -471,7 +906,7 @@ def list_post():
     return render_template('list_post.html', posts=posts)
 
 @app.route('/edit_post/<post_id>', methods=['GET', 'POST'])
-@require_lifetime
+@require_active_subscription
 @login_required
 def edit_post(post_id):
     post = mongo.db.posts.find_one({'_id': ObjectId(post_id)})
@@ -540,7 +975,7 @@ def edit_post(post_id):
 
 
 @app.route('/delete_post/<post_id>')
-@require_lifetime
+@require_active_subscription
 @login_required
 def delete_post(post_id):
     post = mongo.db.posts.find_one({'_id': ObjectId(post_id)})
@@ -571,39 +1006,53 @@ def delete_post(post_id):
 
 
 @app.route('/posts')
-@require_lifetime
+@require_active_subscription
 @login_required
 def posts():
     posts = list(mongo.db.posts.find().sort('date', -1))
     return render_template('posts.html', posts=posts)
 
+# --- NUEVA: /dashboard/<slug> ---
+@app.route('/dashboard/<slug>')
+@require_active_subscription
+@login_required
+def dashboard_slug(slug):
+    page = get_page_by_slug(slug)
+    if not page:
+        flash('Sitio no encontrado.')
+        return redirect(url_for('sites'))
+    set_current_page_id(page['_id'])
+    page = ensure_page_has_slug(page)
+    return render_template('dashboard.html', page=page)
+
+# Compat: /dashboard → /dashboard/<slug>
 @app.route('/dashboard')
-@require_lifetime
+@require_active_subscription
 @login_required
 def dashboard():
-    user = mongo.db.users.find_one({'_id': ObjectId(current_user.id)})
-    page = mongo.db.pages.find_one({'_id': user.get('page_id')})
-    return render_template('dashboard.html', page=page)
+    page_id = get_current_page_id()
+    page = mongo.db.page_data.find_one({'_id': page_id}) if page_id else None
+    if not page:
+        flash('Selecciona o crea un sitio.')
+        return redirect(url_for('sites'))
+    page = ensure_page_has_slug(page)
+    return redirect(url_for('dashboard_slug', slug=page['slug']))
 
 # AVISOS
 @app.route('/avisos')
-@require_lifetime
+@require_active_subscription
 @login_required
 def list_avisos():
-    user = mongo.db.users.find_one({'_id': ObjectId(current_user.id)})
-    if not user:
-        flash('Usuario no encontrado.')
-        return redirect(url_for('logout'))  # o a alguna ruta segura
-
-    page_id = user.get('page_id')
-    avisos = list(
-        mongo.db.avisos.find({'page_id': page_id}).sort('date', -1)
-    )
+    page_id = get_current_page_id()
+    if not page_id:
+        flash('Selecciona un sitio.')
+        return redirect(url_for('sites'))
+    avisos = list(mongo.db.avisos.find({'page_id': page_id}).sort('date', -1))
     return render_template('list_avisos.html', avisos=avisos)
 
 # Ruta para crear un nuevo aviso
 @app.route('/create_aviso', methods=['GET', 'POST'])
-@require_lifetime
+@require_active_subscription
 @login_required
 def create_aviso():
     user = mongo.db.users.find_one({'_id': ObjectId(current_user.id)})
@@ -632,7 +1081,7 @@ def create_aviso():
 
 # Ruta para editar un aviso
 @app.route('/edit_aviso/<aviso_id>', methods=['GET', 'POST'])
-@require_lifetime
+@require_active_subscription
 @login_required
 def edit_aviso(aviso_id):
     aviso = mongo.db.avisos.find_one({'_id': ObjectId(aviso_id)})
@@ -659,7 +1108,7 @@ def edit_aviso(aviso_id):
 
 # Ruta para eliminar un aviso
 @app.route('/delete_aviso/<aviso_id>')
-@require_lifetime
+@require_active_subscription
 @login_required
 def delete_aviso(aviso_id):
     aviso = mongo.db.avisos.find_one({'_id': ObjectId(aviso_id)})
@@ -670,15 +1119,14 @@ def delete_aviso(aviso_id):
 
 # productos
 @app.route('/productos')
-@require_lifetime
+@require_active_subscription
 @login_required
 def list_productos():
-    user = mongo.db.users.find_one({'_id': ObjectId(current_user.id)})
-    if not user:
-        flash('Usuario no encontrado.')
-        return redirect(url_for('logout'))
+    page_id = get_current_page_id()
+    if not page_id:
+        flash('Selecciona un sitio.')
+        return redirect(url_for('sites'))
 
-    page_id = user.get('page_id')
     productos = list(mongo.db.productos.find({'page_id': page_id}))
     return render_template('list_productos.html', productos=productos)
 
@@ -686,7 +1134,7 @@ from werkzeug.utils import secure_filename
 import os
 
 @app.route('/create_producto', methods=['GET', 'POST'])
-@require_lifetime
+@require_active_subscription
 @login_required
 def create_producto():
     user = mongo.db.users.find_one({'_id': ObjectId(current_user.id)})
@@ -735,7 +1183,7 @@ def create_producto():
     return render_template('create_producto.html')
 
 @app.route('/edit_producto/<producto_id>', methods=['GET', 'POST'])
-@require_lifetime
+@require_active_subscription
 @login_required
 def edit_producto(producto_id):
     producto = mongo.db.productos.find_one({'_id': ObjectId(producto_id)})
@@ -785,7 +1233,7 @@ def edit_producto(producto_id):
     return render_template('edit_producto.html', producto=producto)
 
 @app.route('/delete_producto/<producto_id>', methods=['POST'])
-@require_lifetime
+@require_active_subscription
 @login_required
 def delete_producto(producto_id):
     producto = mongo.db.productos.find_one({'_id': ObjectId(producto_id)})
@@ -800,7 +1248,8 @@ def delete_producto(producto_id):
 
 
 @app.route('/admin/users')
-@require_lifetime
+@require_active_subscription
+@current_site(required=True)
 @login_required
 @roles_required('admin')
 def manage_users():
@@ -819,7 +1268,7 @@ def manage_users():
     return render_template('manage_users.html', users=users)
 
 @app.route('/admin/users/edit/<user_id>', methods=['GET', 'POST'])
-@require_lifetime
+@require_active_subscription
 @login_required
 @roles_required('admin')
 def edit_user(user_id):
@@ -863,80 +1312,122 @@ MP_PREFS_URL = "https://api.mercadopago.com/checkout/preferences"
 MP_PAYMENTS_URL = "https://api.mercadopago.com/v1/payments/"
 
 def mp_headers():
+    token = os.getenv('MP_ACCESS_TOKEN')
     return {
-        "Authorization": f"Bearer {os.getenv('MP_ACCESS_TOKEN')}",
+        "Authorization": f"Bearer {token}",
         "Content-Type": "application/json"
     }
 
-@app.route('/pay/lifetime')
+
+def mp_patch_preapproval_status(preapproval_id: str, new_status: str):
+    """Hace PATCH al preapproval para cambiar su estado."""
+    url = f"{MP_PREAPPROVALS_URL}/{preapproval_id}"
+    payload = {"status": new_status}
+    r = requests.put(url, headers=mp_headers(), json=payload)  # MP acepta PUT/PATCH (usa PUT aquí)
+    return r
+
+# --- helpers para PATCH de preapproval ---
+def mp_update_preapproval_status(preapproval_id: str, new_status: str):
+    """
+    new_status: 'paused' | 'authorized' | 'cancelled'
+    """
+    body = {"status": new_status}
+    r = requests.patch(f"{MP_PREAPPROVALS_URL}/{preapproval_id}",
+                       headers=mp_headers(),
+                       data=json.dumps(body))
+    # lanza si hay error HTTP
+    r.raise_for_status()
+    return r.json()
+
+@app.route('/subscription/<action>', methods=['POST'])
 @login_required
-def pay_lifetime():
-    page_id = request.args.get('page_id')
+def subscription_action(action):
+    """
+    action in {'pause','resume','cancel'}
+    """
+    page_id = get_current_page_id()
     if not page_id:
-        flash('Falta page_id')
-        return redirect(url_for('create_page'))
+        flash('Selecciona un sitio.', 'warning')
+        return redirect(url_for('sites'))
 
-    if page_has_purchase(page_id, "lifetime"):
-        flash('Licencia ya activa. 🎉')
-        return redirect(url_for('dashboard'))
+    sub = mongo.db.subscriptions.find_one({"page_id": page_id})
+    if not sub or not sub.get('preapproval_id'):
+        flash('No hay suscripción registrada para este sitio.', 'warning')
+        return redirect(url_for('billing_portal'))
 
-    # Leer cupón desde la URL (?coupon=LANZAMIENTO) – la vista ya lo manda cuando corresponde
-    coupon_param = request.args.get('coupon', '').strip() or None
-
-    # Resolver precio final y cupon aplicado (si procede)
-    unit_price, applied_coupon = resolve_lifetime_price_for_checkout(coupon_param)
-
-    success_url = os.getenv("MP_SUCCESS_URL")
-    failure_url = os.getenv("MP_FAILURE_URL")
-    webhook_url = os.getenv("MP_WEBHOOK_URL")
-
-    # (Opcional) etiqueta el cupón en el título del ítem para identificarlo en MP
-    item_title = "Licencia de por vida"
-    if applied_coupon:
-        item_title += f" (cupón: {applied_coupon['code']})"
-
-    payload = {
-        "items": [{
-            "title": item_title,
-            "quantity": 1,
-            "currency_id": "MXN",
-            "unit_price": float(f"{unit_price:.2f}")  # asegúrate que va con 2 decimales
-        }],
-        "auto_return": "approved",
-        "back_urls": {
-            "success": success_url,
-            "failure": failure_url,
-            "pending": success_url
-        },
-        "notification_url": webhook_url,
-        # Mantén tu reference igual para no romper el webhook:
-        "external_reference": f"{current_user.id}|{page_id}|lifetime"
+    mapping = {
+        "pause": "paused",
+        "resume": "authorized",   # vuelve a quedar “autorizada”
+        "cancel": "cancelled"
     }
+    if action not in mapping:
+        flash('Acción inválida.', 'danger')
+        return redirect(url_for('billing_portal'))
 
-    # Si quieres dejar rastro "formal" del cupón en la preferencia (no siempre lo expone MP en el webhook),
-    # puedes usar "metadata" (si tu cuenta/SDK lo soporta):
-    if applied_coupon:
-        payload["metadata"] = {
-            "coupon_code": applied_coupon["code"],
-            "coupon_type": applied_coupon["type"],
-            "coupon_value": applied_coupon["value"],
-            "discount_amount": applied_coupon["discount_amount"]
-        }
+    new_status = mapping[action]
 
     try:
-        r = requests.post(MP_PREFS_URL, headers=mp_headers(), data=json.dumps(payload))
-        pref = r.json()
-        init_point = pref.get("init_point") or pref.get("sandbox_init_point")
-        if not init_point:
-            print("MP preference response:", pref)
-            flash('No se pudo iniciar el pago.')
-            return redirect(url_for('dashboard'))
-        return redirect(init_point)
+        # PATCH a Mercado Pago
+        mp_resp = mp_update_preapproval_status(sub['preapproval_id'], new_status)
+
+        # Refrescar estado desde MP (opcional pero recomendable)
+        pre = requests.get(f"{MP_PREAPPROVALS_URL}/{sub['preapproval_id']}", headers=mp_headers()).json()
+
+        mongo.db.subscriptions.update_one(
+            {"_id": sub["_id"]},
+            {"$set": {
+                "status": pre.get("status", new_status),
+                "raw": pre,
+                "last_event": datetime.utcnow()
+            }}
+        )
+
+        if action == "pause":
+            flash("Tu suscripción fue pausada.", "success")
+        elif action == "resume":
+            flash("Tu suscripción fue reanudada.", "success")
+        elif action == "cancel":
+            flash("Tu suscripción fue cancelada.", "success")
+
+    except requests.HTTPError as e:
+        print("MP PATCH error:", e.response.text if e.response else e)
+        flash("No se pudo actualizar la suscripción en Mercado Pago.", "danger")
     except Exception as e:
-        print("MP error:", e)
-        flash('Error creando la preferencia de pago.')
-        return redirect(url_for('dashboard'))
-  
+        print("Subscription action error:", e)
+        flash("Ocurrió un error al procesar la acción.", "danger")
+
+    return redirect(url_for('billing_portal'))
+
+def migrate_users_page_ids():
+    # Llama esto 1 vez al iniciar la app (después de init mongo)
+    for u in mongo.db.users.find({}):
+        updates = {}
+        legacy = u.get('page_id')
+        page_ids = u.get('page_ids') or []
+        curr = u.get('current_page_id')
+
+        # normaliza a ObjectId
+        def as_oid(v):
+            try:
+                return ObjectId(v) if isinstance(v, str) else v
+            except:
+                return None
+
+        page_ids = [as_oid(x) for x in page_ids if as_oid(x)]
+        legacy_oid = as_oid(legacy)
+        curr_oid = as_oid(curr)
+
+        if legacy_oid and legacy_oid not in page_ids:
+            page_ids.append(legacy_oid)
+            updates['page_ids'] = page_ids
+        if not curr_oid and legacy_oid:
+            updates['current_page_id'] = legacy_oid
+
+        if updates:
+            mongo.db.users.update_one({'_id': u['_id']}, {'$set': updates})
+
+migrate_users_page_ids()
+
 @app.route('/mp/webhook', methods=['POST', 'GET'])
 def mp_webhook():
     try:
@@ -986,10 +1477,6 @@ def mp_webhook():
             upsert=True
         )
 
-        # Si aprobado, activamos
-        if status == 'approved' and addon_slug == 'lifetime' and page_id:
-            set_page_license_lifetime(page_id)
-
         return "ok", 200
     except Exception as e:
         print("Webhook error:", e)
@@ -1038,42 +1525,41 @@ app.config['UPLOAD_FOLDER'] = '/uploads'
 @app.route('/create_page', methods=['GET', 'POST'])
 def create_page():
     if request.method == 'POST':
-        business_name = request.form['business_name']
-        description = request.form['description']
-        category = request.form['category']
-        slogan = request.form['slogan']
-        founding_date = request.form['founding_date']
+        business_name  = request.form['business_name']
+        description    = request.form['description']
+        category       = request.form['category']
+        slogan         = request.form['slogan']
+        founding_date  = request.form['founding_date']
 
         # Contacto y ubicación
-        phone = request.form['phone']
-        whatsapp = request.form['whatsapp']
+        phone       = request.form['phone']
+        whatsapp    = request.form['whatsapp']
         email_contact = request.form['email']
-        website = request.form['website']
-        address = request.form['address']
+        website     = request.form['website']
+        address     = request.form['address']
         postal_code = request.form['postal_code']
-        city = request.form['city']
-        state = request.form['state']
-        color = request.form['color']
+        city        = request.form['city']
+        state       = request.form['state']
+        color       = request.form['color']
 
-        # ⚠️ NUEVO: leer coordenadas del formulario (hidden inputs)
+        # Coordenadas (opcionales)
         lat = request.form.get('lat')
         lng = request.form.get('lng')
 
-        # Redes sociales
-        facebook = request.form['facebook']
+        # Redes
+        facebook  = request.form['facebook']
         instagram = request.form['instagram']
-        tiktok = request.form['tiktok']
+        tiktok    = request.form['tiktok']
 
         # Operación y servicios
         operating_hours = request.form['operating_hours']
-        services = request.form['services']
+        services        = request.form['services']
         payment_methods = request.form['payment_methods']
         delivery_available = request.form.get('delivery_available') == 'on'
 
         # Imagen (opcional)
-        image = request.files['image']
+        image = request.files.get('image')
         image_path = None
-
         if image and image.filename != '':
             slug_empresa = slugify(business_name)
             today = datetime.utcnow().strftime('%Y-%m-%d')
@@ -1094,40 +1580,124 @@ def create_page():
             except:
                 return None
 
+        # ⚠️ Slug único desde el inicio
+        page_slug = unique_slug_for_page(business_name)
+
         new_page = {
-            'business_name': business_name,
-            'description': description,
-            'category': category,
-            'slogan': slogan,
-            'founding_date': founding_date,
-            'phone': phone,
-            'whatsapp': whatsapp,
-            'email': email_contact,
-            'website': website,
-            'address': address,
-            'postal_code': postal_code,
-            'city': city,
-            'state': state,
-            'color': color,
-            'lat': _safe_float(lat),
-            'lng': _safe_float(lng),
-            'facebook': facebook,
-            'instagram': instagram,
-            'tiktok': tiktok,
+            'business_name':  business_name,
+            'description':    description,
+            'category':       category,
+            'slogan':         slogan,
+            'founding_date':  founding_date,
+            'phone':          phone,
+            'whatsapp':       whatsapp,
+            'email':          email_contact,
+            'website':        website,
+            'address':        address,
+            'postal_code':    postal_code,
+            'city':           city,
+            'state':          state,
+            'color':          color,
+            'lat':            _safe_float(lat),
+            'lng':            _safe_float(lng),
+            'facebook':       facebook,
+            'instagram':      instagram,
+            'tiktok':         tiktok,
             'operating_hours': operating_hours,
-            'services': services,
+            'services':        services,
             'payment_methods': payment_methods,
             'delivery_available': delivery_available,
-            'image': image_path
+            'image':            image_path,
+            'slug':             page_slug,    # 👈 guardamos el slug
+            'default_html':     'classico'    # plantilla por defecto
         }
 
         result = mongo.db.page_data.insert_one(new_page)
         page_id = result.inserted_id
-        flash('Empresa creada exitosamente. Ahora registra el usuario administrador.')
+
+        # Si el usuario está logueado, asociamos el sitio y vamos a Facturación
+        if current_user.is_authenticated:
+            try:
+                ensure_user_page_lists(current_user.id, page_id)  # agrega a page_ids y current_page_id si faltan
+            except Exception:
+                # fallback por si no tienes ensure_user_page_lists importado en este archivo
+                u = mongo.db.users.find_one({'_id': ObjectId(current_user.id)})
+                page_ids = u.get('page_ids') or []
+                if ObjectId(page_id) not in [ObjectId(str(x)) for x in page_ids]:
+                    page_ids.append(ObjectId(page_id))
+                mongo.db.users.update_one(
+                    {'_id': ObjectId(current_user.id)},
+                    {'$set': {'page_ids': page_ids, 'current_page_id': ObjectId(page_id)}}
+                )
+            set_current_page_id(page_id)
+            flash('Empresa creada. Activa tu suscripción para comenzar.')
+            return redirect(url_for('billing_portal'))
+
+        # Si NO está logueado, lo mandamos a crear su usuario admin
+        flash('Empresa creada. Crea tu usuario administrador para continuar.')
         return redirect(url_for('register', page_id=str(page_id)))
 
+    # GET
     return render_template('create_page.html')
 
+@app.route('/sites')
+@login_required
+def sites():
+    u = mongo.db.users.find_one({'_id': ObjectId(current_user.id)})
+    ids = set()
+
+    def add(v):
+        try:
+            if v: ids.add(ObjectId(str(v)))
+        except:
+            pass
+
+    for pid in (u.get('page_ids') or []):
+        add(pid)
+    add(u.get('page_id'))  # legacy
+
+    pages = list(mongo.db.page_data.find({'_id': {'$in': list(ids)}}))
+
+    # 💡 Backfill de slug si faltara (para sitios antiguos)
+    for p in pages:
+        if not p.get('slug'):
+            new_slug = unique_slug_for_page(p.get('business_name', 'sitio'))
+            mongo.db.page_data.update_one({'_id': p['_id']}, {'$set': {'slug': new_slug}})
+            p['slug'] = new_slug
+
+    current = str(get_current_page_id() or '')
+    return render_template('sites.html', pages=pages, current=current)
+
+@app.route('/sites/switch/<site_id>')
+@login_required
+def switch_site(site_id):
+    def as_oid(v):
+        try:
+            return ObjectId(str(v))
+        except:
+            return None
+
+    target = as_oid(site_id)
+    if not target:
+        flash('ID de sitio inválido.')
+        return redirect(url_for('sites'))
+
+    u = mongo.db.users.find_one({'_id': ObjectId(current_user.id)})
+    owned = set()
+    for pid in (u.get('page_ids') or []):
+        op = as_oid(pid)
+        if op: owned.add(op)
+    # incluye legacy
+    op = as_oid(u.get('page_id'))
+    if op: owned.add(op)
+
+    if target not in owned:
+        flash('No puedes acceder a ese sitio.')
+        return redirect(url_for('sites'))
+
+    set_current_page_id(target)
+    flash('Sitio activo cambiado.')
+    return redirect(url_for('dashboard'))
 
 DEFAULT_HTML_TEMPLATES = {
     "base": "detalle_negocio.html",
@@ -1136,26 +1706,38 @@ DEFAULT_HTML_TEMPLATES = {
     "restaurante": "public/restaurant.html",
 }
 
-@app.route('/manage_page', methods=['GET', 'POST'])
-@require_lifetime
+@app.route('/manage_page')
+# @require_active_subscription
 @login_required
+def manage_page_compat():
+    page_id = get_current_page_id()
+    if not page_id:
+        flash('Selecciona un sitio.')
+        return redirect(url_for('sites'))
+    page = mongo.db.page_data.find_one({'_id': page_id})
+    if not page:
+        flash('Sitio no encontrado.')
+        return redirect(url_for('sites'))
+    page = ensure_page_has_slug(page)
+    return redirect(url_for('manage_page_slug', slug=page['slug']))
+
+@app.route('/manage_page/<slug>', methods=['GET', 'POST'])
+@login_required
+# @require_active_subscription
 @roles_required('admin')
-def manage_page():
+def manage_page_slug(slug):
     if current_user.role != 'admin':
         flash('Acceso denegado.')
         return redirect(url_for('dashboard'))
 
-    user = mongo.db.users.find_one({'_id': ObjectId(current_user.id)})
-    if not user:
-        flash('Usuario no encontrado.')
-        return redirect(url_for('login'))
+    page = get_page_by_slug(slug)
+    if not page:
+        flash('Sitio no encontrado.')
+        return redirect(url_for('sites'))
 
-    page_id = user.get('page_id')
-    if not page_id:
-        flash('No tienes una página asignada')
-        return redirect(url_for('dashboard'))
-
-    data = mongo.db.page_data.find_one({'_id': page_id})
+    # fija el sitio activo por conveniencia
+    set_current_page_id(page['_id'])
+    page = ensure_page_has_slug(page)  # crea slug si no existía
 
     if request.method == 'POST':
         # --- Información básica
@@ -1181,8 +1763,8 @@ def manage_page():
         def _safe_float(v):
             try: return float(v)
             except: return None
-        lat = _safe_float(lat_raw) if lat_raw else (data.get('lat') if data else None)
-        lng = _safe_float(lng_raw) if lng_raw else (data.get('lng') if data else None)
+        lat = _safe_float(lat_raw) if lat_raw else (page.get('lat') if page else None)
+        lng = _safe_float(lng_raw) if lng_raw else (page.get('lng') if page else None)
 
         # --- Redes sociales
         facebook  = request.form['facebook']
@@ -1195,17 +1777,16 @@ def manage_page():
         payment_methods    = request.form['payment_methods']
         delivery_available = 'delivery_available' in request.form
 
-        # --- NUEVO: HTML por defecto
+        # --- Plantilla por defecto
         chosen_default_html = request.form.get('default_html') or 'classico'
         if chosen_default_html not in DEFAULT_HTML_TEMPLATES:
-            chosen_default_html = 'classico'  # fallback seguro
+            chosen_default_html = 'classico'
 
         # --- Imagen (opcional)
         image = request.files.get('image')
-        image_path = data['image'] if data and 'image' in data else None
-
+        image_path = page.get('image')
         if image and image.filename != '':
-            slug_empresa = slugify(data['business_name'] if data else business_name)
+            slug_empresa = slugify(page['business_name'] if page else business_name)
             today = datetime.utcnow().strftime('%Y-%m-%d')
             folder_path = os.path.join(app.config['UPLOAD_FOLDER'], slug_empresa, today)
             os.makedirs(folder_path, exist_ok=True)
@@ -1213,9 +1794,7 @@ def manage_page():
             filename = secure_filename(image.filename)
             timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
             final_filename = f"{timestamp}_{filename}"
-            full_path = os.path.join(folder_path, final_filename)
-            image.save(full_path)
-
+            image.save(os.path.join(folder_path, final_filename))
             image_path = f"{slug_empresa}/{today}/{final_filename}"
 
         new_data = {
@@ -1243,24 +1822,27 @@ def manage_page():
             'payment_methods': payment_methods,
             'delivery_available': delivery_available,
             'image':            image_path,
-            'default_html':     chosen_default_html  # 👈 se guarda solo la clave
+            'default_html':     chosen_default_html
         }
 
-        if data:
-            mongo.db.page_data.update_one({'_id': page_id}, {'$set': new_data})
-        else:
-            new_data['_id'] = page_id
-            mongo.db.page_data.insert_one(new_data)
+        # permitir cambiar slug manualmente (opcional)
+        posted_slug = (request.form.get('slug') or '').strip()
+        if posted_slug:
+            normalized = slugify(posted_slug)
+            if normalized and normalized != page.get('slug'):
+                new_data['slug'] = unique_slug_for_page(normalized)
 
+        mongo.db.page_data.update_one({'_id': page['_id']}, {'$set': new_data})
+
+        # Si cambió el slug, redirige a la nueva URL
+        final_slug = new_data.get('slug') or page.get('slug')
         flash('Perfil del negocio actualizado exitosamente.')
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('manage_page_slug', slug=final_slug))
 
-    # valor seleccionado (si no hay, usa 'classico')
-    selected_default_html = (data or {}).get('default_html', 'classico')
-
+    selected_default_html = (page or {}).get('default_html', 'classico')
     return render_template(
         'manage_page.html',
-        data=data,
+        data=page,  # data.slug disponible
         default_html_key=selected_default_html,
         default_html_whitelist=DEFAULT_HTML_TEMPLATES
     )
@@ -1534,21 +2116,18 @@ def sitemap():
     return Response(xml, mimetype='application/xml')
 
 @app.route('/admin/reseñas')
-@require_lifetime
+@require_active_subscription
 @login_required
 def admin_reseñas():
-    user = mongo.db.users.find_one({'_id': ObjectId(current_user.id)})
-    if not user:
-        flash('Usuario no encontrado.')
-        return redirect(url_for('logout'))
-
-    page_id = user.get('page_id')
+    page_id = get_current_page_id()
+    if not page_id:
+        flash('Selecciona un sitio.')
+        return redirect(url_for('sites'))
     reseñas = list(mongo.db.reseñas.find({'page_id': page_id}).sort('fecha', -1))
-
     return render_template('admin_reseñas.html', reseñas=reseñas)
 
 @app.route('/admin/reviews/delete/<review_id>', methods=['POST'])
-@require_lifetime
+@require_active_subscription
 @login_required
 def delete_review(review_id):
     try:

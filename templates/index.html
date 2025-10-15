@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Global PYMES — Tu web completa con pago único</title>
+  <title>Global PYMES — Tu web completa con suscripción mensual</title>
 
   <!-- Bootstrap & fuentes -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -12,8 +12,8 @@
   <link rel="icon" href="{{ url_for('static', filename='images/logo.jpg') }}" type="image/png">
 
   <!-- SEO -->
-  <meta name="description" content="Crea la web de tu negocio con pago único. Productos, reseñas, WhatsApp, SEO y Mercado Pago. Hecho en México.">
-  <meta name="keywords" content="pago único, pymes, tienda simple, catálogo, reseñas, Mercado Pago, Global PYMES, DavaniTechnology">
+  <meta name="description" content="Crea la web de tu negocio con suscripción mensual. Productos, reseñas, WhatsApp, SEO y cobros con Mercado Pago. Hecho en México.">
+  <meta name="keywords" content="suscripción mensual, pymes, catálogo, reseñas, Mercado Pago, Global PYMES, DavaniTechnology">
   <meta name="author" content="DavaniTechnology">
   <meta name="geo.region" content="MX">
   <meta name="geo.placename" content="México">
@@ -21,8 +21,8 @@
   <meta name="robots" content="index, follow">
 
   <!-- OG -->
-  <meta property="og:title" content="Global PYMES — Tu web completa con pago único">
-  <meta property="og:description" content="Paga una sola vez y obtén tu web completa: catálogo, reseñas, WhatsApp, SEO y Mercado Pago.">
+  <meta property="og:title" content="Global PYMES — Tu web completa con suscripción mensual">
+  <meta property="og:description" content="Todo para tu web en un solo plan mensual: catálogo, reseñas, WhatsApp, SEO y cobros con Mercado Pago.">
   <meta property="og:image" content="https://technologydavani.com/static/images/logo.jpg">
   <meta property="og:url" content="https://technologydavani.com">
   <meta property="og:type" content="website">
@@ -56,9 +56,7 @@
     .price{font-size:2.4rem;font-weight:800;color:var(--brand);}
     .footer{background:#0f1220;color:#cbd5e1}
     .footer a{color:#94a3b8}
-    .price-line{display:flex;align-items:baseline;gap:.75rem}
-    .price-line .old{color:#6b7280;text-decoration:line-through}
-    .coupon-chip{border:1px dashed #64748b;border-radius:999px;padding:.35rem .7rem;font-weight:700}
+    .price-note{font-size:.95rem;color:#6b7280}
   </style>
 </head>
 <body>
@@ -73,7 +71,7 @@
     <div id="nav" class="collapse navbar-collapse">
       <ul class="navbar-nav ms-auto align-items-lg-center gap-2">
         <li class="nav-item"><a class="nav-link" href="#features">Características</a></li>
-        <li class="nav-item"><a class="nav-link" href="#price">Pago único</a></li>
+        <li class="nav-item"><a class="nav-link" href="#price">Precios</a></li>
         <li class="nav-item"><a class="nav-link" href="#faq">FAQ</a></li>
 
         {% if current_user.is_authenticated %}
@@ -81,9 +79,9 @@
             <a href="{{ url_for('dashboard') }}" class="btn btn-ghost btn-sm"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a>
           </li>
           <li class="nav-item">
-            <a href="{{ url_for('pay_lifetime', page_id=current_user.page_id) }}"
+            <a href="{{ url_for('pay_subscription') }}"
                class="btn btn-brand btn-sm ms-lg-2 js-open-terms"
-               data-requires-terms="true"><i class="bi bi-credit-card me-1"></i> Activar licencia</a>
+               data-requires-terms="true"><i class="bi bi-credit-card me-1"></i> Activar suscripción</a>
           </li>
         {% else %}
           <li class="nav-item ms-lg-3">
@@ -102,12 +100,11 @@
 <header class="hero py-5 py-md-6">
   <div class="container text-center">
     <span class="badge badge-soft rounded-pill px-3 py-2 mb-3">
-      Hecho en México · Mercado Pago integrado · SEO automático
+      Hecho en México · Mercado Pago · SEO automático
     </span>
-    <h1 class="mb-3">Tu web completa con <u>pago único</u>, sin mensualidades</h1>
+    <h1 class="mb-3">Tu web completa con <u>suscripción mensual</u></h1>
     <p class="lead mb-4">
-      Muestra tus productos, recibe reseñas y cotizaciones por WhatsApp y cobra con Mercado Pago. 
-      Paga una sola vez y administra todo desde un panel sencillo.
+      Catálogo, reseñas, WhatsApp y cobros con Mercado Pago. Administra todo desde un panel sencillo.
     </p>
 
     <div class="d-flex flex-wrap justify-content-center gap-2">
@@ -115,14 +112,14 @@
         <i class="bi bi-magic me-1"></i> Crear mi página
       </a>
       {% if current_user.is_authenticated %}
-      <a href="{{ url_for('pay_lifetime', page_id=current_user.page_id, coupon=COUPON.code if SHOW_COUPON else None) }}"
+      <a href="{{ url_for('pay_subscription') }}"
          class="btn btn-ghost btn-lg js-open-terms"
          data-requires-terms="true">
-        <i class="bi bi-credit-card me-1"></i> Activar licencia de por vida
+        <i class="bi bi-credit-card me-1"></i> Activar suscripción
       </a>
       {% else %}
       <a href="{{ url_for('login') }}" class="btn btn-ghost btn-lg">
-        <i class="bi bi-credit-card me-1"></i> Activar licencia
+        <i class="bi bi-credit-card me-1"></i> Activar suscripción
       </a>
       {% endif %}
     </div>
@@ -154,7 +151,7 @@
         <div class="card h-100 p-4">
           <div class="icon-pill mb-3"><i class="bi bi-star-half"></i></div>
           <h5 class="fw-bold">Reseñas verificadas</h5>
-          <p>Clientes califican y comentan; tú moderas desde el panel. Dale confianza a nuevos compradores.</p>
+          <p>Clientes califican y comentan; tú moderas desde el panel. Da confianza a nuevos compradores.</p>
         </div>
       </div>
 
@@ -162,7 +159,7 @@
         <div class="card h-100 p-4">
           <div class="icon-pill mb-3"><i class="bi bi-credit-card-2-front"></i></div>
           <h5 class="fw-bold">Mercado Pago</h5>
-          <p>Checkout Pro listo para el <strong>pago único</strong> de tu licencia, sin complicaciones.</p>
+          <p>Suscripción mensual con <strong>preapproval</strong>. Cobro automático y control desde tu panel.</p>
         </div>
       </div>
       <div class="col-md-4">
@@ -189,59 +186,37 @@
     <div class="row align-items-stretch g-4">
       <div class="col-lg-7">
         <div class="card h-100 p-4 p-md-5">
-          <span class="badge rounded-pill text-bg-success w-fit mb-3">Pago único de por vida</span>
-          <h3 class="mb-3">Activa tu licencia y olvídate de mensualidades</h3>
-          <p class="mb-4">Acceso permanente al panel, catálogo, reseñas, SEO y Mercado Pago integrado. 
-            Sin suscripciones, sin letra chiquita.</p>
-
-          {% if SHOW_COUPON %}
-          <div class="alert alert-warning d-flex align-items-center justify-content-between">
-            <div>
-              <strong>Cupon activo:</strong> 
-              <span class="coupon-chip"><i class="bi bi-ticket-perforated me-1"></i>{{ COUPON.code }}</span>
-              {% if COUPON.type == 'percent' %}
-                <span class="ms-2">-{{ COUPON.value }}%</span>
-              {% else %}
-                <span class="ms-2">-${{ '%.2f'|format(COUPON.value) }} MXN</span>
-              {% endif %}
-              {% if COUPON.expiry %}
-                <small class="ms-2 text-muted">Válido hasta {{ COUPON.expiry }}</small>
-              {% endif %}
-            </div>
-          </div>
-          {% endif %}
+          <span class="badge rounded-pill text-bg-primary w-fit mb-3">Plan mensual</span>
+          <h3 class="mb-3">{{ SUB_PLAN.name }}</h3>
+          <p class="mb-4">
+            Un solo plan. Todo incluido. Sin límites de páginas internas ni reseñas.
+            Se renueva automáticamente cada mes y puedes <strong>pausar o cancelar cuando quieras</strong>.
+          </p>
 
           <div class="mb-3">
-            {% if SHOW_COUPON and COUPON.discount_amount > 0 %}
-              <div class="price-line">
-                <div class="old">${{ '%.2f'|format(LIFETIME_PRICE) }} MXN</div>
-                <div class="text-muted">menos {{ '%.2f'|format(COUPON.discount_amount) }} MXN</div>
-              </div>
-              <div class="price">${{ '%.2f'|format(FINAL_PRICE) }} MXN</div>
-              <small class="text-muted">Precio con cupón <strong>{{ COUPON.code }}</strong> aplicado.</small>
-            {% else %}
-              <div class="price">${{ '%.2f'|format(LIFETIME_PRICE) }} MXN</div>
-              <small class="text-muted">Precio de activación de por vida.</small>
-            {% endif %}
+            <div class="price">
+              ${{ ('%.0f'|format(SUB_PLAN.price)).rstrip('0').rstrip('.') }} {{ SUB_PLAN.currency }}/mes
+            </div>
+            <div class="price-note">Cobro automático vía Mercado Pago.</div>
           </div>
 
           <ul class="list-unstyled mt-3">
             <li class="mb-2"><i class="bi bi-check2-circle text-success me-2"></i> Web completa lista para vender</li>
-            <li class="mb-2"><i class="bi bi-check2-circle text-success me-2"></i> Branding preparado para crecer</li>
-            <li class="mb-2"><i class="bi bi-check2-circle text-success me-2"></i> Soporte básico y actualizaciones</li>
-            <li class="mb-2"><i class="bi bi-check2-circle text-success me-2"></i> Integración con WhatsApp y correo</li>
+            <li class="mb-2"><i class="bi bi-check2-circle text-success me-2"></i> Reseñas y moderación</li>
+            <li class="mb-2"><i class="bi bi-check2-circle text-success me-2"></i> WhatsApp y correo integrados</li>
+            <li class="mb-2"><i class="bi bi-check2-circle text-success me-2"></i> SEO y sitemap automáticos</li>
           </ul>
 
           <div class="d-flex align-items-end gap-3 mt-3">
             {% if current_user.is_authenticated %}
-              <a href="{{ url_for('pay_lifetime', page_id=current_user.page_id, coupon=COUPON.code if SHOW_COUPON else None) }}"
+              <a href="{{ url_for('pay_subscription') }}"
                  class="btn btn-brand btn-lg ms-auto js-open-terms"
                  data-requires-terms="true">
                 <i class="bi bi-credit-card me-1"></i> Activar con Mercado Pago
               </a>
             {% else %}
               <a href="{{ url_for('login') }}" class="btn btn-brand btn-lg ms-auto">
-                <i class="bi bi-credit-card me-1"></i> Activar con Mercado Pago
+                <i class="bi bi-credit-card me-1"></i> Inicia sesión para activar
               </a>
             {% endif %}
           </div>
@@ -261,12 +236,12 @@
         <div class="card h-100 p-4 p-md-5">
           <h5 class="mb-3">¿Cómo funciona?</h5>
           <div class="mb-2"><strong>1)</strong> Crea tu página con los datos básicos de tu negocio.</div>
-          <div class="mb-2"><strong>2)</strong> Activa tu licencia con <em>pago único</em> vía Mercado Pago.</div>
+          <div class="mb-2"><strong>2)</strong> Activa tu <em>suscripción mensual</em> con Mercado Pago.</div>
           <div class="mb-4"><strong>3)</strong> Personaliza contenido y comienza a vender.</div>
 
           <div class="alert alert-info mb-0">
             <i class="bi bi-info-circle me-1"></i>
-            Tu panel se desbloquea automáticamente cuando el pago se aprueba (vía webhook).
+            Gestiona tu suscripción desde <a href="{{ url_for('billing_portal') }}">Facturación</a>: pausar, reanudar o cancelar.
           </div>
         </div>
       </div>
@@ -280,7 +255,7 @@
     <h2 class="section-title mb-3">¿Quiénes somos?</h2>
     <p class="text-muted fs-5 mx-auto" style="max-width:860px">
       Somos jóvenes desarrolladores en México. Construimos herramientas claras, seguras y accesibles para que las PYMES
-      digitalicen su operación sin dolores de cabeza ni mensualidades eternas.
+      digitalicen su operación sin dolores de cabeza.
     </p>
 
     <div class="row mt-4 g-4">
@@ -325,9 +300,9 @@
     {% endwith %}
 
     <form class="row g-3" method="POST" action="/enviar">
-      <div class="col-md-6"><input type="text" name="nombre" id="nombre" class="form-control rounded-3" placeholder="Tu nombre o empresa"></div>
-      <div class="col-md-6"><input type="email" name="correo" id="correo" class="form-control rounded-3" placeholder="Tu correo"></div>
-      <div class="col-12"><textarea name="mensaje" id="mensaje" class="form-control rounded-3" rows="4" placeholder="Tu mensaje..."></textarea></div>
+      <div class="col-md-6"><input type="text" name="nombre" id="nombre" class="form-control rounded-3" placeholder="Tu nombre o empresa" required></div>
+      <div class="col-md-6"><input type="email" name="correo" id="correo" class="form-control rounded-3" placeholder="Tu correo" required></div>
+      <div class="col-12"><textarea name="mensaje" id="mensaje" class="form-control rounded-3" rows="4" placeholder="Tu mensaje..." required></textarea></div>
       <div class="g-recaptcha" data-sitekey="{{ RECAPTCHA_SITE_KEY }}"></div>
       <div class="col-12 text-center"><button type="submit" class="btn btn-brand btn-lg rounded-3">Enviar</button></div>
     </form>
@@ -344,26 +319,27 @@
       </h2>
       <div id="faq-cost" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
         <div class="accordion-body">
-          {% if SHOW_COUPON and COUPON.discount_amount > 0 %}
-            Licencia de por vida: <strong class="text-decoration-line-through">${{ '%.2f'|format(LIFETIME_PRICE) }}</strong> 
-            con cupón <strong>{{ COUPON.code }}</strong> queda en 
-            <strong>${{ '%.2f'|format(FINAL_PRICE) }}</strong>.
-          {% else %}
-            La licencia de por vida tiene un <strong>pago único de ${{ '%.2f'|format(LIFETIME_PRICE) }}</strong>.
-          {% endif %}
+          El plan es de <strong>${{ ('%.0f'|format(SUB_PLAN.price)).rstrip('0').rstrip('.') }} {{ SUB_PLAN.currency }}/mes</strong>.
+          Se renueva automáticamente y puedes pausar o cancelar en cualquier momento desde <a href="{{ url_for('billing_portal') }}">Facturación</a>.
         </div>
       </div>
     </div>
     <div class="accordion-item">
-      <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#faq2">¿Qué incluye la licencia?</button></h2>
+      <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#faq2">¿Qué incluye el plan?</button></h2>
       <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-        <div class="accordion-body">Acceso permanente al panel, catálogo, reseñas, SEO, WhatsApp y <strong>Mercado Pago</strong> para activar la licencia.</div>
+        <div class="accordion-body">Acceso al panel, catálogo, reseñas, SEO, WhatsApp y cobros con <strong>Mercado Pago</strong>.</div>
       </div>
     </div>
     <div class="accordion-item">
       <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#faq4">¿Cómo se procesa el pago?</button></h2>
       <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-        <div class="accordion-body">Con <strong>Mercado Pago</strong> (Checkout Pro). Al aprobarse, el sistema activa la licencia mediante webhook.</div>
+        <div class="accordion-body">Con <strong>Mercado Pago</strong> (preapproval). Tras autorizar, se cobra cada mes automáticamente.</div>
+      </div>
+    </div>
+    <div class="accordion-item">
+      <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#faq5">¿Puedo pausar o cancelar?</button></h2>
+      <div id="faq5" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+        <div class="accordion-body">Sí. Desde <a href="{{ url_for('billing_portal') }}">Facturación</a> puedes pausar, reanudar o cancelar cuando quieras.</div>
       </div>
     </div>
   </div>
@@ -406,8 +382,7 @@
           Eres responsable de toda actividad realizada desde tu cuenta.</p>
 
         <h6>3. Pagos</h6>
-        <p>La activación de licencia se realiza mediante pago único a través de Mercado Pago u otro procesador equivalente.
-          El procesamiento del cobro y seguridad de la transacción corresponden al procesador de pagos.</p>
+        <p>La activación del plan se realiza mediante suscripción mensual con Mercado Pago. El cobro se renueva automáticamente.</p>
 
         <h6>4. Contenido del usuario</h6>
         <p>Eres titular del contenido que publiques y otorgas a Global PYMES una licencia limitada para alojarlo y mostrarlo
@@ -465,43 +440,37 @@
     const acceptChk = document.getElementById('acceptTerms');
     const btnContinue = document.getElementById('btnTermsContinue');
 
-    let pendingHref = null; // a dónde vamos después de aceptar
+    let pendingHref = null;
 
-    // Habilita / deshabilita el botón Continuar
     acceptChk.addEventListener('change', function(){
       btnContinue.disabled = !this.checked;
     });
 
-    // Abrir modal desde botones que requieren términos
     document.querySelectorAll('[data-requires-terms="true"]').forEach(btn => {
       btn.addEventListener('click', function(e){
         e.preventDefault();
         pendingHref = this.getAttribute('href');
-        // resetear estado del modal por si venía de antes
         acceptChk.checked = false;
         btnContinue.disabled = true;
         termsModal.show();
       });
     });
 
-    // Links para abrir modal desde texto (footer / price)
     document.querySelectorAll('.js-open-terms-link, .js-open-privacy-link').forEach(a => {
       a.addEventListener('click', function(e){
         e.preventDefault();
-        pendingHref = null; // solo informativo, no redirigimos
+        pendingHref = null;
         acceptChk.checked = false;
         btnContinue.disabled = true;
         termsModal.show();
       });
     });
 
-    // Continuar: solo si hay destino pendiente (checkout)
     btnContinue.addEventListener('click', function(){
       if (acceptChk.checked) {
         if (pendingHref) {
           window.location.href = pendingHref;
         } else {
-          // Si se abrió desde un link informativo, solo cerrar
           termsModal.hide();
         }
       }

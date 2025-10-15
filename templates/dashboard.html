@@ -23,7 +23,7 @@
                 <div class="card-body">
                     <h5 class="card-title">🛠 Gestionar página</h5>
                     <p class="card-text">Edita la información de tu página asignada.</p>
-                    <a href="{{ url_for('manage_page') }}" class="btn btn-primary">Ir</a>
+                    <a href="{{ url_for('manage_page_slug', slug=page.slug) }}" class="btn btn-primary">Ir</a>
                 </div>
             </div>
         </div>

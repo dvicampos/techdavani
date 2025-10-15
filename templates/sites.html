@@ -1,0 +1,138 @@
+{% extends "layout.html" %}
+
+{% block title %}Mis sitios — MyPymes{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card {
+        background: #14181d;
+        border: 1px solid #1f2630;
+    }
+
+    .badge-current {
+        background: #00d18f;
+        color: #0b0c10;
+    }
+
+    .tag {
+        background: #222a34;
+        color: #aeb6c2;
+        border-radius: 999px;
+        padding: .125rem .5rem;
+        font-size: .75rem;
+    }
+
+    .search-input {
+        background: #11161b;
+        border-color: #1f2630;
+        color: #e6e9ee;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-end mb-3">
+    <div>
+        <h1 class="h3 m-0">Tus sitios</h1>
+        <div class="text-secondary small">Selecciona el sitio activo para administrarlo.</div>
+    </div>
+    <form class="mt-3 mt-sm-0" method="get" onsubmit="filterCards(event)">
+        <div class="input-group">
+            <input id="q" class="form-control form-control-sm search-input"
+                placeholder="Buscar por nombre, ciudad, estado…" />
+            <button class="btn btn-outline-light btn-sm" type="submit">Buscar</button>
+        </div>
+    </form>
+</div>
+
+<div class="mb-3">
+    <a class="btn btn-primary btn-sm" href="{{ url_for('create_page') }}">➕ Crear sitio</a>
+</div>
+
+{% if pages|length == 0 %}
+<div class="text-center py-5">
+    <p class="lead mb-3">Aún no tienes sitios.</p>
+    <a href="{{ url_for('create_page') }}" class="btn btn-primary">Crear mi primer sitio</a>
+</div>
+{% else %}
+<div id="grid" class="row g-3">
+    {% for p in pages %}
+    <div class="col-12 col-md-6 col-lg-4 site-card" data-name="{{ (p.business_name or '')|lower }}"
+        data-city="{{ (p.city or '')|lower }}" data-state="{{ (p.state or '')|lower }}"
+        data-category="{{ (p.category or '')|lower }}">
+        <div class="card h-100">
+            <div class="card-body d-flex flex-column">
+                <div class="d-flex justify-content-between align-items-start">
+                    <h2 class="h5 mb-1">{{ p.business_name }}</h2>
+                    {% if current and p._id|string == current|string %}
+                    <span class="badge badge-current">Activo</span>
+                    {% endif %}
+                </div>
+
+                <div class="mb-2">
+                    {% if p.category %}<span class="tag me-1">{{ p.category }}</span>{% endif %}
+                    {% if p.city %}<span class="tag me-1">{{ p.city }}</span>{% endif %}
+                    {% if p.state %}<span class="tag me-1">{{ p.state }}</span>{% endif %}
+                </div>
+
+                {% if p.slogan %}
+                <p class="text-secondary small mb-2">“{{ p.slogan }}”</p>
+                {% endif %}
+
+                {# Link público: usa slug si existe; si no, nombre normalizado #}
+                {% set slug = (p.slug or (p.business_name or ''))|lower|replace(' ', '-') %}
+                <div class="small mb-2">
+                    <span class="text-secondary">Sitio público:</span>
+                    <a class="ms-1" href="{{ url_for('detalle_negocio', nombre=slug) }}" target="_blank"
+                        rel="noopener">abrir</a>
+                </div>
+
+                <div class="mt-auto d-flex flex-wrap gap-2">
+                    {# usa siempre el slug real (ya garantizado en backend) #}
+                    {% set _slug = p.slug %}
+
+                    {% if current and p._id|string == current|string %}
+                    <a class="btn btn-outline-light btn-sm" href="{{ url_for('dashboard_slug', slug=_slug) }}">
+                        Ir a dashboard
+                    </a>
+                    {% else %}
+                    <a class="btn btn-primary btn-sm" href="{{ url_for('switch_site', site_id=p._id|string) }}">
+                        Usar este sitio
+                    </a>
+                    {# opcional: permite saltar directo al dashboard y se activará solo #}
+                    <a class="btn btn-outline-light btn-sm" href="{{ url_for('dashboard_slug', slug=_slug) }}">
+                        Ir a dashboard
+                    </a>
+                    {% endif %}
+
+                    {# ✅ estos dos SIEMPRE visibles #}
+                    <a class="btn btn-outline-light btn-sm" href="{{ url_for('manage_page_slug', slug=_slug) }}">
+                        Editar perfil
+                    </a>
+                    <a class="btn btn-outline-light btn-sm" href="{{ url_for('detalle_negocio', nombre=_slug) }}"
+                        target="_blank">
+                        Ver público
+                    </a>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function filterCards(e) {
+        if (e) e.preventDefault();
+        const q = (document.getElementById('q').value || '').trim().toLowerCase();
+        const cards = document.querySelectorAll('.site-card');
+        cards.forEach(c => {
+            const hay = (c.dataset.name + ' ' + c.dataset.city + ' ' + c.dataset.state + ' ' + c.dataset.category).includes(q);
+            c.style.display = hay ? '' : 'none';
+        });
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,226 @@
+{% extends "layout.html" %}
+
+{% block title %}Facturación — MyPymes{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* ====== Tokens (usa los de layout si existen) ====== */
+  :root{
+    --ring: 0 0 0 .25rem rgba(124,121,255,.25);
+  }
+
+  /* ====== Layout de la sección ====== */
+  .section-header{
+    display:flex; align-items:flex-start; gap:.75rem;
+    padding: .25rem 0 1rem 0;
+    border-bottom:1px dashed var(--glass-border, #1f2630);
+    margin-bottom:1rem;
+  }
+  .section-header .icon{
+    width:40px; height:40px; flex:0 0 40px;
+    display:grid; place-items:center;
+    border-radius:12px;
+    background: radial-gradient(120px 60px at 10% 0%, rgba(124,121,255,.18), transparent),
+                radial-gradient(120px 60px at 90% 0%, rgba(56,189,248,.12), transparent),
+                color-mix(in srgb, var(--card, #14181d) 85%, #fff 15%);
+    border:1px solid var(--glass-border, #1f2630);
+  }
+  .muted{ color: var(--muted, #9aa3ae); }
+
+  /* ====== Cards ====== */
+  .card{
+    background: color-mix(in srgb, var(--card, #0f1426) 92%, #fff 8%);
+    border:1px solid var(--glass-border, #1f2630);
+    border-radius:16px;
+    box-shadow: var(--shadow-1, 0 10px 28px rgba(0,0,0,.35));
+    overflow: hidden;
+  }
+  .card .card-body{ padding:1.25rem; }
+
+  /* ====== List group oscuro ====== */
+  .list-group-flush>.list-group-item{
+    background: transparent;
+    color: var(--ink, #e7eaf3);
+    border-color: rgba(255,255,255,.06);
+  }
+
+  /* ====== Badges de estado con dot ====== */
+  .status-badge{
+    display:inline-flex; align-items:center; gap:.5rem;
+    padding:.35rem .6rem;
+    border-radius:999px; font-weight:700; letter-spacing:.2px;
+    border:1px solid transparent;
+  }
+  .status-badge .dot{
+    width:.55rem; height:.55rem; border-radius:50%;
+    box-shadow:0 0 0 3px rgba(255,255,255,.06) inset;
+  }
+  .badge-live{ background:#0fe3a0; color:#0b0c10; border-color:rgba(0,0,0,.08); }
+  .badge-live .dot{ background:#057a4c; }
+  .badge-warn{ background:#ffcf66; color:#0b0c10; border-color:rgba(0,0,0,.08); }
+  .badge-warn .dot{ background:#946200; }
+  .badge-dead{ background:#ff7b93; color:#0b0c10; border-color:rgba(0,0,0,.08); }
+  .badge-dead .dot{ background:#7a0b1d; }
+
+  /* ====== Precio ====== */
+  .price{
+    font-size:2.25rem; font-weight:800; line-height:1;
+  }
+  .price .per{
+    font-size:.9rem; font-weight:600; opacity:.85;
+  }
+
+  /* ====== Botones ====== */
+  .btn{
+    border-radius:12px; font-weight:700;
+  }
+  .btn-primary{
+    background: linear-gradient(135deg, var(--brand, #7c79ff), var(--brand-2, #a3a1ff));
+    border: none;
+  }
+  .btn-primary:focus{ box-shadow: var(--ring); }
+  .btn-outline-light{
+    border-color: rgba(255,255,255,.18);
+  }
+  .btn-danger{
+    background: linear-gradient(135deg, #ff5a7a, #ef476f); border: none;
+  }
+
+  /* ====== Info line ====== */
+  .kv{
+    display:flex; align-items:center; gap:.5rem; flex-wrap:wrap;
+    padding:.5rem 0;
+  }
+  .kv code{
+    background: rgba(255,255,255,.06);
+    padding:.2rem .45rem; border-radius:8px;
+    border:1px solid rgba(255,255,255,.08);
+    color: var(--ink, #e7eaf3);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<header class="section-header p-3 rounded mb-2">
+  <div class="icon"><i class="bi bi-receipt fs-5"></i></div>
+  <div>
+    <h1 class="h4 m-0">Facturación del sitio</h1>
+    {% if page %}
+      <div class="muted small">Sitio activo: <strong>{{ page.business_name }}</strong></div>
+    {% else %}
+      <div class="muted small">No hay sitio activo seleccionado.</div>
+    {% endif %}
+  </div>
+</header>
+
+<div class="row g-3">
+  <!-- Estado -->
+  <div class="col-12 col-lg-7">
+    <div class="card">
+      <div class="card-body">
+        <h2 class="h6 text-uppercase muted mb-3">Estado de tu suscripción</h2>
+
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-shield-check"></i> Suscripción mensual
+            </div>
+            {% if sub %}
+              {% set st = (sub.status or 'pending')|lower %}
+              {% if st in ['authorized','active','charged'] %}
+                <span class="status-badge badge-live"><span class="dot"></span> {{ st }}</span>
+              {% elif st in ['pending','paused'] %}
+                <span class="status-badge badge-warn"><span class="dot"></span> {{ st }}</span>
+              {% else %}
+                <span class="status-badge badge-dead"><span class="dot"></span> {{ st }}</span>
+              {% endif %}
+            {% else %}
+              <span class="status-badge badge-dead"><span class="dot"></span> no registrada</span>
+            {% endif %}
+          </li>
+
+          {% if sub %}
+          <li class="list-group-item">
+            <div class="kv small muted">
+              <span class="d-inline-flex align-items-center gap-1">
+                <i class="bi bi-hash"></i> ID preapproval:
+              </span>
+              <code>{{ sub.preapproval_id or (sub.raw and sub.raw.id) }}</code>
+            </div>
+            <div class="kv small muted">
+              <i class="bi bi-clock-history"></i> Último evento:
+              <span>{{ (sub.last_event or sub.raw and sub.raw.last_modified or '') }}</span>
+            </div>
+          </li>
+          {% endif %}
+        </ul>
+
+        <div class="mt-3 small muted d-flex align-items-start gap-2">
+          <i class="bi bi-info-circle mt-1"></i>
+          <div>
+            La suscripción se renueva automáticamente cada mes via Mercado Pago. Puedes pausar o cancelar cuando quieras.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Acciones -->
+  <div class="col-12 col-lg-5">
+    <div class="card h-100">
+      <div class="card-body d-flex flex-column">
+        <h2 class="h6 text-uppercase muted mb-3">Acciones</h2>
+
+        <div class="mb-3">
+          <div class="price">${{ '%.0f'|format(SUB_PLAN.price) }} <span class="fs-6">{{ SUB_PLAN.currency }}/mes</span></div>
+          <div class="muted small">Un solo plan. Todo incluido.</div>
+        </div>
+
+        {% set st = (sub and sub.status or '')|lower %}
+
+        {% if not sub or st in ['', 'null', 'none', 'cancelled'] %}
+          <div class="d-grid gap-2 mt-1">
+            <a class="btn btn-primary btn-lg" href="{{ url_for('pay_subscription') }}">
+              <i class="bi bi-lightning-charge-fill me-1"></i> Activar suscripción
+            </a>
+          </div>
+        {% elif st in ['authorized','active','charged'] %}
+          <form class="d-grid gap-2" method="post" action="{{ url_for('subscription_action', action='pause') }}">
+            <button class="btn btn-outline-light" type="submit">
+              <i class="bi bi-pause-fill me-1"></i> Pausar
+            </button>
+          </form>
+          <form class="mt-2" method="post" action="{{ url_for('subscription_action', action='cancel') }}">
+            <button class="btn btn-danger w-100" type="submit">
+              <i class="bi bi-x-octagon-fill me-1"></i> Cancelar
+            </button>
+          </form>
+        {% elif st == 'paused' %}
+          <form class="d-grid gap-2" method="post" action="{{ url_for('subscription_action', action='resume') }}">
+            <button class="btn btn-primary" type="submit">
+              <i class="bi bi-play-fill me-1"></i> Reanudar
+            </button>
+          </form>
+          <form class="mt-2" method="post" action="{{ url_for('subscription_action', action='cancel') }}">
+            <button class="btn btn-danger w-100" type="submit">
+              <i class="bi bi-x-octagon-fill me-1"></i> Cancelar
+            </button>
+          </form>
+        {% else %}
+          <div class="d-grid gap-2">
+            <a class="btn btn-primary" href="{{ url_for('pay_subscription') }}">
+              <i class="bi bi-lightning-charge-fill me-1"></i> Activar suscripción
+            </a>
+          </div>
+        {% endif %}
+
+        <div class="small muted mt-3 pt-2 border-top" style="border-color: rgba(255,255,255,.06)!important;">
+          Estado actual: <strong class="text-uppercase">{{ st or '—' }}</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}{% endblock %}
