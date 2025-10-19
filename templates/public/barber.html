@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- SEO -->
+  <title>{{ page.get('business_name','Barbería') }}</title>
+  <meta name="description" content="{{ page.get('slogan') or page.get('description','')[:160] }}">
+  <meta name="keywords" content="{{ page.get('category','Barbería') }}, cortes, barba, grooming, barber shop">
+  <meta name="author" content="{{ page.get('business_name','') }}">
+
+  <!-- OG / Twitter -->
+  <meta property="og:title" content="{{ page.get('business_name','Barbería') }}">
+  <meta property="og:description" content="{{ page.get('slogan') or page.get('description','')[:200] }}">
+  <meta property="og:image" content="{{ url_for('static', filename=page.get('image') or 'images/default.png', _external=True) }}">
+  <meta property="og:url" content="{{ request.url }}">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ page.get('business_name','Barbería') }}">
+  <meta name="twitter:description" content="{{ page.get('slogan') or page.get('description','')[:200] }}">
+  <meta name="twitter:image" content="{{ url_for('static', filename=page.get('image') or 'images/default.png', _external=True) }}">
+
+  <link rel="icon" href="{{ url_for('static', filename='images/logo.jpg') }}" type="image/png" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
+
+  <!-- Adsense (opcional) -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8911862194691129" crossorigin="anonymous"></script>
+  <meta name="google-adsense-account" content="ca-pub-8911862194691129">
+
+  <style>
+    /* ========= THEME BASE (claro) ========= */
+    :root{
+      --brand: {{ page.get('color') and "'" ~ page.get('color') ~ "'" or '#7c2132' }};
+      --brand-dark:#3a0e16;
+      --navy:#0b1b2b;
+      --cream:#f7f1e6;
+      --gold:#c9a44b;
+      --ink:#1b1b1b;
+      --muted:#6b7280;
+      --line:#e5e7eb;
+      --shadow:0 10px 30px rgba(0,0,0,.10);
+      --radius:18px;
+    }
+    html,body{scroll-behavior:smooth}
+    body{font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;background:var(--cream);color:var(--ink)}
+    .container-section{max-width:1200px}
+
+    /* ========= NAV ========= */
+    #mainNavbar{
+      background: linear-gradient(90deg, var(--navy), var(--brand));
+      backdrop-filter:saturate(120%) blur(4px);
+    }
+    #mainNavbar .nav-link{color:#fff; opacity:.9}
+    #mainNavbar .nav-link:hover{opacity:1}
+    .navbar-brand{letter-spacing:.5px}
+
+    /* ========= HERO ========= */
+    .header{
+      position:relative; color:#fff; padding:72px 0; overflow:hidden;
+      border-bottom:6px double rgba(255,255,255,.25);
+      background:
+        linear-gradient(90deg, rgba(12,24,40,.85), rgba(124,33,50,.85)),
+        url('{{ url_for("static", filename=page.get("hero_bg") or "images/barber-bg.jpg") }}') center/cover no-repeat;
+    }
+    .header::after{
+      content:""; position:absolute; inset:auto 0 -40px 0; height:40px;
+      background-image: repeating-linear-gradient(135deg, #e51c2d 0 18px, #ffffff 18px 36px, #1c4bb8 36px 54px, #ffffff 54px 72px);
+      box-shadow:0 -8px 18px rgba(0,0,0,.2) inset;
+    }
+    .hero-card{ background:rgba(15,27,43,.55); border:1px solid rgba(255,255,255,.18); border-radius:var(--radius); box-shadow:var(--shadow); padding:24px; backdrop-filter: blur(4px); }
+    .hero-title{font-weight:800; text-shadow:0 3px 14px rgba(0,0,0,.35)}
+    .hero-pill{
+      display:inline-flex; align-items:center; gap:.5rem;
+      background:linear-gradient(90deg, var(--gold), #e5c97a);
+      color:#1f2937; font-weight:700; padding:.45rem .9rem; border-radius:999px; font-size:.95rem;
+      box-shadow:0 6px 18px rgba(0,0,0,.2)
+    }
+    .hero-btn{ border:2px solid #fff; color:#fff; font-weight:700; border-radius:999px; padding:.7rem 1.2rem }
+    .hero-btn:hover{background:#fff; color:var(--navy)}
+
+    /* ========= CARDS / BLOCKS ========= */
+    .card-barber{ background:#fff; border:1px solid #e9e4d7; border-radius:var(--radius); box-shadow:var(--shadow); }
+    .card-barber .card-header{ background:linear-gradient(180deg, #fffaf0, #f5ebcf); border-bottom:1px dashed #e6d9b8; color:#4b5563; font-weight:700; }
+    .badge-gold{ background:linear-gradient(90deg, var(--gold), #e5c97a); color:#263238; font-weight:700; border-radius:999px; }
+    .divider-pole{
+      height:14px; border-radius:999px; overflow:hidden;
+      background-image: repeating-linear-gradient(135deg, #e51c2d 0 12px, #ffffff 12px 24px, #1c4bb8 24px 36px, #ffffff 36px 48px);
+      opacity:.9; box-shadow:0 6px 16px rgba(0,0,0,.08) inset;
+    }
+
+    /* ========= INFO LIST ========= */
+    .info-list p{margin-bottom:.8rem}
+    .info-list i{color:var(--brand)}
+
+    /* ========= CTA WhatsApp flotante ========= */
+    .wa-fab{ position:fixed; bottom:12%; left:20px; z-index:1050; }
+    .wa-fab a{
+      display:flex; align-items:center; gap:.5rem; background:#25D366; color:#fff; padding:.6rem .9rem; border-radius:999px;
+      box-shadow:0 10px 24px rgba(37,211,102,.35); text-decoration:none; font-weight:600;
+    }
+
+    /* ========= NOTICIAS CINTA ========= */
+    .noticias-section{ background: linear-gradient(90deg, var(--brand), var(--navy)); padding:.5rem 0; }
+    .aviso-banner{
+      display:inline-flex; align-items:center; gap:.5rem; flex-wrap:wrap;
+      background:rgba(255,255,255,.15); color:#fff; border:1px solid rgba(255,255,255,.45);
+      border-radius:999px; padding:.45rem 1rem; font-size:.95rem; box-shadow:0 6px 12px rgba(0,0,0,.1)
+    }
+
+    /* ========= PRODUCTS / GALLERY ========= */
+    .img-zoom-trigger{cursor:pointer}
+    .product-price{font-size:.95rem}
+
+    /* ========= TABLE PRICES (si no hay productos) ========= */
+    .cutlist{border:1px solid #e9e4d7; border-radius:var(--radius); overflow:hidden}
+    .cutlist .row{padding:12px 16px}
+    .cutlist .row:nth-child(odd){background:#fff}
+    .cutlist .row:nth-child(even){background:#fbf7ea}
+    .cutlist .label{font-weight:700}
+    .cutlist .price{font-weight:800; color:var(--brand)}
+
+    /* ========= MAP ========= */
+    #map{height:320px;border-radius:12px;overflow:hidden;box-shadow:var(--shadow)}
+
+    /* ========= FOOTER ========= */
+    footer{background:linear-gradient(90deg, var(--navy), var(--brand))}
+    footer a{text-decoration:underline}
+
+    /* ========= RESPONSIVE ========= */
+    @media (max-width: 992px){ .hero-title{font-size:2rem} }
+    @media (max-width: 768px){ .header{padding:56px 0} .aviso-banner{font-size:.85rem} footer{margin-bottom:12%} }
+
+    /* ========= THEME NIGHT (oscuro colorido) ========= */
+    body.theme-night{
+      --brand: {{ page.get('color') and "'" ~ page.get('color') ~ "'" or '#e0465e' }};
+      --brand-dark:#150a12;
+      --navy:#0a0f14;
+      --cream:#0e1319;
+      --gold:#e9c365;
+      --ink:#e9eef5;
+      --muted:#a6b0be;
+      --line:#1e2a36;
+      --shadow:0 16px 40px rgba(0,0,0,.4);
+      color:var(--ink);
+      background:
+        radial-gradient(1200px 600px at 15% -10%, rgba(224,70,94,.18), transparent 60%),
+        radial-gradient(1000px 600px at 90% 10%, rgba(28,75,184,.18), transparent 60%),
+        radial-gradient(900px 500px at 50% 120%, rgba(233,195,101,.12), transparent 60%),
+        linear-gradient(180deg, #0a0f14, #0b1219 40%, #0a0f14);
+    }
+    body.theme-night #mainNavbar{
+      background: linear-gradient(90deg, #0b1a2b, #1c4bb8 35%, #7c2132 70%, #0b1a2b);
+      box-shadow:0 10px 30px rgba(0,0,0,.5);
+    }
+    body.theme-night .navbar-brand, 
+    body.theme-night #mainNavbar .nav-link{ color:#fff !important; }
+
+    body.theme-night .header{
+      background:
+        linear-gradient(120deg, rgba(10,15,20,.75), rgba(28,75,184,.35), rgba(224,70,94,.35)),
+        url('{{ url_for("static", filename=page.get("hero_bg") or "images/barber-bg.jpg") }}') center/cover no-repeat;
+      border-bottom:0;
+    }
+    body.theme-night .header::after{
+      height:36px; bottom:-36px;
+      background-image: repeating-linear-gradient(135deg, #e51c2d 0 18px, #fff 18px 36px, #1c4bb8 36px 54px, #fff 54px 72px);
+      filter:saturate(115%) brightness(1); animation:poleSlide 9s linear infinite; opacity:.95;
+    }
+    @keyframes poleSlide{ 0%{background-position:0 0} 100%{background-position:200px 0} }
+    body.theme-night .hero-card{ background: linear-gradient(180deg, rgba(14,19,25,.55), rgba(14,19,25,.85)); border:1px solid rgba(255,255,255,.08); }
+    body.theme-night .hero-title{ text-shadow: 0 6px 28px rgba(0,0,0,.6); }
+    body.theme-night .hero-pill{ background:linear-gradient(90deg, #ffd17a, #e9c365); color:#1a2430; }
+    body.theme-night .divider-pole{
+      background-image: repeating-linear-gradient(135deg, #e51c2d 0 10px, #fff 10px 20px, #1c4bb8 20px 30px, #fff 30px 40px);
+      box-shadow:0 8px 20px rgba(0,0,0,.35) inset, 0 6px 24px rgba(0,0,0,.18);
+      opacity:1;
+    }
+    body.theme-night .card-barber{
+      background: linear-gradient(180deg, rgba(14,19,25,.65), rgba(14,19,25,.9));
+      border:1px solid rgba(233,195,101,.25);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(6px) saturate(115%);
+    }
+    body.theme-night .card-barber .card-header{
+      background:linear-gradient(180deg, rgba(233,195,101,.14), rgba(255,209,122,.05));
+      border-bottom:1px dashed rgba(233,195,101,.35);
+      color:#ffefc7;
+    }
+    body.theme-night .badge-gold{ background:linear-gradient(90deg, #ffd17a, #e9c365); color:#0f1720; border:1px solid rgba(255,255,255,.06); }
+    body.theme-night .btn-outline-dark{ color:#e6eef7; border-color:#e6eef7; }
+    body.theme-night .btn-outline-dark:hover{ background:#e6eef7; color:#0d141c; }
+    body.theme-night .btn.btn-dark{
+      background: linear-gradient(135deg, #1c4bb8, #7c2132 60%, #e0465e);
+      border:none; box-shadow:0 10px 28px rgba(0,0,0,.45);
+    }
+    body.theme-night .btn.btn-dark:hover{ filter:brightness(1.1); transform: translateY(-1px); }
+    body.theme-night .noticias-section{ background: linear-gradient(90deg, #7c2132, #1c4bb8); box-shadow:0 -12px 28px rgba(0,0,0,.5); }
+    body.theme-night .aviso-banner{ background: rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.25); }
+    body.theme-night .form-control{ background:#0f151d; color:#dfe7f0; border:1px solid #203040; }
+    body.theme-night .form-control:focus{ outline:none; box-shadow:0 0 0 .2rem rgba(28,75,184,.25); border-color:#3568ff; }
+    body.theme-night #map{ border:1px solid rgba(233,195,101,.25); }
+    body.theme-night footer{ background: linear-gradient(90deg, #0b1a2b, #1c4bb8 40%, #7c2132 85%); border-top:1px solid rgba(255,255,255,.08); }
+    body.theme-night footer a{ color:#fff; }
+  </style>
+</head>
+
+<!-- ACTIVA el tema oscuro colorido con class="theme-night" -->
+<body class="theme-night" data-bs-spy="scroll" data-bs-target="#mainNavbar" data-bs-offset="80" tabindex="0">
+
+  <!-- NAV -->
+  <nav id="mainNavbar" class="navbar navbar-expand-lg navbar-dark fixed-top shadow-sm">
+    <div class="container">
+      <a class="navbar-brand fw-bold" href="/">{{ page.get('business_name','Barbería') }}</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+        <ul class="navbar-nav">
+          <li class="nav-item"><a class="nav-link" href="#info">Información</a></li>
+          <li class="nav-item"><a class="nav-link" href="#contacto">Contacto</a></li>
+          {% if posts %}<li class="nav-item"><a class="nav-link" href="#publicaciones">Publicaciones</a></li>{% endif %}
+          {% if productos %}<li class="nav-item"><a class="nav-link" href="#productos">Productos</a></li>{% endif %}
+          <li class="nav-item"><a class="nav-link" href="#reseñas">Reseñas</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- CINTA DE AVISOS -->
+  <div class="noticias-section fixed-bottom w-100 shadow-sm" style="z-index:1030;">
+    <div class="container-fluid">
+      <div id="noticiasCarousel" class="carousel slide" data-bs-ride="carousel">
+        <div class="carousel-inner text-center">
+          {% if avisos %}
+            {% for aviso in avisos %}
+            <div class="carousel-item {% if loop.first %}active{% endif %}">
+              <div class="aviso-banner mx-auto">
+                <i class="bi bi-megaphone-fill"></i><strong>{{ aviso.title }}:</strong>
+                <span>{{ aviso.content }}</span>
+                <small class="opacity-75">| {{ aviso.date.strftime("%d de %B de %Y") }}</small>
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="carousel-item active">
+              <div class="aviso-banner mx-auto">
+                <i class="bi bi-scissors"></i><strong>Bienvenidos:</strong>
+                <span>Agenda tu corte o arreglo de barba hoy mismo</span>
+              </div>
+            </div>
+          {% endif %}
+        </div>
+
+        <button class="carousel-control-prev" type="button" data-bs-target="#noticiasCarousel" data-bs-slide="prev">
+          <span class="carousel-control-prev-icon" aria-hidden="true"></span><span class="visually-hidden">Anterior</span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#noticiasCarousel" data-bs-slide="next">
+          <span class="carousel-control-next-icon" aria-hidden="true"></span><span class="visually-hidden">Siguiente</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <header class="header text-center" style="background-blend-mode: overlay, normal;">
+    <div class="container container-section position-relative">
+      <div class="row align-items-center g-4">
+        <div class="col-md-4">
+          {% if page.get('image') %}
+            <img src="{{ url_for('uploaded_file', filename=page.get('image')) }}" class="img-fluid rounded-circle border border-4 border-light shadow" style="width:240px;height:240px;object-fit:cover" alt="Logo / imagen">
+          {% else %}
+            <img src="{{ url_for('static', filename='images/default_image.png') }}" class="img-fluid rounded-circle border border-4 border-light shadow" style="width:240px;height:240px;object-fit:cover" alt="Logo">
+          {% endif %}
+        </div>
+        <div class="col-md-8 text-md-start">
+          {% if page.get('slogan') %}<span class="hero-pill"><i class="fa-solid fa-scissors"></i>{{ page.get('slogan') }}</span>{% endif %}
+          <h1 class="hero-title display-5 fw-bold mt-3">{{ page.get('business_name','Barbería') }}</h1>
+          <div class="d-flex flex-wrap gap-2 mt-2">
+            <a href="#contacto" class="btn hero-btn"><i class="bi bi-whatsapp me-2"></i>Reservar por WhatsApp</a>
+            <a href="#productos" class="btn btn-light fw-bold" style="border-radius:999px"><i class="bi bi-list-stars me-2"></i>Mis servicios</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- SEPARADOR -->
+  <div class="container container-section mt-4">
+    <div class="divider-pole"></div>
+  </div>
+
+  <!-- INFORMACIÓN -->
+  <section class="container container-section my-5" id="info">
+    <h2 class="mb-4 fw-bold"><i class="fa-solid fa-chair-barber me-2"></i>Información General</h2>
+    <div class="row g-4">
+      <div class="col-md-6">
+        <div class="card card-barber h-100">
+          <div class="card-header"><i class="fa-solid fa-shop me-2"></i>Sobre nosotros</div>
+          <div class="card-body info-list">
+            <p><i class="fas fa-align-left me-2"></i><span class="label">Quiénes somos:</span> {{ page.get('description') }}</p>
+            <p><i class="fas fa-tag me-2"></i><span class="label">Categoría:</span> {{ page.get('category','Barbería') }}</p>
+            <p><i class="fas fa-calendar-alt me-2"></i><span class="label">Fundación:</span> {{ page.get('founding_date') }}</p>
+            <p><i class="fas fa-concierge-bell me-2"></i><span class="label">Servicios:</span> {{ page.get('services','Cortes, barba, afeitado clásico, tratamientos capilares') }}</p>
+            <p><i class="fas fa-credit-card me-2"></i><span class="label">Métodos de pago:</span> {{ page.get('payment_methods','Efectivo, Tarjeta, Transferencia') }}</p>
+            {% if page.get('delivery_available') %}<p><i class="fas fa-truck me-2"></i><span class="label">Servicio a domicilio:</span> Sí</p>{% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="card card-barber h-100">
+          <div class="card-header"><i class="fa-solid fa-location-dot me-2"></i>Ubicación & Horarios</div>
+          <div class="card-body info-list">
+            <p><i class="fas fa-map-marker-alt me-2"></i><span class="label">Dirección:</span> {{ page.get('address') }}</p>
+            <p><i class="fas fa-mail-bulk me-2"></i><span class="label">Código Postal:</span> {{ page.get('postal_code') }}</p>
+            <p><i class="fas fa-city me-2"></i><span class="label">Ciudad:</span> {{ page.get('city') }}</p>
+            <p><i class="fas fa-flag me-2"></i><span class="label">Estado:</span> {{ page.get('state') }}</p>
+            <p><i class="far fa-clock me-2"></i><span class="label">Horario:</span> {{ page.get('operating_hours','Lun–Sáb 10:00–20:00') }}</p>
+
+            {% set has_coords = page.get('lat') is not none and page.get('lng') is not none %}
+            <div class="mt-3">
+              <p class="mb-2"><i class="fas fa-location-dot me-2"></i><strong>Ubicación en mapa:</strong></p>
+              {% if has_coords %}
+                <div id="map" class="mb-3"></div>
+                <div class="d-flex gap-2 flex-wrap">
+                  <a class="btn btn-outline-dark btn-sm" target="_blank" href="https://www.google.com/maps/dir/?api=1&destination={{ page.get('lat') }},{{ page.get('lng') }}">Cómo llegar (Google)</a>
+                </div>
+              {% else %}
+                <div class="alert alert-warning mb-2">Aún no hay coordenadas guardadas para este negocio.</div>
+                <div class="d-flex gap-2 flex-wrap">
+                  {% if page.get('address') %}
+                  <a class="btn btn-outline-dark btn-sm" target="_blank" href="https://www.google.com/maps/search/?api=1&query={{ page.get('address') | urlencode }}">Buscar dirección en Google Maps</a>
+                  <a class="btn btn-outline-dark btn-sm" target="_blank" href="https://www.openstreetmap.org/search?query={{ page.get('address') | urlencode }}">Buscar en OpenStreetMap</a>
+                  {% endif %}
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- SERVICIOS / PRECIOS RÁPIDOS (muestra si NO hay productos) -->
+  {% if not productos %}
+  <section class="container container-section my-5" id="servicios">
+    <h2 class="mb-1 fw-bold"><i class="fa-solid fa-scissors me-2"></i>Servicios</h2>
+    <p class="text-muted mb-4">Precios orientativos — pregunta por promociones vigentes.</p>
+    <div class="cutlist">
+      <div class="row align-items-center"><div class="col-8 label">Corte clásico</div><div class="col-4 text-end price">$180–$250</div></div>
+      <div class="row align-items-center"><div class="col-8 label">Corte + Barba</div><div class="col-4 text-end price">$260–$340</div></div>
+      <div class="row align-items-center"><div class="col-8 label">Arreglo de barba (toalla caliente)</div><div class="col-4 text-end price">$160–$220</div></div>
+      <div class="row align-items-center"><div class="col-8 label">Afeitada clásica con navaja</div><div class="col-4 text-end price">$180–$240</div></div>
+      <div class="row align-items-center"><div class="col-8 label">Corte infantil</div><div class="col-4 text-end price">$140–$180</div></div>
+    </div>
+    <div class="text-center mt-3">
+      <a href="#contacto" class="btn btn-dark rounded-pill px-4"><i class="bi bi-whatsapp me-2"></i>Reservar por WhatsApp</a>
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- PUBLICACIONES -->
+  <section class="container container-section my-5" id="publicaciones">
+    <h2 class="mb-4 fw-bold"><i class="bi bi-newspaper me-2"></i>Publicaciones Recientes</h2>
+    {% if posts and posts|length > 0 %}
+      <div class="row">
+        {% for post in posts %}
+        <div class="col-md-4 mb-4">
+          <div class="card h-100 card-barber">
+            {% if post.cabecera %}
+              <img src="{{ url_for('uploaded_file', filename=post.cabecera) }}" class="card-img-top img-zoom-trigger" alt="Imagen del post" data-bs-toggle="modal" data-bs-target="#zoomModal" data-img-src="{{ url_for('uploaded_file', filename=post.cabecera) }}">
+            {% endif %}
+            <div class="card-body d-flex flex-column">
+              <h5 class="card-title">{{ post.title }}</h5>
+              <p class="card-text">{{ post.content[:110] }}...</p>
+              <a href="{{ url_for('ver_post', post_id=post._id) }}" class="btn btn-outline-dark mt-auto rounded-pill">Leer más</a>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% if posts|length > 2 %}
+      <div class="text-center mt-2">
+        <a href="{{ url_for('lista_blogs_negocio', nombre=page.get('business_name'), page=1) }}" class="btn btn-dark rounded-pill">Ver más publicaciones</a>
+      </div>
+      {% endif %}
+    {% else %}
+      <div class="alert alert-warning p-3 rounded shadow-sm mt-3" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> No hay publicaciones disponibles por ahora.
+      </div>
+    {% endif %}
+  </section>
+
+  <!-- PRODUCTOS / SERVICIOS COTIZABLES -->
+  <section class="container container-section my-5" id="productos">
+    {% if productos and productos|length > 0 %}
+      <h2 class="mb-3 fw-bold"><i class="bi bi-list-stars me-2"></i>Servicios / Productos</h2>
+      <div class="alert alert-info d-flex align-items-center p-3 rounded shadow-sm mb-3" role="alert">
+        <i class="bi bi-info-circle-fill me-3 fs-4 text-primary"></i>
+        <div>
+          <h6 class="mb-1 fw-bold">Cotiza fácilmente</h6>
+          <p class="mb-0 small">Elige cantidades y pulsa <strong>“Cotizar por WhatsApp”</strong>.</p>
+        </div>
+      </div>
+
+      <form id="form-cotizar" class="row g-3">
+        {% for producto in productos %}
+        <div class="col-12 col-sm-6 col-md-4">
+          <div class="card h-100 card-barber">
+            {% if producto.image %}
+              <img src="{{ url_for('uploaded_file', filename=producto.image) }}" alt="{{ producto.title }}"
+                   class="card-img-top img-zoom-trigger"
+                   style="object-fit: cover; width: 100%; height: 250px;"
+                   data-bs-toggle="modal" data-bs-target="#zoomModal"
+                   data-img-src="{{ url_for('uploaded_file', filename=producto.image) }}">
+            {% else %}
+              <img src="{{ url_for('static', filename='img/default-product.png') }}" alt="Imagen no disponible"
+                   class="card-img-top img-zoom-trigger" style="object-fit:cover;width:100%;height:250px"
+                   data-bs-toggle="modal" data-bs-target="#zoomModal"
+                   data-img-src="{{ url_for('static', filename='img/default-product.png') }}">
+            {% endif %}
+            <div class="card-body d-flex flex-column py-3 px-3">
+              <div class="d-flex justify-content-between align-items-start">
+                <h6 class="card-title mb-1 fw-semibold">{{ producto.title }}</h6>
+                {% if producto.show_price %}
+                  <span class="badge badge-gold product-price">${{ "%.2f"|format(producto.price) }}</span>
+                {% endif %}
+              </div>
+              {% if producto.description %}<p class="card-text text-muted small mb-2">{{ producto.description }}</p>{% endif %}
+              <div class="mt-auto">
+                <label for="prod_{{ loop.index }}" class="form-label small mb-1">Cantidad</label>
+                <input type="number" class="form-control form-control-sm" id="prod_{{ loop.index }}"
+                  name="prod_{{ producto.title | replace(' ', '_') }}" min="0" value="0" placeholder="0"
+                  aria-label="Cantidad para {{ producto.title }}">
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+
+        <div class="col-12 text-center mt-1">
+          <button type="submit" class="btn btn-dark btn-lg rounded-pill px-4">
+            <i class="bi bi-whatsapp fs-5 me-2"></i> Cotizar por WhatsApp
+          </button>
+        </div>
+      </form>
+    {% endif %}
+
+    <!-- Modal zoom -->
+    <div class="modal fade" id="zoomModal" tabindex="-1" aria-labelledby="zoomModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered" style="max-width:min(1000px,90vw)">
+        <div class="modal-content bg-transparent border-0">
+          <div class="modal-body p-0">
+            <img src="" alt="Imagen ampliada" id="zoomedImage" class="img-fluid rounded shadow" style="width:100%">
+          </div>
+          <div class="modal-footer border-0 justify-content-center">
+            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAB WhatsApp -->
+  <div class="wa-fab">
+    <a href="https://wa.me/{{ page.get('whatsapp','') | replace(' ', '') }}" target="_blank">
+      <i class="bi bi-whatsapp fs-5"></i> WhatsApp
+    </a>
+  </div>
+
+  <!-- RESEÑAS (Formulario) -->
+  <div class="container container-section card card-barber border-0 mb-5" id="reseñas">
+    <div class="card-body">
+      <h3 class="mt-2 fw-bold"><i class="bi bi-star-half me-2"></i>Deja tu reseña</h3>
+      {% with messages = get_flashed_messages() %}
+      {% if messages %}
+      <div class="alert alert-info mt-2">
+        {% for message in messages %}<p class="mb-0">{{ message }}</p>{% endfor %}
+      </div>
+      {% endif %}
+      {% endwith %}
+
+      <form method="POST" class="mb-4">
+        <div class="mb-3">
+          <label for="nombre" class="form-label">Tu nombre</label>
+          <input type="text" name="nombre" class="form-control" required>
+        </div>
+        <div class="mb-3">
+          <label for="comentario" class="form-label">Comentario</label>
+          <textarea name="comentario" class="form-control" rows="3" required></textarea>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Calificación</label>
+          <div id="starRating" class="mb-2">
+            {% for i in range(1, 6) %}
+              <i class="bi bi-star-fill star-icon fs-3 me-1 text-secondary" data-value="{{ i }}"></i>
+            {% endfor %}
+          </div>
+          <input type="hidden" name="estrellas" id="estrellas" value="0" required>
+        </div>
+        <button type="submit" class="btn btn-dark rounded-pill">Enviar reseña</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- LISTADO DE RESEÑAS -->
+  <div class="container container-section">
+    <h4 class="mt-4 mb-3 text-center fw-bold">⭐ Reseñas de nuestros clientes</h4>
+    {% if reseñas %}
+      <div class="row row-cols-1 row-cols-md-2 g-4">
+        {% for r in reseñas %}
+        <div class="col">
+          <div class="card h-100 card-barber">
+            <div class="card-body">
+              <h5 class="card-title text-center mb-2">{{ r.nombre }}</h5>
+              <div class="text-center mb-3">
+                {% for i in range(1, 6) %}
+                  {% if i <= r.estrellas %}
+                    <i class="bi bi-star-fill text-warning fs-5"></i>
+                  {% else %}
+                    <i class="bi bi-star text-secondary fs-5"></i>
+                  {% endif %}
+                {% endfor %}
+              </div>
+              <p class="card-text">{{ r.comentario }}</p>
+            </div>
+            <div class="card-footer text-end bg-transparent border-0">
+              <small class="text-muted">{{ r.fecha.strftime('%d/%m/%Y') }}</small>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="text-muted text-center">No hay reseñas aún. ¡Sé el primero en dejar una ⭐!</p>
+    {% endif %}
+  </div>
+
+  <!-- CONTACTO -->
+  <section class="container container-section my-5" id="contacto">
+    <h2 class="mb-4 fw-bold"><i class="bi bi-telephone me-2"></i>Contacto</h2>
+    <div class="row row-cols-1 row-cols-md-2 g-4">
+      <div class="col">
+        <div class="card card-barber h-100">
+          <div class="card-body">
+            <p><i class="fas fa-phone me-2 text-success"></i><strong>Teléfono:</strong> {{ page.get('phone') }}</p>
+            <p><i class="fas fa-envelope me-2 text-danger"></i><strong>Email:</strong> {{ page.get('email') }}</p>
+            <p><i class="fas fa-globe me-2 text-primary"></i><strong>Web:</strong>
+              <a href="{{ page.get('website') }}" target="_blank">{{ page.get('website') }}</a>
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="card card-barber h-100">
+          <div class="card-body">
+            {% if page.get('facebook') %}
+            <p><i class="fab fa-facebook me-2 text-primary"></i><strong>Facebook:</strong>
+              <a href="{{ page.get('facebook') }}" target="_blank">Ir a Facebook</a>
+            </p>
+            {% endif %}
+            {% if page.get('instagram') %}
+            <p><i class="fab fa-instagram me-2 text-danger"></i><strong>Instagram:</strong>
+              <a href="{{ page.get('instagram') }}" target="_blank">Ir a Instagram</a>
+            </p>
+            {% endif %}
+            {% if page.get('tiktok') %}
+            <p><i class="fab fa-tiktok me-2 text-dark"></i><strong>TikTok:</strong>
+              <a href="{{ page.get('tiktok') }}" target="_blank">Ir a TikTok</a>
+            </p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="text-white mt-5 pt-4 pb-3">
+    <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center">
+      <div class="mb-3 mb-md-0 text-center text-md-start">
+        <p class="mb-0">&copy; {{ (now() or '')|default('', true) and now().year if now else 2025 }} <strong>{{ page.get('business_name','Barbería') }}</strong>. Todos los derechos reservados.</p>
+        <small class="text-white-50">Sitio creado con <a href="https://davanitechnology.com/" target="_blank" class="text-white">DavaniTechnology</a></small>
+      </div>
+      <div class="text-center text-md-end">
+        {% if page.get('facebook') %}<a href="{{ page.get('facebook') }}" target="_blank" class="text-white me-3 fs-4" aria-label="Facebook"><i class="bi bi-facebook"></i></a>{% endif %}
+        {% if page.get('tiktok') %}<a href="{{ page.get('tiktok') }}" target="_blank" class="text-white fs-4" aria-label="TikTok"><i class="bi bi-tiktok"></i></a>{% endif %}
+      </div>
+    </div>
+  </footer>
+
+  <!-- SCRIPTS -->
+  <script>
+    // Zoom de imagen en modal
+    document.querySelectorAll('.img-zoom-trigger').forEach(img=>{
+      img.addEventListener('click', e=>{
+        const src = e.currentTarget.getAttribute('data-img-src');
+        const zoomed = document.getElementById('zoomedImage');
+        if(zoomed) zoomed.src = src;
+      })
+    });
+
+    // Cotización por WhatsApp
+    const formCotizar = document.getElementById('form-cotizar');
+    if (formCotizar) {
+      formCotizar.addEventListener('submit', function (e) {
+        e.preventDefault();
+        const whatsappNumber = "{{ page.get('whatsapp','') | replace(' ', '') }}";
+        let mensaje = "Hola, quiero cotizar estos servicios:%0A";
+        let inputs = formCotizar.querySelectorAll('input[type=number]');
+        let haySeleccion = false;
+
+        inputs.forEach(input=>{
+          let cantidad = parseInt(input.value);
+          if (cantidad>0) {
+            haySeleccion = true;
+            let nombre = input.name.replace('prod_', '').replace(/_/g,' ');
+            mensaje += `- ${nombre}: ${cantidad}%0A`;
+          }
+        });
+
+        if (!haySeleccion) { alert("Por favor, ingresa cantidad para al menos un producto."); return; }
+        window.open(`https://wa.me/${whatsappNumber}?text=${mensaje}`, '_blank');
+      });
+    }
+
+    // Estrellas de reseña
+    const stars = document.querySelectorAll('.star-icon');
+    const inputEstrellas = document.getElementById('estrellas');
+    stars.forEach(star=>{
+      star.addEventListener('click', ()=>{
+        const val = parseInt(star.getAttribute('data-value'));
+        inputEstrellas.value = val;
+        stars.forEach(s=>{
+          const sv = parseInt(s.getAttribute('data-value'));
+          s.classList.remove('text-warning','text-secondary');
+          s.classList.add(sv<=val ? 'text-warning' : 'text-secondary');
+        });
+      });
+    });
+  </script>
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script>
+    (function(){
+      const lat = {{ page.get('lat') is not none and page.get('lat') or 'null' }};
+      const lng = {{ page.get('lng') is not none and page.get('lng') or 'null' }};
+      if (lat !== null && lng !== null){
+        const map = L.map('map', { scrollWheelZoom:false }).setView([lat,lng], 16);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
+        }).addTo(map);
+        const marker = L.marker([lat,lng]).addTo(map);
+        marker.bindPopup(`<strong>{{ page.get('business_name')|e }}</strong><br>{{ (page.get('address') or '')|e }}`).openPopup();
+        setTimeout(()=> map.invalidateSize(), 300);
+      }
+    })();
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

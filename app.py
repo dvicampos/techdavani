@@ -1704,10 +1704,11 @@ DEFAULT_HTML_TEMPLATES = {
     "classico": "public/page_core.html",
     "brutal":  "public/page_public_crafts.html",
     "restaurante": "public/restaurant.html",
+    "barber": "public/barber.html",
 }
 
 @app.route('/manage_page')
-# @require_active_subscription
+@require_active_subscription
 @login_required
 def manage_page_compat():
     page_id = get_current_page_id()
@@ -1723,7 +1724,7 @@ def manage_page_compat():
 
 @app.route('/manage_page/<slug>', methods=['GET', 'POST'])
 @login_required
-# @require_active_subscription
+@require_active_subscription
 @roles_required('admin')
 def manage_page_slug(slug):
     if current_user.role != 'admin':
