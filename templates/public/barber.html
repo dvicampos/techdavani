@@ -205,6 +205,15 @@
     body.theme-night #map{ border:1px solid rgba(233,195,101,.25); }
     body.theme-night footer{ background: linear-gradient(90deg, #0b1a2b, #1c4bb8 40%, #7c2132 85%); border-top:1px solid rgba(255,255,255,.08); }
     body.theme-night footer a{ color:#fff; }
+    footer {
+            margin-bottom: 4%;
+        }
+
+        @media (max-width: 768px) {
+            footer {
+                margin-bottom: 10%;
+            }
+        }
   </style>
 </head>
 
@@ -301,7 +310,7 @@
       <div class="col-md-6">
         <div class="card card-barber h-100">
           <div class="card-header"><i class="fa-solid fa-shop me-2"></i>Sobre nosotros</div>
-          <div class="card-body info-list">
+          <div class="card-body info-list text-light">
             <p><i class="fas fa-align-left me-2"></i><span class="label">Quiénes somos:</span> {{ page.get('description') }}</p>
             <p><i class="fas fa-tag me-2"></i><span class="label">Categoría:</span> {{ page.get('category','Barbería') }}</p>
             <p><i class="fas fa-calendar-alt me-2"></i><span class="label">Fundación:</span> {{ page.get('founding_date') }}</p>
@@ -315,7 +324,7 @@
       <div class="col-md-6">
         <div class="card card-barber h-100">
           <div class="card-header"><i class="fa-solid fa-location-dot me-2"></i>Ubicación & Horarios</div>
-          <div class="card-body info-list">
+          <div class="card-body info-list text-light">
             <p><i class="fas fa-map-marker-alt me-2"></i><span class="label">Dirección:</span> {{ page.get('address') }}</p>
             <p><i class="fas fa-mail-bulk me-2"></i><span class="label">Código Postal:</span> {{ page.get('postal_code') }}</p>
             <p><i class="fas fa-city me-2"></i><span class="label">Ciudad:</span> {{ page.get('city') }}</p>
@@ -375,8 +384,8 @@
               <img src="{{ url_for('uploaded_file', filename=post.cabecera) }}" class="card-img-top img-zoom-trigger" alt="Imagen del post" data-bs-toggle="modal" data-bs-target="#zoomModal" data-img-src="{{ url_for('uploaded_file', filename=post.cabecera) }}">
             {% endif %}
             <div class="card-body d-flex flex-column">
-              <h5 class="card-title">{{ post.title }}</h5>
-              <p class="card-text">{{ post.content[:110] }}...</p>
+              <h5 class="card-title text-warning">{{ post.title }}</h5>
+              <p class="card-text text-light">{{ post.content[:110] }}...</p>
               <a href="{{ url_for('ver_post', post_id=post._id) }}" class="btn btn-outline-dark mt-auto rounded-pill">Leer más</a>
             </div>
           </div>
@@ -425,14 +434,14 @@
             {% endif %}
             <div class="card-body d-flex flex-column py-3 px-3">
               <div class="d-flex justify-content-between align-items-start">
-                <h6 class="card-title mb-1 fw-semibold">{{ producto.title }}</h6>
+                <h6 class="card-title mb-1 fw-semibold text-light">{{ producto.title }}</h6>
                 {% if producto.show_price %}
                   <span class="badge badge-gold product-price">${{ "%.2f"|format(producto.price) }}</span>
                 {% endif %}
               </div>
-              {% if producto.description %}<p class="card-text text-muted small mb-2">{{ producto.description }}</p>{% endif %}
+              {% if producto.description %}<p class="card-text text-info small mb-2">{{ producto.description }}</p>{% endif %}
               <div class="mt-auto">
-                <label for="prod_{{ loop.index }}" class="form-label small mb-1">Cantidad</label>
+                <label for="prod_{{ loop.index }}" class="form-label small mb-1 text-success">Cantidad</label>
                 <input type="number" class="form-control form-control-sm" id="prod_{{ loop.index }}"
                   name="prod_{{ producto.title | replace(' ', '_') }}" min="0" value="0" placeholder="0"
                   aria-label="Cantidad para {{ producto.title }}">
@@ -468,13 +477,13 @@
   <!-- FAB WhatsApp -->
   <div class="wa-fab">
     <a href="https://wa.me/{{ page.get('whatsapp','') | replace(' ', '') }}" target="_blank">
-      <i class="bi bi-whatsapp fs-5"></i> WhatsApp
+      <i class="bi bi-whatsapp fs-5"></i>
     </a>
   </div>
 
   <!-- RESEÑAS (Formulario) -->
   <div class="container container-section card card-barber border-0 mb-5" id="reseñas">
-    <div class="card-body">
+    <div class="card-body text-light">
       <h3 class="mt-2 fw-bold"><i class="bi bi-star-half me-2"></i>Deja tu reseña</h3>
       {% with messages = get_flashed_messages() %}
       {% if messages %}
@@ -536,7 +545,7 @@
         {% endfor %}
       </div>
     {% else %}
-      <p class="text-muted text-center">No hay reseñas aún. ¡Sé el primero en dejar una ⭐!</p>
+      <p class="text-light text-center">No hay reseñas aún. ¡Sé el primero en dejar una ⭐!</p>
     {% endif %}
   </div>
 
@@ -546,7 +555,7 @@
     <div class="row row-cols-1 row-cols-md-2 g-4">
       <div class="col">
         <div class="card card-barber h-100">
-          <div class="card-body">
+          <div class="card-body text-light">
             <p><i class="fas fa-phone me-2 text-success"></i><strong>Teléfono:</strong> {{ page.get('phone') }}</p>
             <p><i class="fas fa-envelope me-2 text-danger"></i><strong>Email:</strong> {{ page.get('email') }}</p>
             <p><i class="fas fa-globe me-2 text-primary"></i><strong>Web:</strong>
@@ -557,7 +566,7 @@
       </div>
       <div class="col">
         <div class="card card-barber h-100">
-          <div class="card-body">
+          <div class="card-body text-light">
             {% if page.get('facebook') %}
             <p><i class="fab fa-facebook me-2 text-primary"></i><strong>Facebook:</strong>
               <a href="{{ page.get('facebook') }}" target="_blank">Ir a Facebook</a>

@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>{{ page.get('business_name','') }}</title>
+  <meta name="description" content="{{ page.get('description','')[:160] }}">
+  <meta name="keywords" content="{{ page.get('category','') }}">
+  <meta name="author" content="{{ page.get('business_name','') }}">
+
+  <!-- OG / Twitter (solo si hay imagen configurada) -->
+  <meta property="og:title" content="{{ page.get('business_name','') }}">
+  <meta property="og:description" content="{{ page.get('slogan') or page.get('description','')[:200] }}">
+  {% if page.get('image') %}
+    <meta property="og:image" content="{{ url_for('uploaded_file', filename=page['image']) }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="{{ url_for('uploaded_file', filename=page['image']) }}">
+  {% endif %}
+  <meta property="og:url" content="{{ request.url }}">
+  <meta property="og:type" content="website">
+
+  <link rel="icon" href="{{ url_for('static', filename='images/logo.jpg') }}" type="image/png">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+  <style>
+    :root{
+      --brand: {{ page.get('color') or '#111827' }};
+      --accent:#ef4444;
+      --ink:#e5e7eb;
+      --muted:#9ca3af;
+      --bg:#0b0d10;
+      --card:#111418;
+      --radius:18px;
+      --shadow:0 18px 40px rgba(0,0,0,.25);
+      --map-h: clamp(260px, 42vh, 520px);
+      --section-gap: clamp(1.25rem, 2vw + .5rem, 3rem);
+      --container-pad: clamp(12px, 2vw, 24px);
+    }
+
+    /* Base */
+    html {scroll-behavior: smooth;}
+    body{
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      background:var(--bg);
+      color:var(--ink);
+      line-height:1.55;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      word-wrap: break-word;
+      overflow-wrap: anywhere;
+    }
+    a{text-decoration:none}
+    img{max-width:100%; height:auto; display:block}
+
+    /* Contenedor: mejor padding lateral en todos los tamaños */
+    .container { padding-left: var(--container-pad); padding-right: var(--container-pad); }
+
+    /* Tipografías fluidas */
+    h1,h2,h3,.display-5{ letter-spacing:-.02em; }
+    h1,.display-5{font-size: clamp(1.8rem, 2.4vw + 1.1rem, 3rem);}
+    h2{font-size: clamp(1.25rem, 1.2vw + 1rem, 2rem);}
+    h3{font-size: clamp(1.1rem, .9vw + .95rem, 1.6rem);}
+
+    /* Separaciones fluidas */
+    section { margin-top: var(--section-gap); margin-bottom: var(--section-gap); }
+
+    /* Evita que los anclajes queden tapados por la navbar sticky */
+    [id] { scroll-margin-top: 84px; }
+
+    /* Focus visible */
+    :focus-visible{
+      outline:2px solid #93c5fd;
+      outline-offset:2px;
+      border-radius:8px;
+    }
+
+    /* Top announcement bar (solo si avisos) */
+    .topbar{
+      background:linear-gradient(90deg, var(--brand), #0b0d10);
+      border-bottom:1px solid rgba(229,231,235,.08)
+    }
+    .topbar .pill{
+      display:inline-flex; gap:.5rem; align-items:center;
+      padding:.25rem .6rem; border-radius:999px;
+      border:1px dashed rgba(255,255,255,.35); color:#fff
+    }
+
+    /* Navbar (glass + offcanvas) */
+    .nav-glass{
+      position:sticky; top:0; z-index:1020;
+      background:linear-gradient(90deg, rgba(17,24,39,.85), rgba(17,24,39,.65));
+      backdrop-filter:blur(8px);
+      border-bottom:1px solid rgba(229,231,235,.08)
+    }
+    .navbar-brand{font-weight:800; letter-spacing:.3px}
+    .nav-link{color:#cbd5e1!important}
+    .nav-link:hover{color:#fff!important}
+    .offcanvas{
+      background: #0d1116;
+      border-left:1px solid rgba(229,231,235,.08)
+    }
+
+    /* Chips (scroll táctil en móvil) */
+    .chips{display:flex; gap:.5rem; flex-wrap:wrap}
+    @media (max-width: 576px){
+      .chips{
+        flex-wrap:nowrap; overflow:auto; -webkit-overflow-scrolling:touch; padding-bottom:.25rem;
+        scrollbar-width:none;
+      }
+      .chips::-webkit-scrollbar{display:none}
+    }
+    .chip{
+      border:1px solid rgba(229,231,235,.18);
+      color:#e5e7eb; padding:.35rem .75rem; border-radius:999px; background:#0f1318; white-space:nowrap
+    }
+    .chip.active{background:#e5e7eb;color:#0b0d10;font-weight:700}
+
+    /* Hero */
+    .hero{
+      position:relative; overflow:hidden; border-radius:0 0 28px 28px; 
+      background:
+        radial-gradient(900px 420px at 90% -10%, rgba(239,68,68,.16), transparent 60%),
+        radial-gradient(700px 360px at 10% -20%, rgba(59,130,246,.14), transparent 60%),
+        linear-gradient(180deg, #0b0d10, #0d0f13 55%, #0b0d10)
+    }
+    .title{font-weight:900; line-height:1.05}
+    .cta{
+      display:inline-flex; gap:.6rem; align-items:center;
+      background:var(--accent); color:#fff; border:none;
+      padding:.9rem 1.2rem; border-radius:999px; font-weight:700;
+      box-shadow:0 14px 34px rgba(239,68,68,.25)
+    }
+    .cta:hover{transform:translateY(-2px)}
+    .hero-img{
+      width:100%; aspect-ratio: 16/10; object-fit:cover;
+      border-radius:20px; border:1px solid rgba(229,231,235,.08);
+      box-shadow:0 30px 80px rgba(0,0,0,.45)
+    }
+    .hero-badge{
+      position:absolute; right:2%; top:14%;
+      background:#111827; border:1px solid rgba(229,231,235,.08);
+      padding:.7rem .9rem; border-radius:14px
+    }
+    @media (max-width: 576px){
+      .hero-badge{ position:static; margin-top:.75rem; width:max-content }
+    }
+
+    /* Productos: grid ultra-responsiva */
+    .grid{
+      display:grid; gap:18px;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+    @media (min-width:1440px){
+      .grid{ gap:22px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+    }
+
+    .card-prod{
+      background:var(--card); border:1px solid rgba(229,231,235,.08);
+      border-radius:var(--radius); overflow:hidden;
+      transition:transform .14s ease, box-shadow .14s ease, border-color .14s ease
+    }
+    .card-prod:hover{transform:translateY(-3px); box-shadow:var(--shadow); border-color:rgba(229,231,235,.18)}
+    .prod-media{position:relative}
+    .prod-tag{
+      position:absolute; left:10px; top:10px; background:#0b0d10;
+      border:1px solid rgba(229,231,235,.12); padding:.25rem .45rem; border-radius:8px; font-size:.78rem
+    }
+    .prod-img{width:100%; aspect-ratio: 4/3; object-fit:cover}
+    .prod-body{padding:14px}
+    .prod-title{
+      font-weight:700; color:#fff; margin:0 0 4px;
+      display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+    }
+    .prod-price{color:#93c5fd; font-weight:800}
+    .prod-old{color:#94a3b8; text-decoration:line-through; font-weight:600; margin-left:.5rem}
+    .sizes{display:flex; gap:.35rem; flex-wrap:wrap}
+    .size{border:1px solid rgba(229,231,235,.22); border-radius:10px; padding:.2rem .5rem; font-size:.85rem; color:#e5e7eb; cursor:pointer}
+    .size.active{background:#e5e7eb; color:#0b0d10; font-weight:800}
+    .btn-outline{border:1px solid rgba(229,231,235,.28); color:#e5e7eb; padding:.55rem .8rem; border-radius:12px; background:transparent; font-weight:700}
+    .btn-primary{background:linear-gradient(90deg, var(--accent), #fb7185); color:#fff; border:none; padding:.55rem .9rem; border-radius:12px; font-weight:800}
+
+    /* Acciones de producto: apila en móvil, dos columnas en >=421px */
+    .actions{ display:grid; grid-template-columns: 100%; gap:8px; align-items:center }
+    @media (min-width: 421px){ .actions{ grid-template-columns: minmax(86px, 120px) 1fr auto } }
+    .actions input[type=number]{ min-width:86px }
+
+    /* Highlights (info general) */
+    .highlights{display:grid; gap:12px; grid-template-columns:repeat(12,1fr)}
+    .hl{grid-column: span 12; background:rgba(255,255,255,.03); border:1px solid rgba(229,231,235,.08); border-radius:14px; padding:14px}
+    @media(min-width: 768px){ .hl{grid-column: span 4} }
+    .hl i{opacity:.85}
+
+    /* Visítanos (mapa) */
+    .visit{background:linear-gradient(180deg, #0d0f13, #0b0d10)}
+    #mapWrap{border:1px solid rgba(229,231,235,.08); border-radius:18px; overflow:hidden}
+    #map{height: var(--map-h); min-height:260px}
+
+    /* Tarjetas genéricas */
+    .card-review{background:var(--card); border:1px solid rgba(229,231,235,.08); border-radius:16px}
+
+    /* Footer */
+    footer{border-top:1px solid rgba(229,231,235,.08)}
+
+    /* FAB: respeta safe-area en móviles con notch */
+    .fab-wa{
+      position:fixed; right:18px; bottom:calc(18px + env(safe-area-inset-bottom)); z-index:1060;
+    }
+
+    /* Preferencias de movimiento */
+    @media (prefers-reduced-motion: reduce){
+      * {animation: none!important; transition: none!important}
+    }
+  </style>
+</head>
+<body>
+
+<!-- TOP ANNOUNCEMENT BAR -->
+{% if avisos and avisos|length %}
+<div class="topbar py-1">
+  <div class="container d-flex align-items-center justify-content-center gap-2 flex-wrap">
+    {% for a in avisos[:3] %}
+      <span class="pill small"><i class="bi bi-megaphone"></i> <b>{{ a.title }}</b>{% if a.date %} · {{ a.date.strftime("%d/%m/%Y") }}{% endif %}</span>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- NAV (offcanvas en móvil) -->
+<nav class="navbar navbar-dark navbar-expand-lg nav-glass">
+  <div class="container">
+    <a class="navbar-brand" href="/">{{ page.get('business_name','') }}</a>
+    <button class="navbar-toggler border-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#navOff" aria-controls="navOff" aria-label="Abrir menú">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="navOff" aria-labelledby="navOffLabel">
+      <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="navOffLabel">{{ page.get('business_name','') }}</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button>
+      </div>
+      <div class="offcanvas-body">
+        <ul class="navbar-nav ms-auto align-items-lg-center">
+          {% if posts %}<li class="nav-item"><a class="nav-link" data-bs-dismiss="offcanvas" href="#novedades">Novedades</a></li>{% endif %}
+          {% if productos %}<li class="nav-item"><a class="nav-link" data-bs-dismiss="offcanvas" href="#productos">Productos</a></li>{% endif %}
+          <li class="nav-item"><a class="nav-link" data-bs-dismiss="offcanvas" href="#info">Información</a></li>
+          <li class="nav-item"><a class="nav-link" data-bs-dismiss="offcanvas" href="#visitanos">Visítanos</a></li>
+          <li class="nav-item"><a class="nav-link" data-bs-dismiss="offcanvas" href="#contacto">Contacto</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+{% set has_hero_copy = page.get('slogan') or page.get('headline') or page.get('hero_text') %}
+{% set has_hero_media = page.get('image') %}
+{% if has_hero_copy or has_hero_media or (avisos and avisos|length) %}
+<header class="hero" style="padding-top:42px">
+  <div class="container py-5">
+    <div class="row g-4 align-items-center">
+      {% if has_hero_copy %}
+      <div class="col-lg-6">
+        {% if page.get('tagline') %}
+          <div class="chips mb-2"><span class="chip">{{ page.tagline }}</span></div>
+        {% endif %}
+
+        {% if page.get('headline') %}
+          <h1 class="title display-5 text-white">{{ page.headline }}</h1>
+        {% elif page.get('slogan') %}
+          <h1 class="title display-5 text-white">{{ page.slogan }}</h1>
+        {% endif %}
+
+        {% if page.get('hero_text') %}<p class="mt-2 text-secondary">{{ page.hero_text }}</p>{% endif %}
+
+        {% if avisos and avisos|length %}
+          <div class="chips mt-3">
+            {% for a in avisos[:4] %}<span class="chip"><i class="bi bi-bell"></i> {{ a.title }}</span>{% endfor %}
+          </div>
+        {% endif %}
+
+        <div class="d-flex gap-2 mt-3 flex-wrap">
+          {% if productos %}<a href="#productos" class="cta"><i class="bi bi-bag-heart"></i> Comprar</a>{% endif %}
+          {% if posts %}<a href="#novedades" class="btn btn-outline">Novedades</a>{% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+      {% if has_hero_media %}
+      <div class="col-lg-6">
+        <img class="hero-img" src="{{ url_for('uploaded_file', filename=page['image']) }}" alt="{{ page.get('business_name','') }}" loading="lazy" decoding="async"
+             onerror="this.style.display='none'">
+        {% if page.get('promo_code') or page.get('promo_note') %}
+        <div class="hero-badge small">
+          {% if page.get('promo_note') %}<div class="fw-bold">{{ page.promo_note }}</div>{% endif %}
+          {% if page.get('promo_code') %}<div class="text-secondary">Código: <span class="text-white fw-bold">{{ page.promo_code }}</span></div>{% endif %}
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</header>
+{% endif %}
+
+<!-- NOVEDADES -->
+{% if posts and posts|length %}
+<section id="novedades" class="container">
+  <div class="d-flex align-items-end justify-content-between mb-3 flex-wrap gap-2">
+    <h2 class="m-0">Novedades</h2>
+    {% if posts|length > 3 and page.get('business_name') %}
+      <a class="text-secondary" href="{{ url_for('lista_blogs_negocio', nombre=page.get('business_name',''), page=1) }}">Ver todo</a>
+    {% endif %}
+  </div>
+  <div class="row g-3">
+    {% for post in posts[:3] %}
+    <div class="col-12 col-sm-6 col-md-4">
+      <div class="card card-review h-100">
+        {% if post.cabecera %}
+          <img src="{{ url_for('uploaded_file', filename=post.cabecera) }}" class="card-img-top" style="aspect-ratio:16/10;object-fit:cover" alt="Post"
+               loading="lazy" decoding="async" onerror="this.style.display='none'">
+        {% endif %}
+        <div class="card-body">
+          <h6 class="fw-bold text-white">{{ post.title }}</h6>
+          {% if post.content %}<p class="text-secondary small mb-3">{{ post.content[:120] }}{% if post.content|length>120 %}...{% endif %}</p>{% endif %}
+          <a class="btn btn-outline btn-sm" href="{{ url_for('ver_post', post_id=post._id) }}">Leer más</a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<!-- PRODUCTOS -->
+{% if productos and productos|length %}
+<section id="productos" class="container">
+  <div class="d-flex align-items-end justify-content-between mb-3 flex-wrap gap-2">
+    <h2 class="m-0">Productos</h2>
+    <div class="d-flex gap-2 align-items-center w-auto">
+      <label class="text-secondary small d-none d-sm-inline" for="sort">Ordenar:</label>
+      <select id="sort" class="form-select form-select-sm bg-dark text-white border-secondary">
+        <option value="new">Recientes</option>
+        <option value="low">Precio: menor a mayor</option>
+        <option value="high">Precio: mayor a menor</option>
+      </select>
+    </div>
+  </div>
+
+  {% set cats = productos | map(attribute='category') | list | select('string') | list %}
+  {% set cats_unique = cats | unique | list if cats else [] %}
+  {% if cats_unique and cats_unique|length > 1 %}
+  <div class="chips mb-3" id="chips">
+    <span class="chip active" data-cat="all">Todo</span>
+    {% for c in cats_unique %}<span class="chip" data-cat="{{ c }}">{{ c }}</span>{% endfor %}
+  </div>
+  {% endif %}
+
+  <form id="cotizarForm">
+    <div class="grid" id="prodGrid">
+      {% for p in productos %}
+      <article class="card-prod" data-cat="{{ p.get('category','') }}">
+        <div class="prod-media">
+          {% if p.get('image') %}
+            <img class="prod-img img-zoom-trigger"
+                 data-bs-toggle="modal" data-bs-target="#zoomModal"
+                 data-img-src="{{ url_for('uploaded_file', filename=p.image) }}"
+                 src="{{ url_for('uploaded_file', filename=p.image) }}"
+                 alt="{{ p.title }}" loading="lazy" decoding="async"
+                 onerror="this.closest('.prod-media').style.display='none'">
+          {% endif %}
+          {% if p.get('badge') %}<span class="prod-tag">{{ p.badge }}</span>{% endif %}
+        </div>
+        <div class="prod-body">
+          <div class="d-flex justify-content-between align-items-start gap-2">
+            <h5 class="prod-title">{{ p.title }}</h5>
+            <div class="text-end">
+              {% if p.get('price') is not none %}
+                <span class="prod-price">${{ '%.2f'|format(p.price) }}</span>
+              {% endif %}
+              {% if p.get('compare_at') is not none %}
+                <span class="prod-old">${{ '%.2f'|format(p.compare_at) }}</span>
+              {% endif %}
+            </div>
+          </div>
+
+          {% if p.get('description') %}
+          <p class="text-secondary small mb-2">{{ p.description[:90] }}{% if p.description|length>90 %}...{% endif %}</p>
+          {% endif %}
+
+          {% if p.get('sizes') and p.sizes|length %}
+          <div class="sizes">
+            {% for s in p.sizes %}
+              <span class="size" role="button" tabindex="0" data-size="{{ s }}">{{ s }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          <div class="actions">
+            <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" min="0" value="0" name="qty_{{ loop.index }}">
+            <button type="button" class="btn btn-outline btn-sm w-100" onclick="addToQuote('{{ p.title|escape }}', this)">+</button>
+            {% if page.get('whatsapp') %}
+              <button type="button" class="btn btn-primary btn-sm" onclick="buyNow('{{ p.title|escape }}', this)" aria-label="Comprar por WhatsApp">
+                <i class="bi bi-whatsapp"></i>
+              </button>
+            {% endif %}
+          </div>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+
+    {% if page.get('whatsapp') %}
+    <div class="text-center mt-3">
+      <button type="submit" class="btn btn-primary btn-lg"><i class="bi bi-whatsapp me-2"></i> Cotizar por WhatsApp</button>
+    </div>
+    {% endif %}
+  </form>
+</section>
+{% endif %}
+
+<!-- INFORMACIÓN (highlights) -->
+<section class="container" id="info">
+  <h2 class="mb-3">Información</h2>
+  <div class="highlights mb-3">
+    {% if page.get('category') %}<div class="hl"><i class="bi bi-tag me-2"></i><b>Categoría:</b> {{ page.category }}</div>{% endif %}
+    {% if page.get('operating_hours') %}<div class="hl"><i class="bi bi-clock me-2"></i><b>Horario:</b> {{ page.operating_hours }}</div>{% endif %}
+    {% if page.get('payment_methods') %}<div class="hl"><i class="bi bi-credit-card me-2"></i><b>Pagos:</b> {{ page.payment_methods }}</div>{% endif %}
+    {% if page.get('delivery_available') %}<div class="hl"><i class="bi bi-truck me-2"></i><b>Envíos:</b> Sí</div>{% endif %}
+  </div>
+
+  <div class="row g-4">
+    {% if page.get('description') %}
+    <div class="col-lg-7">
+      <div class="card-review p-3 h-100">
+        <h4 class="mb-2">Sobre nosotros</h4>
+        <p class="mb-0 text-secondary">{{ page.description }}</p>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="col-lg-5">
+      <div class="card-review p-3 h-100">
+        <h5 class="mb-2">Detalles</h5>
+        {% if page.get('founding_date') %}<p class="mb-2"><i class="bi bi-calendar-event me-2"></i>Fundación: {{ page.founding_date }}</p>{% endif %}
+        {% if page.get('services') %}<p class="mb-2"><i class="bi bi-stars me-2"></i>Servicios: {{ page.services }}</p>{% endif %}
+        {% if page.get('address') %}<p class="mb-2"><i class="bi bi-geo-alt me-2"></i>Dirección: {{ page.address }}</p>{% endif %}
+        {% if page.get('city') or page.get('state') or page.get('postal_code') %}<p class="mb-0"><i class="bi bi-geo me-2"></i>{{ page.get('city','') }}{% if page.get('state') %}, {{ page.state }}{% endif %}{% if page.get('postal_code') %} · CP {{ page.postal_code }}{% endif %}</p>{% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- VISÍTANOS (MAPA mejorado) -->
+<section id="visitanos" class="visit py-5">
+  <div class="container">
+    <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+      <h2 class="m-0">Visítanos</h2>
+      {% if page.get('lat') is not none and page.get('lng') is not none %}
+        <a class="btn btn-outline btn-sm" target="_blank" href="https://www.google.com/maps/dir/?api=1&destination={{ page.lat }},{{ page.lng }}"><i class="bi bi-sign-turn-right"></i> Cómo llegar</a>
+      {% elif page.get('address') %}
+        <a class="btn btn-outline btn-sm" target="_blank" href="https://www.google.com/maps/search/?api=1&query={{ page.address | urlencode }}"><i class="bi bi-search"></i> Buscar dirección</a>
+      {% endif %}
+    </div>
+
+    {% set has_coords = page.get('lat') is not none and page.get('lng') is not none %}
+    {% if has_coords %}
+      <div id="mapWrap"><div id="map" role="region" aria-label="Mapa de ubicación"></div></div>
+    {% else %}
+      <div class="card-review p-3">
+        <p class="mb-2 text-secondary">Aún no hay coordenadas guardadas.</p>
+        {% if page.get('address') %}
+          <div class="d-flex gap-2 flex-wrap">
+            <a class="btn btn-outline btn-sm" target="_blank" href="https://www.google.com/maps/search/?api=1&query={{ page.address | urlencode }}">Google Maps</a>
+            <a class="btn btn-outline btn-sm" target="_blank" href="https://www.openstreetmap.org/search?query={{ page.address | urlencode }}">OpenStreetMap</a>
+          </div>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+</section>
+
+<!-- CONTACTO -->
+<section id="contacto" class="container">
+  <div class="row g-3">
+    <div class="col-md-6">
+      <div class="card-review p-3">
+        <h4 class="mb-3">Contacto</h4>
+        {% if page.get('phone') %}<p class="mb-1"><i class="bi bi-telephone text-success me-2"></i> {{ page.phone }}</p>{% endif %}
+        {% if page.get('email') %}<p class="mb-1"><i class="bi bi-envelope text-danger me-2"></i> {{ page.email }}</p>{% endif %}
+        {% if page.get('website') %}<p class="mb-1"><i class="bi bi-globe me-2 text-primary"></i> <a class="text-secondary" href="{{ page.website }}" target="_blank" rel="noopener">{{ page.website }}</a></p>{% endif %}
+        <div class="d-flex gap-2 mt-2 flex-wrap">
+          {% if page.get('facebook') %}<a class="btn btn-outline btn-sm" href="{{ page.facebook }}" target="_blank" rel="noopener"><i class="bi bi-facebook"></i></a>{% endif %}
+          {% if page.get('instagram') %}<a class="btn btn-outline btn-sm" href="{{ page.instagram }}" target="_blank" rel="noopener"><i class="bi bi-instagram"></i></a>{% endif %}
+          {% if page.get('tiktok') %}<a class="btn btn-outline btn-sm" href="{{ page.tiktok }}" target="_blank" rel="noopener"><i class="bi bi-tiktok"></i></a>{% endif %}
+        </div>
+      </div>
+    </div>
+
+    {% if page.get('whatsapp') %}
+    <div class="col-md-6">
+      <div class="card-review p-3">
+        <h4 class="mb-3">Escríbenos</h4>
+        <form onsubmit="openWhats(event)">
+          <div class="row g-2">
+            <div class="col-md-6"><input class="form-control bg-dark text-white border-secondary" id="cname" placeholder="Nombre" required></div>
+            <div class="col-md-6"><input class="form-control bg-dark text-white border-secondary" id="cmail" placeholder="Email" type="email"></div>
+            <div class="col-12"><textarea class="form-control bg-dark text-white border-secondary" id="cmsg" rows="3" placeholder="Mensaje"></textarea></div>
+          </div>
+          <button class="btn btn-primary mt-2" type="submit"><i class="bi bi-whatsapp me-1"></i> Enviar por WhatsApp</button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+<!-- RESEÑAS -->
+{% if reseñas %}
+<section class="container" id="reseñas">
+  <h2 class="mb-3">Reseñas</h2>
+  <div class="row g-3">
+    {% for r in reseñas %}
+    <div class="col-12 col-md-6">
+      <div class="card-review p-3 h-100">
+        <div class="d-flex align-items-center justify-content-between">
+          <strong>{{ r.nombre }}</strong>
+          <div>
+            {% for i in range(1,6) %}
+              {% if i <= r.estrellas %}<i class="bi bi-star-fill text-warning"></i>{% else %}<i class="bi bi-star text-secondary"></i>{% endif %}
+            {% endfor %}
+          </div>
+        </div>
+        {% if r.comentario %}<p class="mt-2 mb-0 text-secondary">{{ r.comentario }}</p>{% endif %}
+        {% if r.fecha %}<small class="text-secondary">{{ r.fecha.strftime('%d/%m/%Y') }}</small>{% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<!-- FOOTER -->
+<footer class="py-4">
+  <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
+    <div class="text-secondary small">
+      {% if page.get('business_name') %}© {{ 2025 }} <b>{{ page.business_name }}</b>.{% endif %} Todos los derechos reservados.
+    </div>
+    <div class="d-flex gap-3 flex-wrap">
+      {% if productos %}<a class="text-secondary" href="#productos">Shop</a>{% endif %}
+      {% if posts %}<a class="text-secondary" href="#novedades">Novedades</a>{% endif %}
+      <a class="text-secondary" href="#contacto">Contacto</a>
+    </div>
+  </div>
+</footer>
+
+<!-- FAB WhatsApp -->
+{% if page.get('whatsapp') %}
+<a href="https://wa.me/{{ page.whatsapp | replace(' ','') }}" class="fab-wa" target="_blank" aria-label="WhatsApp">
+  <span class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width:56px;height:56px;background:#25D366;box-shadow:0 10px 26px rgba(37,211,102,.35)">
+    <i class="bi bi-whatsapp text-white fs-3"></i>
+  </span>
+</a>
+{% endif %}
+
+<!-- Modal Zoom (solo si hay imágenes de productos) -->
+<div class="modal fade" id="zoomModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-xl">
+    <div class="modal-content bg-transparent border-0">
+      <img id="zoomedImage" class="w-100 rounded" alt="Preview">
+    </div>
+  </div>
+</div>
+
+<!-- Styles & Scripts -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+  // Zoom modal (productos)
+  document.querySelectorAll('.img-zoom-trigger')?.forEach(el=>{
+    el.addEventListener('click', e=>{
+      const src = e.currentTarget.getAttribute('data-img-src') || e.currentTarget.src;
+      const img = document.getElementById('zoomedImage');
+      if(img) img.src = src;
+    })
+  });
+
+  // Chips categorías -> filtro
+  const chips = document.querySelectorAll('.chip');
+  const grid  = document.getElementById('prodGrid');
+  chips.forEach(ch=>{
+    ch.addEventListener('click', ()=>{
+      chips.forEach(c=>c.classList.remove('active'));
+      ch.classList.add('active');
+      const cat = ch.dataset.cat;
+      grid?.querySelectorAll('.card-prod').forEach(card=>{
+        card.style.display = (cat==='all' || card.dataset.cat===cat) ? '' : 'none';
+      });
+      // Reflow para que no queden huecos al ocultar
+      grid?.offsetHeight;
+    });
+  });
+
+  // Ordenar por precio
+  const sortSel = document.getElementById('sort');
+  sortSel?.addEventListener('change', ()=>{
+    const cards = Array.from(grid.querySelectorAll('.card-prod')).filter(c=>c.style.display!=='none');
+    const byPrice = c => parseFloat((c.querySelector('.prod-price')?.textContent || '').replace(/[^0-9.]/g,'') || 0);
+    if (sortSel.value==='low') cards.sort((a,b)=>byPrice(a)-byPrice(b));
+    if (sortSel.value==='high') cards.sort((a,b)=>byPrice(b)-byPrice(a));
+    if (sortSel.value==='new') cards.sort(()=>0.5-Math.random());
+    cards.forEach(c=>grid.appendChild(c));
+  });
+
+  // Tallas -> selección visual y accesible
+  document.querySelectorAll('.card-prod').forEach(card=>{
+    const sizeEls = card.querySelectorAll('.size');
+    sizeEls.forEach(s=>{
+      function activate(){ sizeEls.forEach(x=>x.classList.remove('active')); s.classList.add('active'); }
+      s.addEventListener('click', activate);
+      s.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); activate(); }});
+    });
+  });
+
+  // WhatsApp: cotizar/buy
+  const telefono = "{{ page.get('whatsapp','') | replace(' ','') }}";
+  function buildQuote(){
+    let mensaje = "Hola, quiero cotizar:%0A";
+    let count = 0;
+    document.querySelectorAll('.card-prod').forEach(card=>{
+      const title = card.querySelector('.prod-title')?.textContent?.trim();
+      const qty   = card.querySelector('input[type=number]')?.valueAsNumber || 0;
+      const size  = card.querySelector('.size.active')?.dataset.size || '';
+      if(qty>0){ count++; mensaje += `• ${title}${size?(" ("+size+")"):""} x ${qty}%0A`; }
+    });
+    return {mensaje, count};
+  }
+
+  document.getElementById('cotizarForm')?.addEventListener('submit', e=>{
+    e.preventDefault();
+    if(!telefono){ alert("No hay número de WhatsApp configurado."); return; }
+    const {mensaje, count} = buildQuote();
+    if(!count){ alert("Selecciona al menos 1 producto con cantidad > 0"); return; }
+    window.open(`https://wa.me/${telefono}?text=${mensaje}`, '_blank');
+  });
+
+  window.addToQuote = function(title, btn){
+    const wrap = btn.closest('.card-prod');
+    const qtyInput = wrap.querySelector('input[type=number]');
+    qtyInput.value = (qtyInput.valueAsNumber || 0) + 1;
+    btn.classList.add('btn-success'); setTimeout(()=>btn.classList.remove('btn-success'), 450);
+  }
+
+  window.buyNow = function(title, btn){
+    if(!telefono){ alert("No hay número de WhatsApp configurado."); return; }
+    const wrap = btn.closest('.card-prod');
+    const qty  = wrap.querySelector('input[type=number]')?.valueAsNumber || 1;
+    const size = wrap.querySelector('.size.active')?.dataset.size || '';
+    const line = `Hola, me interesa: ${title}${size?(" ("+size+")"):""} x ${qty}`;
+    window.open(`https://wa.me/${telefono}?text=${encodeURIComponent(line)}`, '_blank');
+  }
+
+  window.openWhats = function(e){
+    e.preventDefault(); // asegura que no lance error
+    if(!telefono){ alert("No hay número de WhatsApp configurado."); return; }
+    const name = document.getElementById('cname')?.value || '';
+    const mail = document.getElementById('cmail')?.value || '';
+    const msg  = document.getElementById('cmsg')?.value || '';
+    const t = `Hola, soy ${name}. ${mail?("Email: "+mail+". "):""}${msg}`;
+    window.open(`https://wa.me/${telefono}?text=${encodeURIComponent(t)}`, '_blank');
+  }
+</script>
+
+<!-- Leaflet + Mapa robusto (lazy init, resize-safe) -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script>
+(function(){
+  const hasCoords = {{ 'true' if (page.get('lat') is not none and page.get('lng') is not none) else 'false' }};
+  if(!hasCoords) return;
+
+  const lat = {{ page.get('lat') if page.get('lat') is not none else 'null' }};
+  const lng = {{ page.get('lng') if page.get('lng') is not none else 'null' }};
+
+  function initMap(){
+    const target = document.getElementById('map');
+    if(!target || target.dataset.ready) return;
+    target.dataset.ready = '1';
+
+    const map = L.map('map', { scrollWheelZoom:false, zoomControl:true }).setView([lat, lng], 16);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19, attribution:'&copy; OSM'}).addTo(map);
+    const marker = L.marker([lat, lng]).addTo(map);
+    marker.bindPopup(`<strong>{{ page.get('business_name','')|e }}</strong><br>{{ (page.get('address','') or '')|e }}`);
+
+    // Ajustes de tamaño
+    setTimeout(()=>map.invalidateSize(), 250);
+    window.addEventListener('resize', ()=>map.invalidateSize());
+
+    // Si el nav offcanvas se cierra (por si abres mapa luego), invalida tamaño
+    const off = document.getElementById('navOff');
+    off?.addEventListener('hidden.bs.offcanvas', ()=>setTimeout(()=>map.invalidateSize(), 200));
+  }
+
+  // Lazy init con IntersectionObserver
+  document.addEventListener('DOMContentLoaded', ()=>{
+    const target = document.getElementById('map');
+    if(!target) return;
+
+    if('IntersectionObserver' in window){
+      const io = new IntersectionObserver(entries=>{
+        entries.forEach(e=>{ if(e.isIntersecting){ initMap(); io.disconnect(); } });
+      }, {threshold: .15});
+      io.observe(target);
+    } else {
+      initMap();
+    }
+  });
+})();
+</script>
+
+</body>
+</html>

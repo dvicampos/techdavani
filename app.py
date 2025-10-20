@@ -1705,6 +1705,7 @@ DEFAULT_HTML_TEMPLATES = {
     "brutal":  "public/page_public_crafts.html",
     "restaurante": "public/restaurant.html",
     "barber": "public/barber.html",
+    "rope": "public/rope.html",
 }
 
 @app.route('/manage_page')
