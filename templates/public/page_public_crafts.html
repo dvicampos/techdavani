@@ -1,816 +1,609 @@
-{# templates/page_public_crafts.html #}
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
 
-    <title>{{ page.get('business_name','Taller de Manualidades') }}</title>
-    <meta name="description" content="{{ page.get('slogan') or page.get('description','')[:160] }}">
-    <meta name="author" content="{{ page.get('business_name','') }}">
+  <title>{{ page.get('business_name','Taller de Manualidades') }}</title>
+  <meta name="description" content="{{ page.get('slogan') or page.get('description','')[:160] }}">
+  <meta name="author" content="{{ page.get('business_name','') }}">
 
-    {# Open Graph / Twitter #}
-    {% set og_img = page.get('image') %}
-    {% if og_img and not (og_img.startswith('http://') or og_img.startswith('https://')) %}
+  {# Open Graph / Twitter #}
+  {% set og_img = page.get('image') %}
+  {% if og_img and not (og_img.startswith('http://') or og_img.startswith('https://')) %}
     {% set og_img = url_for('uploaded_file', filename=og_img, _external=True) %}
-    {% endif %}
-    <meta property="og:title" content="{{ page.get('business_name','') }}">
-    <meta property="og:description" content="{{ page.get('slogan') or page.get('description','')[:200] }}">
-    <meta property="og:image"
-        content="{{ og_img or url_for('static', filename='images/default.png', _external=True) }}">
-    <meta property="og:url" content="{{ request.url }}">
-    <meta property="og:type" content="website">
-    <meta name="twitter:card" content="summary_large_image">
+  {% endif %}
+  <meta property="og:title" content="{{ page.get('business_name','') }}">
+  <meta property="og:description" content="{{ page.get('slogan') or page.get('description','')[:200] }}">
+  <meta property="og:image" content="{{ og_img or url_for('static', filename='images/default.png', _external=True) }}">
+  <meta property="og:url" content="{{ request.url }}">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&family=Parisienne&display=swap"
-        rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&family=Parisienne&display=swap" rel="stylesheet">
 
-    {# Leaflet #}
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  {# Leaflet #}
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
 
-    <style>
-        :root {
-            --brand: {
-                    {
-                    page.get('color') or '#e18dac'
-                }
-            }
+  <style>
+    :root{
+      --brand: {{ page.get('color') or '#e18dac' }};
+      --ink:#3a3a3a; --bg:#fff7fb; --paper:#ffffff;
+      --accent:#ffd166; --mint:#b8e0d2; --lilac:#c9b7f3;
+      --radius:16px; --shadow:0 10px 28px rgba(28,25,23,.08);
+      --glass-bg:255,255,255; --glass-alpha:.18; --glass-alpha-strong:.28;
+      --glass-blur:14px; --glass-border:rgba(255,255,255,.45); --glass-ring:rgba(0,0,0,.06);
+    }
+    html,body{background:var(--bg); color:var(--ink)}
+    body{font-family:Quicksand,system-ui,-apple-system,"Segoe UI",sans-serif}
 
-            ;
-            /* rosa pastel por defecto */
-            --ink: #3a3a3a;
-            --bg: #fff7fb;
-            --paper: #ffffff;
-            --accent: #ffd166;
-            /* amarillo pastel */
-            --mint: #b8e0d2;
-            /* menta */
-            --lilac:#c9b7f3;
-            /* lila */
-            --radius: 16px;
-            --shadow: 0 10px 28px rgba(28, 25, 23, .08);
+    .paper{background:var(--paper); border-radius:var(--radius); box-shadow:var(--shadow); position:relative; overflow:hidden; border:1px solid #f3e7ef;}
+    .paper::before{content:""; position:absolute; inset:0; background-image:radial-gradient(rgba(0,0,0,.04) 1px, transparent 1px); background-size:12px 12px; opacity:.35; pointer-events:none;}
+    .washi{--col:var(--accent); position:absolute; top:-10px; left:16px; width:120px; height:32px; background:var(--col); transform:rotate(-5deg); opacity:.9; border-radius:4px; box-shadow:0 4px 10px rgba(0,0,0,.12); mix-blend-mode:multiply;}
+    .washi::after{content:""; position:absolute; inset:0; background:repeating-linear-gradient(45deg, rgba(255,255,255,.45) 0 6px, transparent 6px 12px); border-radius:4px; opacity:.8;}
 
-            /* Glass tokens */
-            --glass-bg: 255,
-            255,
-            255;
-            /* para rgba() */
-            --glass-alpha: .18;
-            --glass-alpha-strong: .28;
-            --glass-blur: 14px;
-            --glass-border: rgba(255, 255, 255, .45);
-            --glass-ring: rgba(0, 0, 0, .06);
-        }
+    .glass{background:rgba(var(--glass-bg), var(--glass-alpha)); backdrop-filter: blur(var(--glass-blur)) saturate(140%); -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(140%); border:1px solid var(--glass-border); box-shadow:0 1px 0 var(--glass-ring), var(--shadow); border-radius:var(--radius);}
+    .glass-strong{background:rgba(var(--glass-bg), var(--glass-alpha-strong)); backdrop-filter: blur(calc(var(--glass-blur) + 4px)) saturate(160%); -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 4px)) saturate(160%); border:1px solid var(--glass-border); box-shadow:0 1px 0 var(--glass-ring), var(--shadow); border-radius:var(--radius);}
+    @supports not (backdrop-filter: blur(1px)){ .glass,.glass-strong{background:#fffffff0;} }
 
-        html,
-        body {
-            background: var(--bg);
-            color: var(--ink);
-        }
+    .cover{
+      background:
+        radial-gradient(1200px 600px at 0% -10%, color-mix(in oklab, var(--brand) 85%, #fff 15%) 0%, transparent 55%),
+        radial-gradient(1000px 600px at 100% 0%, color-mix(in oklab, var(--mint) 85%, #fff 15%) 0%, transparent 50%),
+        linear-gradient(180deg, #ffedf7 0%, #f8e9ff 100%);
+    }
+    .nb{position:sticky; top:0; z-index:1020; border-bottom:1px solid rgba(255,255,255,.4);}
+    .navbar-brand{font-weight:800; letter-spacing:.3px; color:#4b1f3d !important;}
+    .nav-link{font-weight:700; color:#5d2c4e !important;}
+    .nav-link:hover{color:#3b1933 !important; text-decoration:underline;}
 
-        body {
-            font-family: Quicksand, system-ui, -apple-system, "Segoe UI", sans-serif;
-        }
+    .hero{padding:clamp(40px, 6vw, 80px) 0 clamp(24px,4vw,48px);}
+    .avatar{width:220px; height:220px; object-fit:cover; border-radius:24px; border:6px solid #fff; box-shadow:var(--shadow);}
+    .badge-soft{display:inline-block; padding:.45rem .9rem; border-radius:999px; background:#ffe6ef; color:#8b3a5b; font-weight:800; border:1px solid #f3cfe0;}
+    .brand-script{font-family:"Parisienne", cursive; color:#6f2e57;}
+    .btn-craft{border:2px dashed #d9b7c9; background:rgba(255,255,255,.9); color:#7d4564; font-weight:800; border-radius:999px; padding:.6rem 1.05rem; box-shadow:var(--shadow);}
+    .btn-craft:hover{background:#fff0f6; color:#5a2a48;}
 
-        /* Papel con textura */
-        .paper {
-            background: var(--paper);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            position: relative;
-            overflow: hidden;
-            border: 1px solid #f3e7ef;
-        }
+    .sec-title{font-weight:900; letter-spacing:.2px; display:flex; align-items:center; gap:.6rem;}
+    .sec-title .dot{width:12px; height:12px; border-radius:50%; background:var(--brand);}
+    .card-craft{background:#fff; border:1px dashed #e7c5d9; border-radius:var(--radius); box-shadow:var(--shadow);}
+    .price-tag{background:#222; color:#fff; border-radius:999px; padding:.25rem .6rem; font-weight:800;}
 
-        .paper::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background-image: radial-gradient(rgba(0, 0, 0, .04) 1px, transparent 1px);
-            background-size: 12px 12px;
-            opacity: .35;
-            pointer-events: none;
-        }
+    .fab-wa{position:fixed; left:18px; bottom:12%; z-index:1050; text-decoration:none;}
+    #map{height:300px; border-radius:12px; border:1px dashed #e7c5d9; box-shadow:var(--shadow);}
 
-        /* Washi tape */
-        .washi {
-            --col: var(--accent);
-            position: absolute;
-            top: -10px;
-            left: 16px;
-            width: 120px;
-            height: 32px;
-            background: var(--col);
-            transform: rotate(-5deg);
-            opacity: .9;
-            border-radius: 4px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, .12);
-            mix-blend-mode: multiply;
-        }
+    .ticker{position:fixed; left:0; right:0; bottom:0; z-index:1030; padding:.55rem 0; background:rgba(255,255,255,.22); backdrop-filter: blur(10px) saturate(150%); -webkit-backdrop-filter: blur(10px) saturate(150%); border-top:1px solid rgba(255,255,255,.55); box-shadow:0 -6px 24px rgba(0,0,0,.08); color:#3b1933;}
+    .ticker-pill{display:inline-flex; align-items:center; gap:.45rem; font-weight:800; padding:.35rem .8rem; border-radius:999px; background:rgba(255,255,255,.6); border:1px solid rgba(0,0,0,.06);}
+    .navbar-toggler{border:2px dashed rgba(93,44,78,.4); background:rgba(255,255,255,.6);}
+    .navbar-toggler-icon{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 16 16'%3E%3Cpath stroke='%235d2c4e' stroke-linecap='round' stroke-width='2' d='M2 4h12M2 8h12M2 12h12'/%3E%3C/svg%3E");}
+    .ft{padding-bottom:10% !important; background:rgba(255,255,255,.6);}
+    @media (max-width:768px){ .ft{padding-bottom:20% !important;} }
 
-        .washi::after {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background: repeating-linear-gradient(45deg, rgba(255, 255, 255, .45) 0 6px, transparent 6px 12px);
-            border-radius: 4px;
-            opacity: .8;
-        }
-
-        /* ============ GLASS ============ */
-        .glass {
-            background: rgba(var(--glass-bg), var(--glass-alpha));
-            backdrop-filter: blur(var(--glass-blur)) saturate(140%);
-            -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(140%);
-            border: 1px solid var(--glass-border);
-            box-shadow: 0 1px 0 var(--glass-ring), var(--shadow);
-            border-radius: var(--radius);
-        }
-
-        .glass-strong {
-            background: rgba(var(--glass-bg), var(--glass-alpha-strong));
-            backdrop-filter: blur(calc(var(--glass-blur) + 4px)) saturate(160%);
-            -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 4px)) saturate(160%);
-            border: 1px solid var(--glass-border);
-            box-shadow: 0 1px 0 var(--glass-ring), var(--shadow);
-            border-radius: var(--radius);
-        }
-
-        @supports not (backdrop-filter: blur(1px)) {
-
-            .glass,
-            .glass-strong {
-                background: #fffffff0;
-            }
-
-            /* fallback */
-        }
-
-        /* NAV (glass sobre degradé) */
-        .cover {
-            background:
-                radial-gradient(1200px 600px at 0% -10%, color-mix(in oklab, var(--brand) 85%, #fff 15%) 0%, transparent 55%),
-                radial-gradient(1000px 600px at 100% 0%, color-mix(in oklab, var(--mint) 85%, #fff 15%) 0%, transparent 50%),
-                linear-gradient(180deg, #ffedf7 0%, #f8e9ff 100%);
-        }
-
-        .nb {
-            position: sticky;
-            top: 0;
-            z-index: 1020;
-            border-bottom: 1px solid rgba(255, 255, 255, .4);
-        }
-
-        .navbar-brand {
-            font-weight: 800;
-            letter-spacing: .3px;
-            color: #4b1f3d !important;
-        }
-
-        .nav-link {
-            font-weight: 700;
-            color: #5d2c4e !important;
-        }
-
-        .nav-link:hover {
-            color: #3b1933 !important;
-            text-decoration: underline;
-        }
-
-        /* HERO */
-        .hero {
-            padding: clamp(40px, 6vw, 80px) 0 clamp(24px, 4vw, 48px);
-        }
-
-        .avatar {
-            width: 220px;
-            height: 220px;
-            object-fit: cover;
-            border-radius: 24px;
-            border: 6px solid #fff;
-            box-shadow: var(--shadow);
-        }
-
-        .badge-soft {
-            display: inline-block;
-            padding: .45rem .9rem;
-            border-radius: 999px;
-            background: #ffe6ef;
-            color: #8b3a5b;
-            font-weight: 800;
-            border: 1px solid #f3cfe0;
-        }
-
-        .brand-script {
-            font-family: "Parisienne", cursive;
-            color: #6f2e57;
-        }
-
-        /* Botones */
-        .btn-craft {
-            border: 2px dashed #d9b7c9;
-            background: rgba(255, 255, 255, .9);
-            color: #7d4564;
-            font-weight: 800;
-            border-radius: 999px;
-            padding: .6rem 1.05rem;
-            box-shadow: var(--shadow);
-        }
-
-        .btn-craft:hover {
-            background: #fff0f6;
-            color: #5a2a48;
-        }
-
-        /* Secciones */
-        .sec-title {
-            font-weight: 900;
-            letter-spacing: .2px;
-            display: flex;
-            align-items: center;
-            gap: .6rem;
-        }
-
-        .sec-title .dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: var(--brand);
-        }
-
-        /* Tarjetas */
-        .card-craft {
-            background: #fff;
-            border: 1px dashed #e7c5d9;
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-        }
-
-        .price-tag {
-            background: #222;
-            color: #fff;
-            border-radius: 999px;
-            padding: .25rem .6rem;
-            font-weight: 800;
-        }
-
-        /* WhatsApp FAB */
-        .fab-wa {
-            position: fixed;
-            left: 18px;
-            bottom: 12%;
-            z-index: 1050;
-            text-decoration: none;
-        }
-
-        /* Mapa */
-        #map {
-            height: 300px;
-            border-radius: 12px;
-            border: 1px dashed #e7c5d9;
-            box-shadow: var(--shadow);
-        }
-
-        /* Avisos (ticker glass) */
-        .ticker {
-            position: fixed;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            z-index: 1030;
-            padding: .55rem 0;
-            background: rgba(255, 255, 255, .22);
-            backdrop-filter: blur(10px) saturate(150%);
-            -webkit-backdrop-filter: blur(10px) saturate(150%);
-            border-top: 1px solid rgba(255, 255, 255, .55);
-            box-shadow: 0 -6px 24px rgba(0, 0, 0, .08);
-            color: #3b1933;
-        }
-
-        .ticker-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: .45rem;
-            font-weight: 800;
-            padding: .35rem .8rem;
-            border-radius: 999px;
-            background: rgba(255, 255, 255, .6);
-            border: 1px solid rgba(0, 0, 0, .06);
-        }
-
-        /* Mejor visibilidad del toggler */
-        .navbar-toggler {
-            border: 2px dashed rgba(93, 44, 78, .4);
-            background: rgba(255, 255, 255, .6);
-        }
-
-        .navbar-toggler-icon {
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 16 16'%3E%3Cpath stroke='%235d2c4e' stroke-linecap='round' stroke-width='2' d='M2 4h12M2 8h12M2 12h12'/%3E%3C/svg%3E");
-        }
-
-        .ft {
-            padding-bottom: 10% !important;
-            background: rgba(255, 255, 255, .6);
-        }
-
-        @media (max-width: 768px) {
-            .ft {
-                padding-bottom: 20% !important;
-            }
-        }
-
-        /* Chips glass para info */
-        .info-chip {
-            display: inline-flex;
-            align-items: center;
-            gap: .45rem;
-            padding: .42rem .85rem;
-            border-radius: 999px;
-            background: rgba(255, 255, 255, .72);
-            backdrop-filter: blur(10px) saturate(150%);
-            -webkit-backdrop-filter: blur(10px) saturate(150%);
-            border: 1px solid rgba(0, 0, 0, .06);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, .06);
-            font-weight: 800;
-            color: #5d2c4e;
-            line-height: 1;
-        }
-
-        .info-chip--brand {
-            background: color-mix(in oklab, var(--brand) 20%, #ffffff 80%);
-            border-color: color-mix(in oklab, var(--brand) 40%, #000 0%);
-        }
-
-        .info-chip--ghost {
-            background: rgba(255, 255, 255, .55);
-        }
-
-        .info-chip i {
-            font-size: 1rem;
-            opacity: .9;
-        }
-    </style>
+    .info-chip{display:inline-flex; align-items:center; gap:.45rem; padding:.42rem .85rem; border-radius:999px; background:rgba(255,255,255,.72); backdrop-filter: blur(10px) saturate(150%); -webkit-backdrop-filter: blur(10px) saturate(150%); border:1px solid rgba(0,0,0,.06); box-shadow:0 6px 20px rgba(0,0,0,.06); font-weight:800; color:#5d2c4e; line-height:1;}
+    .info-chip--brand{background: color-mix(in oklab, var(--brand) 20%, #ffffff 80%);}
+    .info-chip--ghost{background: rgba(255,255,255,.55);}
+    .info-chip i{font-size:1rem; opacity:.9;}
+  </style>
 </head>
-
 <body>
 
-    <!-- COVER (fondo) + NAV -->
-    <div class="cover">
-        <nav class="navbar navbar-expand-lg glass nb">
-            <div class="container">
-                <a class="navbar-brand" href="/">{{ page.get('business_name','Taller de Manualidades') }}</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nv"
-                    aria-label="Menú">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div id="nv" class="collapse navbar-collapse justify-content-end">
-                    <ul class="navbar-nav">
-                        <li class="nav-item"><a class="nav-link" href="#info">Información</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#contacto">Contacto</a></li>
-                        {% if posts %}<li class="nav-item"><a class="nav-link" href="#publicaciones">Tutoriales</a></li>
-                        {% endif %}
-                        {% if productos %}<li class="nav-item"><a class="nav-link" href="#productos">Kits &
-                                Productos</a></li>{% endif %}
-                        <li class="nav-item"><a class="nav-link" href="#reseñas">Reseñas</a></li>
-                    </ul>
-                </div>
+  <!-- COVER + NAV -->
+  <div class="cover">
+    <nav class="navbar navbar-expand-lg glass nb">
+      <div class="container">
+        <a class="navbar-brand" href="/">{{ page.get('business_name','Taller de Manualidades') }}</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nv" aria-label="Menú">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div id="nv" class="collapse navbar-collapse justify-content-end">
+          <ul class="navbar-nav">
+            <li class="nav-item"><a class="nav-link" href="#info">Información</a></li>
+            <li class="nav-item"><a class="nav-link" href="#contacto">Contacto</a></li>
+            {% if posts %}<li class="nav-item"><a class="nav-link" href="#publicaciones">Tutoriales</a></li>{% endif %}
+            {% if (servicios and servicios|length>0) or (productos_fisicos and productos_fisicos|length>0) %}
+              <li class="nav-item"><a class="nav-link" href="#productos">Servicios & Productos</a></li>
+            {% elif productos %}
+              <li class="nav-item"><a class="nav-link" href="#productos">Kits & Productos</a></li>
+            {% endif %}
+            <li class="nav-item"><a class="nav-link" href="#reseñas">Reseñas</a></li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <!-- HERO -->
+    <section class="hero">
+      <div class="container">
+        <div class="glass-strong p-4 p-md-5 position-relative">
+          <span class="washi" style="--col: var(--lilac); transform: rotate(-7deg);"></span>
+          <div class="row g-4 align-items-center">
+            <div class="col-md-4 text-center">
+              {% if page.get('image') %}
+                <img class="avatar" src="{{ url_for('uploaded_file', filename=page['image']) }}" alt="Portada">
+              {% else %}
+                <img class="avatar" src="{{ url_for('static', filename='images/default_image.png') }}" alt="Portada">
+              {% endif %}
             </div>
-        </nav>
-
-        <!-- HERO con card glass -->
-        <section class="hero">
-            <div class="container">
-                <div class="glass-strong p-4 p-md-5 position-relative">
-                    <span class="washi" style="--col: var(--lilac); transform: rotate(-7deg);"></span>
-                    <div class="row g-4 align-items-center">
-                        <div class="col-md-4 text-center">
-                            {% if page.get('image') %}
-                            <img class="avatar" src="{{ url_for('uploaded_file', filename=page['image']) }}"
-                                alt="Portada">
-                            {% else %}
-                            <img class="avatar" src="{{ url_for('static', filename='images/default_image.png') }}"
-                                alt="Portada">
-                            {% endif %}
-                        </div>
-                        <div class="col-md-8">
-                            <span class="badge-soft mb-2">{{ page.get('category','Manualidades & DIY') }}</span>
-                            <h1 class="mb-1" style="font-weight:900; color:#2b193b;">{{ page.get('business_name','Taller
-                                de Manualidades') }}</h1>
-                            {% if page.get('slogan') %}
-                            <p class="brand-script fs-3">“{{ page['slogan'] }}”</p>
-                            {% endif %}
-                            <div class="d-flex flex-wrap gap-2 mt-3">
-                                {% if page.get('website') %}
-                                <a class="btn btn-craft" href="{{ page.website }}" target="_blank"><i
-                                        class="bi bi-globe2 me-1"></i> Visitar web</a>
-                                {% endif %}
-                                {% if page.get('phone') %}
-                                <a class="btn btn-craft" href="tel:{{ page.phone }}"><i
-                                        class="bi bi-telephone-outbound me-1"></i> Llamar</a>
-                                {% endif %}
-                                {% if page.get('instagram') %}
-                                <a class="btn btn-craft" href="{{ page.instagram }}" target="_blank"><i
-                                        class="bi bi-instagram me-1"></i> Instagram</a>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <div class="col-md-8">
+              <span class="badge-soft mb-2">{{ page.get('category','Manualidades & DIY') }}</span>
+              <h1 class="mb-1" style="font-weight:900; color:#2b193b;">{{ page.get('business_name','Taller de Manualidades') }}</h1>
+              {% if page.get('slogan') %}<p class="brand-script fs-3">“{{ page['slogan'] }}”</p>{% endif %}
+              <div class="d-flex flex-wrap gap-2 mt-3">
+                {% if page.get('website') %}<a class="btn btn-craft" href="{{ page.website }}" target="_blank"><i class="bi bi-globe2 me-1"></i> Visitar web</a>{% endif %}
+                {% if page.get('phone') %}<a class="btn btn-craft" href="tel:{{ page.phone }}"><i class="bi bi-telephone-outbound me-1"></i> Llamar</a>{% endif %}
+                {% if page.get('instagram') %}<a class="btn btn-craft" href="{{ page.instagram }}" target="_blank"><i class="bi bi-instagram me-1"></i> Instagram</a>{% endif %}
+              </div>
             </div>
-        </section>
-    </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
 
-    <!-- INFO -->
-    <section class="container my-5" id="info">
-  <h2 class="sec-title"><span class="dot"></span> Información del taller</h2>
-  <div class="row g-4">
-    <div class="col-md-6">
-      <div class="card-craft p-4 position-relative">
-        <span class="washi" style="left:auto; right:18px; top:-12px; --col: var(--accent); transform: rotate(6deg);"></span>
-        <p class="mb-2"><strong>¿Quiénes somos?</strong></p>
-        <p>{{ page.get('description','Realizamos piezas únicas hechas a mano con amor y materiales de calidad.') }}</p>
+  <!-- INFO -->
+  <section class="container my-5" id="info">
+    <h2 class="sec-title"><span class="dot"></span> Información del taller</h2>
+    <div class="row g-4">
+      <div class="col-md-6">
+        <div class="card-craft p-4 position-relative">
+          <span class="washi" style="left:auto; right:18px; top:-12px; --col: var(--accent); transform: rotate(6deg);"></span>
+          <p class="mb-2"><strong>¿Quiénes somos?</strong></p>
+          <p>{{ page.get('description','Realizamos piezas únicas hechas a mano con amor y materiales de calidad.') }}</p>
 
-        {# Usamos SOLO listas que vienen del backend #}
-        {% set services = (services_list if services_list is defined and services_list else []) %}
-        {% set pmethods = (pm_list if pm_list is defined and pm_list else []) %}
+          {% set services = (services_list if services_list is defined and services_list else []) %}
+          {% set pmethods = (pm_list if pm_list is defined and pm_list else []) %}
 
-        <div class="d-flex flex-wrap gap-2 mt-2">
-          {# Servicios #}
-          {% for s in services %}
-            <span class="info-chip info-chip--brand">
-              <i class="bi bi-scissors"></i>{{ s }}
-            </span>
-          {% endfor %}
+          <div class="d-flex flex-wrap gap-2 mt-2">
+            {% for s in services %}
+              <span class="info-chip info-chip--brand"><i class="bi bi-scissors"></i>{{ s }}</span>
+            {% endfor %}
+            {% for m in pmethods %}
+              <span class="info-chip"><i class="bi bi-credit-card-2-front"></i>{{ m }}</span>
+            {% endfor %}
+            {% if page.get('founding_date') %}<span class="info-chip info-chip--ghost"><i class="bi bi-calendar-heart"></i>Desde {{ page.founding_date }}</span>{% endif %}
+            {% if page.get('delivery_available') %}<span class="info-chip"><i class="bi bi-truck"></i>Envíos</span>{% endif %}
+          </div>
+        </div>
+      </div>
 
-          {# Métodos de pago #}
-          {% for m in pmethods %}
-            <span class="info-chip">
-              <i class="bi bi-credit-card-2-front"></i>{{ m }}
-            </span>
-          {% endfor %}
+      <div class="col-md-6">
+        <div class="card-craft p-4">
+          <div class="d-flex align-items-center justify-content-between">
+            <h6 class="mb-0" style="background: var(--mint); padding:.35rem .7rem; border-radius:999px; border:1px solid #96cab9; font-weight:800;">Taller & Tienda</h6>
+          </div>
+          <div class="mt-3">
+            <p class="mb-2"><i class="bi bi-geo-alt-fill me-1" style="color:var(--brand)"></i><strong>Dirección:</strong> {{ page.get('address','') }}</p>
+            <div class="row g-2">
+              <div class="col-6"><small class="text-muted">CP</small><div>{{ page.get('postal_code','') }}</div></div>
+              <div class="col-6"><small class="text-muted">Ciudad</small><div>{{ page.get('city','') }}</div></div>
+            </div>
+            <div class="mt-2"><small class="text-muted">Estado</small><div>{{ page.get('state','') }}</div></div>
+            <div class="mt-2"><small class="text-muted">Horario</small><div>{{ page.get('operating_hours','') }}</div></div>
 
-          {% if page.get('founding_date') %}
-            <span class="info-chip info-chip--ghost">
-              <i class="bi bi-calendar-heart"></i>Desde {{ page.founding_date }}
-            </span>
-          {% endif %}
-
-          {% if page.get('delivery_available') %}
-            <span class="info-chip">
-              <i class="bi bi-truck"></i>Envíos
-            </span>
-          {% endif %}
+            {% set has_coords = (page.get('lat') is not none) and (page.get('lng') is not none) %}
+            <div class="mt-3">
+              {% if has_coords %}
+                <div id="map" class="mb-3"></div>
+                <a class="btn btn-craft" target="_blank" href="https://www.google.com/maps/dir/?api=1&destination={{ page.lat }},{{ page.lng }}"><i class="bi bi-geo-alt me-1"></i> Cómo llegar</a>
+              {% elif page.get('address') %}
+                <a class="btn btn-craft" target="_blank" href="https://www.google.com/maps/search/?api=1&query={{ page.address | urlencode }}"><i class="bi bi-search me-1"></i> Buscar dirección</a>
+              {% else %}
+                <div class="alert alert-warning py-2 px-3 mt-2">Aún no hay ubicación definida.</div>
+              {% endif %}
+            </div>
+          </div>
         </div>
       </div>
     </div>
+  </section>
 
-    <div class="col-md-6">
-      <div class="card-craft p-4">
-        <div class="d-flex align-items-center justify-content-between">
-          <h6 class="mb-0" style="background: var(--mint); padding:.35rem .7rem; border-radius:999px; border:1px solid #96cab9; font-weight:800;">
-            Taller & Tienda
-          </h6>
+  <!-- CONTACTO -->
+  <section class="container my-5" id="contacto">
+    <h2 class="sec-title"><span class="dot"></span> Contacto</h2>
+    <div class="row g-4">
+      <div class="col-md-6">
+        <div class="card-craft p-4">
+          {% if page.get('phone') %}<p><i class="bi bi-telephone-heart me-2"></i><strong>Teléfono:</strong> {{ page.phone }}</p>{% endif %}
+          {% if page.get('email') %}<p><i class="bi bi-envelope-paper-heart me-2"></i><strong>Email:</strong> {{ page.email }}</p>{% endif %}
+          {% if page.get('website') %}<p><i class="bi bi-globe-americas me-2"></i><strong>Web:</strong> <a href="{{ page.website }}" target="_blank">{{ page.website }}</a></p>{% endif %}
         </div>
-        <div class="mt-3">
-          <p class="mb-2">
-            <i class="bi bi-geo-alt-fill me-1" style="color:var(--brand)"></i>
-            <strong>Dirección:</strong> {{ page.get('address','') }}
-          </p>
-          <div class="row g-2">
-            <div class="col-6">
-              <small class="text-muted">CP</small>
-              <div>{{ page.get('postal_code','') }}</div>
-            </div>
-            <div class="col-6">
-              <small class="text-muted">Ciudad</small>
-              <div>{{ page.get('city','') }}</div>
-            </div>
-          </div>
-          <div class="mt-2">
-            <small class="text-muted">Estado</small>
-            <div>{{ page.get('state','') }}</div>
-          </div>
-          <div class="mt-2">
-            <small class="text-muted">Horario</small>
-            <div>{{ page.get('operating_hours','') }}</div>
-          </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card-craft p-4">
+          {% if page.get('facebook') %}<p><i class="bi bi-facebook me-2"></i><strong>Facebook:</strong> <a href="{{ page.facebook }}" target="_blank">Ir a Facebook</a></p>{% endif %}
+          {% if page.get('instagram') %}<p><i class="bi bi-instagram me-2"></i><strong>Instagram:</strong> <a href="{{ page.instagram }}" target="_blank">Ir a Instagram</a></p>{% endif %}
+          {% if page.get('tiktok') %}<p><i class="bi bi-tiktok me-2"></i><strong>TikTok:</strong> <a href="{{ page.tiktok }}" target="_blank">Ir a TikTok</a></p>{% endif %}
+        </div>
+      </div>
+    </div>
+  </section>
 
-          {% set has_coords = (page.get('lat') is not none) and (page.get('lng') is not none) %}
-          <div class="mt-3">
-            {% if has_coords %}
-              <div id="map" class="mb-3"></div>
-              <a class="btn btn-craft" target="_blank"
-                 href="https://www.google.com/maps/dir/?api=1&destination={{ page.lat }},{{ page.lng }}">
-                <i class="bi bi-geo-alt me-1"></i> Cómo llegar
-              </a>
-            {% elif page.get('address') %}
-              <a class="btn btn-craft" target="_blank"
-                 href="https://www.google.com/maps/search/?api=1&query={{ page.address | urlencode }}">
-                <i class="bi bi-search me-1"></i> Buscar dirección
-              </a>
-            {% else %}
-              <div class="alert alert-warning py-2 px-3 mt-2">Aún no hay ubicación definida.</div>
-            {% endif %}
+  <!-- PUBLICACIONES -->
+  <section class="container my-5" id="publicaciones">
+    <h2 class="sec-title"><span class="dot"></span> Tutoriales & Novedades</h2>
+    {% if posts and posts|length>0 %}
+      <div class="row g-4">
+        {% for post in posts %}
+          <div class="col-md-4">
+            <div class="card-craft h-100 overflow-hidden">
+              {% if post.cabecera %}
+                <img src="{{ url_for('uploaded_file', filename=post.cabecera) }}" class="w-100" style="height:200px; object-fit:cover;" alt="post">
+              {% endif %}
+              <div class="p-3 d-flex flex-column">
+                <h5 style="font-weight:800">{{ post.title }}</h5>
+                <p class="text-muted">{{ post.content[:110] }}...</p>
+                <a class="btn btn-craft mt-auto" href="{{ url_for('ver_post', post_id=post._id) }}">Leer más</a>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="card-craft p-3">Aún no hay publicaciones.</div>
+    {% endif %}
+  </section>
+
+  <!-- SERVICIOS & PRODUCTOS (con cotizador y modal de nombre) -->
+  <section class="container my-5" id="productos">
+    <h2 class="sec-title"><span class="dot"></span> Servicios & Productos artesanales</h2>
+
+    {% if (servicios and servicios|length>0) or (productos_fisicos and productos_fisicos|length>0) %}
+      <div class="glass p-3 mb-3">
+        <strong><i class="bi bi-info-circle me-1"></i> ¿Quieres cotizar?</strong>
+        Selecciona cantidades, pulsa <b>Cotizar</b>, te pediremos tu nombre y abriremos WhatsApp con el detalle.
+      </div>
+
+      <form id="form-cotizar" class="row g-3">
+        {% if servicios and servicios|length>0 %}
+          <div class="col-12"><h3 class="h6 fw-bold d-flex align-items-center gap-2"><i class="bi bi-brush"></i> Servicios</h3></div>
+          {% for item in servicios %}
+            <div class="col-12 col-sm-6 col-md-4">
+              <div class="card-craft h-100">
+                {% if item.image %}
+                  <img src="{{ url_for('uploaded_file', filename=item.image) }}" class="w-100 img-zoom-trigger"
+                       data-bs-toggle="modal" data-bs-target="#zoomModal"
+                       data-img-src="{{ url_for('uploaded_file', filename=item.image) }}"
+                       style="object-fit:cover; height:220px; cursor:zoom-in;" alt="{{ item.title }}">
+                {% endif %}
+                <div class="p-3 d-flex flex-column">
+                  <h6 class="mb-1" style="font-weight:800">{{ item.title }}</h6>
+                  {% if item.description %}<p class="text-muted small">{{ item.description }}</p>{% endif %}
+                  {% if item.show_price %}<div class="mb-2"><span class="price-tag">${{ "%.2f"|format(item.price) }}</span></div>{% endif %}
+                  <div class="mt-auto">
+                    <label class="form-label small">Cantidad / Nº sesiones</label>
+                    <input type="number" class="form-control" min="0" value="0"
+                           name="prod_{{ item.title | replace(' ','_') }}"
+                           data-item-nombre="{{ item.title }}">
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        {% endif %}
+
+        {% if productos_fisicos and productos_fisicos|length>0 %}
+          <div class="col-12 mt-2"><h3 class="h6 fw-bold d-flex align-items-center gap-2"><i class="bi bi-box-seam"></i> Productos</h3></div>
+          {% for item in productos_fisicos %}
+            <div class="col-12 col-sm-6 col-md-4">
+              <div class="card-craft h-100">
+                {% if item.image %}
+                  <img src="{{ url_for('uploaded_file', filename=item.image) }}" class="w-100 img-zoom-trigger"
+                       data-bs-toggle="modal" data-bs-target="#zoomModal"
+                       data-img-src="{{ url_for('uploaded_file', filename=item.image) }}"
+                       style="object-fit:cover; height:220px; cursor:zoom-in;" alt="{{ item.title }}">
+                {% endif %}
+                <div class="p-3 d-flex flex-column">
+                  <h6 class="mb-1" style="font-weight:800">{{ item.title }}</h6>
+                  {% if item.description %}<p class="text-muted small">{{ item.description }}</p>{% endif %}
+                  {% if item.show_price %}<div class="mb-2"><span class="price-tag">${{ "%.2f"|format(item.price) }}</span></div>{% endif %}
+                  <div class="mt-auto">
+                    <label class="form-label small">Cantidad</label>
+                    <input type="number" class="form-control" min="0" value="0"
+                           name="prod_{{ item.title | replace(' ','_') }}"
+                           data-item-nombre="{{ item.title }}">
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        {% endif %}
+
+        <div class="col-12 text-center">
+          <button class="btn btn-craft px-4 py-2" type="submit"><i class="bi bi-whatsapp me-1"></i> Cotizar</button>
+        </div>
+      </form>
+
+      <!-- Modal zoom -->
+      <div class="modal fade" id="zoomModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" style="max-width:72vw;">
+          <div class="modal-content p-2"><img id="zoomedImage" class="img-fluid" alt="Zoom"></div>
+        </div>
+      </div>
+
+      <!-- Modal Cotizar (pide nombre + resumen) -->
+      <div class="modal fade" id="cotizarModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content" style="border-radius:16px;">
+            <div class="modal-header" style="background:linear-gradient(90deg, var(--brand), var(--mint)); color:#3b1933; border:none;">
+              <h5 class="modal-title fw-bold">¡Casi listo! ✍️</h5>
+              <button class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+              <div class="mb-3">
+                <label class="form-label">Tu nombre</label>
+                <input type="text" class="form-control" id="nombreClienteInput" placeholder="Ej. Ana Pérez">
+                <div class="text-danger small mt-1 d-none" id="errorModalNombre">Por favor, escribe tu nombre.</div>
+              </div>
+              <div>
+                <div class="form-label mb-1">Tu selección:</div>
+                <div id="resumenSeleccion" class="border rounded p-2 small" style="max-height:220px; overflow-y:auto;"></div>
+              </div>
+            </div>
+            <div class="modal-footer" style="border:none;">
+              <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+              <button class="btn btn-craft" id="enviarCotizacionBtn"><i class="bi bi-whatsapp me-1"></i> Enviar a WhatsApp</button>
+            </div>
           </div>
         </div>
+      </div>
+    {% else %}
+      {# fallback antiguo si aún usas "productos" sin tipo #}
+      <h2 class="visually-hidden">Kits & Productos artesanales</h2>
+      {% if productos and productos|length>0 %}
+        <div class="glass p-3 mb-3">
+          <strong><i class="bi bi-info-circle me-1"></i> ¿Quieres cotizar?</strong> Elige cantidades y envíanos por WhatsApp.
+        </div>
+        <form id="form-cotizar" class="row g-3">
+          {% for producto in productos %}
+            <div class="col-12 col-sm-6 col-md-4">
+              <div class="card-craft h-100">
+                {% if producto.image %}
+                  <img src="{{ url_for('uploaded_file', filename=producto.image) }}" alt="{{ producto.title }}"
+                      class="w-100 img-zoom-trigger" data-bs-toggle="modal" data-bs-target="#zoomModal"
+                      data-img-src="{{ url_for('uploaded_file', filename=producto.image) }}"
+                      style="object-fit:cover; height:220px; cursor:zoom-in;">
+                {% endif %}
+                <div class="p-3 d-flex flex-column">
+                  <h6 class="mb-1" style="font-weight:800">{{ producto.title }}</h6>
+                  {% if producto.description %}<p class="text-muted small">{{ producto.description }}</p>{% endif %}
+                  {% if producto.show_price %}<div class="mb-2"><span class="price-tag">${{ "%.2f"|format(producto.price) }}</span></div>{% endif %}
+                  <div class="mt-auto">
+                    <label class="form-label small">Cantidad</label>
+                    <input type="number" class="form-control" min="0"
+                          name="prod_{{ producto.title | replace(' ','_') }}" value="0"
+                          data-item-nombre="{{ producto.title }}">
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+          <div class="col-12 text-center"><button class="btn btn-craft px-4 py-2" type="submit"><i class="bi bi-whatsapp me-1"></i> Cotizar</button></div>
+        </form>
+
+        <div class="modal fade" id="zoomModal" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered" style="max-width:72vw;"><div class="modal-content p-2"><img id="zoomedImage" class="img-fluid" alt="Zoom"></div></div>
+        </div>
+
+        <div class="modal fade" id="cotizarModal" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius:16px;">
+              <div class="modal-header" style="background:linear-gradient(90deg, var(--brand), var(--mint)); color:#3b1933; border:none;">
+                <h5 class="modal-title fw-bold">¡Casi listo! ✍️</h5>
+                <button class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+              </div>
+              <div class="modal-body">
+                <div class="mb-3">
+                  <label class="form-label">Tu nombre</label>
+                  <input type="text" class="form-control" id="nombreClienteInput" placeholder="Ej. Ana Pérez">
+                  <div class="text-danger small mt-1 d-none" id="errorModalNombre">Por favor, escribe tu nombre.</div>
+                </div>
+                <div>
+                  <div class="form-label mb-1">Tu selección:</div>
+                  <div id="resumenSeleccion" class="border rounded p-2 small" style="max-height:220px; overflow-y:auto;"></div>
+                </div>
+              </div>
+              <div class="modal-footer" style="border:none;">
+                <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button class="btn btn-craft" id="enviarCotizacionBtn"><i class="bi bi-whatsapp me-1"></i> Enviar a WhatsApp</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% else %}
+        <div class="card-craft p-3">No hay productos disponibles por ahora.</div>
+      {% endif %}
+    {% endif %}
+  </section>
+
+  <!-- RESEÑAS -->
+  <section class="container my-5" id="reseñas">
+    <h2 class="sec-title"><span class="dot"></span> Reseñas</h2>
+    <div class="card-craft p-3 mb-4">
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          <div class="alert alert-info mb-3">{% for m in messages %}<div>{{ m }}</div>{% endfor %}</div>
+        {% endif %}
+      {% endwith %}
+      <form method="POST" class="row g-3">
+        <div class="col-md-6"><label class="form-label">Tu nombre</label><input type="text" name="nombre" class="form-control" required></div>
+        <div class="col-md-6">
+          <label class="form-label">Calificación</label>
+          <div id="starRating">{% for i in range(1,6) %}<i class="bi bi-star-fill fs-3 me-1 text-secondary star-icon" data-value="{{ i }}"></i>{% endfor %}</div>
+          <input type="hidden" name="estrellas" id="estrellas" value="0" required>
+        </div>
+        <div class="col-12"><label class="form-label">Comentario</label><textarea name="comentario" class="form-control" rows="3" required></textarea></div>
+        <div class="col-12"><button class="btn btn-craft" type="submit">Enviar reseña</button></div>
+      </form>
+    </div>
+
+    <div class="row g-3">
+      {% if reseñas and reseñas|length>0 %}
+        {% for r in reseñas %}
+          <div class="col-md-6">
+            <div class="card-craft h-100 p-3">
+              <h5 class="text-center" style="font-weight:800">{{ r.nombre }}</h5>
+              <div class="text-center mb-2">
+                {% for i in range(1,6) %}{% if i <= r.estrellas %}<i class="bi bi-star-fill text-warning"></i>{% else %}<i class="bi bi-star text-secondary"></i>{% endif %}{% endfor %}
+              </div>
+              <p>{{ r.comentario }}</p>
+              <div class="text-end"><small class="text-muted">{{ r.fecha.strftime('%d/%m/%Y') }}</small></div>
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div class="col-12"><div class="card-craft p-3">No hay reseñas todavía.</div></div>
+      {% endif %}
+    </div>
+  </section>
+
+  <!-- Avisos / Ticker -->
+  <div class="ticker">
+    <div class="container">
+      <div id="avCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="4600">
+        <div class="carousel-inner text-center">
+          {% if avisos and avisos|length>0 %}
+            {% for a in avisos %}
+              <div class="carousel-item {% if loop.first %}active{% endif %}">
+                <span class="ticker-pill"><i class="bi bi-megaphone-fill"></i> {{ a.title }}</span>
+                <span class="ms-2">{{ a.content }}</span>
+              </div>
+            {% endfor %}
+          {% else %}
+            <div class="carousel-item active">
+              <span class="ticker-pill"><i class="bi bi-megaphone-fill"></i> Bienvenid@</span>
+              <span class="ms-2">¡Gracias por visitar nuestro taller creativo! ✂️🧵</span>
+            </div>
+          {% endif %}
+        </div>
+        <button class="carousel-control-prev" type="button" data-bs-target="#avCarousel" data-bs-slide="prev">
+          <span class="carousel-control-prev-icon"></span><span class="visually-hidden">Anterior</span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#avCarousel" data-bs-slide="next">
+          <span class="carousel-control-next-icon"></span><span class="visually-hidden">Siguiente</span>
+        </button>
       </div>
     </div>
   </div>
-</section>
 
-
-    <!-- CONTACTO -->
-    <section class="container my-5" id="contacto">
-        <h2 class="sec-title"><span class="dot"></span> Contacto</h2>
-        <div class="row g-4">
-            <div class="col-md-6">
-                <div class="card-craft p-4">
-                    {% if page.get('phone') %}<p><i class="bi bi-telephone-heart me-2"></i><strong>Teléfono:</strong> {{
-                        page.phone }}</p>{% endif %}
-                    {% if page.get('email') %}<p><i class="bi bi-envelope-paper-heart me-2"></i><strong>Email:</strong>
-                        {{ page.email }}</p>{% endif %}
-                    {% if page.get('website') %}<p><i class="bi bi-globe-americas me-2"></i><strong>Web:</strong> <a
-                            href="{{ page.website }}" target="_blank">{{ page.website }}</a></p>{% endif %}
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card-craft p-4">
-                    {% if page.get('facebook') %}<p><i class="bi bi-facebook me-2"></i><strong>Facebook:</strong> <a
-                            href="{{ page.facebook }}" target="_blank">Ir a Facebook</a></p>{% endif %}
-                    {% if page.get('instagram') %}<p><i class="bi bi-instagram me-2"></i><strong>Instagram:</strong> <a
-                            href="{{ page.instagram }}" target="_blank">Ir a Instagram</a></p>{% endif %}
-                    {% if page.get('tiktok') %}<p><i class="bi bi-tiktok me-2"></i><strong>TikTok:</strong> <a
-                            href="{{ page.tiktok }}" target="_blank">Ir a TikTok</a></p>{% endif %}
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- PUBLICACIONES -->
-    <section class="container my-5" id="publicaciones">
-        <h2 class="sec-title"><span class="dot"></span> Tutoriales & Novedades</h2>
-        {% if posts and posts|length>0 %}
-        <div class="row g-4">
-            {% for post in posts %}
-            <div class="col-md-4">
-                <div class="card-craft h-100 overflow-hidden">
-                    {% if post.cabecera %}
-                    <img src="{{ url_for('uploaded_file', filename=post.cabecera) }}" class="w-100"
-                        style="height:200px; object-fit:cover;" alt="post">
-                    {% endif %}
-                    <div class="p-3 d-flex flex-column">
-                        <h5 style="font-weight:800">{{ post.title }}</h5>
-                        <p class="text-muted">{{ post.content[:110] }}...</p>
-                        <a class="btn btn-craft mt-auto" href="{{ url_for('ver_post', post_id=post._id) }}">Leer más</a>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        {% else %}
-        <div class="card-craft p-3">Aún no hay publicaciones.</div>
-        {% endif %}
-    </section>
-
-    <!-- PRODUCTOS -->
-    <section class="container my-5" id="productos">
-        <h2 class="sec-title"><span class="dot"></span> Kits & Productos artesanales</h2>
-        {% if productos and productos|length>0 %}
-        <div class="glass p-3 mb-3">
-            <strong><i class="bi bi-info-circle me-1"></i> ¿Quieres cotizar?</strong> Elige cantidades y envíanos por
-            WhatsApp. ¡Te asesoramos!
-        </div>
-
-        <form id="form-cotizar" class="row g-3">
-            {% for producto in productos %}
-            <div class="col-12 col-sm-6 col-md-4">
-                <div class="card-craft h-100">
-                    {% if producto.image %}
-                    <img src="{{ url_for('uploaded_file', filename=producto.image) }}" alt="{{ producto.title }}"
-                        class="w-100 img-zoom-trigger" data-bs-toggle="modal" data-bs-target="#zoomModal"
-                        data-img-src="{{ url_for('uploaded_file', filename=producto.image) }}"
-                        style="object-fit:cover; height:220px; cursor:zoom-in;">
-                    {% endif %}
-                    <div class="p-3 d-flex flex-column">
-                        <h6 class="mb-1" style="font-weight:800">{{ producto.title }}</h6>
-                        {% if producto.description %}<p class="text-muted small">{{ producto.description }}</p>{% endif
-                        %}
-                        {% if producto.show_price %}<div class="mb-2"><span class="price-tag">${{
-                                "%.2f"|format(producto.price) }}</span></div>{% endif %}
-                        <div class="mt-auto">
-                            <label class="form-label small">Cantidad</label>
-                            <input type="number" class="form-control" min="0" id="prod_{{ loop.index }}"
-                                name="prod_{{ producto.title | replace(' ','_') }}" value="0">
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-            <div class="col-12 text-center">
-                <button class="btn btn-craft px-4 py-2" type="submit"><i class="bi bi-whatsapp me-1"></i> Cotizar por
-                    WhatsApp</button>
-            </div>
-        </form>
-
-        <!-- Modal zoom -->
-        <div class="modal fade" id="zoomModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered" style="max-width:72vw;">
-                <div class="modal-content p-2">
-                    <img id="zoomedImage" class="img-fluid" alt="Zoom">
-                </div>
-            </div>
-        </div>
-        {% else %}
-        <div class="card-craft p-3">No hay productos disponibles por ahora.</div>
-        {% endif %}
-    </section>
-
-    <!-- RESEÑAS -->
-    <section class="container my-5" id="reseñas">
-        <h2 class="sec-title"><span class="dot"></span> Reseñas</h2>
-        <div class="card-craft p-3 mb-4">
-            {% with messages = get_flashed_messages() %}
-            {% if messages %}
-            <div class="alert alert-info mb-3">
-                {% for m in messages %}<div>{{ m }}</div>{% endfor %}
-            </div>
-            {% endif %}
-            {% endwith %}
-            <form method="POST" class="row g-3">
-                <div class="col-md-6">
-                    <label class="form-label">Tu nombre</label>
-                    <input type="text" name="nombre" class="form-control" required>
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">Calificación</label>
-                    <div id="starRating">
-                        {% for i in range(1,6) %}
-                        <i class="bi bi-star-fill fs-3 me-1 text-secondary star-icon" data-value="{{ i }}"></i>
-                        {% endfor %}
-                    </div>
-                    <input type="hidden" name="estrellas" id="estrellas" value="0" required>
-                </div>
-                <div class="col-12">
-                    <label class="form-label">Comentario</label>
-                    <textarea name="comentario" class="form-control" rows="3" required></textarea>
-                </div>
-                <div class="col-12">
-                    <button class="btn btn-craft" type="submit">Enviar reseña</button>
-                </div>
-            </form>
-        </div>
-
-        <div class="row g-3">
-            {% if reseñas and reseñas|length>0 %}
-            {% for r in reseñas %}
-            <div class="col-md-6">
-                <div class="card-craft h-100 p-3">
-                    <h5 class="text-center" style="font-weight:800">{{ r.nombre }}</h5>
-                    <div class="text-center mb-2">
-                        {% for i in range(1,6) %}
-                        {% if i <= r.estrellas %}<i class="bi bi-star-fill text-warning"></i>{% else %}<i
-                                class="bi bi-star text-secondary"></i>{% endif %}
-                            {% endfor %}
-                    </div>
-                    <p>{{ r.comentario }}</p>
-                    <div class="text-end"><small class="text-muted">{{ r.fecha.strftime('%d/%m/%Y') }}</small></div>
-                </div>
-            </div>
-            {% endfor %}
-            {% else %}
-            <div class="col-12">
-                <div class="card-craft p-3">No hay reseñas todavía.</div>
-            </div>
-            {% endif %}
-        </div>
-    </section>
-
-    <!-- Avisos / Ticker (glass) -->
-    <div class="ticker">
-        <div class="container">
-            <div id="avCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="4600">
-                <div class="carousel-inner text-center">
-                    {% if avisos and avisos|length>0 %}
-                    {% for a in avisos %}
-                    <div class="carousel-item {% if loop.first %}active{% endif %}">
-                        <span class="ticker-pill"><i class="bi bi-megaphone-fill"></i> {{ a.title }}</span>
-                        <span class="ms-2">{{ a.content }}</span>
-                    </div>
-                    {% endfor %}
-                    {% else %}
-                    <div class="carousel-item active">
-                        <span class="ticker-pill"><i class="bi bi-megaphone-fill"></i> Bienvenid@</span>
-                        <span class="ms-2">¡Gracias por visitar nuestro taller creativo! ✂️🧵</span>
-                    </div>
-                    {% endif %}
-                </div>
-                <button class="carousel-control-prev" type="button" data-bs-target="#avCarousel" data-bs-slide="prev">
-                    <span class="carousel-control-prev-icon"></span>
-                    <span class="visually-hidden">Anterior</span>
-                </button>
-                <button class="carousel-control-next" type="button" data-bs-target="#avCarousel" data-bs-slide="next">
-                    <span class="carousel-control-next-icon"></span>
-                    <span class="visually-hidden">Siguiente</span>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    {# WhatsApp FAB #}
-    {% if page.get('whatsapp') %}
+  {# WhatsApp FAB #}
+  {% if page.get('whatsapp') %}
     <a class="fab-wa" href="https://wa.me/{{ page.whatsapp | replace(' ','') }}" target="_blank" aria-label="WhatsApp">
-        <span class="btn btn-craft d-flex align-items-center gap-2">
-            <i class="bi bi-whatsapp"></i>
-        </span>
+      <span class="btn btn-craft d-flex align-items-center gap-2"><i class="bi bi-whatsapp"></i></span>
     </a>
-    {% endif %}
+  {% endif %}
 
-    <!-- FOOTER -->
-    <footer class="py-4 mt-5 ft">
-        <div class="container d-flex flex-column flex-md-row align-items-center justify-content-between">
-            <div><strong>{{ page.get('business_name','Taller de Manualidades') }}</strong> · &copy; 2025</div>
-            <div class="d-flex align-items-center gap-3">
-                {% if page.get('facebook') %}<a href="{{ page.facebook }}" target="_blank"
-                    class="text-decoration-none text-dark"><i class="bi bi-facebook fs-4"></i></a>{% endif %}
-                {% if page.get('tiktok') %}<a href="{{ page.tiktok }}" target="_blank"
-                    class="text-decoration-none text-dark"><i class="bi bi-tiktok fs-4"></i></a>{% endif %}
-            </div>
-        </div>
-    </footer>
+  <!-- FOOTER -->
+  <footer class="py-4 mt-5 ft">
+    <div class="container d-flex flex-column flex-md-row align-items-center justify-content-between">
+      <div><strong>{{ page.get('business_name','Taller de Manualidades') }}</strong> · &copy; 2025</div>
+      <div class="d-flex align-items-center gap-3">
+        {% if page.get('facebook') %}<a href="{{ page.facebook }}" target="_blank" class="text-decoration-none text-dark"><i class="bi bi-facebook fs-4"></i></a>{% endif %}
+        {% if page.get('tiktok') %}<a href="{{ page.tiktok }}" target="_blank" class="text-decoration-none text-dark"><i class="bi bi-tiktok fs-4"></i></a>{% endif %}
+      </div>
+    </div>
+  </footer>
 
-    <!-- JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <!-- JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
-    <script>
-        // Imagen zoom
-        document.querySelectorAll('.img-zoom-trigger').forEach(img => {
-            img.addEventListener('click', e => {
-                const src = e.currentTarget.getAttribute('data-img-src');
-                const el = document.getElementById('zoomedImage');
-                if (el) el.src = src;
-            });
+  <script>
+    // Zoom
+    document.querySelectorAll('.img-zoom-trigger').forEach(img=>{
+      img.addEventListener('click', e=>{
+        const src = e.currentTarget.getAttribute('data-img-src');
+        const el = document.getElementById('zoomedImage');
+        if (el) el.src = src;
+      });
+    });
+
+    // Cotizar con modal (pide nombre y muestra resumen)
+    (function(){
+      const form = document.getElementById('form-cotizar');
+      if (!form) return;
+
+      const modalEl = document.getElementById('cotizarModal');
+      const nombreInput = document.getElementById('nombreClienteInput');
+      const errorNombre = document.getElementById('errorModalNombre');
+      const resumenDiv = document.getElementById('resumenSeleccion');
+      const enviarBtn = document.getElementById('enviarCotizacionBtn');
+      let lineas = [];
+
+      form.addEventListener('submit', (e)=>{
+        e.preventDefault();
+        lineas = [];
+
+        form.querySelectorAll('input[type=number]').forEach(inp=>{
+          const n = parseInt(inp.value||"0");
+          if (n>0){
+            const nombre = inp.getAttribute('data-item-nombre') || inp.name.replace('prod_','').replaceAll('_',' ');
+            lineas.push(`- ${nombre}: ${n}`);
+          }
         });
 
-        // Cotizar por WhatsApp
-        (function () {
-            const form = document.getElementById('form-cotizar');
-            if (!form) return;
-            form.addEventListener('submit', function (e) {
-                e.preventDefault();
-                const wa = "{{ page.get('whatsapp','')|replace(' ','') }}";
-                let msg = "Hola, quiero cotizar:%0A";
-                let any = 0;
-                form.querySelectorAll('input[type=number]').forEach(inp => {
-                    const v = parseInt(inp.value || "0");
-                    if (v > 0) {
-                        any++;
-                        const name = inp.name.replace('prod_', '').replaceAll('_', ' ');
-                        msg += `- ${name}: ${v}%0A`;
-                    }
-                });
-                if (!any) { alert("Ingresa cantidad para al menos un producto."); return; }
-                window.open(`https://wa.me/${wa}?text=${msg}`, "_blank");
-            });
-        })();
+        if (!lineas.length){ alert("Ingresa cantidad para al menos un servicio o producto."); return; }
 
-        // Estrellas reseña
-        (function () {
-            const stars = document.querySelectorAll('.star-icon');
-            const input = document.getElementById('estrellas');
-            if (!stars.length || !input) return;
-            stars.forEach(s => {
-                s.addEventListener('click', () => {
-                    const v = parseInt(s.getAttribute('data-value'));
-                    input.value = v;
-                    stars.forEach(x => {
-                        const xv = parseInt(x.getAttribute('data-value'));
-                        x.classList.remove('text-warning', 'text-secondary');
-                        x.classList.add(xv <= v ? 'text-warning' : 'text-secondary');
-                    });
-                });
-            });
-        })();
-
-        // Mapa
-        (function () {
-            const lat = {{ page.get('lat') if page.get('lat') is not none else 'null'
-        }};
-        const lng = {{ page.get('lng') if page.get('lng') is not none else 'null' }};
-        if (lat !== null && lng !== null) {
-            const map = L.map('map', { scrollWheelZoom: false }).setView([lat, lng], 16);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
-            const m = L.marker([lat, lng]).addTo(map);
-            m.bindPopup(`<strong>{{ page.get('business_name','')|e }}</strong><br>{{ page.get('address','')|e }}`).openPopup();
-            setTimeout(() => map.invalidateSize(), 300);
+        if (resumenDiv){
+          resumenDiv.innerHTML = lineas.map(l=>`<div>${l}</div>`).join('');
         }
-    }) ();
-    </script>
-</body>
+        if (errorNombre){ errorNombre.classList.add('d-none'); }
+        if (nombreInput){ nombreInput.classList.remove('is-invalid'); }
 
+        new bootstrap.Modal(modalEl).show();
+        setTimeout(()=> nombreInput && nombreInput.focus(), 200);
+      });
+
+      if (enviarBtn){
+        enviarBtn.addEventListener('click', ()=>{
+          const nombre = (nombreInput && nombreInput.value || '').trim();
+          if (!nombre){
+            errorNombre && errorNombre.classList.remove('d-none');
+            nombreInput && nombreInput.classList.add('is-invalid');
+            nombreInput && nombreInput.focus();
+            return;
+          }
+          const wa = "{{ page.get('whatsapp','')|replace(' ','') }}";
+          let msj = `Hola, soy ${encodeURIComponent(nombre)} y quiero cotizar:%0A`;
+          lineas.forEach(l=> msj += encodeURIComponent(l) + "%0A");
+          window.open(`https://wa.me/${wa}?text=${msj}`, "_blank");
+        });
+      }
+    })();
+
+    // Reseñas estrellas
+    (function(){
+      const stars = document.querySelectorAll('.star-icon');
+      const input = document.getElementById('estrellas');
+      if (!stars.length || !input) return;
+      stars.forEach(s=>{
+        s.addEventListener('click', ()=>{
+          const v = parseInt(s.getAttribute('data-value'));
+          input.value = v;
+          stars.forEach(x=>{
+            const xv = parseInt(x.getAttribute('data-value'));
+            x.classList.remove('text-warning','text-secondary');
+            x.classList.add(xv<=v ? 'text-warning' : 'text-secondary');
+          });
+        });
+      });
+    })();
+
+    // Mapa
+    (function(){
+      const lat = {{ page.get('lat') if page.get('lat') is not none else 'null' }};
+      const lng = {{ page.get('lng') if page.get('lng') is not none else 'null' }};
+      if (lat !== null && lng !== null){
+        const map = L.map('map',{scrollWheelZoom:false}).setView([lat,lng],16);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
+        const m = L.marker([lat,lng]).addTo(map);
+        m.bindPopup(`<strong>{{ page.get('business_name','')|e }}</strong><br>{{ page.get('address','')|e }}`).openPopup();
+        setTimeout(()=> map.invalidateSize(), 300);
+      }
+    })();
+  </script>
+</body>
 </html>

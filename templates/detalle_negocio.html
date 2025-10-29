@@ -589,103 +589,240 @@
 
 
     <section class="container my-5" data-aos="fade-up" id="productos">
-        <h2 class="mb-4 border-bottom pb-2">📰 Productos</h2>
-        <div class="container-md">
-            {% if productos and productos|length > 0 %}
-            <div class="alert alert-info d-flex align-items-center p-3 rounded shadow-sm mb-3" role="alert">
-                <i class="bi bi-info-circle-fill me-3 fs-4 text-primary"></i>
-                <div>
-                    <h6 class="mb-1 fw-bold">Cotiza fácilmente tus productos</h6>
-                    <p class="mb-0 small">
-                        Selecciona la cantidad de los artículos que deseas pedir información y haz clic en
-                        <strong>"Cotizar por WhatsApp"</strong>. Nuestro equipo te responderá lo antes posible.
-                    </p>
-                </div>
-            </div>
 
-            <form id="form-cotizar" class="row g-2">
-                {% for producto in productos %}
-                <div class="col-12 col-sm-6 col-md-4">
-                    <div class="card h-100 shadow-sm">
-                        {% if producto.image %}
-                            <img src="{{ url_for('uploaded_file', filename=producto.image) }}" alt="{{ producto.title }}"
-                            class="card-img-top img-zoom-trigger"
-                            style="object-fit: cover; width: 100%; height: 250px; cursor: pointer;"
-                            data-bs-toggle="modal" data-bs-target="#zoomModal"
-                            data-img-src="{{ url_for('uploaded_file', filename=producto.image) }}">
-                        {% else %}
-                        <img src="{{ url_for('static', filename='img/default-product.png') }}"
-                            alt="Imagen no disponible" class="card-img-top img-zoom-trigger"
-                            style="object-fit: cover; width: 100%; height: 250px; cursor: pointer;"
-                            data-bs-toggle="modal" data-bs-target="#zoomModal"
-                            data-img-src="{{ url_for('static', filename='img/default-product.png') }}">
-                        {% endif %}
+    <h2 class="mb-4 border-bottom pb-2">🛒 Productos y Servicios</h2>
 
-                        <div class="card-body d-flex flex-column py-2 px-3">
-                            <h6 class="card-title mb-1 small fw-semibold">{{ producto.title }}</h6>
+    {% if (productos_fisicos and productos_fisicos|length > 0) or (servicios and servicios|length > 0) %}
 
-                            {% if producto.description %}
-                            <p class="card-text text-muted small mb-2">{{ producto.description }}</p>
-                            {% endif %}
+    <!-- Aviso de ayuda -->
+    <div class="alert alert-info d-flex align-items-center p-3 rounded shadow-sm mb-4" role="alert">
+        <i class="bi bi-info-circle-fill me-3 fs-4 text-primary"></i>
+        <div>
+            <h6 class="mb-1 fw-bold">Cotiza fácilmente</h6>
+            <p class="mb-0 small">
+                Ingresa la cantidad que te interesa de cada elemento (producto físico o servicio),
+                luego toca <strong>"Cotizar"</strong>.
+                Te pediremos tu nombre y te abriremos WhatsApp con todo listo 😌.
+            </p>
+        </div>
+    </div>
 
-                            {% if producto.show_price %}
-                            <div class="mb-2">
-                                <span class="badge bg-success text-white fw-semibold" style="font-size: 0.9rem;">
-                                    Precio: ${{ "%.2f"|format(producto.price) }}
-                                </span>
-                            </div>
-                            {% endif %}
+    <!-- FORM que agrupa TODO -->
+    <form id="form-cotizar" class="row g-4">
 
-                            <div class="mt-auto">
-                                <label for="prod_{{ loop.index }}" class="form-label small mb-1">Cantidad:</label>
-                                <input type="number" class="form-control form-control-sm" id="prod_{{ loop.index }}"
-                                    name="prod_{{ producto.title | replace(' ', '_') }}" min="0" value="0"
-                                    placeholder="0" aria-label="Cantidad para {{ producto.title }}">
-                            </div>
-                        </div>
+        <!-- ================== SERVICIOS ================== -->
+        {% if servicios and servicios|length > 0 %}
+        <div class="col-12">
+            <h3 class="h5 fw-bold text-uppercase text-muted d-flex align-items-center">
+                <i class="bi bi-wrench-adjustable-circle me-2 text-primary"></i> Servicios
+            </h3>
+        </div>
 
+        {% for item in servicios %}
+        <div class="col-12 col-sm-6 col-md-4">
+            <div class="card h-100 shadow-sm">
+                {% if item.image %}
+                    <img src="{{ url_for('uploaded_file', filename=item.image) }}"
+                         alt="{{ item.title }}"
+                         class="card-img-top img-zoom-trigger"
+                         style="object-fit: cover; width: 100%; height: 250px; cursor: pointer;"
+                         data-bs-toggle="modal"
+                         data-bs-target="#zoomModal"
+                         data-img-src="{{ url_for('uploaded_file', filename=item.image) }}">
+                {% else %}
+                    <img src="{{ url_for('static', filename='img/default-product.png') }}"
+                         alt="Imagen no disponible"
+                         class="card-img-top img-zoom-trigger"
+                         style="object-fit: cover; width: 100%; height: 250px; cursor: pointer;"
+                         data-bs-toggle="modal"
+                         data-bs-target="#zoomModal"
+                         data-img-src="{{ url_for('static', filename='img/default-product.png') }}">
+                {% endif %}
+
+                <div class="card-body d-flex flex-column py-2 px-3">
+                    <span class="badge bg-dark align-self-start mb-2" style="font-size: .7rem;">
+                        Servicio
+                    </span>
+
+                    <h6 class="card-title mb-1 small fw-semibold">{{ item.title }}</h6>
+
+                    {% if item.description %}
+                    <p class="card-text text-muted small mb-2">{{ item.description }}</p>
+                    {% endif %}
+
+                    {% if item.show_price %}
+                    <div class="mb-2">
+                        <span class="badge bg-success text-white fw-semibold" style="font-size: 0.9rem;">
+                            Precio: ${{ "%.2f"|format(item.price) }}
+                        </span>
+                    </div>
+                    {% endif %}
+
+                    <div class="mt-auto">
+                        <label for="prod_{{ loop.index0 }}_serv" class="form-label small mb-1">Cantidad / Nº de citas:</label>
+                        <input type="number"
+                               class="form-control form-control-sm"
+                               id="prod_{{ loop.index0 }}_serv"
+                               name="prod_{{ item.title | replace(' ', '_') }}"
+                               min="0"
+                               value="0"
+                               placeholder="0"
+                               aria-label="Cantidad para {{ item.title }}"
+                               data-item-nombre="{{ item.title }}">
                     </div>
                 </div>
 
-                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+        {% endif %}
 
-                <div class="col-12 text-center mt-3">
-                    <button type="submit" class="btn btn-success btn-lg px-4 py-2">
-                        <i class="bi bi-whatsapp fs-5 me-2"></i> Cotizar por WhatsApp
+        <!-- ================== PRODUCTOS FÍSICOS ================== -->
+        {% if productos_fisicos and productos_fisicos|length > 0 %}
+        <div class="col-12 mt-4">
+            <h3 class="h5 fw-bold text-uppercase text-muted d-flex align-items-center">
+                <i class="bi bi-box-seam me-2 text-success"></i> Productos
+            </h3>
+        </div>
+
+        {% for item in productos_fisicos %}
+        <div class="col-12 col-sm-6 col-md-4">
+            <div class="card h-100 shadow-sm">
+                {% if item.image %}
+                    <img src="{{ url_for('uploaded_file', filename=item.image) }}"
+                         alt="{{ item.title }}"
+                         class="card-img-top img-zoom-trigger"
+                         style="object-fit: cover; width: 100%; height: 250px; cursor: pointer;"
+                         data-bs-toggle="modal"
+                         data-bs-target="#zoomModal"
+                         data-img-src="{{ url_for('uploaded_file', filename=item.image) }}">
+                {% else %}
+                    <img src="{{ url_for('static', filename='img/default-product.png') }}"
+                         alt="Imagen no disponible"
+                         class="card-img-top img-zoom-trigger"
+                         style="object-fit: cover; width: 100%; height: 250px; cursor: pointer;"
+                         data-bs-toggle="modal"
+                         data-bs-target="#zoomModal"
+                         data-img-src="{{ url_for('static', filename='img/default-product.png') }}">
+                {% endif %}
+
+                <div class="card-body d-flex flex-column py-2 px-3">
+                    <span class="badge bg-secondary align-self-start mb-2" style="font-size: .7rem;">
+                        Producto
+                    </span>
+
+                    <h6 class="card-title mb-1 small fw-semibold">{{ item.title }}</h6>
+
+                    {% if item.description %}
+                    <p class="card-text text-muted small mb-2">{{ item.description }}</p>
+                    {% endif %}
+
+                    {% if item.show_price %}
+                    <div class="mb-2">
+                        <span class="badge bg-success text-white fw-semibold" style="font-size: 0.9rem;">
+                            Precio: ${{ "%.2f"|format(item.price) }}
+                        </span>
+                    </div>
+                    {% endif %}
+
+                    <div class="mt-auto">
+                        <label for="prod_{{ loop.index0 }}_prod" class="form-label small mb-1">Cantidad:</label>
+                        <input type="number"
+                               class="form-control form-control-sm"
+                               id="prod_{{ loop.index0 }}_prod"
+                               name="prod_{{ item.title | replace(' ', '_') }}"
+                               min="0"
+                               value="0"
+                               placeholder="0"
+                               aria-label="Cantidad para {{ item.title }}"
+                               data-item-nombre="{{ item.title }}">
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        <!-- BOTÓN COTIZAR -->
+        <div class="col-12 text-center mt-4">
+            <button type="submit"
+                    class="btn btn-success btn-lg px-4 py-2"
+                    id="btnAbrirModalCotizar">
+                <i class="bi bi-whatsapp fs-5 me-2"></i>
+                Cotizar
+            </button>
+        </div>
+
+    </form>
+
+    {% else %}
+        <div class="alert alert-warning p-3 rounded shadow-sm mt-3" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-3 fs-4 text-warning"></i>
+            <div>
+                <h6 class="mb-1 fw-bold small">No hay productos ni servicios disponibles</h6>
+                <p class="mb-0 small">
+                    Por ahora no tenemos elementos para cotizar. Contáctanos directamente desde la sección de contacto. 🙌
+                </p>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Modal Zoom Imagen (igual que antes) -->
+    <div class="modal fade" id="zoomModal" tabindex="-1" aria-labelledby="zoomModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-70">
+            <div class="modal-content bg-transparent border-0">
+                <div class="modal-body p-0">
+                    <img src="" alt="Imagen ampliada" id="zoomedImage" class="img-fluid rounded shadow"
+                        style="width: 100%;">
+                </div>
+                <div class="modal-footer border-0 justify-content-center">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Modal de cotización: pedir nombre -->
+    <div class="modal fade" id="cotizarModal" tabindex="-1" aria-labelledby="cotizarModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow">
+                <div class="modal-header" style="background: linear-gradient(to right, {{ page['color'] or '#343a40' }}, #000); color: #fff;">
+                    <h5 class="modal-title" id="cotizarModalLabel">Antes de cotizar ✍️</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="small text-muted mb-3">
+                        Déjanos tu nombre para que sepamos cómo dirigirnos a ti cuando te respondamos por WhatsApp.
+                    </p>
+
+                    <div class="mb-3">
+                        <label for="nombreClienteInput" class="form-label">Tu nombre</label>
+                        <input type="text" class="form-control" id="nombreClienteInput" placeholder="Ej. Carlos / Ana Martínez">
+                    </div>
+
+                    <div id="resumenSeleccion" class="bg-light border rounded p-2 small" style="max-height: 200px; overflow-y: auto;">
+                        <!-- aquí metemos un preview de lo que seleccionó -->
+                    </div>
+
+                    <div class="text-danger small mt-2 d-none" id="errorModalNombre">
+                        Por favor escribe tu nombre 🙏
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-success" id="enviarCotizacionBtn">
+                        <i class="bi bi-whatsapp me-1"></i> Enviar por WhatsApp
                     </button>
                 </div>
-            </form>
-            {% else %}
-            <div class="alert alert-warning p-3 rounded shadow-sm mt-3" role="alert">
-                <i class="bi bi-exclamation-triangle-fill me-3 fs-4 text-warning"></i>
-                <div>
-                    <h6 class="mb-1 fw-bold small">No hay productos disponibles</h6>
-                    <p class="mb-0 small">
-                        Actualmente no tenemos productos para cotizar. Por favor, vuelve más tarde o comunícate
-                        con nosotros en el apartado de contacto o por medio de WhatsApp.
-                    </p>
-                </div>
-            </div>
-            {% endif %}
-        </div>
-
-        <!-- Modal para zoom -->
-        <!-- Modal para zoom -->
-        <div class="modal fade" id="zoomModal" tabindex="-1" aria-labelledby="zoomModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-70">
-                <div class="modal-content bg-transparent border-0">
-                    <div class="modal-body p-0">
-                        <img src="" alt="Imagen ampliada" id="zoomedImage" class="img-fluid rounded shadow"
-                            style="width: 100%;">
-                    </div>
-                    <div class="modal-footer border-0 justify-content-center">
-                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
-                    </div>
-                </div>
             </div>
         </div>
+    </div>
 
-    </section>
+</section>
+
 
     <!-- Etiqueta flotante de WhatsApp -->
     <div style="position: fixed; bottom: 12%; left: 20px; z-index: 1050;">
@@ -788,61 +925,108 @@
     </footer>
 
     <script>
-        document.querySelectorAll('.img-zoom-trigger').forEach(img => {
-            img.addEventListener('click', event => {
-                const src = event.currentTarget.getAttribute('data-img-src');
-                const zoomedImage = document.getElementById('zoomedImage');
-                zoomedImage.src = src;
-            });
+    // ---- Zoom de imagen (igual que ya tenías) ----
+    document.querySelectorAll('.img-zoom-trigger').forEach(img => {
+        img.addEventListener('click', event => {
+            const src = event.currentTarget.getAttribute('data-img-src');
+            const zoomedImage = document.getElementById('zoomedImage');
+            zoomedImage.src = src;
         });
-        
-        const formCotizar = document.getElementById('form-cotizar');
-        if (formCotizar) {
-            formCotizar.addEventListener('submit', function (e) {
-                e.preventDefault();
+    });
 
-                const whatsappNumber = "{{ page.whatsapp | replace(' ', '') }}";
-                let mensaje = "Hola, quiero cotizar estos productos:%0A";
+    // === Cotización con modal ===
+    const formCotizar = document.getElementById('form-cotizar');
+    const resumenSeleccionDiv = document.getElementById('resumenSeleccion');
+    const nombreClienteInput = document.getElementById('nombreClienteInput');
+    const errorModalNombre = document.getElementById('errorModalNombre');
 
-                let inputs = formCotizar.querySelectorAll('input[type=number]');
-                let haySeleccion = false;
+    // guardaremos temporalmente la selección del usuario aquí
+    let cotizacionLineas = [];
 
-                inputs.forEach(input => {
-                    let cantidad = parseInt(input.value);
-                    if (cantidad > 0) {
-                        haySeleccion = true;
-                        let nombreProducto = input.name.replace('prod_', '').replace(/_/g, ' ');
-                        mensaje += `- ${nombreProducto}: ${cantidad}%0A`;
-                    }
-                });
+    if (formCotizar) {
+        formCotizar.addEventListener('submit', function (e) {
+            e.preventDefault();
 
-                if (!haySeleccion) {
-                    alert("Por favor, ingresa cantidad para al menos un producto.");
-                    return;
+            cotizacionLineas = [];
+            let inputs = formCotizar.querySelectorAll('input[type=number]');
+            inputs.forEach(input => {
+                const cantidad = parseInt(input.value);
+                if (cantidad > 0) {
+                    const nombreItem = input.getAttribute('data-item-nombre') ||
+                                       input.name.replace('prod_', '').replace(/_/g, ' ');
+                    cotizacionLineas.push(`- ${nombreItem}: ${cantidad}`);
                 }
-
-                let urlWhatsapp = `https://wa.me/${whatsappNumber}?text=${mensaje}`;
-                window.open(urlWhatsapp, '_blank');
             });
-        }
 
+            if (cotizacionLineas.length === 0) {
+                alert("Por favor ingresa cantidad para al menos un servicio o producto 🙏");
+                return;
+            }
 
-        const stars = document.querySelectorAll('.star-icon');
-        const inputEstrellas = document.getElementById('estrellas');
+            // Previsualizar lo que seleccionó el usuario en el modal:
+            resumenSeleccionDiv.innerHTML = cotizacionLineas
+                .map(l => `<div>${l}</div>`)
+                .join('');
 
-        stars.forEach(star => {
-            star.addEventListener('click', () => {
-                const valor = parseInt(star.getAttribute('data-value'));
-                inputEstrellas.value = valor;
+            // limpiar errores previos
+            errorModalNombre.classList.add('d-none');
+            nombreClienteInput.classList.remove('is-invalid');
 
-                stars.forEach(s => {
-                    const sVal = parseInt(s.getAttribute('data-value'));
-                    s.classList.remove('text-warning', 'text-secondary');
-                    s.classList.add(sVal <= valor ? 'text-warning' : 'text-secondary');
-                });
+            // Abrir modal Bootstrap
+            const cotizarModal = new bootstrap.Modal(document.getElementById('cotizarModal'));
+            cotizarModal.show();
+        });
+    }
+
+    // Cuando el usuario confirma enviar al WhatsApp
+    const enviarCotizacionBtn = document.getElementById('enviarCotizacionBtn');
+    if (enviarCotizacionBtn) {
+        enviarCotizacionBtn.addEventListener('click', () => {
+            const nombreCliente = (nombreClienteInput.value || '').trim();
+
+            if (!nombreCliente) {
+                errorModalNombre.classList.remove('d-none');
+                nombreClienteInput.classList.add('is-invalid');
+                nombreClienteInput.focus();
+                return;
+            }
+
+            const whatsappNumber = "{{ page.whatsapp | replace(' ', '') }}";
+
+            // Armamos el mensaje final
+            // %0A = salto de línea URL-encoded
+            let mensaje = `Hola, soy ${nombreCliente} y quiero cotizar:%0A`;
+            cotizacionLineas.forEach(linea => {
+                mensaje += encodeURIComponent(linea) + "%0A";
+            });
+
+            const urlWhatsapp = `https://wa.me/${whatsappNumber}?text=${mensaje}`;
+            window.open(urlWhatsapp, '_blank');
+        });
+    }
+
+    // === Estrellas reseña (igual que ya tenías) ===
+    const stars = document.querySelectorAll('.star-icon');
+    const inputEstrellas = document.getElementById('estrellas');
+
+    stars.forEach(star => {
+        star.addEventListener('click', () => {
+            const valor = parseInt(star.getAttribute('data-value'));
+            inputEstrellas.value = valor;
+
+            stars.forEach(s => {
+                const sVal = parseInt(s.getAttribute('data-value'));
+                s.classList.remove('text-warning', 'text-secondary');
+                s.classList.add(sVal <= valor ? 'text-warning' : 'text-secondary');
             });
         });
-    </script>
+    });
+    const cotizarModal = new bootstrap.Modal(document.getElementById('cotizarModal'));
+cotizarModal.show();
+setTimeout(() => { nombreClienteInput.focus(); }, 300);
+
+</script>
+
     <!-- Leaflet (gratis, sin API key) -->
     <link
     rel="stylesheet"

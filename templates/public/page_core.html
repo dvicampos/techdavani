@@ -211,7 +211,9 @@
           <li class="nav-item"><a class="nav-link" href="#info">Información</a></li>
           <li class="nav-item"><a class="nav-link" href="#contacto">Contacto</a></li>
           {% if posts %}<li class="nav-item"><a class="nav-link" href="#publicaciones">Publicaciones</a></li>{% endif %}
-          {% if productos %}<li class="nav-item"><a class="nav-link" href="#productos">Productos</a></li>{% endif %}
+          {% if (servicios and servicios|length>0) or (productos_fisicos and productos_fisicos|length>0) %}
+            <li class="nav-item"><a class="nav-link" href="#productos">Productos</a></li>
+          {% endif %}
           <li class="nav-item"><a class="nav-link" href="#reseñas">Reseñas</a></li>
         </ul>
       </div>
@@ -362,60 +364,187 @@
   </section>
 
   <!-- PRODUCTOS / COTIZAR -->
-  <section class="container my-5" id="productos">
-    <h2 class="section-title brand-font">Productos</h2>
-    {% if productos and productos|length>0 %}
-      <div class="card card-brutal p-3 mb-3">
-        <div class="d-flex align-items-center gap-2">
-          <span class="pill-invert"><i class="bi bi-info-circle"></i></span>
-          <div><strong>Cotiza fácil:</strong> elige cantidades y envía por WhatsApp.</div>
+  <!-- PRODUCTOS / SERVICIOS / COTIZAR -->
+<section class="container my-5" id="productos">
+  <h2 class="section-title brand-font">Productos y Servicios</h2>
+
+  {% if (servicios and servicios|length>0) or (productos_fisicos and productos_fisicos|length>0) %}
+
+    <div class="card card-brutal p-3 mb-3">
+      <div class="d-flex align-items-center gap-2">
+        <span class="pill-invert"><i class="bi bi-info-circle"></i></span>
+        <div>
+          <strong>Cotiza fácil:</strong> elige cantidades de servicios o productos, luego pulsa <em>Cotizar</em>.
+          Te pediremos tu nombre y abriremos WhatsApp con todo listo.
         </div>
       </div>
+    </div>
 
-      <form id="form-cotizar" class="row g-3">
-        {% for producto in productos %}
+    <form id="form-cotizar" class="row g-3">
+
+      <!-- ===== SERVICIOS ===== -->
+      {% if servicios and servicios|length>0 %}
+        <div class="col-12">
+          <h3 class="h5 brand-font d-flex align-items-center gap-2">
+            <i class="bi bi-wrench-adjustable-circle text-primary"></i> Servicios
+          </h3>
+        </div>
+
+        {% for item in servicios %}
         <div class="col-12 col-sm-6 col-md-4">
           <div class="card card-brutal h-100">
-            {% if producto.image %}
-              <img src="{{ url_for('uploaded_file', filename=producto.image) }}" alt="{{ producto.title }}" class="card-img-top img-zoom-trigger" data-bs-toggle="modal" data-bs-target="#zoomModal" data-img-src="{{ url_for('uploaded_file', filename=producto.image) }}" style="object-fit:cover; height:220px; cursor: zoom-in;">
+            {% if item.image %}
+              <img
+                src="{{ url_for('uploaded_file', filename=item.image) }}"
+                alt="{{ item.title }}"
+                class="card-img-top img-zoom-trigger"
+                data-bs-toggle="modal" data-bs-target="#zoomModal"
+                data-img-src="{{ url_for('uploaded_file', filename=item.image) }}"
+                style="object-fit:cover; height:220px; cursor: zoom-in;"
+              >
             {% endif %}
             <div class="card-body d-flex flex-column">
-              <h6 class="brand-font mb-1">{{ producto.title }}</h6>
-              {% if producto.description %}<p class="text-muted-2 small">{{ producto.description }}</p>{% endif %}
-              {% if producto.show_price %}
-                <div class="mb-2"><span class="badge-pill" style="background:#111;color:#fff;border-color:#fff;">${{ "%.2f"|format(producto.price) }}</span></div>
+              <div class="mb-1">
+                <span class="badge-pill" style="background:#111;color:#fff;border-color:#fff;">Servicio</span>
+              </div>
+              <h6 class="brand-font mb-1">{{ item.title }}</h6>
+              {% if item.description %}
+                <p class="text-muted-2 small">{{ item.description }}</p>
+              {% endif %}
+              {% if item.show_price %}
+                <div class="mb-2">
+                  <span class="badge-pill" style="background:#0b1321;color:#fff;border-color:#fff;">
+                    ${{ "%.2f"|format(item.price) }}
+                  </span>
+                </div>
               {% endif %}
               <div class="mt-auto">
-                <label class="form-label small">Cantidad</label>
-                <input type="number" class="form-control" style="border:3px solid var(--border)" min="0"
-                       id="prod_{{ loop.index }}" name="prod_{{ producto.title | replace(' ','_') }}" value="0">
+                <label class="form-label small">Cantidad / Nº de citas</label>
+                <input
+                  type="number" min="0" value="0"
+                  class="form-control" style="border:3px solid var(--border)"
+                  id="serv_{{ loop.index0 }}"
+                  name="prod_{{ item.title | replace(' ','_') }}"
+                  data-item-nombre="{{ item.title }}"
+                >
               </div>
             </div>
           </div>
         </div>
         {% endfor %}
-        <div class="col-12 text-center">
-          <button type="submit" class="btn btn-brutal btn-brand px-4 py-2 hover-raise">
-            <i class="bi bi-whatsapp me-1"></i> Cotizar por WhatsApp
-          </button>
-        </div>
-      </form>
-    {% else %}
-      <div class="card card-brutal p-3">No hay productos disponibles.</div>
-    {% endif %}
+      {% endif %}
 
-    <!-- Modal zoom -->
-    <div class="modal fade" id="zoomModal" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered" style="max-width: 72vw;">
-        <div class="modal-content" style="border:3px solid var(--border); box-shadow: var(--shadow);">
-          <img id="zoomedImage" src="" class="img-fluid" alt="Zoom">
-          <div class="p-2 text-end">
-            <button class="btn btn-brutal btn-ghost" data-bs-dismiss="modal">Cerrar</button>
+      <!-- ===== PRODUCTOS FÍSICOS ===== -->
+      {% if productos_fisicos and productos_fisicos|length>0 %}
+        <div class="col-12 mt-2">
+          <h3 class="h5 brand-font d-flex align-items-center gap-2">
+            <i class="bi bi-box-seam text-success"></i> Productos
+          </h3>
+        </div>
+
+        {% for item in productos_fisicos %}
+        <div class="col-12 col-sm-6 col-md-4">
+          <div class="card card-brutal h-100">
+            {% if item.image %}
+              <img
+                src="{{ url_for('uploaded_file', filename=item.image) }}"
+                alt="{{ item.title }}"
+                class="card-img-top img-zoom-trigger"
+                data-bs-toggle="modal" data-bs-target="#zoomModal"
+                data-img-src="{{ url_for('uploaded_file', filename=item.image) }}"
+                style="object-fit:cover; height:220px; cursor: zoom-in;"
+              >
+            {% endif %}
+            <div class="card-body d-flex flex-column">
+              <div class="mb-1">
+                <span class="badge-pill" style="background:#666;color:#fff;border-color:#fff;">Producto</span>
+              </div>
+              <h6 class="brand-font mb-1">{{ item.title }}</h6>
+              {% if item.description %}
+                <p class="text-muted-2 small">{{ item.description }}</p>
+              {% endif %}
+              {% if item.show_price %}
+                <div class="mb-2">
+                  <span class="badge-pill" style="background:#0b1321;color:#fff;border-color:#fff;">
+                    ${{ "%.2f"|format(item.price) }}
+                  </span>
+                </div>
+              {% endif %}
+              <div class="mt-auto">
+                <label class="form-label small">Cantidad</label>
+                <input
+                  type="number" min="0" value="0"
+                  class="form-control" style="border:3px solid var(--border)"
+                  id="prod_{{ loop.index0 }}"
+                  name="prod_{{ item.title | replace(' ','_') }}"
+                  data-item-nombre="{{ item.title }}"
+                >
+              </div>
+            </div>
           </div>
+        </div>
+        {% endfor %}
+      {% endif %}
+
+      <!-- Botón principal -->
+      <div class="col-12 text-center">
+        <button type="submit" class="btn btn-brutal btn-brand px-4 py-2 hover-raise">
+          <i class="bi bi-whatsapp me-1"></i> Cotizar
+        </button>
+      </div>
+    </form>
+
+  {% else %}
+    <div class="card card-brutal p-3">No hay productos ni servicios disponibles.</div>
+  {% endif %}
+
+  <!-- Modal zoom (igual que tenías) -->
+  <div class="modal fade" id="zoomModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 72vw;">
+      <div class="modal-content" style="border:3px solid var(--border); box-shadow: var(--shadow);">
+        <img id="zoomedImage" src="" class="img-fluid" alt="Zoom">
+        <div class="p-2 text-end">
+          <button class="btn btn-brutal btn-ghost" data-bs-dismiss="modal">Cerrar</button>
         </div>
       </div>
     </div>
-  </section>
+  </div>
+
+  <!-- Modal de cotización: pide nombre y muestra preview -->
+  <div class="modal fade" id="cotizarModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content" style="border:3px solid var(--border); box-shadow: var(--shadow);">
+        <div class="modal-header" style="background: var(--brand); color:#fff;">
+          <h5 class="modal-title">Antes de cotizar ✍️</h5>
+          <button class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <p class="small text-muted">
+            Déjanos tu nombre para dirigirnos a ti cuando te contactemos por WhatsApp.
+          </p>
+
+          <div class="mb-3">
+            <label class="form-label">Tu nombre</label>
+            <input type="text" class="form-control" id="nombreClienteInput" placeholder="Ej. Ana Martínez" style="border:3px solid var(--border);">
+            <div class="text-danger small mt-1 d-none" id="errorModalNombre">Por favor escribe tu nombre 🙏</div>
+          </div>
+
+          <div>
+            <div class="form-label mb-1">Tu selección:</div>
+            <div id="resumenSeleccion" class="bg-light border rounded p-2 small" style="max-height: 220px; overflow-y:auto; border:3px solid var(--border);"></div>
+          </div>
+        </div>
+        <div class="modal-footer justify-content-between">
+          <button class="btn btn-brutal btn-ghost" data-bs-dismiss="modal">Cancelar</button>
+          <button class="btn btn-brutal btn-brand" id="enviarCotizacionBtn">
+            <i class="bi bi-whatsapp me-1"></i> Enviar por WhatsApp
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
 
   <!-- RESEÑAS -->
   <section class="container my-5" id="reseñas">
@@ -551,25 +680,63 @@
     });
 
     // cotizar
-    const formCotizar = document.getElementById('form-cotizar');
-    if (formCotizar){
-      formCotizar.addEventListener('submit', (e)=>{
-        e.preventDefault();
-        const wa = "{{ page.get('whatsapp','')|replace(' ','') }}";
-        let msj = "Hola, quiero cotizar:%0A";
-        let selected = 0;
-        formCotizar.querySelectorAll('input[type=number]').forEach(inp=>{
-          const n = parseInt(inp.value||"0");
-          if (n>0){
-            selected++;
-            const name = inp.name.replace('prod_','').replaceAll('_',' ');
-            msj += `- ${name}: ${n}%0A`;
-          }
-        });
-        if (!selected){ alert("Ingresa cantidad para al menos un producto."); return; }
-        window.open(`https://wa.me/${wa}?text=${msj}`, "_blank");
-      });
+    // cotizar con modal (productos + servicios)
+const formCotizar = document.getElementById('form-cotizar');
+const resumenSeleccionDiv = document.getElementById('resumenSeleccion');
+const nombreClienteInput = document.getElementById('nombreClienteInput');
+const errorModalNombre = document.getElementById('errorModalNombre');
+let cotizacionLineas = [];
+
+if (formCotizar){
+  formCotizar.addEventListener('submit', (e)=>{
+    e.preventDefault();
+
+    cotizacionLineas = [];
+    const inputs = formCotizar.querySelectorAll('input[type=number]');
+    inputs.forEach(inp=>{
+      const n = parseInt(inp.value || "0");
+      if (n>0){
+        const nombre = inp.getAttribute('data-item-nombre') ||
+                       inp.name.replace('prod_','').replaceAll('_',' ');
+        cotizacionLineas.push(`- ${nombre}: ${n}`);
+      }
+    });
+
+    if (cotizacionLineas.length===0){
+      alert("Ingresa cantidad para al menos un servicio o producto 🙏");
+      return;
     }
+
+    // preview en el modal
+    resumenSeleccionDiv.innerHTML = cotizacionLineas.map(l=>`<div>${l}</div>`).join('');
+    errorModalNombre.classList.add('d-none');
+    nombreClienteInput.classList.remove('is-invalid');
+
+    const modal = new bootstrap.Modal(document.getElementById('cotizarModal'));
+    modal.show();
+    setTimeout(()=> nombreClienteInput && nombreClienteInput.focus(), 250);
+  });
+}
+
+const enviarCotizacionBtn = document.getElementById('enviarCotizacionBtn');
+if (enviarCotizacionBtn){
+  enviarCotizacionBtn.addEventListener('click', ()=>{
+    const nombre = (nombreClienteInput.value || '').trim();
+    if (!nombre){
+      errorModalNombre.classList.remove('d-none');
+      nombreClienteInput.classList.add('is-invalid');
+      nombreClienteInput.focus();
+      return;
+    }
+
+    const wa = "{{ page.get('whatsapp','')|replace(' ','') }}";
+    let msj = `Hola, soy ${encodeURIComponent(nombre)} y quiero cotizar:%0A`;
+    cotizacionLineas.forEach(l=>{ msj += encodeURIComponent(l) + "%0A"; });
+
+    window.open(`https://wa.me/${wa}?text=${msj}`, "_blank");
+  });
+}
+
 
     // estrellas
     const stars = document.querySelectorAll('.star-icon');

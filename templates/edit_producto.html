@@ -1,39 +1,73 @@
 {% extends "layout.html" %}
 {% block content %}
-<h2 class="mb-4">🛍️ Editar producto</h2>
-<form method="POST" enctype="multipart/form-data">
-  <div class="mb-3">
-    <label>Título</label>
-    <input type="text" name="title" class="form-control" value="{{ producto.title }}" required>
-  </div>
-  <div class="mb-3">
-    <label>Descripción</label>
-    <textarea name="description" class="form-control" required>{{ producto.description }}</textarea>
-  </div>
-  <div class="mb-3">
-    <label>Precio</label>
-    <input type="number" name="price" step="0.01" class="form-control" value="{{ producto.price }}" required>
-  </div>
-  <div class="mb-3">
-    <label>
-      <input type="checkbox" name="show_price" {% if producto and producto.get('show_price') %}checked{% endif %}>
-      Mostrar precio
-    </label>
-  </div>
-  <div class="mb-3">
-    <label>Imagen (opcional)</label>
-    <input type="file" name="image" class="form-control">
-    {% if producto.image %}
-    <p>Imagen actual:</p>
-    <img src="{{ url_for('uploaded_file', filename=producto.image) }}" alt="Imagen producto" width="100">
-    {% endif %}
-  </div>
-  <button type="submit" class="btn btn-primary">Actualizar</button>
-</form>
+<div class="container my-5">
+    <h2 class="mb-4">✏ Editar Producto</h2>
 
-<div class="mt-4 text-center">
-  <a href="{{ url_for('dashboard')}}" class="btn btn-outline-dark">
-    <i class="bi bi-arrow-left-circle"></i> Regresar
-  </a>
+    <form method="POST" enctype="multipart/form-data">
+
+        <div class="mb-3">
+            <label class="form-label">Título</label>
+            <input type="text" name="title" class="form-control"
+                value="{{ producto['title'] }}" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Descripción</label>
+            <textarea name="description" class="form-control" required>{{ producto['description'] }}</textarea>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Precio</label>
+            <input type="number" name="price" step="0.01" class="form-control"
+                value="{{ producto['price'] }}" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="tipo" class="form-label">Tipo</label>
+            <select name="tipo" id="tipo" class="form-control">
+                {% for t in tipos_posibles %}
+                    <option value="{{ t }}"
+                        {% if producto.get('tipo','producto') == t %}selected{% endif %}>
+                        {{ t|capitalize }}
+                    </option>
+                {% endfor %}
+            </select>
+            <div class="form-text">
+                "Servicio" = mano de obra / cita. "Producto" = vendes físicamente.
+            </div>
+        </div>
+
+        <div class="form-check mb-3">
+            <input class="form-check-input"
+                type="checkbox"
+                name="show_price"
+                id="show_price"
+                {% if producto.get('show_price') %}checked{% endif %}>
+            <label class="form-check-label" for="show_price">
+                Mostrar precio
+            </label>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Imagen (subir nueva opcional)</label>
+            <input type="file" name="image" class="form-control">
+            {% if producto.get('image') %}
+                <div class="mt-2">
+                    <small class="text-muted d-block mb-1">Imagen actual:</small>
+                    <img src="{{ url_for('uploaded_file', filename=producto['image']) }}"
+                         alt="Imagen actual"
+                         style="max-height:100px; border:1px solid #ccc; border-radius:6px;">
+                </div>
+            {% endif %}
+        </div>
+
+        <button type="submit" class="btn btn-primary">Actualizar</button>
+    </form>
+
+    <div class="mt-4 text-center">
+        <a href="{{ url_for('list_productos') }}" class="btn btn-outline-dark">
+            <i class="bi bi-arrow-left-circle"></i> Regresar
+        </a>
+    </div>
 </div>
 {% endblock %}

@@ -3,30 +3,58 @@
 <div class="container my-5">
     <h2 class="mb-4">➕ Crear Producto</h2>
     <form method="POST" enctype="multipart/form-data">
+
         <div class="mb-3">
             <label for="title" class="form-label">Título</label>
             <input type="text" name="title" class="form-control" required>
         </div>
+
         <div class="mb-3">
             <label for="description" class="form-label">Descripción</label>
             <textarea name="description" class="form-control" required></textarea>
         </div>
+
         <div class="mb-3">
             <label for="price" class="form-label">Precio</label>
             <input type="number" name="price" step="0.01" class="form-control" required>
         </div>
-        <label>
-            <input type="checkbox" name="show_price" {% if producto and producto.get('show_price') %}checked{% endif %}>
-            Mostrar precio
-        </label>
+
+        <!-- 🔥 Nuevo: Tipo -->
+        <div class="mb-3">
+            <label for="tipo" class="form-label">Tipo</label>
+            <select name="tipo" id="tipo" class="form-control">
+                {% for t in tipos_posibles %}
+                    <option value="{{ t }}"
+                        {% if t == 'producto' %}selected{% endif %}>
+                        {{ t|capitalize }}
+                    </option>
+                {% endfor %}
+            </select>
+            <div class="form-text">
+                Selecciona "Servicio" si es algo que haces (corte de cabello, consulta, etc.).
+                Selecciona "Producto" si es algo físico que vendes.
+            </div>
+        </div>
+
+        <div class="form-check mb-3">
+            <input class="form-check-input" type="checkbox" name="show_price"
+                id="show_price"
+                {% if producto and producto.get('show_price') %}checked{% endif %}>
+            <label class="form-check-label" for="show_price">
+                Mostrar precio
+            </label>
+        </div>
+
         <div class="mb-3">
             <label for="image" class="form-label">Imagen</label>
             <input type="file" name="image" class="form-control">
         </div>
+
         <button type="submit" class="btn btn-success">Guardar</button>
     </form>
+
     <div class="mt-4 text-center">
-        <a href="{{ url_for('dashboard')}}" class="btn btn-outline-dark">
+        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-dark">
             <i class="bi bi-arrow-left-circle"></i> Regresar
         </a>
     </div>

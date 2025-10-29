@@ -55,29 +55,24 @@
     a{text-decoration:none}
     img{max-width:100%; height:auto; display:block}
 
-    /* Contenedor: mejor padding lateral en todos los tamaños */
     .container { padding-left: var(--container-pad); padding-right: var(--container-pad); }
 
-    /* Tipografías fluidas */
     h1,h2,h3,.display-5{ letter-spacing:-.02em; }
     h1,.display-5{font-size: clamp(1.8rem, 2.4vw + 1.1rem, 3rem);}
     h2{font-size: clamp(1.25rem, 1.2vw + 1rem, 2rem);}
     h3{font-size: clamp(1.1rem, .9vw + .95rem, 1.6rem);}
 
-    /* Separaciones fluidas */
     section { margin-top: var(--section-gap); margin-bottom: var(--section-gap); }
 
-    /* Evita que los anclajes queden tapados por la navbar sticky */
     [id] { scroll-margin-top: 84px; }
 
-    /* Focus visible */
     :focus-visible{
       outline:2px solid #93c5fd;
       outline-offset:2px;
       border-radius:8px;
     }
 
-    /* Top announcement bar (solo si avisos) */
+    /* Top announcement bar */
     .topbar{
       background:linear-gradient(90deg, var(--brand), #0b0d10);
       border-bottom:1px solid rgba(229,231,235,.08)
@@ -88,7 +83,7 @@
       border:1px dashed rgba(255,255,255,.35); color:#fff
     }
 
-    /* Navbar (glass + offcanvas) */
+    /* Navbar */
     .nav-glass{
       position:sticky; top:0; z-index:1020;
       background:linear-gradient(90deg, rgba(17,24,39,.85), rgba(17,24,39,.65));
@@ -103,7 +98,7 @@
       border-left:1px solid rgba(229,231,235,.08)
     }
 
-    /* Chips (scroll táctil en móvil) */
+    /* Chips */
     .chips{display:flex; gap:.5rem; flex-wrap:wrap}
     @media (max-width: 576px){
       .chips{
@@ -148,7 +143,7 @@
       .hero-badge{ position:static; margin-top:.75rem; width:max-content }
     }
 
-    /* Productos: grid ultra-responsiva */
+    /* Productos grid */
     .grid{
       display:grid; gap:18px;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -182,10 +177,40 @@
     .btn-outline{border:1px solid rgba(229,231,235,.28); color:#e5e7eb; padding:.55rem .8rem; border-radius:12px; background:transparent; font-weight:700}
     .btn-primary{background:linear-gradient(90deg, var(--accent), #fb7185); color:#fff; border:none; padding:.55rem .9rem; border-radius:12px; font-weight:800}
 
-    /* Acciones de producto: apila en móvil, dos columnas en >=421px */
+    /* Acciones producto */
     .actions{ display:grid; grid-template-columns: 100%; gap:8px; align-items:center }
     @media (min-width: 421px){ .actions{ grid-template-columns: minmax(86px, 120px) 1fr auto } }
     .actions input[type=number]{ min-width:86px }
+
+    /* Servicios */
+    .service-card{
+      background:var(--card);
+      border:1px solid rgba(229,231,235,.08);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      height:100%;
+      padding:1rem 1.25rem;
+    }
+    .service-title{
+      font-weight:700;
+      color:var(--ink);
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:.5rem;
+      flex-wrap:wrap;
+    }
+    .service-price{
+      font-weight:800;
+      color:#93c5fd;
+      white-space:nowrap;
+    }
+    .service-desc{
+      color:var(--muted);
+      font-size:.9rem;
+      margin-top:.5rem;
+      margin-bottom:1rem;
+    }
 
     /* Highlights (info general) */
     .highlights{display:grid; gap:12px; grid-template-columns:repeat(12,1fr)}
@@ -193,7 +218,7 @@
     @media(min-width: 768px){ .hl{grid-column: span 4} }
     .hl i{opacity:.85}
 
-    /* Visítanos (mapa) */
+    /* Visítanos */
     .visit{background:linear-gradient(180deg, #0d0f13, #0b0d10)}
     #mapWrap{border:1px solid rgba(229,231,235,.08); border-radius:18px; overflow:hidden}
     #map{height: var(--map-h); min-height:260px}
@@ -204,12 +229,11 @@
     /* Footer */
     footer{border-top:1px solid rgba(229,231,235,.08)}
 
-    /* FAB: respeta safe-area en móviles con notch */
+    /* FAB */
     .fab-wa{
       position:fixed; right:18px; bottom:calc(18px + env(safe-area-inset-bottom)); z-index:1060;
     }
 
-    /* Preferencias de movimiento */
     @media (prefers-reduced-motion: reduce){
       * {animation: none!important; transition: none!important}
     }
@@ -228,7 +252,7 @@
 </div>
 {% endif %}
 
-<!-- NAV (offcanvas en móvil) -->
+<!-- NAV -->
 <nav class="navbar navbar-dark navbar-expand-lg nav-glass">
   <div class="container">
     <a class="navbar-brand" href="/">{{ page.get('business_name','') }}</a>
@@ -244,7 +268,8 @@
       <div class="offcanvas-body">
         <ul class="navbar-nav ms-auto align-items-lg-center">
           {% if posts %}<li class="nav-item"><a class="nav-link" data-bs-dismiss="offcanvas" href="#novedades">Novedades</a></li>{% endif %}
-          {% if productos %}<li class="nav-item"><a class="nav-link" data-bs-dismiss="offcanvas" href="#productos">Productos</a></li>{% endif %}
+          {% if productos_fisicos %}<li class="nav-item"><a class="nav-link" data-bs-dismiss="offcanvas" href="#productos">Productos</a></li>{% endif %}
+          {% if servicios %}<li class="nav-item"><a class="nav-link" data-bs-dismiss="offcanvas" href="#servicios">Servicios</a></li>{% endif %}
           <li class="nav-item"><a class="nav-link" data-bs-dismiss="offcanvas" href="#info">Información</a></li>
           <li class="nav-item"><a class="nav-link" data-bs-dismiss="offcanvas" href="#visitanos">Visítanos</a></li>
           <li class="nav-item"><a class="nav-link" data-bs-dismiss="offcanvas" href="#contacto">Contacto</a></li>
@@ -282,7 +307,7 @@
         {% endif %}
 
         <div class="d-flex gap-2 mt-3 flex-wrap">
-          {% if productos %}<a href="#productos" class="cta"><i class="bi bi-bag-heart"></i> Comprar</a>{% endif %}
+          {% if productos_fisicos %}<a href="#productos" class="cta"><i class="bi bi-bag-heart"></i> Comprar</a>{% endif %}
           {% if posts %}<a href="#novedades" class="btn btn-outline">Novedades</a>{% endif %}
         </div>
       </div>
@@ -334,8 +359,7 @@
 </section>
 {% endif %}
 
-<!-- PRODUCTOS -->
-{% if productos and productos|length %}
+{% if productos_fisicos and productos_fisicos|length %}
 <section id="productos" class="container">
   <div class="d-flex align-items-end justify-content-between mb-3 flex-wrap gap-2">
     <h2 class="m-0">Productos</h2>
@@ -349,30 +373,40 @@
     </div>
   </div>
 
-  {% set cats = productos | map(attribute='category') | list | select('string') | list %}
+  {# sacamos las categorías desde productos_fisicos #}
+  {% set cats = productos_fisicos | map(attribute='category') | list | select('string') | list %}
   {% set cats_unique = cats | unique | list if cats else [] %}
   {% if cats_unique and cats_unique|length > 1 %}
   <div class="chips mb-3" id="chips">
     <span class="chip active" data-cat="all">Todo</span>
-    {% for c in cats_unique %}<span class="chip" data-cat="{{ c }}">{{ c }}</span>{% endfor %}
+    {% for c in cats_unique %}
+      <span class="chip" data-cat="{{ c }}">{{ c }}</span>
+    {% endfor %}
   </div>
   {% endif %}
 
+  <!-- FORM de cotización -->
   <form id="cotizarForm">
     <div class="grid" id="prodGrid">
-      {% for p in productos %}
+      {% for p in productos_fisicos %}
       <article class="card-prod" data-cat="{{ p.get('category','') }}">
         <div class="prod-media">
           {% if p.get('image') %}
             <img class="prod-img img-zoom-trigger"
-                 data-bs-toggle="modal" data-bs-target="#zoomModal"
+                 data-bs-toggle="modal"
+                 data-bs-target="#zoomModal"
                  data-img-src="{{ url_for('uploaded_file', filename=p.image) }}"
                  src="{{ url_for('uploaded_file', filename=p.image) }}"
-                 alt="{{ p.title }}" loading="lazy" decoding="async"
+                 alt="{{ p.title }}"
+                 loading="lazy"
+                 decoding="async"
                  onerror="this.closest('.prod-media').style.display='none'">
           {% endif %}
-          {% if p.get('badge') %}<span class="prod-tag">{{ p.badge }}</span>{% endif %}
+          {% if p.get('badge') %}
+            <span class="prod-tag">{{ p.badge }}</span>
+          {% endif %}
         </div>
+
         <div class="prod-body">
           <div class="d-flex justify-content-between align-items-start gap-2">
             <h5 class="prod-title">{{ p.title }}</h5>
@@ -387,7 +421,9 @@
           </div>
 
           {% if p.get('description') %}
-          <p class="text-secondary small mb-2">{{ p.description[:90] }}{% if p.description|length>90 %}...{% endif %}</p>
+          <p class="text-secondary small mb-2">
+            {{ p.description[:90] }}{% if p.description|length>90 %}...{% endif %}
+          </p>
           {% endif %}
 
           {% if p.get('sizes') and p.sizes|length %}
@@ -398,13 +434,30 @@
           </div>
           {% endif %}
 
+          <!-- acciones -->
           <div class="actions">
-            <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" min="0" value="0" name="qty_{{ loop.index }}">
-            <button type="button" class="btn btn-outline btn-sm w-100" onclick="addToQuote('{{ p.title|escape }}', this)">+</button>
+            <input
+              type="number"
+              class="form-control form-control-sm bg-dark text-white border-secondary qty-input"
+              min="0"
+              value="0"
+              name="qty_{{ loop.index }}"
+            >
+            <!-- sumar rápido -->
+            <button
+              type="button"
+              class="btn btn-outline btn-sm w-100 add-btn"
+            >+</button>
+
             {% if page.get('whatsapp') %}
-              <button type="button" class="btn btn-primary btn-sm" onclick="buyNow('{{ p.title|escape }}', this)" aria-label="Comprar por WhatsApp">
-                <i class="bi bi-whatsapp"></i>
-              </button>
+            <!-- boton pedir solo este producto -->
+            <button
+              type="button"
+              class="btn btn-primary btn-sm buy-btn"
+              aria-label="Comprar por WhatsApp"
+            >
+              <i class="bi bi-whatsapp"></i>
+            </button>
             {% endif %}
           </div>
         </div>
@@ -414,14 +467,98 @@
 
     {% if page.get('whatsapp') %}
     <div class="text-center mt-3">
-      <button type="submit" class="btn btn-primary btn-lg"><i class="bi bi-whatsapp me-2"></i> Cotizar por WhatsApp</button>
+      <button type="submit" class="btn btn-primary btn-lg" id="abrirCotizarModalBtn">
+        <i class="bi bi-whatsapp me-2"></i> Cotizar por WhatsApp
+      </button>
     </div>
     {% endif %}
   </form>
+
+  <!-- MODAL COTIZACIÓN (pide nombre y muestra resumen) -->
+  <div class="modal fade" id="cotizarModal" tabindex="-1" aria-labelledby="cotizarModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content shadow">
+        <div class="modal-header" style="background:linear-gradient(90deg, var(--accent), #fb7185); color:#fff;">
+          <h5 class="modal-title" id="cotizarModalLabel">Antes de enviar ✍️</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <p class="small text-muted mb-3">
+            Cuéntanos tu nombre para saber cómo dirigirnos a ti cuando te respondamos por WhatsApp.
+          </p>
+
+          <div class="mb-3">
+            <label for="nombreClienteInput" class="form-label">Tu nombre</label>
+            <input
+              type="text"
+              class="form-control"
+              id="nombreClienteInput"
+              placeholder="Ej. Ana / Carlos Martínez"
+            >
+          </div>
+
+          <label class="form-label small text-secondary">Resumen de tu solicitud</label>
+          <div
+            id="resumenSeleccion"
+            class="bg-dark border border-secondary rounded p-2 small text-white"
+            style="max-height:200px; overflow-y:auto;"
+          ></div>
+
+          <div class="text-danger small mt-2 d-none" id="errorModalNombre">
+            Por favor escribe tu nombre 🙏
+          </div>
+        </div>
+
+        <div class="modal-footer justify-content-between">
+          <button type="button" class="btn btn-outline-brand" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-brand" id="enviarCotizacionBtn">
+            <i class="bi bi-whatsapp me-1"></i> Enviar por WhatsApp
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </section>
 {% endif %}
 
-<!-- INFORMACIÓN (highlights) -->
+<!-- SERVICIOS (usa servicios) -->
+{% if servicios and servicios|length %}
+<section id="servicios" class="container">
+  <div class="d-flex align-items-end justify-content-between mb-3 flex-wrap gap-2">
+    <h2 class="m-0">Servicios</h2>
+  </div>
+
+  <div class="row g-4">
+    {% for s in servicios %}
+    <div class="col-md-6 col-lg-4 d-flex">
+      <div class="service-card d-flex flex-column w-100">
+        <div class="service-title">
+          <span>{{ s.title }}</span>
+          {% if s.get('show_price') %}
+            <span class="service-price">${{ "%.2f"|format(s.price) }}</span>
+          {% endif %}
+        </div>
+
+        {% if s.get('description') %}
+          <div class="service-desc">{{ s.description }}</div>
+        {% endif %}
+
+        {% if page.get('whatsapp') %}
+          <a class="btn btn-outline w-100 mt-auto"
+             href="https://wa.me/{{ page.whatsapp | replace(' ','') }}?text={{ ('Hola, me interesa el servicio: ' ~ s.title)|urlencode }}"
+             target="_blank">
+            <i class="bi bi-whatsapp me-1"></i> Preguntar por WhatsApp
+          </a>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<!-- INFORMACIÓN -->
 <section class="container" id="info">
   <h2 class="mb-3">Información</h2>
   <div class="highlights mb-3">
@@ -453,7 +590,7 @@
   </div>
 </section>
 
-<!-- VISÍTANOS (MAPA mejorado) -->
+<!-- VISÍTANOS -->
 <section id="visitanos" class="visit py-5">
   <div class="container">
     <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
@@ -549,7 +686,8 @@
       {% if page.get('business_name') %}© {{ 2025 }} <b>{{ page.business_name }}</b>.{% endif %} Todos los derechos reservados.
     </div>
     <div class="d-flex gap-3 flex-wrap">
-      {% if productos %}<a class="text-secondary" href="#productos">Shop</a>{% endif %}
+      {% if productos_fisicos %}<a class="text-secondary" href="#productos">Productos</a>{% endif %}
+      {% if servicios %}<a class="text-secondary" href="#servicios">Servicios</a>{% endif %}
       {% if posts %}<a class="text-secondary" href="#novedades">Novedades</a>{% endif %}
       <a class="text-secondary" href="#contacto">Contacto</a>
     </div>
@@ -565,7 +703,7 @@
 </a>
 {% endif %}
 
-<!-- Modal Zoom (solo si hay imágenes de productos) -->
+<!-- Modal Zoom -->
 <div class="modal fade" id="zoomModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-xl">
     <div class="modal-content bg-transparent border-0">
@@ -574,13 +712,13 @@
   </div>
 </div>
 
-<!-- Styles & Scripts -->
+<!-- Leaflet / Bootstrap -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-  // Zoom modal (productos)
+  // ================ ZOOM IMAGEN PRODUCTO =================
   document.querySelectorAll('.img-zoom-trigger')?.forEach(el=>{
     el.addEventListener('click', e=>{
       const src = e.currentTarget.getAttribute('data-img-src') || e.currentTarget.src;
@@ -589,9 +727,11 @@
     })
   });
 
-  // Chips categorías -> filtro
-  const chips = document.querySelectorAll('.chip');
+  // ================ FILTRO POR CATEGORÍA (chips) =================
+  const chipsWrap = document.getElementById('chips');
+  const chips = chipsWrap ? chipsWrap.querySelectorAll('.chip') : [];
   const grid  = document.getElementById('prodGrid');
+
   chips.forEach(ch=>{
     ch.addEventListener('click', ()=>{
       chips.forEach(c=>c.classList.remove('active'));
@@ -600,82 +740,248 @@
       grid?.querySelectorAll('.card-prod').forEach(card=>{
         card.style.display = (cat==='all' || card.dataset.cat===cat) ? '' : 'none';
       });
-      // Reflow para que no queden huecos al ocultar
+      // reflow para evitar huecos raros
       grid?.offsetHeight;
     });
   });
 
-  // Ordenar por precio
+  // ================ ORDENAMIENTO =================
   const sortSel = document.getElementById('sort');
   sortSel?.addEventListener('change', ()=>{
-    const cards = Array.from(grid.querySelectorAll('.card-prod')).filter(c=>c.style.display!=='none');
-    const byPrice = c => parseFloat((c.querySelector('.prod-price')?.textContent || '').replace(/[^0-9.]/g,'') || 0);
-    if (sortSel.value==='low') cards.sort((a,b)=>byPrice(a)-byPrice(b));
+    const cards = Array
+      .from(grid.querySelectorAll('.card-prod'))
+      .filter(c=>c.style.display!=='none');
+    const byPrice = c => parseFloat(
+      (c.querySelector('.prod-price')?.textContent || '')
+        .replace(/[^0-9.]/g,'') || 0
+    );
+    if (sortSel.value==='low')  cards.sort((a,b)=>byPrice(a)-byPrice(b));
     if (sortSel.value==='high') cards.sort((a,b)=>byPrice(b)-byPrice(a));
-    if (sortSel.value==='new') cards.sort(()=>0.5-Math.random());
+    if (sortSel.value==='new')  cards.sort(()=>0.5-Math.random());
     cards.forEach(c=>grid.appendChild(c));
   });
 
-  // Tallas -> selección visual y accesible
+  // ================ TALLAS (marcar activa) =================
   document.querySelectorAll('.card-prod').forEach(card=>{
     const sizeEls = card.querySelectorAll('.size');
     sizeEls.forEach(s=>{
-      function activate(){ sizeEls.forEach(x=>x.classList.remove('active')); s.classList.add('active'); }
+      function activate(){
+        sizeEls.forEach(x=>x.classList.remove('active'));
+        s.classList.add('active');
+      }
       s.addEventListener('click', activate);
-      s.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); activate(); }});
+      s.addEventListener('keydown', e=>{
+        if(e.key==='Enter' || e.key===' '){
+          e.preventDefault();
+          activate();
+        }
+      });
     });
   });
 
-  // WhatsApp: cotizar/buy
+  // ================ WHATSAPP / COTIZACIÓN =================
   const telefono = "{{ page.get('whatsapp','') | replace(' ','') }}";
-  function buildQuote(){
-    let mensaje = "Hola, quiero cotizar:%0A";
-    let count = 0;
-    document.querySelectorAll('.card-prod').forEach(card=>{
-      const title = card.querySelector('.prod-title')?.textContent?.trim();
-      const qty   = card.querySelector('input[type=number]')?.valueAsNumber || 0;
-      const size  = card.querySelector('.size.active')?.dataset.size || '';
-      if(qty>0){ count++; mensaje += `• ${title}${size?(" ("+size+")"):""} x ${qty}%0A`; }
-    });
-    return {mensaje, count};
+
+  // estado temporal para el modal
+  let cotizacionLineas = [];   // array de strings "- Producto X (Talla) x Cant"
+  let compraIndividual = false; // true si vino de "buy now" 1 producto
+
+  const cotizarForm           = document.getElementById('cotizarForm');
+  const cotizarModalEl        = document.getElementById('cotizarModal');
+  const resumenSeleccionDiv   = document.getElementById('resumenSeleccion');
+  const nombreClienteInput    = document.getElementById('nombreClienteInput');
+  const errorModalNombre      = document.getElementById('errorModalNombre');
+  const enviarCotizacionBtn   = document.getElementById('enviarCotizacionBtn');
+
+  const bsCotizarModal = cotizarModalEl ? new bootstrap.Modal(cotizarModalEl) : null;
+
+  // helper: arma "- Nombre (talla) x cant"
+  function lineaProducto(card){
+    const title = card.querySelector('.prod-title')?.textContent?.trim() || 'Producto';
+    const qtyInput = card.querySelector('.qty-input');
+    const qty = qtyInput?.valueAsNumber || 0;
+    const sizeSel = card.querySelector('.size.active')?.dataset.size || '';
+    if(qty <= 0) return null;
+    return `- ${title}${sizeSel?(" ("+sizeSel+")"):""} x ${qty}`;
   }
 
-  document.getElementById('cotizarForm')?.addEventListener('submit', e=>{
-    e.preventDefault();
-    if(!telefono){ alert("No hay número de WhatsApp configurado."); return; }
-    const {mensaje, count} = buildQuote();
-    if(!count){ alert("Selecciona al menos 1 producto con cantidad > 0"); return; }
-    window.open(`https://wa.me/${telefono}?text=${mensaje}`, '_blank');
+  // sumar rápido con "+"
+  document.querySelectorAll('.card-prod .add-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const wrap = btn.closest('.card-prod');
+      const qtyInput = wrap.querySelector('.qty-input');
+      qtyInput.value = (qtyInput.valueAsNumber || 0) + 1;
+      btn.classList.add('btn-success');
+      setTimeout(()=>btn.classList.remove('btn-success'), 450);
+    });
   });
 
-  window.addToQuote = function(title, btn){
-    const wrap = btn.closest('.card-prod');
-    const qtyInput = wrap.querySelector('input[type=number]');
-    qtyInput.value = (qtyInput.valueAsNumber || 0) + 1;
-    btn.classList.add('btn-success'); setTimeout(()=>btn.classList.remove('btn-success'), 450);
-  }
+  // flujo "Cotizar por WhatsApp" (varios productos)
+  cotizarForm?.addEventListener('submit', e=>{
+    e.preventDefault();
+    if(!telefono){
+      alert("No hay número de WhatsApp configurado.");
+      return;
+    }
 
-  window.buyNow = function(title, btn){
-    if(!telefono){ alert("No hay número de WhatsApp configurado."); return; }
-    const wrap = btn.closest('.card-prod');
-    const qty  = wrap.querySelector('input[type=number]')?.valueAsNumber || 1;
-    const size = wrap.querySelector('.size.active')?.dataset.size || '';
-    const line = `Hola, me interesa: ${title}${size?(" ("+size+")"):""} x ${qty}`;
-    window.open(`https://wa.me/${telefono}?text=${encodeURIComponent(line)}`, '_blank');
-  }
+    compraIndividual = false;
+    cotizacionLineas = [];
 
+    // recorremos TODOS los productos visibles (aunque estén ocultos por filtro igual cuenta, tú decides)
+    document.querySelectorAll('.card-prod').forEach(card=>{
+      const l = lineaProducto(card);
+      if(l){ cotizacionLineas.push(l); }
+    });
+
+    if(!cotizacionLineas.length){
+      alert("Selecciona al menos 1 producto con cantidad > 0 🙏");
+      return;
+    }
+
+    // pintar preview en el modal
+    resumenSeleccionDiv.innerHTML = cotizacionLineas.map(l => `<div>${l}</div>`).join('');
+    // reset errores
+    errorModalNombre.classList.add('d-none');
+    nombreClienteInput.classList.remove('is-invalid');
+    // abrir modal
+    bsCotizarModal?.show();
+    setTimeout(()=>{ nombreClienteInput.focus(); }, 250);
+  });
+
+  // flujo "buy now" de un producto (botón con ícono de whatsapp)
+  document.querySelectorAll('.card-prod .buy-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      if(!telefono){
+        alert("No hay número de WhatsApp configurado.");
+        return;
+      }
+
+      compraIndividual = true;
+      cotizacionLineas = [];
+
+      const card = btn.closest('.card-prod');
+
+      // si el user no puso cantidad, asumimos 1
+      const qtyInput = card.querySelector('.qty-input');
+      if(qtyInput && (!qtyInput.valueAsNumber || qtyInput.valueAsNumber <=0)){
+        qtyInput.value = 1;
+      }
+
+      const l = lineaProducto(card);
+      if(l){ cotizacionLineas.push(l); }
+
+      if(!cotizacionLineas.length){
+        alert("Selecciona cantidad válida 🙏");
+        return;
+      }
+
+      resumenSeleccionDiv.innerHTML = cotizacionLineas.map(l => `<div>${l}</div>`).join('');
+      errorModalNombre.classList.add('d-none');
+      nombreClienteInput.classList.remove('is-invalid');
+      bsCotizarModal?.show();
+      setTimeout(()=>{ nombreClienteInput.focus(); }, 250);
+    });
+  });
+
+  // CLICK EN "Enviar por WhatsApp" dentro del modal
+  enviarCotizacionBtn?.addEventListener('click', ()=>{
+    const nombreCliente = (nombreClienteInput.value || '').trim();
+    if(!nombreCliente){
+      errorModalNombre.classList.remove('d-none');
+      nombreClienteInput.classList.add('is-invalid');
+      nombreClienteInput.focus();
+      return;
+    }
+
+    // armamos el mensaje final
+    // %0A = salto de línea URL-encoded
+    let mensaje = `Hola, soy ${nombreCliente} y quiero ${compraIndividual ? 'pedir' : 'cotizar'}:%0A`;
+    cotizacionLineas.forEach(linea=>{
+      mensaje += encodeURIComponent(linea) + "%0A";
+    });
+
+    const urlWhatsapp = `https://wa.me/${telefono}?text=${mensaje}`;
+    window.open(urlWhatsapp, '_blank');
+  });
+
+  // ================ CONTACTO -> openWhats (ya pedimos nombre ahí con inputs) =================
   window.openWhats = function(e){
-    e.preventDefault(); // asegura que no lance error
-    if(!telefono){ alert("No hay número de WhatsApp configurado."); return; }
+    e.preventDefault();
+    if(!telefono){
+      alert("No hay número de WhatsApp configurado.");
+      return;
+    }
     const name = document.getElementById('cname')?.value || '';
     const mail = document.getElementById('cmail')?.value || '';
     const msg  = document.getElementById('cmsg')?.value || '';
     const t = `Hola, soy ${name}. ${mail?("Email: "+mail+". "):""}${msg}`;
     window.open(`https://wa.me/${telefono}?text=${encodeURIComponent(t)}`, '_blank');
   }
+
+  // ================ MAPA (IntersectionObserver lazy init) =================
+  (function(){
+    const hasCoords = {{ 'true' if (page.get('lat') is not none and page.get('lng') is not none) else 'false' }};
+    if(!hasCoords) return;
+
+    const lat = {{ page.get('lat') if page.get('lat') is not none else 'null' }};
+    const lng = {{ page.get('lng') if page.get('lng') is not none else 'null' }};
+
+    function initMap(){
+      const target = document.getElementById('map');
+      if(!target || target.dataset.ready) return;
+      target.dataset.ready = '1';
+
+      const map = L.map('map', { scrollWheelZoom:false, zoomControl:true }).setView([lat,lng], 16);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom:19,
+        attribution:'&copy; OpenStreetMap'
+      }).addTo(map);
+      L.marker([lat,lng]).addTo(map).bindPopup({{ page.get('business_name','"Negocio"')|tojson }});
+      setTimeout(()=>map.invalidateSize(), 250);
+      window.addEventListener('resize', ()=>map.invalidateSize());
+      const off = document.getElementById('navOff');
+      off?.addEventListener('hidden.bs.offcanvas', ()=>setTimeout(()=>map.invalidateSize(), 200));
+    }
+
+    document.addEventListener('DOMContentLoaded', ()=>{
+      const target = document.getElementById('map');
+      if(!target) return;
+      if('IntersectionObserver' in window){
+        const io = new IntersectionObserver(entries=>{
+          entries.forEach(e=>{
+            if(e.isIntersecting){
+              initMap();
+              io.disconnect();
+            }
+          });
+        }, {threshold:.15});
+        io.observe(target);
+      } else {
+        initMap();
+      }
+    });
+  })();
+
+  // ================ ESTRELLAS (reseñas) =================
+  (() => {
+    const stars = document.querySelectorAll('.star-icon');
+    const input = document.getElementById('estrellas');
+    if(!stars.length || !input) return;
+    stars.forEach(s=>{
+      s.addEventListener('click', ()=>{
+        const v = parseInt(s.dataset.value);
+        input.value = v;
+        stars.forEach(i=>{
+          const n = parseInt(i.dataset.value);
+          i.classList.remove('text-warning','text-secondary');
+          i.classList.add(n<=v ? 'text-warning' : 'text-secondary');
+        });
+      });
+    });
+  })();
 </script>
 
-<!-- Leaflet + Mapa robusto (lazy init, resize-safe) -->
+<!-- Leaflet init -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 <script>
@@ -696,16 +1002,13 @@
     const marker = L.marker([lat, lng]).addTo(map);
     marker.bindPopup(`<strong>{{ page.get('business_name','')|e }}</strong><br>{{ (page.get('address','') or '')|e }}`);
 
-    // Ajustes de tamaño
     setTimeout(()=>map.invalidateSize(), 250);
     window.addEventListener('resize', ()=>map.invalidateSize());
 
-    // Si el nav offcanvas se cierra (por si abres mapa luego), invalida tamaño
     const off = document.getElementById('navOff');
     off?.addEventListener('hidden.bs.offcanvas', ()=>setTimeout(()=>map.invalidateSize(), 200));
   }
 
-  // Lazy init con IntersectionObserver
   document.addEventListener('DOMContentLoaded', ()=>{
     const target = document.getElementById('map');
     if(!target) return;

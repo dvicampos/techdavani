@@ -1145,12 +1145,13 @@ def create_producto():
     page_id = user.get('page_id')
 
     if request.method == 'POST':
-        title = request.form['title']
-        description = request.form['description']
-        price = float(request.form['price'])
-        show_price = 'show_price' in request.form
+        title        = request.form['title']
+        description  = request.form['description']
+        price        = float(request.form['price'])
+        show_price   = 'show_price' in request.form
 
-        # Manejo de imagen
+        tipo         = request.form.get('tipo', 'producto').strip().lower()  
+
         image_file = request.files['image']
         image_path = None
         if image_file and image_file.filename != '':
@@ -1165,7 +1166,6 @@ def create_producto():
             full_path = os.path.join(folder, final_filename)
             image_file.save(full_path)
 
-            # Guardar ruta relativa
             image_path = f"{slug}/{today}/{final_filename}"
 
         mongo.db.productos.insert_one({
@@ -1174,13 +1174,16 @@ def create_producto():
             'price': price,
             'image': image_path,
             'page_id': page_id,
-            'show_price': show_price
+            'show_price': show_price,
+
+            'tipo': tipo
         })
 
-        flash('Producto creado correctamente.')
+        flash('Elemento creado correctamente.')
         return redirect(url_for('list_productos'))
 
-    return render_template('create_producto.html')
+    tipos_posibles = ['producto', 'servicio']
+    return render_template('create_producto.html', tipos_posibles=tipos_posibles)
 
 @app.route('/edit_producto/<producto_id>', methods=['GET', 'POST'])
 @require_active_subscription
@@ -1193,14 +1196,15 @@ def edit_producto(producto_id):
         return redirect(url_for('list_productos'))
 
     if request.method == 'POST':
-        title = request.form['title']
-        description = request.form['description']
-        price = float(request.form['price'])
-        show_price = 'show_price' in request.form
+        title        = request.form['title']
+        description  = request.form['description']
+        price        = float(request.form['price'])
+        show_price   = 'show_price' in request.form
 
-        # Imagen nueva (si se carga)
+        tipo         = request.form.get('tipo', 'producto').strip().lower()
+
         image_file = request.files.get('image')
-        image_path = producto.get('image')  # mantener la anterior si no hay nueva
+        image_path = producto.get('image')
 
         if image_file and image_file.filename != '':
             slug = slugify(title)
@@ -1223,14 +1227,17 @@ def edit_producto(producto_id):
                 'description': description,
                 'price': price,
                 'image': image_path,
-                'show_price': show_price
+                'show_price': show_price,
+
+                'tipo': tipo
             }}
         )
 
-        flash('Producto actualizado correctamente.')
+        flash('Elemento actualizado correctamente.')
         return redirect(url_for('list_productos'))
 
-    return render_template('edit_producto.html', producto=producto)
+    tipos_posibles = ['producto', 'servicio']
+    return render_template('edit_producto.html', producto=producto, tipos_posibles=tipos_posibles)
 
 @app.route('/delete_producto/<producto_id>', methods=['POST'])
 @require_active_subscription
@@ -1861,8 +1868,13 @@ def detalle_negocio(nombre):
     # Colecciones asociadas
     posts     = list(mongo.db.posts.find({'page_id': negocio['_id']}).limit(3))
     avisos    = list(mongo.db.avisos.find({'page_id': negocio['_id']}))
-    productos = list(mongo.db.productos.find({'page_id': negocio['_id']}))
+    productos_all = list(mongo.db.productos.find({'page_id': negocio['_id']}))
+
+    productos_fisicos = [p for p in productos_all if p.get('tipo', 'producto') == 'producto']
+    servicios        = [p for p in productos_all if p.get('tipo', 'producto') == 'servicio']
+
     reseñas   = list(mongo.db.reseñas.find({'page_id': negocio['_id']}))
+
 
     # Alta de reseña (POST)
     if request.method == 'POST':
@@ -1905,7 +1917,8 @@ def detalle_negocio(nombre):
         negocios=negocios,
         posts=posts,
         avisos=avisos,
-        productos=productos,
+        productos_fisicos=productos_fisicos,
+        servicios=servicios,
         reseñas=reseñas,
         services_list=services_list,   # <-- para chips
         pm_list=pm_list                # <-- para chips

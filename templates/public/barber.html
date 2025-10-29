@@ -156,7 +156,7 @@
       background: linear-gradient(90deg, #0b1a2b, #1c4bb8 35%, #7c2132 70%, #0b1a2b);
       box-shadow:0 10px 30px rgba(0,0,0,.5);
     }
-    body.theme-night .navbar-brand, 
+    body.theme-night .navbar-brand,
     body.theme-night #mainNavbar .nav-link{ color:#fff !important; }
 
     body.theme-night .header{
@@ -205,15 +205,8 @@
     body.theme-night #map{ border:1px solid rgba(233,195,101,.25); }
     body.theme-night footer{ background: linear-gradient(90deg, #0b1a2b, #1c4bb8 40%, #7c2132 85%); border-top:1px solid rgba(255,255,255,.08); }
     body.theme-night footer a{ color:#fff; }
-    footer {
-            margin-bottom: 4%;
-        }
-
-        @media (max-width: 768px) {
-            footer {
-                margin-bottom: 10%;
-            }
-        }
+    footer { margin-bottom: 4%; }
+    @media (max-width: 768px) { footer { margin-bottom: 10%; } }
   </style>
 </head>
 
@@ -232,8 +225,12 @@
         <ul class="navbar-nav">
           <li class="nav-item"><a class="nav-link" href="#info">Información</a></li>
           <li class="nav-item"><a class="nav-link" href="#contacto">Contacto</a></li>
-          {% if posts %}<li class="nav-item"><a class="nav-link" href="#publicaciones">Publicaciones</a></li>{% endif %}
-          {% if productos %}<li class="nav-item"><a class="nav-link" href="#productos">Productos</a></li>{% endif %}
+          {% if posts %}
+          <li class="nav-item"><a class="nav-link" href="#publicaciones">Publicaciones</a></li>
+          {% endif %}
+          {% if (servicios and servicios|length>0) or (productos_fisicos and productos_fisicos|length>0) %}
+          <li class="nav-item"><a class="nav-link" href="#productos">Servicios / Productos</a></li>
+          {% endif %}
           <li class="nav-item"><a class="nav-link" href="#reseñas">Reseñas</a></li>
         </ul>
       </div>
@@ -287,7 +284,9 @@
           {% endif %}
         </div>
         <div class="col-md-8 text-md-start">
-          {% if page.get('slogan') %}<span class="hero-pill"><i class="fa-solid fa-scissors"></i>{{ page.get('slogan') }}</span>{% endif %}
+          {% if page.get('slogan') %}
+          <span class="hero-pill"><i class="fa-solid fa-scissors"></i>{{ page.get('slogan') }}</span>
+          {% endif %}
           <h1 class="hero-title display-5 fw-bold mt-3">{{ page.get('business_name','Barbería') }}</h1>
           <div class="d-flex flex-wrap gap-2 mt-2">
             <a href="#contacto" class="btn hero-btn"><i class="bi bi-whatsapp me-2"></i>Reservar por WhatsApp</a>
@@ -354,8 +353,9 @@
       </div>
     </div>
   </section>
-  <!-- SERVICIOS / PRECIOS RÁPIDOS (muestra si NO hay productos) -->
-  {% if not productos %}
+
+  <!-- SERVICIOS / PRECIOS RÁPIDOS (sólo si no hay datos cargados para cotizar) -->
+  {% if not ( (servicios and servicios|length>0) or (productos_fisicos and productos_fisicos|length>0) ) %}
   <section class="container container-section my-5" id="servicios">
     <h2 class="mb-1 fw-bold"><i class="fa-solid fa-scissors me-2"></i>Servicios</h2>
     <p class="text-muted mb-4">Precios orientativos — pregunta por promociones vigentes.</p>
@@ -404,59 +404,172 @@
     {% endif %}
   </section>
 
-  <!-- PRODUCTOS / SERVICIOS COTIZABLES -->
+  <!-- SERVICIOS / PRODUCTOS COTIZABLES -->
   <section class="container container-section my-5" id="productos">
-    {% if productos and productos|length > 0 %}
-      <h2 class="mb-3 fw-bold"><i class="bi bi-list-stars me-2"></i>Servicios / Productos</h2>
+    <h2 class="mb-3 fw-bold"><i class="bi bi-list-stars me-2"></i>Servicios / Productos</h2>
+
+    {% if (servicios and servicios|length>0) or (productos_fisicos and productos_fisicos|length>0) %}
       <div class="alert alert-info d-flex align-items-center p-3 rounded shadow-sm mb-3" role="alert">
         <i class="bi bi-info-circle-fill me-3 fs-4 text-primary"></i>
         <div>
           <h6 class="mb-1 fw-bold">Cotiza fácilmente</h6>
-          <p class="mb-0 small">Elige cantidades y pulsa <strong>“Cotizar por WhatsApp”</strong>.</p>
+          <p class="mb-0 small">
+            Elige cantidades de lo que necesitas y pulsa <strong>“Cotizar”</strong>.
+            Te pediremos tu nombre y abriremos WhatsApp con todo listo.
+          </p>
         </div>
       </div>
 
       <form id="form-cotizar" class="row g-3">
-        {% for producto in productos %}
-        <div class="col-12 col-sm-6 col-md-4">
-          <div class="card h-100 card-barber">
-            {% if producto.image %}
-              <img src="{{ url_for('uploaded_file', filename=producto.image) }}" alt="{{ producto.title }}"
-                   class="card-img-top img-zoom-trigger"
-                   style="object-fit: cover; width: 100%; height: 250px;"
-                   data-bs-toggle="modal" data-bs-target="#zoomModal"
-                   data-img-src="{{ url_for('uploaded_file', filename=producto.image) }}">
-            {% else %}
-              <img src="{{ url_for('static', filename='img/default-product.png') }}" alt="Imagen no disponible"
-                   class="card-img-top img-zoom-trigger" style="object-fit:cover;width:100%;height:250px"
-                   data-bs-toggle="modal" data-bs-target="#zoomModal"
-                   data-img-src="{{ url_for('static', filename='img/default-product.png') }}">
-            {% endif %}
-            <div class="card-body d-flex flex-column py-3 px-3">
-              <div class="d-flex justify-content-between align-items-start">
-                <h6 class="card-title mb-1 fw-semibold text-light">{{ producto.title }}</h6>
-                {% if producto.show_price %}
-                  <span class="badge badge-gold product-price">${{ "%.2f"|format(producto.price) }}</span>
+
+        <!-- SERVICIOS -->
+        {% if servicios and servicios|length>0 %}
+          <div class="col-12">
+            <h3 class="h5 fw-bold d-flex align-items-center gap-2 text-light">
+              <i class="bi bi-scissors text-warning"></i> Servicios
+            </h3>
+          </div>
+
+          {% for item in servicios %}
+          <div class="col-12 col-sm-6 col-md-4">
+            <div class="card h-100 card-barber">
+              {% if item.image %}
+                <img
+                  src="{{ url_for('uploaded_file', filename=item.image) }}"
+                  alt="{{ item.title }}"
+                  class="card-img-top img-zoom-trigger"
+                  style="object-fit:cover; width:100%; height:250px; cursor:pointer;"
+                  data-bs-toggle="modal" data-bs-target="#zoomModal"
+                  data-img-src="{{ url_for('uploaded_file', filename=item.image) }}"
+                >
+              {% else %}
+                <img
+                  src="{{ url_for('static', filename='img/default-product.png') }}"
+                  alt="Imagen no disponible"
+                  class="card-img-top img-zoom-trigger"
+                  style="object-fit:cover; width:100%; height:250px; cursor:pointer;"
+                  data-bs-toggle="modal" data-bs-target="#zoomModal"
+                  data-img-src="{{ url_for('static', filename='img/default-product.png') }}"
+                >
+              {% endif %}
+
+              <div class="card-body d-flex flex-column py-3 px-3">
+                <div class="d-flex justify-content-between align-items-start">
+                  <h6 class="card-title mb-1 fw-semibold text-light">{{ item.title }}</h6>
+                  <span class="badge badge-gold product-price">Servicio</span>
+                </div>
+
+                {% if item.description %}
+                <p class="card-text text-info small mb-2">{{ item.description }}</p>
                 {% endif %}
-              </div>
-              {% if producto.description %}<p class="card-text text-info small mb-2">{{ producto.description }}</p>{% endif %}
-              <div class="mt-auto">
-                <label for="prod_{{ loop.index }}" class="form-label small mb-1 text-success">Cantidad</label>
-                <input type="number" class="form-control form-control-sm" id="prod_{{ loop.index }}"
-                  name="prod_{{ producto.title | replace(' ', '_') }}" min="0" value="0" placeholder="0"
-                  aria-label="Cantidad para {{ producto.title }}">
+
+                {% if item.show_price %}
+                <div class="mb-2">
+                  <span class="badge bg-success text-white fw-semibold" style="font-size: .9rem;">
+                    ${{ "%.2f"|format(item.price) }}
+                  </span>
+                </div>
+                {% endif %}
+
+                <div class="mt-auto">
+                  <label class="form-label small mb-1 text-success">Cantidad / Nº de citas</label>
+                  <input
+                    type="number"
+                    class="form-control form-control-sm"
+                    style="border:2px solid rgba(255,255,255,.2); background:#0f151d; color:#fff;"
+                    min="0"
+                    value="0"
+                    id="serv_{{ loop.index0 }}"
+                    name="prod_{{ item.title | replace(' ', '_') }}"
+                    data-item-nombre="{{ item.title }}"
+                  >
+                </div>
               </div>
             </div>
           </div>
-        </div>
-        {% endfor %}
+          {% endfor %}
+        {% endif %}
 
+        <!-- PRODUCTOS FÍSICOS -->
+        {% if productos_fisicos and productos_fisicos|length>0 %}
+          <div class="col-12 mt-2">
+            <h3 class="h5 fw-bold d-flex align-items-center gap-2 text-light">
+              <i class="bi bi-box-seam text-success"></i> Productos
+            </h3>
+          </div>
+
+          {% for item in productos_fisicos %}
+          <div class="col-12 col-sm-6 col-md-4">
+            <div class="card h-100 card-barber">
+              {% if item.image %}
+                <img
+                  src="{{ url_for('uploaded_file', filename=item.image) }}"
+                  alt="{{ item.title }}"
+                  class="card-img-top img-zoom-trigger"
+                  style="object-fit:cover; width:100%; height:250px; cursor:pointer;"
+                  data-bs-toggle="modal" data-bs-target="#zoomModal"
+                  data-img-src="{{ url_for('uploaded_file', filename=item.image) }}"
+                >
+              {% else %}
+                <img
+                  src="{{ url_for('static', filename='img/default-product.png') }}"
+                  alt="Imagen no disponible"
+                  class="card-img-top img-zoom-trigger"
+                  style="object-fit:cover; width:100%; height:250px; cursor:pointer;"
+                  data-bs-toggle="modal" data-bs-target="#zoomModal"
+                  data-img-src="{{ url_for('static', filename='img/default-product.png') }}"
+                >
+              {% endif %}
+
+              <div class="card-body d-flex flex-column py-3 px-3">
+                <div class="d-flex justify-content-between align-items-start">
+                  <h6 class="card-title mb-1 fw-semibold text-light">{{ item.title }}</h6>
+                  <span class="badge badge-gold product-price">Producto</span>
+                </div>
+
+                {% if item.description %}
+                <p class="card-text text-info small mb-2">{{ item.description }}</p>
+                {% endif %}
+
+                {% if item.show_price %}
+                <div class="mb-2">
+                  <span class="badge bg-success text-white fw-semibold" style="font-size: .9rem;">
+                    ${{ "%.2f"|format(item.price) }}
+                  </span>
+                </div>
+                {% endif %}
+
+                <div class="mt-auto">
+                  <label class="form-label small mb-1 text-success">Cantidad</label>
+                  <input
+                    type="number"
+                    class="form-control form-control-sm"
+                    style="border:2px solid rgba(255,255,255,.2); background:#0f151d; color:#fff;"
+                    min="0"
+                    value="0"
+                    id="prod_{{ loop.index0 }}"
+                    name="prod_{{ item.title | replace(' ', '_') }}"
+                    data-item-nombre="{{ item.title }}"
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        {% endif %}
+
+        <!-- Botón Cotizar -->
         <div class="col-12 text-center mt-1">
           <button type="submit" class="btn btn-dark btn-lg rounded-pill px-4">
-            <i class="bi bi-whatsapp fs-5 me-2"></i> Cotizar por WhatsApp
+            <i class="bi bi-whatsapp fs-5 me-2"></i> Cotizar
           </button>
         </div>
       </form>
+    {% else %}
+      <div class="alert alert-warning p-3 rounded shadow-sm mt-3 text-center text-light" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        Aún no hay servicios ni productos configurados para cotizar.
+      </div>
     {% endif %}
 
     <!-- Modal zoom -->
@@ -472,6 +585,45 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal Cotizar: pide nombre y muestra resumen -->
+    <div class="modal fade" id="cotizarModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background:#0f151d; color:#fff; border:1px solid rgba(255,255,255,.15); box-shadow:0 20px 60px rgba(0,0,0,.8); border-radius:16px;">
+          <div class="modal-header border-0" style="background: linear-gradient(90deg,#1c4bb8,#7c2132); color:#fff;">
+            <h5 class="modal-title fw-bold">Antes de cotizar ✍️</h5>
+            <button class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          </div>
+          <div class="modal-body">
+            <p class="small text-light mb-2">
+              Déjanos tu nombre para dirigirnos a ti cuando te contactemos por WhatsApp.
+            </p>
+            <div class="mb-3">
+              <label class="form-label">Tu nombre</label>
+              <input type="text" class="form-control" id="nombreClienteInput"
+                     placeholder="Ej. Juan Morales"
+                     style="background:#0f151d; color:#fff; border:1px solid #394b63;">
+              <div class="text-danger small mt-1 d-none" id="errorModalNombre">Por favor escribe tu nombre 🙏</div>
+            </div>
+
+            <div>
+              <div class="form-label mb-1">Tu selección:</div>
+              <div id="resumenSeleccion"
+                   class="bg-dark border rounded p-2 small text-white"
+                   style="max-height:220px; overflow-y:auto; border:1px solid #394b63; background:#0f151d;">
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer border-0 justify-content-between">
+            <button class="btn btn-outline-light rounded-pill" data-bs-dismiss="modal">Cancelar</button>
+            <button class="btn btn-dark rounded-pill" id="enviarCotizacionBtn">
+              <i class="bi bi-whatsapp me-1"></i> Enviar por WhatsApp
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </section>
 
   <!-- FAB WhatsApp -->
@@ -603,8 +755,10 @@
   </footer>
 
   <!-- SCRIPTS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Zoom imagen -->
   <script>
-    // Zoom de imagen en modal
     document.querySelectorAll('.img-zoom-trigger').forEach(img=>{
       img.addEventListener('click', e=>{
         const src = e.currentTarget.getAttribute('data-img-src');
@@ -612,32 +766,84 @@
         if(zoomed) zoomed.src = src;
       })
     });
+  </script>
 
-    // Cotización por WhatsApp
+  <!-- Cotizar con modal -->
+  <script>
     const formCotizar = document.getElementById('form-cotizar');
-    if (formCotizar) {
-      formCotizar.addEventListener('submit', function (e) {
-        e.preventDefault();
-        const whatsappNumber = "{{ page.get('whatsapp','') | replace(' ', '') }}";
-        let mensaje = "Hola, quiero cotizar estos servicios:%0A";
-        let inputs = formCotizar.querySelectorAll('input[type=number]');
-        let haySeleccion = false;
+    const resumenSeleccionDiv = document.getElementById('resumenSeleccion');
+    const nombreClienteInput = document.getElementById('nombreClienteInput');
+    const errorModalNombre = document.getElementById('errorModalNombre');
+    const enviarCotizacionBtn = document.getElementById('enviarCotizacionBtn');
+    let cotizacionLineas = [];
 
-        inputs.forEach(input=>{
-          let cantidad = parseInt(input.value);
-          if (cantidad>0) {
-            haySeleccion = true;
-            let nombre = input.name.replace('prod_', '').replace(/_/g,' ');
-            mensaje += `- ${nombre}: ${cantidad}%0A`;
+    if (formCotizar){
+      formCotizar.addEventListener('submit', (e)=>{
+        e.preventDefault();
+
+        cotizacionLineas = [];
+        const inputs = formCotizar.querySelectorAll('input[type=number]');
+        inputs.forEach(inp=>{
+          const n = parseInt(inp.value || "0");
+          if (n>0){
+            const nombre = inp.getAttribute('data-item-nombre') ||
+                           inp.name.replace('prod_','').replace(/_/g,' ');
+            cotizacionLineas.push(`- ${nombre}: ${n}`);
           }
         });
 
-        if (!haySeleccion) { alert("Por favor, ingresa cantidad para al menos un producto."); return; }
-        window.open(`https://wa.me/${whatsappNumber}?text=${mensaje}`, '_blank');
+        if (cotizacionLineas.length===0){
+          alert("Ingresa cantidad para al menos un servicio o producto 🙏");
+          return;
+        }
+
+        // vista previa en modal
+        if (resumenSeleccionDiv){
+          resumenSeleccionDiv.innerHTML = cotizacionLineas
+            .map(l=>`<div>${l}</div>`)
+            .join('');
+        }
+
+        if (errorModalNombre){
+          errorModalNombre.classList.add('d-none');
+        }
+        if (nombreClienteInput){
+          nombreClienteInput.classList.remove('is-invalid');
+        }
+
+        const modalEl = document.getElementById('cotizarModal');
+        const modalObj = new bootstrap.Modal(modalEl);
+        modalObj.show();
+
+        setTimeout(()=>{ if(nombreClienteInput){ nombreClienteInput.focus(); } },250);
       });
     }
 
-    // Estrellas de reseña
+    if (enviarCotizacionBtn){
+      enviarCotizacionBtn.addEventListener('click', ()=>{
+        const nombre = (nombreClienteInput && nombreClienteInput.value || '').trim();
+        if (!nombre){
+          if (errorModalNombre){ errorModalNombre.classList.remove('d-none'); }
+          if (nombreClienteInput){
+            nombreClienteInput.classList.add('is-invalid');
+            nombreClienteInput.focus();
+          }
+          return;
+        }
+
+        const wa = "{{ page.get('whatsapp','')|replace(' ','') }}";
+        let msj = `Hola, soy ${encodeURIComponent(nombre)} y quiero cotizar:%0A`;
+        cotizacionLineas.forEach(l=>{
+          msj += encodeURIComponent(l) + "%0A";
+        });
+
+        window.open(`https://wa.me/${wa}?text=${msj}`, "_blank");
+      });
+    }
+  </script>
+
+  <!-- Estrellas de reseña -->
+  <script>
     const stars = document.querySelectorAll('.star-icon');
     const inputEstrellas = document.getElementById('estrellas');
     stars.forEach(star=>{
@@ -663,7 +869,8 @@
       if (lat !== null && lng !== null){
         const map = L.map('map', { scrollWheelZoom:false }).setView([lat,lng], 16);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
+          maxZoom: 19,
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
         }).addTo(map);
         const marker = L.marker([lat,lng]).addTo(map);
         marker.bindPopup(`<strong>{{ page.get('business_name')|e }}</strong><br>{{ (page.get('address') or '')|e }}`).openPopup();
@@ -672,6 +879,5 @@
     })();
   </script>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

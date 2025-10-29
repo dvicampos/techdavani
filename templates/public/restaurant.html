@@ -37,7 +37,10 @@
     }
 
     html{scroll-behavior:smooth}
-    body{font-family: ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial; background:var(--bg); color:var(--ink)}
+    body{
+      font-family: ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial;
+      background:var(--bg); color:var(--ink)
+    }
 
     /* NAV */
     .navbar{
@@ -66,18 +69,38 @@
       object-fit:cover; border-radius:999px; border:3px solid #fff;
       box-shadow:0 12px 36px rgba(2,6,23,.25);
     }
-    .pill{ display:inline-flex; gap:.5rem; align-items:center; padding:.35rem .75rem; border-radius:999px; background:rgba(255,255,255,.14); color:#fff; border:1px solid rgba(255,255,255,.24) }
-    .chips .chip{ display:inline-block; padding:.25rem .6rem; border:1px solid var(--line); border-radius:999px; color:var(--muted); margin:.25rem .35rem .25rem 0; font-weight:600; font-size:.85rem }
+    .pill{
+      display:inline-flex; gap:.5rem; align-items:center; padding:.35rem .75rem;
+      border-radius:999px; background:rgba(255,255,255,.14); color:#fff;
+      border:1px solid rgba(255,255,255,.24)
+    }
+    .chips .chip{
+      display:inline-block; padding:.25rem .6rem; border:1px solid var(--line);
+      border-radius:999px; color:var(--muted); margin:.25rem .35rem .25rem 0;
+      font-weight:600; font-size:.85rem
+    }
 
-    .btn-brand{ background:var(--brand)!important; border-color:var(--brand)!important; color:#fff!important; font-weight:700 }
+    .btn-brand{
+      background:var(--brand)!important; border-color:var(--brand)!important;
+      color:#fff!important; font-weight:700
+    }
     .btn-brand:hover{ filter:brightness(.96) }
-    .btn-outline-brand{ border-color:var(--brand)!important; color:var(--brand)!important }
-    .btn-outline-brand:hover{ background:var(--brand)!important; color:#fff!important }
+    .btn-outline-brand{
+      border-color:var(--brand)!important; color:var(--brand)!important
+    }
+    .btn-outline-brand:hover{
+      background:var(--brand)!important; color:#fff!important
+    }
 
-    .card-soft{ background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow) }
+    .card-soft{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow)
+    }
     .section-title{ font-weight:800; letter-spacing:.2px }
 
-    /* ===== MENÚ con filtros ===== */
+    /* ===== MENÚ (SOLO PRODUCTOS_FISICOS / PLATILLOS) ===== */
     .menu-tools{ gap:.6rem; flex-wrap:wrap }
     .menu-search{ max-width:480px }
     .tabs .btn{
@@ -85,24 +108,73 @@
       border:1px solid var(--line); background:transparent; color:var(--ink); font-weight:600
     }
     .tabs .btn.active{ background:var(--brand); color:#fff; border-color:transparent }
-    .menu-card{ display:flex; gap:14px; align-items:flex-start; padding:12px; border-bottom:1px dashed var(--line) }
+
+    .menu-card{
+      display:flex; flex-wrap:wrap;
+      gap:14px; align-items:flex-start;
+      padding:12px; border-bottom:1px dashed var(--line)
+    }
     .menu-card:last-child{ border-bottom:0 }
-    .menu-thumb{ width:86px; height:86px; border-radius:12px; object-fit:cover; border:1px solid var(--line); background:#fff }
+
+    .menu-thumb{
+      width:86px; height:86px; border-radius:12px; object-fit:cover;
+      border:1px solid var(--line); background:#fff
+    }
     .menu-name{ font-weight:800 }
     .menu-price{ font-weight:800; color:var(--brand) }
-    .badge-diet{ font-size:.72rem; border:1px solid var(--line); border-radius:999px; padding:.12rem .45rem; color:var(--muted) }
+    .badge-diet{
+      font-size:.72rem; border:1px solid var(--line);
+      border-radius:999px; padding:.12rem .45rem;
+      color:var(--muted)
+    }
 
-    /* ESPECIALES */
-    .special{ position:relative; overflow:hidden }
-    .special img{ width:100%; aspect-ratio: 4/3; object-fit:cover }
-    @supports not (aspect-ratio: 4/3){ .special img{ height:220px } }
-    .special .tag{ position:absolute; top:12px; left:12px; background:var(--brand); color:#fff; padding:.25rem .5rem; border-radius:999px; font-weight:700 }
+    .pedido-box label{
+      font-size:.7rem; color:var(--muted); margin:0;
+    }
+    .pedido-box input{min-width:70px;}
+
+    /* ===== SERVICIOS EXTRA (catering, eventos, etc) ===== */
+    .service-card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      height:100%;
+      padding:1rem 1.25rem;
+    }
+    .service-title{
+      font-weight:700;
+      color:var(--ink);
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:.5rem;
+      flex-wrap:wrap;
+    }
+    .service-price{
+      font-weight:800;
+      color:var(--brand);
+      white-space:nowrap;
+    }
+    .service-desc{
+      color:var(--muted);
+      font-size:.9rem;
+      margin-top:.5rem;
+      margin-bottom:1rem;
+    }
 
     /* GALERÍA */
-    .gallery img{ width:100%; aspect-ratio: 1/1; object-fit:cover; border-radius:10px; border:1px solid var(--line) }
+    .gallery img{
+      width:100%; aspect-ratio: 1/1;
+      object-fit:cover; border-radius:10px; border:1px solid var(--line)
+    }
 
     /* MAPA */
-    #map{ height: 340px; border-radius:16px; border:1px solid var(--line); overflow:hidden; box-shadow:var(--shadow) }
+    #map{
+      height: 340px; border-radius:16px;
+      border:1px solid var(--line); overflow:hidden;
+      box-shadow:var(--shadow)
+    }
 
     /* RESEÑAS */
     .star{ color:#fbbf24 }
@@ -118,11 +190,11 @@
     /* WhatsApp flotante */
     .floating-wa{
       position: fixed; bottom: 18px; right: 18px; z-index: 1050;
-      background:#25D366; color:#fff; border-radius:999px; padding:.7rem .9rem; box-shadow:0 12px 34px rgba(37,211,102,.35);
+      background:#25D366; color:#fff; border-radius:999px;
+      padding:.7rem .9rem; box-shadow:0 12px 34px rgba(37,211,102,.35);
     }
     .floating-wa:hover{ color:#fff; filter:brightness(.95) }
 
-    /* Responsive tweaks */
     @media (max-width: 991.98px){
       .menu-thumb{ width:74px; height:74px }
       .menu-card{ padding:10px }
@@ -146,10 +218,17 @@
     }
     .avisos-inline .chip{
       display:inline-flex; align-items:center; gap:.4rem;
-      padding:.25rem .6rem; border-radius:999px; border:1px dashed var(--line);
-      color:var(--ink); font-weight:600; white-space:nowrap;
+      padding:.25rem .6rem; border-radius:999px;
+      border:1px dashed var(--line);
+      color:var(--ink); font-weight:600;
+      white-space:nowrap;
     }
-    .avisos-inline time{ color:var(--muted); font-size:.8rem }
+    .avisos-inline time{
+      color:var(--muted); font-size:.8rem
+    }
+    .modal-content{
+      background-color: #000 !important;
+    }
   </style>
 
   <!-- JSON-LD -->
@@ -186,6 +265,7 @@
       <div id="navcollapse" class="collapse navbar-collapse">
         <ul class="navbar-nav ms-auto">
           <li class="nav-item"><a class="nav-link" href="#menu">Menú</a></li>
+          <li class="nav-item"><a class="nav-link" href="#servicios">Servicios</a></li>
           <li class="nav-item"><a class="nav-link" href="#reservas">Reservas</a></li>
           <li class="nav-item"><a class="nav-link" href="#info">Información</a></li>
           <li class="nav-item"><a class="nav-link" href="#galeria">Galería</a></li>
@@ -207,16 +287,21 @@
           {% endif %}
         </div>
         <div class="col-md-8">
-          {% if page.get('slogan') %}<span class="pill mb-2"><i class="bi bi-fire"></i>{{ page['slogan'] }}</span>{% endif %}
+          {% if page.get('slogan') %}
+            <span class="pill mb-2"><i class="bi bi-fire"></i>{{ page['slogan'] }}</span>
+          {% endif %}
           <h1 class="display-6 fw-extrabold mb-2">{{ page.get('business_name','Restaurante') }}</h1>
+
+          <!-- chips de features generales -->
           <div class="chips mt-2">
             {% for tag in (page.get('services','') or '').split(',') if tag.strip() %}
               <span class="chip">{{ tag.strip() }}</span>
             {% endfor %}
           </div>
+
           <div class="mt-3 d-flex flex-wrap gap-2">
             {% if page.get('whatsapp') %}
-              <a class="btn btn-brand" href="#reservas"><i class="bi bi-calendar-check me-1"></i> Reservar</a>
+              <a class="btn btn-brand" href="#menu"><i class="bi bi-bag-heart me-1"></i> Hacer pedido</a>
             {% endif %}
             {% if page.get('phone') %}
               <a class="btn btn-outline-brand" href="tel:{{ page.phone }}"><i class="bi bi-telephone me-1"></i> Llamar</a>
@@ -227,7 +312,7 @@
     </div>
   </header>
 
-  <!-- AVISOS (estratégicos entre HERO y MENÚ) -->
+  <!-- AVISOS -->
   {% if avisos and avisos|length>0 %}
   <section class="container my-4">
     <div class="avisos-inline p-3">
@@ -241,7 +326,6 @@
         </button>
       </div>
 
-      <!-- chips (top 3) -->
       <div class="mt-2 d-flex flex-wrap gap-2">
         {% for a in avisos[:3] %}
           <span class="chip">
@@ -255,7 +339,6 @@
         {% endif %}
       </div>
 
-      <!-- lista completa colapsable -->
       <div id="avisosLista" class="collapse mt-2">
         <ul class="m-0 ps-0" style="list-style:none">
           {% for a in avisos %}
@@ -270,69 +353,180 @@
   </section>
   {% endif %}
 
-  <!-- MENÚ -->
+  <!-- MENÚ (usa productos_fisicos = comida/platillos) -->
   <section id="menu" class="container my-5">
     <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
       <h2 class="section-title m-0">🍽️ Menú</h2>
 
-      <!-- Herramientas: buscador + tabs de categorías -->
       <div class="menu-tools d-flex">
         <input id="menuSearch" type="search" class="form-control menu-search" placeholder="Buscar platillo o ingrediente…">
         <div id="menuTabs" class="tabs btn-group" role="group" aria-label="Categorías"></div>
       </div>
     </div>
 
-    {% if productos and productos|length>0 %}
+    {% set hay_menu_items = (productos_fisicos and productos_fisicos|length>0) %}
+
+    {% if hay_menu_items %}
+      {# agrupamos productos_fisicos por categoría #}
       {% set categorias = {} %}
-      {% for p in productos %}
-        {% set cat = (p.get('category') or 'Platillos') %}
-        {% if cat not in categorias %}{% set _ = categorias.update({cat: []}) %}{% endif %}
-        {% set _ = categorias[cat].append(p) %}
+      {% for it in (productos_fisicos or []) %}
+        {% set cat = it.get('category') or 'Platillos' %}
+        {% if cat not in categorias %}
+          {% set _ = categorias.update({cat: []}) %}
+        {% endif %}
+        {% set _ = categorias[cat].append(it) %}
       {% endfor %}
 
-      <div id="menuGrid" class="row g-4">
-        {% for categoria, items in categorias.items() %}
-        <div class="col-12 menu-col" data-category="{{ categoria|e }}">
-          <div class="card-soft p-3 h-100">
-            <div class="d-flex align-items-center justify-content-between mb-2">
-              <h5 class="m-0">{{ categoria }}</h5>
-              <span class="badge text-bg-dark">{{ items|length }}</span>
+      {% if page.get('whatsapp') %}
+      <div class="card-soft p-3 mb-3">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+          <div class="text-white fw-semibold">
+            <i class="bi bi-bag-heart me-2"></i>
+            Selecciona cantidades y pulsa “Pedir por WhatsApp”.
+          </div>
+          <small class="text-success">
+            No pagas aquí — solo mandas el pedido 😌
+          </small>
+        </div>
+      </div>
+      {% endif %}
+
+      <form id="pedidoForm">
+        <div id="menuGrid" class="row g-4">
+          {% for categoria, items in categorias.items() %}
+          <div class="col-12 menu-col" data-category="{{ categoria|e }}">
+            <div class="card-soft p-3 h-100">
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <h5 class="m-0">{{ categoria }}</h5>
+                <span class="badge text-bg-dark">{{ items|length }}</span>
+              </div>
+
+              {% for it in items %}
+              <article class="menu-card"
+                       data-name="{{ (it.title or '')|e }}"
+                       data-tags="{{ (it.tags or '')|e }}">
+                {% if it.get('image') %}
+                  <img class="menu-thumb" loading="lazy" src="{{ url_for('uploaded_file', filename=it.image) }}" alt="{{ it.title }}">
+                {% else %}
+                  <img class="menu-thumb" loading="lazy" src="{{ url_for('static', filename='img/default-product.png') }}" alt="Imagen">
+                {% endif %}
+
+                <div class="flex-grow-1 w-100">
+                  <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap w-100">
+                    <div class="flex-grow-1 me-auto">
+                      <div class="menu-name">{{ it.title }}</div>
+
+                      {% if it.get('description') %}
+                        <div class="text-success small">{{ it.description }}</div>
+                      {% endif %}
+
+                      {% if it.get('tags') %}
+                        <div class="mt-1">
+                          {% for t in it.tags.split(',') if t.strip() %}
+                            <span class="badge-diet me-1">{{ t.strip() }}</span>
+                          {% endfor %}
+                        </div>
+                      {% endif %}
+                    </div>
+
+                    <div class="text-end pedido-box" style="min-width:90px">
+                      {% if it.get('show_price') %}
+                        <div class="menu-price text-nowrap">
+                          ${{ "%.2f"|format(it.price) }}
+                        </div>
+                      {% endif %}
+                      <label class="form-label mt-2">Cant.</label>
+                      <input
+                        type="number"
+                        class="form-control form-control-sm pedido-input"
+                        min="0"
+                        value="0"
+                        name="item_{{ it.title | replace(' ','_') }}"
+                        data-item-nombre="{{ it.title }}">
+                    </div>
+                  </div>
+                </div>
+              </article>
+              {% endfor %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+
+        {% if page.get('whatsapp') %}
+        <div class="text-center mt-4">
+          <button type="submit" class="btn btn-brand px-4">
+            <i class="bi bi-whatsapp me-1"></i> Pedir por WhatsApp
+          </button>
+        </div>
+        {% endif %}
+      </form>
+
+      <!-- Modal confirmación pedido -->
+      <div class="modal fade" id="pedidoModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content" style="border-radius:16px;">
+            <div class="modal-header" style="background:linear-gradient(90deg, var(--brand), var(--brand-2)); color:#fff; border:none;">
+              <h5 class="modal-title fw-bold">Tu pedido 📝</h5>
+              <button class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+              <div class="mb-3">
+                <label class="form-label">Tu nombre</label>
+                <input type="text" class="form-control" id="pedidoNombreInput" placeholder="Ej. Carlos">
+                <div class="text-danger small mt-1 d-none" id="pedidoErrorNombre">Por favor, escribe tu nombre.</div>
+              </div>
+              <div>
+                <div class="form-label mb-1">Resumen:</div>
+                <div id="pedidoResumen" class="border rounded p-2 small" style="max-height:220px;overflow-y:auto;"></div>
+              </div>
+            </div>
+            <div class="modal-footer" style="border:none;">
+              <button class="btn btn-outline-brand" data-bs-dismiss="modal">Editar</button>
+              <button class="btn btn-brand" id="pedidoEnviarBtn">
+                <i class="bi bi-whatsapp me-1"></i>Enviar por WhatsApp
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    {% else %}
+      <div class="alert alert-warning text-warning bg-transparent border border-warning">
+        Aún no hay platillos / productos cargados.
+      </div>
+    {% endif %}
+  </section>
+
+  <!-- SERVICIOS -->
+  <section id="servicios" class="container my-5">
+    {% if servicios and servicios|length>0 %}
+      <h2 class="section-title mb-3">🛎 Servicios especiales</h2>
+      <div class="row g-4">
+        {% for s in servicios %}
+        <div class="col-md-6 col-lg-4 d-flex">
+          <div class="service-card d-flex flex-column w-100">
+            <div class="service-title">
+              <span>{{ s.title }}</span>
+              {% if s.get('show_price') %}
+                <span class="service-price">${{ "%.2f"|format(s.price) }}</span>
+              {% endif %}
             </div>
 
-            {% for producto in items %}
-            <article class="menu-card" data-name="{{ (producto.title or '')|e }}" data-tags="{{ (producto.tags or '')|e }}">
-              {% if producto.get('image') %}
-                <img class="menu-thumb" loading="lazy" src="{{ url_for('uploaded_file', filename=producto.image) }}" alt="{{ producto.title }}">
-              {% else %}
-                <img class="menu-thumb" loading="lazy" src="{{ url_for('static', filename='img/default-product.png') }}" alt="Imagen">
-              {% endif %}
+            {% if s.get('description') %}
+              <div class="service-desc">{{ s.description }}</div>
+            {% endif %}
 
-              <div class="flex-grow-1">
-                <div class="d-flex justify-content-between align-items-start gap-2">
-                  <div>
-                    <div class="menu-name">{{ producto.title }}</div>
-                    {% if producto.get('description') %}<div class="text-success small">{{ producto.description }}</div>{% endif %}
-                    {% if producto.get('tags') %}
-                      <div class="mt-1">
-                        {% for t in producto.tags.split(',') if t.strip() %}
-                          <span class="badge-diet me-1">{{ t.strip() }}</span>
-                        {% endfor %}
-                      </div>
-                    {% endif %}
-                  </div>
-                  {% if producto.get('show_price') %}
-                    <div class="menu-price ms-2 text-nowrap">${{ "%.2f"|format(producto.price) }}</div>
-                  {% endif %}
-                </div>
-              </div>
-            </article>
-            {% endfor %}
+            {% if page.get('whatsapp') %}
+              <a class="btn btn-outline-brand w-100 mt-auto"
+                 href="https://wa.me/{{ page.whatsapp | replace(' ','') }}?text={{ ('Hola, me interesa el servicio: ' ~ s.title)|urlencode }}"
+                 target="_blank">
+                <i class="bi bi-whatsapp me-1"></i> Preguntar por WhatsApp
+              </a>
+            {% endif %}
           </div>
         </div>
         {% endfor %}
       </div>
-    {% else %}
-      <div class="alert alert-warning">Aún no hay productos cargados.</div>
     {% endif %}
   </section>
 
@@ -465,7 +659,9 @@
         <div class="col-md-6">
           <label class="form-label">Calificación</label>
           <div id="starRating" class="fs-4">
-            {% for i in range(1,6) %}<i class="bi bi-star-fill text-secondary me-1 star-icon" data-value="{{ i }}"></i>{% endfor %}
+            {% for i in range(1,6) %}
+              <i class="bi bi-star-fill text-secondary me-1 star-icon" data-value="{{ i }}"></i>
+            {% endfor %}
           </div>
           <input type="hidden" name="estrellas" id="estrellas" value="0" required>
         </div>
@@ -473,7 +669,9 @@
           <label class="form-label">Comentario</label>
           <textarea name="comentario" class="form-control" rows="3" required></textarea>
         </div>
-        <div class="col-12 d-grid d-md-inline"><button class="btn btn-brand">Enviar reseña</button></div>
+        <div class="col-12 d-grid d-md-inline">
+          <button class="btn btn-brand">Enviar reseña</button>
+        </div>
       </form>
     </div>
 
@@ -486,7 +684,11 @@
             <h6 class="m-0">{{ r.nombre }}</h6>
             <div>
               {% for i in range(1,6) %}
-                {% if i <= r.estrellas %}<i class="bi bi-star-fill star"></i>{% else %}<i class="bi bi-star text-secondary"></i>{% endif %}
+                {% if i <= r.estrellas %}
+                  <i class="bi bi-star-fill star"></i>
+                {% else %}
+                  <i class="bi bi-star text-secondary"></i>
+                {% endif %}
               {% endfor %}
             </div>
           </div>
@@ -501,7 +703,7 @@
     {% endif %}
   </section>
 
-  <!-- CTA STICKY (pedido/reserva rápido) -->
+  <!-- CTA STICKY -->
   <div class="cta-stick py-2">
     <div class="container d-flex flex-wrap gap-2 align-items-center justify-content-between">
       <strong class="text-white"><i class="bi bi-bag-heart me-1"></i> ¿Se te antojó algo?</strong>
@@ -528,7 +730,7 @@
 
   <!-- WhatsApp flotante -->
   {% if page.get('whatsapp') %}
-  <a class="floating-wa" href="https://wa.me/{{ page.whatsapp | replace(' ','') }}" target="_blank" aria-label="WhatsApp">
+  <a class="floating-wa" href="#menu" aria-label="WhatsApp pedido rápido">
     <i class="bi bi-whatsapp fs-4"></i>
   </a>
   {% endif %}
@@ -578,6 +780,68 @@
     });
   })();
 
+  // Pedido por WhatsApp (usa productos_fisicos)
+  (() => {
+    const formPedido = document.getElementById('pedidoForm');
+    if(!formPedido) return;
+
+    const modalEl = document.getElementById('pedidoModal');
+    const nombreInput = document.getElementById('pedidoNombreInput');
+    const errorNombre = document.getElementById('pedidoErrorNombre');
+    const resumenDiv = document.getElementById('pedidoResumen');
+    const enviarBtn = document.getElementById('pedidoEnviarBtn');
+    let lineas = [];
+
+    formPedido.addEventListener('submit', (e)=>{
+      e.preventDefault();
+      lineas = [];
+
+      formPedido.querySelectorAll('input[type=number]').forEach(inp=>{
+        const n = parseInt(inp.value||"0");
+        if(n>0){
+          const nombre = inp.getAttribute('data-item-nombre') || inp.name.replace('item_','').replaceAll('_',' ');
+          lineas.push(`- ${nombre}: ${n}`);
+        }
+      });
+
+      if(!lineas.length){
+        alert("Ingresa cantidad para al menos un platillo.");
+        return;
+      }
+
+      if(resumenDiv){
+        resumenDiv.innerHTML = lineas.map(l=>`<div>${l}</div>`).join('');
+      }
+      if(errorNombre){ errorNombre.classList.add('d-none'); }
+      if(nombreInput){ nombreInput.classList.remove('is-invalid'); }
+
+      new bootstrap.Modal(modalEl).show();
+      setTimeout(()=>{ if(nombreInput){ nombreInput.focus(); }},200);
+    });
+
+    if(enviarBtn){
+      enviarBtn.addEventListener('click', ()=>{
+        const nombre = (nombreInput && nombreInput.value || '').trim();
+        if(!nombre){
+          errorNombre && errorNombre.classList.remove('d-none');
+          nombreInput && nombreInput.classList.add('is-invalid');
+          nombreInput && nombreInput.focus();
+          return;
+        }
+        const wa = "{{ (page.get('whatsapp') or '') | replace(' ','') }}";
+        if(!wa){ alert('No hay WhatsApp configurado.'); return; }
+
+        let msj = `Hola, soy ${encodeURIComponent(nombre)} y quiero pedir:%0A`;
+        lineas.forEach(l=>{
+          msj += encodeURIComponent(l) + "%0A";
+        });
+
+        const url = `https://wa.me/${wa}?text=${msj}`;
+        window.open(url,'_blank');
+      });
+    }
+  })();
+
   // Mapa Leaflet
   (() => {
     const lat = {{ page.get('lat') if page.get('lat') is not none else 'null' }};
@@ -590,7 +854,7 @@
     }
   })();
 
-  // Menú: tabs de categoría + búsqueda
+  // Tabs categoría + búsqueda (para productos_fisicos)
   (() => {
     const cols = [...document.querySelectorAll('.menu-col')];
     if(!cols.length) return;
@@ -599,13 +863,17 @@
     const search = document.getElementById('menuSearch');
 
     const cats = [...new Set(cols.map(c => c.dataset.category))].sort((a,b)=>a.localeCompare(b,'es'));
+
     const mkBtn = (label, val, active=false) => {
       const b = document.createElement('button');
-      b.type = 'button'; b.className = 'btn' + (active ? ' active' : '');
-      b.textContent = label; b.dataset.cat = val || '';
+      b.type = 'button';
+      b.className = 'btn' + (active ? ' active' : '');
+      b.textContent = label;
+      b.dataset.cat = val || '';
       b.addEventListener('click', () => {
         [...tabsWrap.querySelectorAll('.btn')].forEach(x=>x.classList.remove('active'));
-        b.classList.add('active'); filter();
+        b.classList.add('active');
+        filter();
       });
       return b;
     };
@@ -619,9 +887,9 @@
 
       cols.forEach(col => {
         const catOk = !active || col.dataset.category === active;
-        // dentro de cada columna, también filtrar sus items
         const items = col.querySelectorAll('.menu-card');
         let visibleCount = 0;
+
         items.forEach(it=>{
           const name = (it.dataset.name||'').toLowerCase();
           const tags = (it.dataset.tags||'').toLowerCase();
@@ -629,10 +897,11 @@
           it.style.display = (catOk && match) ? '' : 'none';
           if(catOk && match) visibleCount++;
         });
-        // oculta columna completa si no hay resultados
+
         col.style.display = visibleCount ? '' : 'none';
       });
     }
+
     search?.addEventListener('input', filter);
   })();
   </script>
