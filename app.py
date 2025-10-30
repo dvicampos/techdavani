@@ -1752,6 +1752,7 @@ def manage_page_compat():
     page = ensure_page_has_slug(page)
     return redirect(url_for('manage_page_slug', slug=page['slug']))
 
+
 @app.route('/manage_page/<slug>', methods=['GET', 'POST'])
 @login_required
 @require_active_subscription
@@ -1768,7 +1769,7 @@ def manage_page_slug(slug):
 
     # fija el sitio activo por conveniencia
     set_current_page_id(page['_id'])
-    page = ensure_page_has_slug(page)  # crea slug si no existía
+    page = ensure_page_has_slug(page)
 
     if request.method == 'POST':
         # --- Información básica
@@ -1792,8 +1793,11 @@ def manage_page_slug(slug):
         lng_raw     = request.form.get('lng')
 
         def _safe_float(v):
-            try: return float(v)
-            except: return None
+            try:
+                return float(v)
+            except:
+                return None
+
         lat = _safe_float(lat_raw) if lat_raw else (page.get('lat') if page else None)
         lng = _safe_float(lng_raw) if lng_raw else (page.get('lng') if page else None)
 
@@ -1813,21 +1817,80 @@ def manage_page_slug(slug):
         if chosen_default_html not in DEFAULT_HTML_TEMPLATES:
             chosen_default_html = 'classico'
 
-        # --- Imagen (opcional)
+        # ====================================================
+        #  ARCHIVOS
+        # ====================================================
+        # carpeta base
+        slug_empresa = slugify(page['business_name'] if page else business_name)
+        today = datetime.utcnow().strftime('%Y-%m-%d')
+        folder_path = os.path.join(app.config['UPLOAD_FOLDER'], slug_empresa, today)
+        os.makedirs(folder_path, exist_ok=True)
+
+        # 1) Imagen principal (la que ya tenías)
         image = request.files.get('image')
         image_path = page.get('image')
         if image and image.filename != '':
-            slug_empresa = slugify(page['business_name'] if page else business_name)
-            today = datetime.utcnow().strftime('%Y-%m-%d')
-            folder_path = os.path.join(app.config['UPLOAD_FOLDER'], slug_empresa, today)
-            os.makedirs(folder_path, exist_ok=True)
-
             filename = secure_filename(image.filename)
-            timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
-            final_filename = f"{timestamp}_{filename}"
+            ts = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+            final_filename = f"{ts}_{filename}"
             image.save(os.path.join(folder_path, final_filename))
             image_path = f"{slug_empresa}/{today}/{final_filename}"
 
+        # 2) Imagen de portada NUEVA
+        cover_image = request.files.get('cover_image')
+        cover_image_path = page.get('cover_image')
+        if cover_image and cover_image.filename != '':
+            filename = secure_filename(cover_image.filename)
+            ts = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+            final_filename = f"cover_{ts}_{filename}"
+            cover_image.save(os.path.join(folder_path, final_filename))
+            cover_image_path = f"{slug_empresa}/{today}/{final_filename}"
+
+        # 3) Galería mixta (imágenes y/o videos SUBIDOS)
+        # en el form: <input type="file" name="media_gallery[]" multiple>
+        uploaded_medias = request.files.getlist('media_gallery[]')
+
+        # lo que ya había
+        existing_gallery = page.get('media_gallery', [])
+
+        # normalizar si antes guardabas así: ["ruta1","ruta2"]
+        norm_gallery = []
+        if isinstance(existing_gallery, list):
+            for item in existing_gallery:
+                if isinstance(item, str):
+                    # lo consideramos imagen por compatibilidad
+                    norm_gallery.append({
+                        'type': 'image',
+                        'path': item
+                    })
+                elif isinstance(item, dict) and 'path' in item:
+                    norm_gallery.append(item)
+
+        # ahora agregamos lo nuevo
+        for f in uploaded_medias:
+            if not f or f.filename == '':
+                continue
+            filename = secure_filename(f.filename)
+            ts = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+            final_filename = f"media_{ts}_{filename}"
+            save_path = os.path.join(folder_path, final_filename)
+            f.save(save_path)
+
+            # detectar tipo por extensión
+            ext = os.path.splitext(filename)[1].lower()
+            if ext in ['.mp4', '.mov', '.avi', '.mkv', '.webm']:
+                media_type = 'video'
+            else:
+                media_type = 'image'
+
+            norm_gallery.append({
+                'type': media_type,
+                'path': f"{slug_empresa}/{today}/{final_filename}"
+            })
+
+        # ====================================================
+        #  ARMAR DATA
+        # ====================================================
         new_data = {
             'business_name':  business_name,
             'description':    description,
@@ -1852,7 +1915,9 @@ def manage_page_slug(slug):
             'services':        services,
             'payment_methods': payment_methods,
             'delivery_available': delivery_available,
-            'image':            image_path,
+            'image':            image_path,         # la de siempre
+            'cover_image':      cover_image_path,   # portada
+            'media_gallery':    norm_gallery,       # galería mixta
             'default_html':     chosen_default_html
         }
 
@@ -1865,7 +1930,6 @@ def manage_page_slug(slug):
 
         mongo.db.page_data.update_one({'_id': page['_id']}, {'$set': new_data})
 
-        # Si cambió el slug, redirige a la nueva URL
         final_slug = new_data.get('slug') or page.get('slug')
         flash('Perfil del negocio actualizado exitosamente.')
         return redirect(url_for('manage_page_slug', slug=final_slug))
@@ -1873,7 +1937,7 @@ def manage_page_slug(slug):
     selected_default_html = (page or {}).get('default_html', 'classico')
     return render_template(
         'manage_page.html',
-        data=page,  # data.slug disponible
+        data=page,
         default_html_key=selected_default_html,
         default_html_whitelist=DEFAULT_HTML_TEMPLATES
     )

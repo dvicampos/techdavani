@@ -408,6 +408,36 @@
           </div>
         </div>
       </div>
+      <!-- Portada -->
+<div class="mb-3">
+  <label class="form-label">Imagen de portada</label>
+  <input type="file" name="cover_image" class="form-control" accept="image/*">
+  {% if data.cover_image %}
+    <div class="mt-2">
+      <img src="{{ url_for('uploaded_file', filename=data.cover_image) }}" style="max-height:100px;">
+    </div>
+  {% endif %}
+</div>
+
+<!-- Galería mixta (imágenes y/o videos) -->
+<div class="mb-3">
+  <label class="form-label">Galería del lugar (imágenes y videos)</label>
+  <input type="file" name="media_gallery[]" class="form-control" multiple>
+  <small class="text-muted">Puedes subir JPG, PNG y también MP4 / WEBM.</small>
+
+  {% if data.media_gallery %}
+    <div class="d-flex gap-3 flex-wrap mt-3">
+      {% for item in data.media_gallery %}
+        {% if item.type == 'video' %}
+          <video src="{{ url_for('uploaded_file', filename=item.path) }}" style="width:140px;height:90px;object-fit:cover" controls></video>
+        {% else %}
+          <img src="{{ url_for('uploaded_file', filename=item.path) }}" style="width:140px;height:90px;object-fit:cover;border-radius:6px;">
+        {% endif %}
+      {% endfor %}
+    </div>
+  {% endif %}
+</div>
+
     </div>
 
     <!-- TEMPLATE -->
