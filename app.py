@@ -1734,6 +1734,7 @@ DEFAULT_HTML_TEMPLATES = {
     "restaurante": "public/restaurant.html",
     "barber": "public/barber.html",
     "rope": "public/rope.html",
+    "coffe": "public/coffe.html",
 }
 
 @app.route('/manage_page')

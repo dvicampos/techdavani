@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Meta dinámicos desde Flask -->
+  <meta name="description" content="{{ page.get('description', '')[:160] }}">
+  <meta name="keywords" content="{{ page.get('category', '') }}">
+  <meta name="author" content="{{ page.get('business_name', '') }}">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="{{ page.get('business_name', '') }}">
+  <meta property="og:description" content="{{ page.get('slogan') or page.get('description', '')[:200] }}">
+  <meta property="og:image" content="{{ url_for('static', filename=page.get('image') or 'images/default.png', _external=True) }}">
+  <meta property="og:url" content="{{ request.url }}">
+  <meta property="og:type" content="website">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="{{ page.get('business_name', '') }}" />
+  <meta name="twitter:description" content="{{ page.get('slogan') or page.get('description', '')[:200] }}" />
+  <meta name="twitter:image" content="{{ url_for('static', filename=page.get('image') or 'images/default.png', _external=True) }}" />
+
+  <title>{{ page['business_name'] }} | Cafetería</title>
+
+  <!-- CDNs -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
+  <link rel="icon" href="{{ url_for('static', filename='images/logo.jpg') }}" type="image/png" />
+
+  <!-- Ads (quitar si no lo usas) -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8911862194691129" crossorigin="anonymous"></script>
+  <meta name="google-adsense-account" content="ca-pub-8911862194691129">
+
+  <style>
+    :root {
+      /* Paleta coffee premium */
+      --cafe-base: {{ "'" ~ (page['color'] if page['color'] else '#4b2e21') ~ "'" }};
+      --cafe-dark: #2a1811;
+      --moka: #8c5b3f;
+      --latte: #f5ede4;
+      --crema: #fff7ee;
+      --caramelo: #d49453;
+      --ink: #2b1f1a;
+      --radius: 18px;
+      --shadow: 0 16px 40px rgba(34, 21, 15, 0.12);
+      --h-banner: 54px; /* altura del banner inferior */
+    }
+
+    body {
+      font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, "Roboto", sans-serif;
+      background-color: var(--latte);
+      color: var(--ink);
+      scroll-behavior: smooth;
+      /* 👇 para que el footer no se esconda con el banner de avisos */
+      padding-bottom: calc(var(--h-banner) + 20px);
+    }
+
+    /* NAV */
+    #mainNavbar {
+      background:
+        radial-gradient(circle at top, rgba(245, 237, 228, 0.12), rgba(10, 10, 10, 0) 35%),
+        linear-gradient(120deg, rgba(43, 31, 26, 0.98), rgba(75, 46, 33, 0.92));
+      backdrop-filter: blur(12px);
+    }
+
+    .navbar-brand {
+      font-weight: 700;
+      letter-spacing: .04em;
+    }
+
+    .nav-link {
+      font-weight: 500;
+      transition: .2s;
+    }
+
+    .nav-link:hover,
+    .nav-link:focus {
+      color: #fff !important;
+      transform: translateY(-1px);
+    }
+
+    /* HERO */
+    .hero-cafe {
+      background:
+        linear-gradient(135deg, rgba(43, 31, 26, 0.98) 0%, rgba(75, 46, 33, 0.9) 35%, rgba(245, 237, 228, 0) 100%),
+        url("https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?q=80&w=1600&auto=format&fit=crop") center/cover fixed;
+      color: #fff;
+      padding: 110px 0 80px;
+      position: relative;
+      overflow: hidden;
+      isolation: isolate;
+    }
+
+    .hero-cafe::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 5% 0%, rgba(245, 237, 228, 0.22), rgba(245, 237, 228, 0));
+      pointer-events: none;
+      mix-blend-mode: screen;
+    }
+
+    /* granos flotando */
+    .bean {
+      position: absolute;
+      width: 55px;
+      height: 34px;
+      background: rgba(212, 148, 83, 0.65);
+      border-radius: 50% 50% 42% 58%;
+      filter: drop-shadow(0 10px 18px rgba(0, 0, 0, .3));
+      animation: float 7s ease-in-out infinite;
+      opacity: 0.35;
+    }
+    .bean.b1 { top: 15%; right: 12%; animation-delay: 0s; }
+    .bean.b2 { top: 50%; right: 4%; animation-delay: 1.5s; transform: rotate(18deg); }
+    .bean.b3 { top: 78%; right: 20%; animation-delay: 3s; transform: rotate(-12deg); }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-16px) rotate(10deg); }
+    }
+
+    .hero-title {
+      font-size: clamp(2.6rem, 4vw, 3.3rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .hero-subtitle {
+      font-size: 1.05rem;
+      max-width: 540px;
+      opacity: .9;
+    }
+    .hero-badge {
+      background: rgba(245, 237, 228, .14);
+      border: 1px solid rgba(245, 237, 228, .5);
+      backdrop-filter: blur(4px);
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .5rem 1rem;
+      border-radius: 999px;
+      margin-bottom: 1rem;
+      font-size: .85rem;
+    }
+    .hero-img {
+      width: 240px;
+      height: 240px;
+      object-fit: cover;
+      border-radius: 999px;
+      border: 6px solid rgba(246, 239, 233, .78);
+      box-shadow: 0 16px 50px rgba(0, 0, 0, .28);
+      background: #fff;
+      animation: scaleIn 1.3s ease;
+    }
+
+    @keyframes scaleIn {
+      from { transform: scale(.7); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .btn-cafe {
+      background: var(--caramelo);
+      border: none;
+      color: #fff;
+      border-radius: 999px;
+      padding: .45rem 1.5rem;
+      font-weight: 500;
+      transition: .2s;
+    }
+    .btn-cafe:hover {
+      background: #c68440;
+      transform: translateY(-1px);
+    }
+
+    /* franja parallax extra */
+    .parallax-band {
+      background: url("https://images.unsplash.com/photo-1494314671902-399b18174975?q=80&w=1600&auto=format&fit=crop") center/cover fixed;
+      min-height: 150px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      color: #fff;
+      position: relative;
+      margin: 0;
+    }
+    .parallax-band::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: rgba(43, 31, 26, .6);
+    }
+    .parallax-band h3 {
+      position: relative;
+      z-index: 2;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    /* cards generales */
+    .section-title {
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      color: var(--ink);
+    }
+    .info-card,
+    .contact-card {
+      background: #fff;
+      border: 0;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      transition: transform .25s ease, box-shadow .25s ease;
+    }
+    .info-card:hover,
+    .contact-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, .08);
+    }
+    .info-icon {
+      width: 38px;
+      height: 38px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 14px;
+      background: rgba(212, 148, 83, .18);
+      color: var(--cafe-base);
+      margin-right: .45rem;
+    }
+
+    /* MENÚ tarjetas */
+    .card-menu {
+      border-radius: 14px;
+      overflow: hidden;
+      background: #fff;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, .05);
+      transition: transform .2s, box-shadow .2s;
+    }
+    .card-menu:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 16px 30px rgba(0, 0, 0, .07);
+    }
+    .menu-tag {
+      font-size: .7rem;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      background: rgba(212, 148, 83, .14);
+      color: #4e301f;
+      border-radius: 999px;
+      padding: .25rem .65rem;
+      display: inline-block;
+    }
+
+    /* banner inferior (promos del día) */
+    .noticias-section {
+      background: linear-gradient(100deg, rgba(75, 46, 33, 1) 0%, rgba(212, 148, 83, .4) 90%);
+      height: var(--h-banner);
+      display: flex;
+      align-items: center;
+    }
+    .aviso-banner {
+      background: rgba(245, 237, 228, .35);
+      border: 1px solid rgba(245, 237, 228, .4);
+      border-radius: 999px;
+      padding: .35rem 1rem;
+      display: inline-flex;
+      align-items: center;
+      gap: .45rem;
+      color: #fff;
+      font-weight: 500;
+      font-size: .9rem;
+      white-space: nowrap;
+    }
+
+    /* MAPA */
+    #map {
+      height: 260px;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, .06);
+    }
+
+    /* flotante whatsapp */
+    .wa-fab {
+      position: fixed;
+      bottom: calc(var(--h-banner) + 15px);
+      left: 20px;
+      z-index: 1050;
+      background: #25D366;
+      color: #fff;
+      border-radius: 999px;
+      padding: .5rem .7rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, .22);
+    }
+
+    /* footer */
+    footer {
+      background: linear-gradient(130deg, #2a1811 0%, #4b2e21 50%, #2a1811 100%);
+      margin-top: 5rem;
+      padding-top: 1.2rem;
+      padding-bottom: 1rem;
+    }
+
+    /* responsive del menú: scroll en móvil */
+    .menus-grid-row {
+      --bs-gutter-x: 1rem;
+    }
+    @media (max-width: 768px) {
+      .hero-cafe {
+        text-align: center;
+        padding-top: 95px;
+      }
+      .hero-subtitle {
+        margin: 0 auto;
+      }
+      .aviso-banner {
+        white-space: normal;
+        font-size: .8rem;
+      }
+      .wa-fab {
+        bottom: calc(var(--h-banner) + 60px);
+      }
+    }
+    @media (max-width: 576px) {
+      .menus-grid-row {
+        display: flex;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        padding-bottom: .5rem;
+      }
+      .menu-card-wrapper {
+        flex: 0 0 78%;
+        max-width: 78%;
+        scroll-snap-align: start;
+      }
+    }
+
+    .modal-70 .modal-dialog {
+      max-width: 70vw;
+    }
+  </style>
+</head>
+<body data-bs-spy="scroll" data-bs-target="#mainNavbar" data-bs-offset="80" tabindex="0">
+
+  <!-- NAVBAR -->
+  <nav id="mainNavbar" class="navbar navbar-expand-lg navbar-dark fixed-top shadow-sm">
+    <div class="container">
+      <a class="navbar-brand fw-bold" href="/"><i class="fa-solid fa-mug-saucer me-1"></i> {{ page['business_name'] }}</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+        aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+        <ul class="navbar-nav">
+          <li class="nav-item"><a class="nav-link" href="#info">La cafetería</a></li>
+          <li class="nav-item"><a class="nav-link" href="#productos">Menú</a></li>
+          {% if posts %}
+          <li class="nav-item"><a class="nav-link" href="#publicaciones">Blog / Recetas</a></li>
+          {% endif %}
+          <li class="nav-item"><a class="nav-link" href="#contacto">Contacto</a></li>
+          <li class="nav-item"><a class="nav-link" href="#reseñas">Reseñas</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <header class="hero-cafe position-relative">
+    <div class="bean b1"></div>
+    <div class="bean b2"></div>
+    <div class="bean b3"></div>
+    <div class="container">
+      <div class="row align-items-center g-4">
+        <div class="col-md-7">
+          <div class="hero-badge">
+            <i class="fa-solid fa-mug-hot"></i>
+            Café de especialidad todos los días
+          </div>
+          <h1 class="hero-title">{{ page['business_name'] }}</h1>
+          {% if page['slogan'] %}
+          <p class="hero-subtitle mt-2">{{ page['slogan'] }}</p>
+          {% else %}
+          <p class="hero-subtitle mt-2">Latte, espresso, cold brew y panecitos que se derriten. Pasa y siéntate. ☕</p>
+          {% endif %}
+          <div class="mt-4 d-flex gap-2 flex-wrap">
+            <a href="#productos" class="btn btn-light rounded-pill px-4 py-2"><i class="bi bi-cup-hot me-1"></i> Ver menú</a>
+            <a href="#contacto" class="btn-cafe"><i class="bi bi-geo-alt me-1"></i> Cómo llegar</a>
+          </div>
+          <p class="mt-3 small">Horario: {{ page.operating_hours or 'Lunes a sábado de 8:00 a 21:00 hrs' }}</p>
+        </div>
+        <div class="col-md-5 text-md-end text-center">
+          {% if page['image'] %}
+          <img src="{{ url_for('uploaded_file', filename=page['image']) }}" alt="Cafetería" class="hero-img">
+          {% else %}
+          <img src="{{ url_for('static', filename='images/default_image.png') }}" alt="Cafetería" class="hero-img">
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- BANNER PROMOS DEL DÍA (fijo abajo) -->
+  <div class="noticias-section fixed-bottom w-100 shadow-sm" style="z-index:1030;">
+    <div class="container-fluid">
+      <div id="noticiasCarousel" class="carousel slide" data-bs-ride="carousel">
+        <div class="carousel-inner text-center">
+          {% if avisos %}
+            {% for aviso in avisos %}
+            <div class="carousel-item {% if loop.first %}active{% endif %}">
+              <div class="aviso-banner mx-auto">
+                <i class="bi bi-megaphone-fill"></i>
+                <strong>{{ aviso.title }}:</strong> {{ aviso.content }} • {{ aviso.date.strftime("%d/%m/%Y") }}
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="carousel-item active">
+              <div class="aviso-banner mx-auto">
+                <i class="bi bi-megaphone-fill"></i>
+                <strong>Promo de hoy:</strong> Latte + concha $65 MXN
+              </div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Franja parallax extra -->
+  <section class="parallax-band">
+    <h3>“El mejor café es el que disfrutas aquí.”</h3>
+  </section>
+
+  <!-- INFO -->
+  <section class="container my-5" id="info">
+    <h2 class="section-title">☕ Sobre la cafetería</h2>
+    <div class="row g-4">
+      <div class="col-md-6">
+        <div class="card info-card h-100">
+          <div class="card-body">
+            <p><span class="info-icon"><i class="fa-solid fa-store"></i></span><strong>Concepto:</strong> {{ page.description or 'Un lugar cálido para café de calidad, pan casero y reuniones.' }}</p>
+            <p><span class="info-icon"><i class="fa-solid fa-mug-saucer"></i></span><strong>Especialidades:</strong> {{ page.services or 'Espresso, cappuccino, latte, frappés, repostería.' }}</p>
+            <p><span class="info-icon"><i class="fa-solid fa-credit-card"></i></span><strong>Métodos de pago:</strong> {{ page.payment_methods or 'Efectivo, tarjeta, transferencia' }}</p>
+            {% if page.delivery_available %}
+            <p><span class="info-icon"><i class="fa-solid fa-motorcycle"></i></span><strong>Entrega:</strong> Sí, servicio a domicilio</p>
+            {% endif %}
+            <p><span class="info-icon"><i class="fa-solid fa-calendar-days"></i></span><strong>Desde:</strong> {{ page.founding_date or '2022' }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="card info-card h-100">
+          <div class="card-body">
+            <p><span class="info-icon"><i class="fa-solid fa-location-dot"></i></span><strong>Dirección:</strong> {{ page.address }}</p>
+            <p><span class="info-icon"><i class="fa-solid fa-city"></i></span><strong>Ciudad / Estado:</strong> {{ page.city }} / {{ page.state }}</p>
+            <p><span class="info-icon"><i class="fa-regular fa-clock"></i></span><strong>Horarios:</strong> {{ page.operating_hours or 'Lunes a sábado 8:00 - 21:00' }}</p>
+
+            {% set has_coords = page.get('lat') is not none and page.get('lng') is not none %}
+            <p class="mt-3 mb-2"><span class="info-icon"><i class="fa-solid fa-map"></i></span><strong>Ubicación en mapa</strong></p>
+            {% if has_coords %}
+              <div id="map" class="mb-3"></div>
+              <a class="btn btn-sm btn-cafe" target="_blank" href="https://www.google.com/maps/dir/?api=1&destination={{ page.lat }},{{ page.lng }}">
+                <i class="bi bi-geo-alt"></i> Cómo llegar
+              </a>
+            {% else %}
+              <div class="alert alert-warning">Aún no hay coordenadas guardadas para este negocio.</div>
+              {% if page.address %}
+              <a class="btn btn-sm btn-cafe" target="_blank" href="https://www.google.com/maps/search/?api=1&query={{ page.address | urlencode }}">
+                Buscar en Google Maps
+              </a>
+              {% endif %}
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACTO -->
+  <section class="container my-5" id="contacto">
+    <h2 class="section-title">📞 ¿Te preparamos algo?</h2>
+    <div class="row g-4">
+      <div class="col-md-6">
+        <div class="card contact-card">
+          <div class="card-body">
+            <p><i class="fas fa-phone me-2 text-success"></i><strong>Teléfono:</strong> {{ page.phone }}</p>
+            <p><i class="fas fa-envelope me-2 text-danger"></i><strong>Email:</strong> {{ page.email }}</p>
+            <p><i class="fas fa-globe me-2 text-primary"></i><strong>Web:</strong>
+              <a href="{{ page.website }}" target="_blank">{{ page.website }}</a>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="card contact-card">
+          <div class="card-body">
+            {% if page.facebook %}
+            <p><i class="fab fa-facebook me-2 text-primary"></i><strong>Facebook:</strong>
+              <a href="{{ page.facebook }}" target="_blank">Ver página</a>
+            </p>
+            {% endif %}
+            {% if page.instagram %}
+            <p><i class="fab fa-instagram me-2 text-danger"></i><strong>Instagram:</strong>
+              <a href="{{ page.instagram }}" target="_blank">Ver perfil</a>
+            </p>
+            {% endif %}
+            {% if page.tiktok %}
+            <p><i class="fab fa-tiktok me-2 text-dark"></i><strong>TikTok:</strong>
+              <a href="{{ page.tiktok }}" target="_blank">Ver TikTok</a>
+            </p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PUBLICACIONES / BLOG / RECETAS -->
+  <section class="container my-5" id="publicaciones">
+    <h2 class="section-title">📝 Recetas, novedades y promos</h2>
+    {% if posts and posts|length > 0 %}
+      <div class="row">
+        {% for post in posts %}
+          <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm border-0">
+              {% if post.cabecera %}
+              <img src="{{ url_for('uploaded_file', filename=post.cabecera) }}" class="card-img-top" alt="Post">
+              {% endif %}
+              <div class="card-body d-flex flex-column">
+                <span class="menu-tag mb-2"><i class="bi bi-journal-text me-1"></i> Blog</span>
+                <h5 class="card-title">{{ post.title }}</h5>
+                <p class="card-text">{{ post.content[:100] }}...</p>
+                <a href="{{ url_for('ver_post', post_id=post._id) }}" class="btn btn-outline-dark mt-auto">Leer más</a>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+
+      {% if posts|length > 2 %}
+      <div class="text-center mt-3">
+        <a href="{{ url_for('lista_blogs_negocio', nombre=page['business_name'], page=1) }}" class="btn btn-cafe">Ver todas las recetas</a>
+      </div>
+      {% endif %}
+    {% else %}
+      <div class="alert alert-warning">Aún no hay publicaciones, pronto subiremos recetas ☕</div>
+    {% endif %}
+  </section>
+
+  <!-- MENÚ / SERVICIOS (SIN TABS) -->
+  <section class="container my-5" id="productos">
+    <h2 class="section-title d-flex align-items-center gap-2">
+      <span>🍽️ Carta & Servicios</span>
+      <small class="text-muted fw-normal">elige cantidades y cotiza por Whats</small>
+    </h2>
+
+    {% if (servicios and servicios|length > 0) or (productos_fisicos and productos_fisicos|length > 0) %}
+
+    <div class="alert alert-info d-flex align-items-center gap-3 mb-4 rounded-4"
+         style="background:rgba(213,243,228,.45);border:1px solid rgba(37,211,102,.18);">
+      <i class="bi bi-whatsapp fs-3 text-success"></i>
+      <div>
+        <div class="fw-semibold">Pide por WhatsApp</div>
+        <div class="small">Pon la cantidad de lo que quieras y presiona <strong>“Cotizar por WhatsApp”</strong>.</div>
+      </div>
+    </div>
+
+    <form id="form-cotizar" class="d-flex flex-column gap-4">
+
+      <!-- 1. SERVICIOS -->
+      {% if servicios and servicios|length > 0 %}
+      <div class="servicios-grid">
+        <div class="d-flex justify-content-between align-items-center mb-3 gap-2 flex-wrap">
+          <h3 class="h5 mb-0 d-flex align-items-center gap-2">
+            <span class="badge bg-danger-subtle text-danger-emphasis rounded-pill"><i class="bi bi-bell"></i></span>
+            Servicios de la cafetería
+          </h3>
+          <p class="small text-muted mb-0">Catering, barra de café, eventos, pedidos especiales…</p>
+        </div>
+
+        <div class="row g-3">
+          {% for item in servicios %}
+          <div class="col-12 col-md-6 col-lg-4">
+            <div class="card shadow-sm border-0 h-100" style="border-radius:16px;">
+              <div class="card-body d-flex flex-column gap-2">
+                <div class="d-flex justify-content-between gap-2">
+                  <h6 class="mb-0 fw-semibold d-flex gap-2 align-items-center">
+                    <span class="badge bg-light text-dark border border-light-subtle">
+                      <i class="bi bi-briefcase me-1"></i>Servicio
+                    </span>
+                    {{ item.title }}
+                  </h6>
+                  {% if item.show_price %}
+                  <span class="badge bg-success-subtle text-success fw-semibold">
+                    ${{ "%.2f"|format(item.price) }}
+                  </span>
+                  {% endif %}
+                </div>
+
+                {% if item.description %}
+                <p class="small text-muted mb-0">{{ item.description }}</p>
+                {% endif %}
+
+                <label class="small text-muted mt-auto" for="serv_{{ loop.index0 }}">Cantidad / horas / mesas</label>
+                <div class="input-group input-group-sm rounded-pill overflow-hidden bg-light-subtle">
+                  <span class="input-group-text bg-transparent border-0">
+                    <i class="bi bi-plus-circle text-success"></i>
+                  </span>
+                  <input
+                    type="number"
+                    id="serv_{{ loop.index0 }}"
+                    name="prod_{{ item.title | replace(' ', '_') }}"
+                    class="form-control border-0 bg-transparent"
+                    min="0"
+                    value="0"
+                    data-item-nombre="{{ item.title }}">
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- 2. MENÚ (TODO lo que hay en productos_fisicos) -->
+      {% if productos_fisicos and productos_fisicos|length > 0 %}
+      <div class="menu-cafe-block">
+        <div class="d-flex justify-content-between align-items-center mb-3 gap-2 flex-wrap">
+          <h3 class="h5 mb-0 d-flex align-items-center gap-2">
+            <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill"><i class="bi bi-cup-hot"></i></span>
+            Menú de la casa
+          </h3>
+          <p class="small text-muted mb-0">Bebidas, panecitos y cositas dulces</p>
+        </div>
+
+        <div class="row g-3 menus-grid-row">
+          {% for item in productos_fisicos %}
+          <div class="col-9 col-sm-6 col-md-4 col-lg-3 menu-card-wrapper">
+            <div class="card card-menu h-100 border-0">
+              {% if item.image %}
+              <div class="ratio ratio-4x3">
+                <img src="{{ url_for('uploaded_file', filename=item.image) }}" class="img-fluid" style="object-fit:cover;">
+              </div>
+              {% endif %}
+              <div class="card-body d-flex flex-column">
+                <span class="menu-tag mb-1">{{ item.category or 'Producto' }}</span>
+                <h6 class="fw-semibold mb-1">{{ item.title }}</h6>
+                {% if item.description %}
+                <p class="small text-muted mb-2">{{ item.description }}</p>
+                {% endif %}
+                {% if item.show_price %}
+                <p class="mb-2"><span class="badge bg-success"> ${{ "%.2f"|format(item.price) }} </span></p>
+                {% endif %}
+                <label class="small text-muted mb-1" for="prod_{{ loop.index0 }}">Cantidad</label>
+                <input type="number"
+                       id="prod_{{ loop.index0 }}"
+                       name="prod_{{ item.title | replace(' ', '_') }}"
+                       class="form-control form-control-sm"
+                       min="0"
+                       value="0"
+                       data-item-nombre="{{ item.title }}">
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- BOTÓN COTIZAR -->
+      <div class="text-center">
+        <button type="submit" class="btn btn-success btn-lg px-4 py-2" id="btnAbrirModalCotizar">
+          <i class="bi bi-whatsapp fs-5 me-2"></i>
+          Cotizar por WhatsApp
+        </button>
+      </div>
+
+      <!-- Modal de cotización -->
+      <div class="modal fade" id="cotizarModal" tabindex="-1" aria-labelledby="cotizarModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content shadow">
+            <div class="modal-header" style="background: linear-gradient(160deg, var(--cafe-base), #2a1811); color:#fff;">
+              <h5 class="modal-title" id="cotizarModalLabel">Tu pedido está casi listo ☕</h5>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+              <p class="small text-muted mb-3">
+                Déjanos tu nombre para armar el mensaje de WhatsApp.
+              </p>
+              <div class="mb-3">
+                <label for="nombreClienteInput" class="form-label">Tu nombre</label>
+                <input type="text" class="form-control" id="nombreClienteInput" placeholder="Ej. Ana / Carlos">
+              </div>
+              <div id="resumenSeleccion" class="bg-light border rounded p-2 small" style="max-height: 200px; overflow-y: auto;"></div>
+              <div class="text-danger small mt-2 d-none" id="errorModalNombre">
+                Por favor escribe tu nombre 🙏
+              </div>
+            </div>
+            <div class="modal-footer justify-content-between">
+              <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+              <button type="button" class="btn btn-success" id="enviarCotizacionBtn">
+                <i class="bi bi-whatsapp me-1"></i> Enviar por WhatsApp
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </form>
+    {% else %}
+    <div class="alert alert-warning p-3 rounded shadow-sm mt-3" role="alert">
+      <i class="bi bi-exclamation-triangle-fill me-3 fs-4 text-warning"></i>
+      <div>
+        <h6 class="mb-1 fw-bold small">No hay menú disponible</h6>
+        <p class="mb-0 small">Escríbenos por WhatsApp 🙌</p>
+      </div>
+    </div>
+    {% endif %}
+  </section>
+
+  <!-- FAB WhatsApp -->
+  <a href="https://wa.me/{{ page.whatsapp | replace(' ', '') }}" target="_blank" class="wa-fab d-flex align-items-center justify-content-center">
+    <i class="bi bi-whatsapp fs-4"></i>
+  </a>
+
+  <!-- RESEÑAS -->
+  <div class="container card shadow-sm border-0 mb-5" id="reseñas">
+    <div class="card-body">
+      <h3 class="mt-2">⭐ Deja tu reseña</h3>
+      {% with messages = get_flashed_messages() %}
+      {% if messages %}
+      <div class="alert alert-info mt-2">
+        {% for message in messages %}
+        <p>{{ message }}</p>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% endwith %}
+      <form method="POST" class="mb-4">
+        <div class="mb-3">
+          <label for="nombre" class="form-label">Tu nombre</label>
+          <input type="text" name="nombre" class="form-control" required>
+        </div>
+        <div class="mb-3">
+          <label for="comentario" class="form-label">Comentario</label>
+          <textarea name="comentario" class="form-control" rows="3" required></textarea>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Calificación</label>
+          <div id="starRating" class="mb-2">
+            {% for i in range(1, 6) %}
+            <i class="bi bi-star-fill star-icon fs-3 me-1 text-secondary" data-value="{{ i }}"></i>
+            {% endfor %}
+          </div>
+          <input type="hidden" name="estrellas" id="estrellas" value="0" required>
+        </div>
+        <button type="submit" class="btn btn-cafe">Enviar reseña</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- LISTA DE RESEÑAS -->
+  <div class="container mb-5">
+    <h4 class="mb-4 text-center">⭐ Opiniones de clientes</h4>
+    {% if reseñas %}
+    <div class="row row-cols-1 row-cols-md-2 g-4">
+      {% for r in reseñas %}
+      <div class="col">
+        <div class="card h-100 shadow-sm border-0">
+          <div class="card-body">
+            <h5 class="card-title text-center mb-2">{{ r.nombre }}</h5>
+            <div class="text-center mb-3">
+              {% for i in range(1, 6) %}
+              {% if i <= r.estrellas %}
+              <i class="bi bi-star-fill text-warning fs-5"></i>
+              {% else %}
+              <i class="bi bi-star text-secondary fs-5"></i>
+              {% endif %}
+              {% endfor %}
+            </div>
+            <p class="card-text">{{ r.comentario }}</p>
+          </div>
+          <div class="card-footer text-end bg-transparent border-0">
+            <small class="text-muted">{{ r.fecha.strftime('%d/%m/%Y') }}</small>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-muted text-center">Aún no hay reseñas. ¡Sé el primero! ☕</p>
+    {% endif %}
+  </div>
+
+  <!-- FOOTER (respetando espacio) -->
+  <footer class="text-white">
+    <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+      <div class="text-center text-md-start">
+        <p class="mb-0">&copy; 2025 <strong>{{ page['business_name'] }}</strong>. Todos los derechos reservados.</p>
+        <small class="text-white-50">Sitio creado con <a href="https://davanitechnology.com/" target="_blank" class="text-white">DavaniTechnology</a></small>
+      </div>
+      <div class="text-center text-md-end">
+        {% if page.facebook %}
+        <a href="{{ page.facebook }}" target="_blank" class="text-white me-3 fs-4"><i class="bi bi-facebook"></i></a>
+        {% endif %}
+        {% if page.tiktok %}
+        <a href="{{ page.tiktok }}" target="_blank" class="text-white fs-4"><i class="bi bi-tiktok"></i></a>
+        {% endif %}
+      </div>
+    </div>
+  </footer>
+
+  <!-- SCRIPTS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+  <script>
+    // Cotización (servicios + menú)
+    const formCotizar = document.getElementById('form-cotizar');
+    const resumenSeleccionDiv = document.getElementById('resumenSeleccion');
+    const nombreClienteInput = document.getElementById('nombreClienteInput');
+    const errorModalNombre = document.getElementById('errorModalNombre');
+    let cotizacionLineas = [];
+
+    if (formCotizar) {
+      formCotizar.addEventListener('submit', function (e) {
+        e.preventDefault();
+        cotizacionLineas = [];
+        const inputs = formCotizar.querySelectorAll('input[type=number]');
+        inputs.forEach(input => {
+          const cantidad = parseInt(input.value);
+          if (cantidad > 0) {
+            const nombreItem = input.getAttribute('data-item-nombre') ||
+              input.name.replace('prod_', '').replace(/_/g, ' ');
+            cotizacionLineas.push(`- ${nombreItem}: ${cantidad}`);
+          }
+        });
+
+        if (cotizacionLineas.length === 0) {
+          alert("Selecciona al menos un producto o servicio ☕");
+          return;
+        }
+
+        resumenSeleccionDiv.innerHTML = cotizacionLineas.map(l => `<div>${l}</div>`).join('');
+        errorModalNombre.classList.add('d-none');
+        nombreClienteInput.classList.remove('is-invalid');
+
+        const cotizarModal = new bootstrap.Modal(document.getElementById('cotizarModal'));
+        cotizarModal.show();
+      });
+    }
+
+    // Enviar a WhatsApp
+    const enviarCotizacionBtn = document.getElementById('enviarCotizacionBtn');
+    if (enviarCotizacionBtn) {
+      enviarCotizacionBtn.addEventListener('click', () => {
+        const nombreCliente = (nombreClienteInput.value || '').trim();
+        if (!nombreCliente) {
+          errorModalNombre.classList.remove('d-none');
+          nombreClienteInput.classList.add('is-invalid');
+          nombreClienteInput.focus();
+          return;
+        }
+
+        const whatsappNumber = "{{ page.whatsapp | replace(' ', '') }}";
+        let mensaje = `Hola, soy ${nombreCliente} y quiero pedir:%0A`;
+        cotizacionLineas.forEach(linea => {
+          mensaje += encodeURIComponent(linea) + "%0A";
+        });
+
+        const urlWhatsapp = `https://wa.me/${whatsappNumber}?text=${mensaje}`;
+        window.open(urlWhatsapp, '_blank');
+      });
+    }
+
+    // Estrellas reseña
+    const stars = document.querySelectorAll('.star-icon');
+    const inputEstrellas = document.getElementById('estrellas');
+    if (stars && inputEstrellas) {
+      stars.forEach(star => {
+        star.addEventListener('click', () => {
+          const valor = parseInt(star.getAttribute('data-value'));
+          inputEstrellas.value = valor;
+          stars.forEach(s => {
+            const sVal = parseInt(s.getAttribute('data-value'));
+            s.classList.remove('text-warning', 'text-secondary');
+            s.classList.add(sVal <= valor ? 'text-warning' : 'text-secondary');
+          });
+        });
+      });
+    }
+
+    // Mapa Leaflet
+    (function () {
+      const lat = {{ page.get('lat') if page.get('lat') is not none else 'null' }};
+      const lng = {{ page.get('lng') if page.get('lng') is not none else 'null' }};
+      if (lat !== null && lng !== null) {
+        const map = L.map('map', { scrollWheelZoom: false }).setView([lat, lng], 16);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '&copy; OSM'
+        }).addTo(map);
+        const marker = L.marker([lat, lng]).addTo(map);
+        marker.bindPopup(`<strong>{{ page['business_name']|e }}</strong><br>{{ (page['address'] or '')|e }}`).openPopup();
+        setTimeout(() => { map.invalidateSize(); }, 300);
+      }
+    })();
+  </script>
+
+  <!-- Modal zoom (opcional) -->
+  <div class="modal fade" id="zoomModal" tabindex="-1" aria-labelledby="zoomModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-70">
+      <div class="modal-content bg-transparent border-0">
+        <div class="modal-body p-0">
+          <img src="" alt="Imagen ampliada" id="zoomedImage" class="img-fluid rounded shadow">
+        </div>
+        <div class="modal-footer border-0 justify-content-center">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
