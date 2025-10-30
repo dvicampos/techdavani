@@ -1,107 +1,392 @@
 {% extends "layout.html" %}
-
 {% block title %}Global PYMES{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h2 class="mb-4">Bienvenido, <strong>{{ current_user.nombre }}</strong></h2>
+{# ==== Defaults seguros ==== #}
+{% set PAGE = page|default(None) %}
+{% set S = stats|default({}) %}
+{% set R = recientes|default({'posts':[], 'avisos':[], 'productos':[]}) %}
 
-    <div class="row mt-5">
-        {% if current_user.role == 'admin' %}
-        <div class="col-md-4">
-            <div class="card shadow-sm mb-4">
-                <div class="card-body">
-                    <h5 class="card-title">👥 Gestionar usuarios</h5>
-                    <p class="card-text">Agrega, edita o elimina usuarios del sistema.</p>
-                    <a href="{{ url_for('manage_users') }}" class="btn btn-primary">Ir</a>
-                </div>
-            </div>
-        </div>
+<style>
+  /* ===== Dark dashboard fijo ===== */
+  :root {
+    --page-bg: #0b1020;        /* fondo detrás del contenedor */
+    --shell-bg: rgba(13,18,32,.35);
+    --panel: rgba(13,18,32,.35);
+    --panel-solid: #111827;
+    --ink: #e2e8f0;
+    --muted: #94a3b8;
+    --accent: #f3c623;
+    --accent-soft: rgba(243,198,35,.12);
+    --danger: #ef4444;
+    --radius-sm: 14px;
+    --radius-md: 18px;
+    --shadow: 0 18px 40px rgba(0,0,0,.35);
+    --stroke: rgba(148,163,184,.16);
+    --gradient-header: radial-gradient(circle at 10% 10%, rgba(243,198,35,.45), rgba(11,16,32,0) 44%), linear-gradient(130deg, #121a2f 0%, #172a4a 70%);
+  }
 
-        <div class="col-md-4">
-            <div class="card shadow-sm mb-4">
-                <div class="card-body">
-                    <h5 class="card-title">🛠 Gestionar página</h5>
-                    <p class="card-text">Edita la información de tu página asignada.</p>
-                    <a href="{{ url_for('manage_page_slug', slug=page.slug) }}" class="btn btn-primary">Ir</a>
-                </div>
-            </div>
-        </div>
+  .dash-shell {
+    max-width: 1180px;
+    margin: 1.6rem auto 3.2rem;
+    background: radial-gradient(circle at 20% -10%, rgba(243,198,35,.16), rgba(11,16,32,0) 38%), rgba(12,16,27,.6);
+    backdrop-filter: blur(24px);
+    border: 1px solid rgba(148,163,184,.12);
+    border-radius: 18px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
 
-        {% endif %}
+  /* ===== Header ===== */
+  .dash-header {
+    display:flex;
+    justify-content:space-between;
+    gap:1rem;
+    align-items:center;
+    background: var(--gradient-header);
+    padding: 1.1rem 1.4rem 1.1rem;
+  }
+  .dash-title {
+    display:flex;
+    flex-direction:column;
+    gap:.25rem;
+  }
+  .dash-title h1 {
+    font-size: 1.28rem;
+    margin:0;
+    color:#fff;
+    font-weight: 700;
+    letter-spacing:.01em;
+  }
+  .dash-title small {
+    color: rgba(226,232,240,.85);
+    font-size:.7rem;
+  }
 
-         {% if current_user.role == 'admin' or current_user.role == 'moderador' %}
-        <div class="col-md-4">
-            <div class="card shadow-sm mb-4">
-                <div class="card-body">
-                    <h5 class="card-title">📝 Crear blog</h5>
-                    <p class="card-text">Publica una nueva entrada en tu blog.</p>
-                    <a href="{{ url_for('crear_post_negocio') }}" class="btn btn-success">Crear</a>
-                </div>
-            </div>
-        </div>
+  .dash-search {
+    display:flex;
+    align-items:center;
+    gap:.4rem;
+    background: rgba(15,23,42,.42);
+    border:1px solid rgba(226,232,240,.12);
+    border-radius:999px;
+    padding:.35rem .75rem;
+    backdrop-filter: blur(10px);
+  }
+  .dash-search span {font-size:.9rem;}
+  .dash-search input {
+    background:transparent;
+    border:0;
+    outline:0;
+    color:#fff;
+    width: 230px;
+    font-size:.75rem;
+  }
+  .dash-search input::placeholder {color:rgba(226,232,240,.6);}
 
-        <div class="col-md-4">
-            <div class="card shadow-sm mb-4">
-                <div class="card-body">
-                    <h5 class="card-title">📢 Crear aviso</h5>
-                    <p class="card-text">Publica un aviso para tu comunidad.</p>
-                    <a href="{{ url_for('create_aviso') }}" class="btn btn-warning">Crear</a>
-                </div>
-            </div>
-        </div>
+  /* ===== Body ===== */
+  .dash-body {
+    padding: 1.1rem 1.4rem 1.5rem;
+  }
 
-        <div class="col-md-4">
-            <div class="card shadow-sm mb-4">
-                <div class="card-body">
-                    <h5 class="card-title">🛒 Crear producto</h5>
-                    <p class="card-text">Agrega un nuevo producto con imagen, descripción y precio.</p>
-                    <a href="{{ url_for('create_producto') }}" class="btn btn-info text-white">Crear</a>
-                </div>
-            </div>
-        </div>
-        {% endif %}
+  /* ===== KPIs ===== */
+  .kpi-row {
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(145px,1fr));
+    gap:.9rem;
+  }
+  .kpi {
+    background: radial-gradient(circle at 10% 10%, rgba(243,198,35,.1), rgba(15,23,42,0) 48%), rgba(15,23,42,.22);
+    border:1px solid rgba(148,163,184,.14);
+    border-radius: 14px;
+    padding:.7rem .85rem .75rem;
+    backdrop-filter: blur(10px);
+  }
+  .kpi-badge {
+    background: rgba(243,198,35,1);
+    color:#101010;
+    font-size:.6rem;
+    padding:.1rem .55rem .15rem;
+    border-radius:999px;
+    font-weight:600;
+    display:inline-block;
+    margin-bottom:.3rem;
+  }
+  .kpi-value {
+    font-size:1.35rem;
+    font-weight:700;
+    color:#fff;
+    line-height:1.05;
+  }
+  .kpi-label {
+    font-size:.72rem;
+    color:rgba(226,232,240,.7);
+  }
 
-        <div class="col-md-4">
-            <div class="card shadow-sm mb-4">
-                <div class="card-body">
-                    <h5 class="card-title">📚 Ver publicaciones</h5>
-                    <p class="card-text">Consulta y gestiona tus publicaciones.</p>
-                    <a href="{{ url_for('list_post') }}" class="btn btn-secondary">Ver</a>
-                </div>
-            </div>
-        </div>
+  /* ===== Section title ===== */
+  .section-title {
+    font-size:.72rem;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    color:rgba(226,232,240,.4);
+    margin:1.25rem 0 .6rem;
+    font-weight:600;
+  }
 
-        <div class="col-md-4">
-            <div class="card shadow-sm mb-4">
-                <div class="card-body">
-                    <h5 class="card-title">📋 Ver avisos</h5>
-                    <p class="card-text">Revisa todos los avisos publicados.</p>
-                    <a href="{{ url_for('list_avisos') }}" class="btn btn-secondary">Ver</a>
-                </div>
-            </div>
-        </div>
+  /* ===== Actions ===== */
+  .actions-grid {
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px,1fr));
+    gap:.75rem;
+  }
+  .action-card {
+    background: radial-gradient(circle at 20% 15%, rgba(255,255,255,.05), rgba(17,24,39,.0) 45%), rgba(17,24,39,.25);
+    border:1px solid rgba(148,163,184,.1);
+    border-radius: 14px;
+    padding:.75rem .75rem .8rem;
+    display:flex;
+    gap:.65rem;
+    align-items:flex-start;
+    min-height:88px;
+    backdrop-filter: blur(15px);
+  }
+  .action-icon {
+    width:40px;
+    height:40px;
+    border-radius: 14px;
+    display:grid;
+    place-items:center;
+    background: radial-gradient(circle at 20% 20%, #f9d36b 0%, #f3c623 45%, #be8e07 100%);
+    color:#111827;
+    font-size:1.05rem;
+    box-shadow: 0 10px 20px rgba(0,0,0,.25);
+  }
+  .action-body h5 {
+    font-size:.83rem;
+    margin:0 0 .25rem;
+    color:var(--ink);
+    color:#fff;
+  }
+  .action-body p {
+    font-size:.7rem;
+    color:rgba(226,232,240,.5);
+    margin:0 0 .45rem;
+  }
+  .action-body .btn {
+    padding:.25rem .6rem;
+    font-size:.67rem;
+    border-radius: 999px;
+  }
 
-        <div class="col-md-4">
-            <div class="card shadow-sm mb-4">
-                <div class="card-body">
-                    <h5 class="card-title">📦 Ver productos</h5>
-                    <p class="card-text">Consulta y administra tus productos disponibles.</p>
-                    <a href="{{ url_for('list_productos') }}" class="btn btn-secondary">Ver</a>
-                </div>
-            </div>
-        </div>
+  /* botones oscuros adaptados */
+  .btn-primary {background:#2563eb;border:0;}
+  .btn-success {background:#22c55e;border:0;}
+  .btn-warning {background:#f97316;border:0;}
+  .btn-info {background:#38bdf8;border:0;}
+  .btn-secondary {background:rgba(148,163,184,.14);border:1px solid rgba(148,163,184,.3);color:#fff;}
 
-        <div class="col-md-4">
-            <div class="card shadow-sm mb-4">
-                <div class="card-body">
-                    <h5 class="card-title">⭐ Ver reseñas</h5>
-                    <p class="card-text">Consulta las reseñas.</p>
-                    <a href="{{ url_for('admin_reseñas') }}" class="btn btn-secondary">Ver</a>
-                </div>
-            </div>
-        </div>
+  /* ===== Recientes ===== */
+  .recent-row {
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px,1fr));
+    gap:.8rem;
+    margin-top:.9rem;
+  }
+  .panel {
+    background: radial-gradient(circle at 8% 8%, rgba(243,198,35,.05), rgba(15,23,42,0) 40%), rgba(17,24,39,.35);
+    border:1px solid rgba(148,163,184,.12);
+    border-radius: 14px;
+    padding:.75rem .8rem .1rem;
+    backdrop-filter: blur(10px);
+  }
+  .panel h5 {
+    font-size:.78rem;
+    margin:0 0 .45rem;
+    color:#fff;
+  }
+  .list-compact {list-style:none;margin:0;padding:0;}
+  .list-compact li {
+    padding:.45rem 0 .5rem;
+    border-bottom:1px dashed rgba(148,163,184,.14);
+  }
+  .list-compact li:last-child {border-bottom:0;}
+  .item-title {
+    font-size:.74rem;
+    font-weight:500;
+    color:#fff;
+    text-decoration:none;
+  }
+  .item-title:hover {text-decoration:underline;}
+  .item-meta {
+    font-size:.63rem;
+    color:rgba(226,232,240,.35);
+  }
+  .empty {
+    background: rgba(15,23,42,.24);
+    border:1px dashed rgba(148,163,184,.24);
+    border-radius:12px;
+    padding:.65rem .4rem;
+    text-align:center;
+    font-size:.68rem;
+    color:rgba(226,232,240,.4);
+  }
 
+  @media (max-width: 768px) {
+    .dash-shell { margin: .5rem .3rem 2.5rem; }
+    .dash-header { flex-direction:column; align-items:flex-start; }
+    .dash-search input { width: 160px; }
+  }
+</style>
+
+<div class="dash-shell">
+  <!-- header -->
+  <div class="dash-header">
+    <div class="dash-title">
+      <h1>Bienvenido, {{ current_user.nombre }}</h1>
+      {% if now is defined %}
+        <small>Hoy es {{ now().strftime('%d/%m/%Y') }} · {{ PAGE.nombre or 'Tu sitio' }}</small>
+      {% endif %}
     </div>
+    <form class="dash-search" method="get" action="{{ url_for('dashboard_slug', slug=PAGE.slug) if PAGE else url_for('dashboard') }}">
+      <span>🔎</span>
+      <input name="q" type="search" placeholder="Buscar publicaciones, avisos, productos…">
+    </form>
+  </div>
+
+  <!-- body -->
+  <div class="dash-body">
+    <!-- KPIs -->
+    <div class="kpi-row">
+      {% set kpis = [
+        {'label':'Publicaciones','value': S.get('posts', 0),'href':url_for('list_post')},
+        {'label':'Avisos','value': S.get('avisos', 0),'href':url_for('list_avisos')},
+        {'label':'Productos','value': S.get('productos', 0),'href':url_for('list_productos')},
+        {'label':'Reseñas','value': S.get('resenas', 0),'href':url_for('admin_reseñas')}
+      ] %}
+      {% if current_user.role == 'admin' %}
+        {% set kpis = kpis + [{'label':'Usuarios','value': S.get('usuarios', 0),'href':url_for('manage_users')}] %}
+      {% endif %}
+
+      {% for k in kpis %}
+        <a href="{{ k.href }}" class="kpi text-decoration-none d-block">
+          <div class="kpi-badge">KPI</div>
+          <div class="kpi-value">{{ k.value }}</div>
+          <div class="kpi-label">{{ k.label }}</div>
+        </a>
+      {% endfor %}
+    </div>
+
+    <!-- acciones -->
+    <div class="section-title">Acciones rápidas</div>
+    {% set acciones = [] %}
+    {% if current_user.role == 'admin' %}
+      {% set acciones = acciones + [
+        {'icon':'👥','title':'Gestionar usuarios','text':'Agrega, edita o elimina usuarios.','href':url_for('manage_users'),'btn':'primary','label':'Ir'},
+        {'icon':'🛠','title':'Gestionar página','text':'Edita la página asignada.','href':(url_for('manage_page_slug', slug=PAGE.slug) if PAGE else '#'),'btn':'primary','label':'Ir'}
+      ] %}
+    {% endif %}
+    {% if current_user.role in ['admin','moderador'] %}
+      {% set acciones = acciones + [
+        {'icon':'📝','title':'Crear blog','text':'Publica una nueva entrada.','href':url_for('crear_post_negocio'),'btn':'success','label':'Crear'},
+        {'icon':'📢','title':'Crear aviso','text':'Publica un aviso para tu comunidad.','href':url_for('create_aviso'),'btn':'warning','label':'Crear'},
+        {'icon':'🛒','title':'Crear producto','text':'Nuevo producto con imagen y precio.','href':url_for('create_producto'),'btn':'info','label':'Crear'}
+      ] %}
+    {% endif %}
+    {% set acciones = acciones + [
+      {'icon':'📚','title':'Ver publicaciones','text':'Consulta y gestiona tus posts.','href':url_for('list_post'),'btn':'secondary','label':'Ver'},
+      {'icon':'📋','title':'Ver avisos','text':'Revisa los avisos publicados.','href':url_for('list_avisos'),'btn':'secondary','label':'Ver'},
+      {'icon':'📦','title':'Ver productos','text':'Administra tus productos.','href':url_for('list_productos'),'btn':'secondary','label':'Ver'},
+      {'icon':'⭐','title':'Ver reseñas','text':'Consulta las reseñas.','href':url_for('admin_reseñas'),'btn':'secondary','label':'Ver'}
+    ] %}
+
+    <div class="actions-grid">
+      {% for a in acciones %}
+        <div class="action-card">
+          <div class="action-icon">{{ a.icon }}</div>
+          <div class="action-body">
+            <h5>{{ a.title }}</h5>
+            <p>{{ a.text }}</p>
+            <a href="{{ a.href }}" class="btn btn-{{ a.btn }}{% if a.btn=='info' %} text-white{% endif %}">{{ a.label }}</a>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <!-- recientes -->
+    <div class="section-title">Recientes</div>
+    <div class="recent-row">
+      <!-- posts -->
+      <div class="panel">
+        <h5>🆕 Publicaciones</h5>
+        {% if R.posts and R.posts|length %}
+          <ul class="list-unstyled list-compact">
+            {% for p in R.posts[:6] %}
+              {% set POST_ID =
+                (p.post_id if p.post_id is defined else
+                 (p.id if p.id is defined else
+                  ('' ~ p._id) if p._id is defined else None))
+              %}
+              {% if POST_ID %}
+                {% set POST_URL = url_for('ver_post', post_id=POST_ID) %}
+              {% elif p.slug is defined %}
+                {% set POST_URL = url_for('ver_post', slug=p.slug) %}
+              {% else %}
+                {% set POST_URL = '#' %}
+              {% endif %}
+              <li>
+                <a href="{{ POST_URL }}" class="item-title">{{ p.titulo or p.title }}</a>
+                <div class="item-meta">
+                  {% set f = (p.fecha if p.fecha is defined else (p.created_at if p.created_at is defined else None)) %}
+                  {% if f %}{{ f.strftime('%d/%m/%Y') if f.strftime is defined else f }}{% endif %}
+                </div>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <div class="empty">Aún no hay publicaciones.</div>
+        {% endif %}
+      </div>
+
+      <!-- avisos -->
+      <div class="panel">
+        <h5>📣 Avisos</h5>
+        {% if R.avisos and R.avisos|length %}
+          <ul class="list-unstyled list-compact">
+            {% for a in R.avisos[:6] %}
+              <li>
+                <span class="item-title">{{ a.titulo or a.title }}</span>
+                <div class="item-meta">
+                  {% set f = (a.fecha if a.fecha is defined else (a.created_at if a.created_at is defined else None)) %}
+                  {% if f %}{{ f.strftime('%d/%m/%Y') if f.strftime is defined else f }}{% endif %}
+                </div>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <div class="empty">Sin avisos por ahora.</div>
+        {% endif %}
+      </div>
+
+      <!-- productos -->
+      <div class="panel">
+        <h5>🛍️ Productos</h5>
+        {% if R.productos and R.productos|length %}
+          <ul class="list-unstyled list-compact">
+            {% for pr in R.productos[:6] %}
+              <li>
+                <a href="{{ url_for('ver_producto', slug=pr.slug) if pr.slug is defined else '#' }}" class="item-title">{{ pr.nombre or pr.name }}</a>
+                <div class="item-meta">
+                  {% if pr.precio is defined and pr.precio is not none %}{{ (pr.precio|float)|round(2) }}{% endif %}
+                  {{ pr.moneda or 'MXN' }}
+                </div>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <div class="empty">Todavía no hay productos recientes.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}

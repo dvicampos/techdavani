@@ -3,156 +3,296 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>{{ post.title }}</title>
+  <title>{{ post.title or 'Publicación' }} · Blog</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet"/>
+
   <style>
-    body {
-      background-color: {{ negocio['colors'] }};
-      font-family: 'Segoe UI', sans-serif;
+    /* ====== TEMA FIJO (no depende del negocio) ====== */
+    :root {
+      --page-bg: #050814;
+      --surface: rgba(9, 12, 20, 0.65);
+      --card: #0f172a;
+      --ink: #e2e8f0;
+      --muted: #94a3b8;
+      --accent: #f3c623;
+      --radius: 18px;
+      --border: rgba(148,163,184,.25);
     }
 
+    body {
+      background: radial-gradient(circle at 8% -10%, rgba(243,198,35,.18), rgba(5,8,20,0) 40%), var(--page-bg);
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      color: var(--ink);
+    }
+
+    /* ===== Navbar neutral ===== */
+    .navbar-post {
+      background: rgba(5,6,8,.35);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(148,163,184,.15);
+    }
+    .navbar-post .navbar-brand {
+      font-weight: 700;
+      letter-spacing: .02em;
+    }
+
+    /* ===== Contenedor del post ===== */
     .post-container {
       max-width: 900px;
-      margin-top: 100px;
-      margin-bottom: 100px;
+      margin: 90px auto 90px;
+      padding: 0 1rem;
     }
 
     .post-card {
-      background: #fff;
-      border-radius: 15px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      background: radial-gradient(circle at 10% 0%, rgba(243,198,35,.18), rgba(15,23,42,0) 50%), rgba(15,23,42,.35);
+      border: 1px solid rgba(148,163,184,.15);
+      border-radius: 18px;
       overflow: hidden;
+      box-shadow: 0 18px 30px rgba(0,0,0,.25);
+      backdrop-filter: blur(18px);
     }
 
-    .post-title {
-      font-size: 2rem;
-      font-weight: bold;
-      margin-bottom: 10px;
+    /* ===== cabecera ===== */
+    .post-cover-wrap {
+      position: relative;
+      background: #020617;
+      min-height: 160px;
     }
-
-    .post-meta {
-      font-size: 0.9rem;
-      color: #666;
-      margin-bottom: 1rem;
-    }
-
-    .post-content {
-      font-size: 1.1rem;
-      line-height: 1.8;
-      color: #333;
-    }
-
     .post-image {
       width: 100%;
-      max-height: 450px;
+      max-height: 420px;
       object-fit: cover;
+      display: block;
     }
-
-    .gallery img, .gallery video {
-      width: 100%;
-      height: 250px;
-      object-fit: cover;
-      border-radius: 10px;
-    }
-
     .badge-custom {
       position: absolute;
       top: 15px;
       left: 15px;
-      background-color: rgba(0, 0, 0, 0.7);
+      background-color: rgba(0, 0, 0, 0.45);
+      border: 1px solid rgba(255,255,255,.25);
       color: white;
-      font-size: 0.8rem;
+      font-size: 0.7rem;
       padding: 6px 12px;
+      border-radius: 999px;
+      backdrop-filter: blur(12px);
+    }
+
+    /* ===== body del post ===== */
+    .post-body {
+      padding: 1.6rem 1.6rem 1.8rem;
+    }
+
+    .post-title {
+      font-size: clamp(1.7rem, 3.2vw, 2.1rem);
+      font-weight: 700;
+      margin-bottom: .4rem;
+      color: #fff;
+    }
+
+    .post-meta {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 1.2rem;
+      display: flex;
+      gap: .65rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .post-meta small {
+      display: inline-flex;
+      gap: .3rem;
+      align-items: center;
+    }
+
+    .pill-cat {
+      background: rgba(243,198,35,.09);
+      border: 1px solid rgba(243,198,35,.35);
+      border-radius: 999px;
+      padding: .2rem .7rem .3rem;
+      font-size: .65rem;
+      color: #fde68a;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    .post-content {
+      font-size: 1rem;
+      line-height: 1.65;
+      color: rgba(226,232,240,.95);
+      word-break: break-word;
+    }
+    .post-content p {
+      margin-bottom: 1rem;
+    }
+
+    /* ===== gallery ===== */
+    .gallery-title {
+      margin-top: 1.6rem;
+      margin-bottom: .5rem;
+      font-weight: 600;
+      color: #fff;
+      font-size: .9rem;
+    }
+
+    .gallery .col-12 {
+      margin-bottom: .8rem;
+    }
+    .gallery img,
+    .gallery video {
+      width: 100%;
+      height: 230px;
+      object-fit: cover;
       border-radius: 12px;
+      border: 1px solid rgba(148,163,184,.14);
+      background: #020617;
+      cursor: zoom-in;
     }
 
+    .btn-attach {
+      background: rgba(148,163,184,.05);
+      border: 1px solid rgba(148,163,184,.35);
+      color: #e2e8f0;
+      border-radius: 999px;
+      font-size: .75rem;
+    }
+
+    /* ===== volver ===== */
+    .back-zone {
+      margin-top: 1.9rem;
+      text-align: center;
+    }
+    .back-zone .btn-back {
+      background: transparent;
+      border: 1px solid rgba(226,232,240,.35);
+      color: #fff;
+      border-radius: 999px;
+    }
+    .back-zone .btn-back:hover {
+      background: rgba(226,232,240,.05);
+    }
+
+    /* ===== footer neutro ===== */
     footer {
-      background: linear-gradient(to right, {{ negocio['color'] or '#343a40' }}, #000);
-      color: white;
-      padding: 2rem 0;
+      background: rgba(1,1,1,.1);
+      border-top: 1px solid rgba(148,163,184,.08);
+      color: rgba(226,232,240,.5);
+      padding: 1.4rem 0 1.2rem;
+      text-align: center;
+      font-size: .7rem;
+    }
+    footer a { color: rgba(226,232,240,.9); }
+
+    /* modal */
+    .modal-content.bg-dark {
+      background: #020617 !important;
+      border: 1px solid rgba(148,163,184,.35);
     }
 
-    footer a {
-      color: #99e;
+    @media (max-width: 768px) {
+      .post-container { margin-top: 80px; }
+      .post-body { padding: 1.2rem 1.1rem 1.4rem; }
+      .gallery img, .gallery video { height: 200px; }
     }
   </style>
 </head>
 <body>
 
-<!-- Navbar -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top shadow-sm"
-     style="background: linear-gradient(to right, {{ negocio['color'] or '#343a40' }}, #000);">
+<!-- Navbar neutro -->
+<nav class="navbar navbar-expand-lg navbar-dark fixed-top navbar-post">
   <div class="container">
-    <a class="navbar-brand fw-bold" href="{{ url_for('detalle_negocio', nombre=negocio['business_name']) }}">{{ negocio['business_name'] }}</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+    <a class="navbar-brand" href="{{ url_for('detalle_negocio', nombre=negocio['business_name']) }}">
+      {{ negocio['business_name'] }}
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navBlog">
       <span class="navbar-toggler-icon"></span>
     </button>
   </div>
 </nav>
 
-<!-- Post Content -->
-<div class="container post-container">
-  <div class="card post-card">
+<!-- Post -->
+<div class="post-container">
+
+  <article class="post-card">
     {% if post.cabecera %}
-    <div class="position-relative">
-      <img src="{{ url_for('uploaded_file', filename=post.cabecera) }}" class="post-image" alt="Cabecera del post">
-      <span class="badge badge-custom"><i class="bi bi-star-fill me-1"></i> Destacado</span>
-    </div>
-    {% endif %}
-    <div class="card-body">
-      <h1 class="post-title">{{ post.title }}</h1>
-      <div class="post-meta">
-        Publicado por <strong>{{ post.author }}</strong> | {{ post.date.strftime('%d/%m/%Y %H:%M') }}
+      <div class="post-cover-wrap">
+        <img src="{{ url_for('uploaded_file', filename=post.cabecera) }}" class="post-image" alt="Cabecera del post">
+        <span class="badge-custom">
+          <i class="bi bi-star-fill me-1"></i> Publicación
+        </span>
       </div>
+    {% endif %}
+
+    <div class="post-body">
+      <h1 class="post-title">{{ post.title or 'Publicación sin título' }}</h1>
+
+      <div class="post-meta">
+        <small><i class="bi bi-person"></i> {{ post.author or 'Administrador' }}</small>
+        {% if post.date %}
+          <small><i class="bi bi-calendar-event"></i> {{ post.date.strftime('%d/%m/%Y %H:%M') }}</small>
+        {% endif %}
+        <small class="pill-cat">blog</small>
+      </div>
+
       <div class="post-content mb-4">
-        {{ post.content }}
+        {{ post.content|safe }}
       </div>
 
       {% if post.files %}
-      <div class="row g-3 gallery">
+        <h6 class="gallery-title"><i class="bi bi-images me-1"></i> Archivos adjuntos</h6>
+        <div class="row g-3 gallery">
           {% for file in post.files %}
-          <div class="col-12 col-sm-6 col-md-4">
-            {% if file.endswith(('jpg', 'jpeg', 'png', 'gif')) %}
-              <img src="{{ url_for('uploaded_file', filename=file) }}" alt="Imagen {{ loop.index }}" class="img-thumbnail shadow-sm" loading="lazy">
-            {% elif file.endswith('mp4') %}
-              <video controls>
-                <source src="{{ url_for('uploaded_file', filename=file) }}" type="video/mp4">
-              </video>
-            {% else %}
-              <a href="{{ url_for('uploaded_file', filename=file) }}" target="_blank" class="btn btn-outline-secondary btn-sm w-100">Descargar {{ file }}</a>
-            {% endif %}
-          </div>
+            <div class="col-12 col-sm-6 col-md-4">
+              {% if file.endswith(('jpg', 'jpeg', 'png', 'gif', 'webp')) %}
+                <img src="{{ url_for('uploaded_file', filename=file) }}" alt="Imagen {{ loop.index }}" loading="lazy">
+              {% elif file.endswith('mp4') %}
+                <video controls>
+                  <source src="{{ url_for('uploaded_file', filename=file) }}" type="video/mp4">
+                </video>
+              {% else %}
+                <a href="{{ url_for('uploaded_file', filename=file) }}"
+                   target="_blank"
+                   class="btn btn-attach w-100 d-flex align-items-center justify-content-center gap-2">
+                  <i class="bi bi-paperclip"></i> Descargar {{ file }}
+                </a>
+              {% endif %}
+            </div>
           {% endfor %}
-      </div>
+        </div>
       {% endif %}
 
       {% if post.file_url %}
-      <div class="mt-4 text-center">
-          <a href="{{ url_for('uploaded_file', filename=post.file_url) }}" target="_blank" class="btn btn-primary btn-lg">
-          <i class="bi bi-download me-2"></i> Descargar archivo adjunto
-        </a>
-      </div>
+        <div class="mt-4 text-center">
+          <a href="{{ url_for('uploaded_file', filename=post.file_url) }}" target="_blank" class="btn btn-primary btn-lg rounded-pill">
+            <i class="bi bi-download me-2"></i> Descargar archivo adjunto
+          </a>
+        </div>
       {% endif %}
 
-      <div class="mt-4 text-center">
-        <a href="{{ url_for('detalle_negocio', nombre=negocio['business_name']) }}" class="btn btn-outline-dark">
+      <div class="back-zone">
+        <a href="{{ url_for('detalle_negocio', nombre=negocio['business_name']) }}" class="btn btn-back">
           <i class="bi bi-arrow-left-circle"></i> Volver a {{ negocio['business_name'] }}
         </a>
       </div>
+
     </div>
-  </div>
+  </article>
+
 </div>
 
-<!-- Footer -->
-<footer class="text-center mt-5">
+<!-- Footer neutro -->
+<footer>
   <div class="container">
-    <p class="mb-1">&copy; 2025 <strong>{{ negocio['business_name'] }}</strong> - Todos los derechos reservados.</p>
-    <small>Creado por <a href="https://davanitechnology.com/" target="_blank">DavaniTechnology</a></small>
+    <p class="mb-1">&copy; {{ negocio['business_name'] }} · Blog · {{ (post.date.year if post.date else 2025) }}</p>
+    <small>
+      Plataforma por <a href="https://davanitechnology.com/" target="_blank" rel="noopener">DavaniTechnology</a>
+    </small>
   </div>
 </footer>
 
-
+<!-- Modal de imagen -->
 <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content bg-dark text-center">
@@ -160,7 +300,7 @@
         <img src="" id="modalImage" class="img-fluid w-100 rounded" alt="Imagen ampliada">
       </div>
       <div class="py-3">
-        <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">
+        <button type="button" class="btn btn-light btn-sm rounded-pill" data-bs-dismiss="modal">
           <i class="bi bi-x-lg me-1"></i> Cerrar
         </button>
       </div>
@@ -171,11 +311,11 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
   document.addEventListener('DOMContentLoaded', () => {
-    const modal = new bootstrap.Modal(document.getElementById('imageModal'));
+    const modalEl = document.getElementById('imageModal');
+    const modal = new bootstrap.Modal(modalEl);
     const modalImg = document.getElementById('modalImage');
 
     document.querySelectorAll('.gallery img').forEach(img => {
-      img.style.cursor = 'zoom-in';
       img.addEventListener('click', () => {
         modalImg.src = img.src;
         modal.show();

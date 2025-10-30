@@ -1013,17 +1013,38 @@ def posts():
     return render_template('posts.html', posts=posts)
 
 # --- NUEVA: /dashboard/<slug> ---
+
 @app.route('/dashboard/<slug>')
-@require_active_subscription
 @login_required
+@require_active_subscription
 def dashboard_slug(slug):
     page = get_page_by_slug(slug)
     if not page:
         flash('Sitio no encontrado.')
         return redirect(url_for('sites'))
+
     set_current_page_id(page['_id'])
     page = ensure_page_has_slug(page)
-    return render_template('dashboard.html', page=page)
+
+    page_id = page['_id']
+
+    # --- Stats (conteos) ---
+    stats = {
+        'posts':     mongo.db.posts.count_documents({'page_id': page_id}),
+        'avisos':    mongo.db.avisos.count_documents({'page_id': page_id}),
+        'productos': mongo.db.productos.count_documents({'page_id': page_id}),
+        'resenas':   mongo.db.resenas.count_documents({'page_id': page_id}) if 'resenas' in mongo.db.list_collection_names() else 0,
+        'usuarios':  mongo.db.users.count_documents({}) if current_user.role == 'admin' else 0,
+    }
+
+    # --- Recientes (top 6 por fecha) ---
+    recientes = {
+        'posts':     list(mongo.db.posts.find({'page_id': page_id}).sort('created_at', -1).limit(6)),
+        'avisos':    list(mongo.db.avisos.find({'page_id': page_id}).sort('created_at', -1).limit(6)),
+        'productos': list(mongo.db.productos.find({'page_id': page_id}).sort('created_at', -1).limit(6)),
+    }
+
+    return render_template('dashboard.html', page=page, stats=stats, recientes=recientes)
 
 # Compat: /dashboard → /dashboard/<slug>
 @app.route('/dashboard')
