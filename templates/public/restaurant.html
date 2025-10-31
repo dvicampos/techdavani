@@ -9,10 +9,14 @@
   <meta name="keywords" content="{{ page.get('category','Restaurante') }}, comida, menú, reservaciones">
   <meta name="author" content="{{ page.get('business_name','') }}">
 
-  <!-- OG / Twitter -->
+  {# OG / Twitter - si hay portada la usamos #}
   <meta property="og:title" content="{{ page.get('business_name','Restaurante') }}">
   <meta property="og:description" content="{{ page.get('slogan') or page.get('description','')[:200] }}">
-  <meta property="og:image" content="{{ url_for('static', filename=page.get('image') or 'images/default.png', _external=True) }}">
+  {% if page.get('cover_image') %}
+    <meta property="og:image" content="{{ url_for('uploaded_file', filename=page.cover_image, _external=True) }}">
+  {% else %}
+    <meta property="og:image" content="{{ url_for('static', filename=page.get('image') or 'images/default.png', _external=True) }}">
+  {% endif %}
   <meta property="og:url" content="{{ request.url }}">
   <meta property="og:type" content="restaurant">
   <meta name="twitter:card" content="summary_large_image">
@@ -33,7 +37,9 @@
       --radius:16px; --shadow:0 16px 40px rgba(0,0,0,.24);
     }
     @media (prefers-color-scheme: light){
-      :root{ --bg:#fafafa; --card:#ffffff; --ink:#0f172a; --muted:#64748b; --line:#e5e7eb; }
+      :root{
+        --bg:#fafafa; --card:#ffffff; --ink:#0f172a; --muted:#64748b; --line:#e5e7eb;
+      }
     }
 
     html{scroll-behavior:smooth}
@@ -50,12 +56,18 @@
     .navbar .nav-link{ color:#fff; font-weight:600; opacity:.9 }
     .navbar .nav-link:hover,.navbar .nav-link.active{ opacity:1 }
 
-    /* HERO */
+    /* HERO con portada */
     .hero{
       position: relative;
+      {% if page.get('cover_image') %}
+      background:
+        linear-gradient(130deg, rgba(11,15,20,.9) 8%, rgba(11,15,20,.35) 58%, rgba(11,15,20,0) 100%),
+        url("{{ url_for('uploaded_file', filename=page.cover_image) }}") center/cover no-repeat;
+      {% else %}
       background:
         radial-gradient(900px 400px at -10% -20%, color-mix(in oklab, var(--brand) 38%, #fff 62%) 0%, transparent 55%),
         linear-gradient(180deg, color-mix(in oklab, var(--bg) 90%, #000 10%) 0%, var(--bg) 100%);
+      {% endif %}
       border-bottom:1px solid var(--line);
       overflow: clip;
     }
@@ -100,7 +112,7 @@
     }
     .section-title{ font-weight:800; letter-spacing:.2px }
 
-    /* ===== MENÚ (SOLO PRODUCTOS_FISICOS / PLATILLOS) ===== */
+    /* ===== MENÚ ===== */
     .menu-tools{ gap:.6rem; flex-wrap:wrap }
     .menu-search{ max-width:480px }
     .tabs .btn{
@@ -128,12 +140,10 @@
       color:var(--muted)
     }
 
-    .pedido-box label{
-      font-size:.7rem; color:var(--muted); margin:0;
-    }
+    .pedido-box label{ font-size:.7rem; color:var(--muted); margin:0; }
     .pedido-box input{min-width:70px;}
 
-    /* ===== SERVICIOS EXTRA (catering, eventos, etc) ===== */
+    /* ===== SERVICIOS ===== */
     .service-card{
       background:var(--card);
       border:1px solid var(--line);
@@ -142,31 +152,32 @@
       height:100%;
       padding:1rem 1.25rem;
     }
-    .service-title{
-      font-weight:700;
-      color:var(--ink);
-      display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      gap:.5rem;
-      flex-wrap:wrap;
-    }
-    .service-price{
-      font-weight:800;
-      color:var(--brand);
-      white-space:nowrap;
-    }
-    .service-desc{
-      color:var(--muted);
-      font-size:.9rem;
-      margin-top:.5rem;
-      margin-bottom:1rem;
-    }
 
-    /* GALERÍA */
-    .gallery img{
-      width:100%; aspect-ratio: 1/1;
-      object-fit:cover; border-radius:10px; border:1px solid var(--line)
+    /* GALERÍA mejorada */
+    .gallery-grid{
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap:1rem;
+    }
+    .gal-item{
+      position:relative;
+      border-radius:14px;
+      overflow:hidden;
+      aspect-ratio:4/3;
+      background:#000;
+      cursor:pointer;
+      border:1px solid rgba(255,255,255,.05);
+    }
+    .gal-item img,.gal-item video{
+      width:100%;height:100%;object-fit:cover;display:block;
+    }
+    .gal-item::after{
+      content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 50%,rgba(0,0,0,.4) 100%);opacity:0;transition:.2s;
+    }
+    .gal-item:hover::after{opacity:1;}
+    .badge-type{
+      position:absolute;top:.5rem;left:.5rem;background:rgba(0,0,0,.6);color:#fff;border-radius:999px;padding:.25rem .6rem;font-size:.7rem;
+      backdrop-filter:blur(2px);
     }
 
     /* MAPA */
@@ -175,9 +186,6 @@
       border:1px solid var(--line); overflow:hidden;
       box-shadow:var(--shadow)
     }
-
-    /* RESEÑAS */
-    .star{ color:#fbbf24 }
 
     /* CTA sticky bottom */
     .cta-stick{
@@ -195,6 +203,27 @@
     }
     .floating-wa:hover{ color:#fff; filter:brightness(.95) }
 
+    /* Botón menú digital */
+    .floating-menu{
+      position: fixed; bottom: 78px; right: 18px; z-index: 1050;
+      background:var(--card); color:var(--ink); border:1px solid rgba(255,255,255,.14);
+      border-radius:999px; padding:.55rem .9rem; display:flex; gap:.4rem; align-items:center;
+      box-shadow:0 16px 42px rgba(0,0,0,.28);
+    }
+    .floating-menu small{font-size:.7rem;line-height:1;}
+
+    /* Offcanvas menú digital */
+    .offcanvas-menu{
+      background: radial-gradient(circle at top, rgba(11,15,20,1) 0%, #050608 65%);
+      color:#fff;
+    }
+    .offcanvas-menu .list-group-item{
+      background:transparent;
+      border:1px solid rgba(255,255,255,.05);
+      border-radius:14px;
+      margin-bottom:.55rem;
+    }
+
     @media (max-width: 991.98px){
       .menu-thumb{ width:74px; height:74px }
       .menu-card{ padding:10px }
@@ -204,6 +233,7 @@
       .section-title{ font-size:1.25rem }
       .btn-brand,.btn-outline-brand{ width:100% }
       .menu-name,.menu-price{ font-size:1rem }
+      .gallery-grid{grid-template-columns:1fr 1fr;}
     }
     @media (min-width: 1200px){
       .container{ max-width: 1140px }
@@ -223,12 +253,9 @@
       color:var(--ink); font-weight:600;
       white-space:nowrap;
     }
-    .avisos-inline time{
-      color:var(--muted); font-size:.8rem
-    }
-    .modal-content{
-      background-color: #000 !important;
-    }
+    .avisos-inline time{ color:var(--muted); font-size:.8rem }
+
+    .modal-content{ background-color: #000 !important; }
   </style>
 
   <!-- JSON-LD -->
@@ -239,7 +266,11 @@
     "name": {{ page.get('business_name','"Restaurante"')|tojson }},
     "description": {{ (page.get('description') or page.get('slogan') or '')|tojson }},
     "servesCuisine": {{ (page.get('category') or 'Comida')|tojson }},
-    "image": {{ url_for('static', filename=page.get('image') or 'images/default.png', _external=True)|tojson }},
+    "image": {% if page.get('cover_image') %}
+      {{ url_for('uploaded_file', filename=page.cover_image, _external=True)|tojson }}
+    {% else %}
+      {{ url_for('static', filename=page.get('image') or 'images/default.png', _external=True)|tojson }}
+    {% endif %},
     "telephone": {{ (page.get('phone') or '')|tojson }},
     "address": {
       "@type":"PostalAddress",
@@ -353,7 +384,7 @@
   </section>
   {% endif %}
 
-  <!-- MENÚ (usa productos_fisicos = comida/platillos) -->
+  <!-- MENÚ -->
   <section id="menu" class="container my-5">
     <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
       <h2 class="section-title m-0">🍽️ Menú</h2>
@@ -371,9 +402,7 @@
       {% set categorias = {} %}
       {% for it in (productos_fisicos or []) %}
         {% set cat = it.get('category') or 'Platillos' %}
-        {% if cat not in categorias %}
-          {% set _ = categorias.update({cat: []}) %}
-        {% endif %}
+        {% if cat not in categorias %}{% set _ = categorias.update({cat: []}) %}{% endif %}
         {% set _ = categorias[cat].append(it) %}
       {% endfor %}
 
@@ -599,20 +628,68 @@
     </div>
   </section>
 
-  <!-- GALERÍA -->
+  <!-- GALERÍA (usa portada + media_gallery + galeria) -->
   <section id="galeria" class="container my-5">
-    <h2 class="section-title mb-3">📷 Galería</h2>
-    <div class="row g-3 gallery">
-      {% for g in (galeria or [])[:8] %}
-      <div class="col-6 col-md-3">
-        <img loading="lazy" src="{{ url_for('uploaded_file', filename=g) }}" alt="Foto {{ loop.index }}">
-      </div>
-      {% else %}
-      <div class="col-12">
-        <div class="card-soft p-3 text-secondary">Carga imágenes para mostrarlas en la galería.</div>
-      </div>
-      {% endfor %}
+    <div class="d-flex justify-content-between align-items-center gap-2 mb-3 flex-wrap">
+      <h2 class="section-title mb-0 d-flex align-items-center gap-2">
+        <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill"><i class="bi bi-images"></i></span>
+        Galería
+      </h2>
+      {% if page.get('address') %}
+      <span class="text-muted small"><i class="bi bi-geo-alt"></i> {{ page.address }}</span>
+      {% endif %}
     </div>
+
+    {% set tiene_portada = page.get('cover_image') %}
+    {% set tiene_media = page.get('media_gallery') and page.media_gallery|length > 0 %}
+    {% set tiene_galeria_vieja = galeria and galeria|length > 0 %}
+
+    {% if tiene_portada or tiene_media or tiene_galeria_vieja %}
+    <div class="gallery-grid">
+      {% if tiene_portada %}
+      <div class="gal-item" data-type="image" data-src="{{ url_for('uploaded_file', filename=page.cover_image) }}">
+        <img src="{{ url_for('uploaded_file', filename=page.cover_image) }}" alt="Portada">
+        <span class="badge-type"><i class="bi bi-image"></i> Portada</span>
+      </div>
+      {% endif %}
+
+      {% if tiene_media %}
+        {% for item in page.media_gallery %}
+          {% if item is string %}
+            <div class="gal-item" data-type="image" data-src="{{ url_for('uploaded_file', filename=item) }}">
+              <img src="{{ url_for('uploaded_file', filename=item) }}" alt="Imagen de la galería">
+              <span class="badge-type"><i class="bi bi-image"></i> Imagen</span>
+            </div>
+          {% else %}
+            {% set fpath = item.path %}
+            {% set ftype = item.type or 'image' %}
+            {% if ftype == 'video' %}
+              <div class="gal-item" data-type="video" data-src="{{ url_for('uploaded_file', filename=fpath) }}">
+                <video src="{{ url_for('uploaded_file', filename=fpath) }}" muted playsinline></video>
+                <span class="badge-type"><i class="bi bi-play-fill"></i> Video</span>
+              </div>
+            {% else %}
+              <div class="gal-item" data-type="image" data-src="{{ url_for('uploaded_file', filename=fpath) }}">
+                <img src="{{ url_for('uploaded_file', filename=fpath) }}" alt="Imagen de la galería">
+                <span class="badge-type"><i class="bi bi-image"></i> Imagen</span>
+              </div>
+            {% endif %}
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+
+      {% if tiene_galeria_vieja %}
+        {% for g in (galeria or [])[:8] %}
+        <div class="gal-item" data-type="image" data-src="{{ url_for('uploaded_file', filename=g) }}">
+          <img loading="lazy" src="{{ url_for('uploaded_file', filename=g) }}" alt="Foto {{ loop.index }}">
+          <span class="badge-type"><i class="bi bi-image"></i> Galería</span>
+        </div>
+        {% endfor %}
+      {% endif %}
+    </div>
+    {% else %}
+      <div class="card-soft p-3 text-secondary">Carga una portada o imágenes para mostrarlas aquí.</div>
+    {% endif %}
   </section>
 
   <!-- NOVEDADES -->
@@ -685,7 +762,7 @@
             <div>
               {% for i in range(1,6) %}
                 {% if i <= r.estrellas %}
-                  <i class="bi bi-star-fill star"></i>
+                  <i class="bi bi-star-fill text-warning"></i>
                 {% else %}
                   <i class="bi bi-star text-secondary"></i>
                 {% endif %}
@@ -734,6 +811,67 @@
     <i class="bi bi-whatsapp fs-4"></i>
   </a>
   {% endif %}
+
+  <!-- Botón MENÚ DIGITAL -->
+  {% if productos_fisicos and productos_fisicos|length>0 %}
+  <button class="floating-menu" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasMenuDigital" aria-controls="offcanvasMenuDigital">
+    <i class="bi bi-phone-vibrate"></i>
+    <div>
+      <div style="font-weight:600;font-size:.75rem;">Menú digital</div>
+      <small>Tocar para ver</small>
+    </div>
+  </button>
+  {% endif %}
+
+  <!-- Offcanvas MENÚ DIGITAL -->
+  <div class="offcanvas offcanvas-end offcanvas-menu" tabindex="-1" id="offcanvasMenuDigital" aria-labelledby="offcanvasMenuDigitalLabel">
+    <div class="offcanvas-header">
+      <h5 class="offcanvas-title d-flex gap-2 align-items-center" id="offcanvasMenuDigitalLabel">
+        <i class="bi bi-egg-fried"></i> {{ page.get('business_name','Menú') }}
+      </h5>
+      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button>
+    </div>
+    <div class="offcanvas-body">
+      {% if hay_menu_items %}
+        {% for categoria, items in categorias.items() %}
+        <div class="mb-3">
+          <h6 class="text-uppercase small text-muted mb-2">{{ categoria }}</h6>
+          <div class="list-group list-group-flush">
+            {% for it in items %}
+            <div class="list-group-item d-flex justify-content-between align-items-start gap-2">
+              <div>
+                <div class="fw-semibold">{{ it.title }}</div>
+                {% if it.get('description') %}
+                  <div class="text-white-50 small">{{ it.description }}</div>
+                {% endif %}
+              </div>
+              {% if it.get('show_price') %}
+              <span class="badge bg-light text-dark rounded-pill">${{ "%.2f"|format(it.price) }}</span>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+      <p class="text-white-50">No hay platillos aún.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Modal zoom galería -->
+  <div class="modal fade" id="zoomModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content bg-transparent border-0">
+        <div class="modal-body p-0">
+          <img src="" alt="Imagen ampliada" id="zoomedImage" class="img-fluid rounded shadow d-none">
+        </div>
+        <div class="modal-footer border-0 justify-content-center">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -903,6 +1041,52 @@
     }
 
     search?.addEventListener('input', filter);
+  })();
+
+  // Zoom galería
+  (() => {
+    const items = document.querySelectorAll('.gal-item');
+    const modalEl = document.getElementById('zoomModal');
+    const zoomedImage = document.getElementById('zoomedImage');
+    let videoEl = null;
+
+    items.forEach(it => {
+      it.addEventListener('click', () => {
+        const type = it.getAttribute('data-type');
+        const src = it.getAttribute('data-src');
+        const modal = new bootstrap.Modal(modalEl);
+
+        if (type === 'video') {
+          zoomedImage.classList.add('d-none');
+          if (!videoEl) {
+            videoEl = document.createElement('video');
+            videoEl.controls = true;
+            videoEl.style.width = '100%';
+            videoEl.style.borderRadius = '14px';
+            modalEl.querySelector('.modal-body').prepend(videoEl);
+          }
+          videoEl.src = src;
+          videoEl.classList.remove('d-none');
+          modal.show();
+        } else {
+          if (videoEl) {
+            videoEl.pause();
+            videoEl.classList.add('d-none');
+          }
+          zoomedImage.src = src;
+          zoomedImage.classList.remove('d-none');
+          modal.show();
+        }
+      });
+    });
+
+    if (modalEl) {
+      modalEl.addEventListener('hidden.bs.modal', () => {
+        if (videoEl) {
+          videoEl.pause();
+        }
+      });
+    }
   })();
   </script>
 </body>
