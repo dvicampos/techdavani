@@ -8,8 +8,8 @@
   <meta name="description" content="{{ page.get('slogan') or page.get('description','')[:160] }}">
   <meta name="author" content="{{ page.get('business_name','') }}">
 
-  {# Open Graph / Twitter #}
-  {% set og_img = page.get('image') %}
+  {# ======== Open Graph / Twitter ======== #}
+  {% set og_img = page.get('cover_image') or page.get('image') %}
   {% if og_img and not (og_img.startswith('http://') or og_img.startswith('https://')) %}
     {% set og_img = url_for('uploaded_file', filename=og_img, _external=True) %}
   {% endif %}
@@ -20,72 +20,177 @@
   <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary_large_image">
 
+  <!-- Bootstrap / Icons / Fonts -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&family=Parisienne&display=swap" rel="stylesheet">
 
-  {# Leaflet #}
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
 
   <style>
     :root{
       --brand: {{ page.get('color') or '#e18dac' }};
-      --ink:#3a3a3a; --bg:#fff7fb; --paper:#ffffff;
-      --accent:#ffd166; --mint:#b8e0d2; --lilac:#c9b7f3;
-      --radius:16px; --shadow:0 10px 28px rgba(28,25,23,.08);
-      --glass-bg:255,255,255; --glass-alpha:.18; --glass-alpha-strong:.28;
-      --glass-blur:14px; --glass-border:rgba(255,255,255,.45); --glass-ring:rgba(0,0,0,.06);
+      --ink:#3a3a3a;
+      --bg:#fff7fb;
+      --paper:#ffffff;
+      --accent: color-mix(in oklab, var(--brand) 70%, #ffe7f3 30%);
+      --accent-soft: color-mix(in oklab, var(--brand) 12%, #ffffff 88%);
+      --mint:#b8e0d2;
+      --lilac:#c9b7f3;
+      --radius:16px;
+      --shadow:0 10px 28px rgba(28,25,23,.08);
+      --glass-bg:255,255,255;
+      --glass-alpha:.18;
+      --glass-alpha-strong:.28;
+      --glass-blur:14px;
+      --glass-border:rgba(255,255,255,.45);
+      --glass-ring:rgba(0,0,0,.06);
     }
     html,body{background:var(--bg); color:var(--ink)}
     body{font-family:Quicksand,system-ui,-apple-system,"Segoe UI",sans-serif}
 
-    .paper{background:var(--paper); border-radius:var(--radius); box-shadow:var(--shadow); position:relative; overflow:hidden; border:1px solid #f3e7ef;}
-    .paper::before{content:""; position:absolute; inset:0; background-image:radial-gradient(rgba(0,0,0,.04) 1px, transparent 1px); background-size:12px 12px; opacity:.35; pointer-events:none;}
-    .washi{--col:var(--accent); position:absolute; top:-10px; left:16px; width:120px; height:32px; background:var(--col); transform:rotate(-5deg); opacity:.9; border-radius:4px; box-shadow:0 4px 10px rgba(0,0,0,.12); mix-blend-mode:multiply;}
-    .washi::after{content:""; position:absolute; inset:0; background:repeating-linear-gradient(45deg, rgba(255,255,255,.45) 0 6px, transparent 6px 12px); border-radius:4px; opacity:.8;}
+    .paper{
+      background:var(--paper);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      position:relative;
+      overflow:hidden;
+      border:1px solid rgba(255,101,174,.09);
+    }
+    .paper::before{
+      content:""; position:absolute; inset:0;
+      background-image:radial-gradient(rgba(0,0,0,.03) 1px, transparent 1px);
+      background-size:12px 12px; opacity:.5; pointer-events:none;
+    }
+    .washi{
+      --col:var(--accent);
+      position:absolute; top:-10px; left:16px; width:120px; height:32px;
+      background:var(--col); transform:rotate(-5deg); opacity:.9;
+      border-radius:4px; box-shadow:0 4px 10px rgba(0,0,0,.12); mix-blend-mode:multiply;
+    }
+    .washi::after{
+      content:""; position:absolute; inset:0;
+      background:repeating-linear-gradient(45deg, rgba(255,255,255,.45) 0 6px, transparent 6px 12px);
+      border-radius:4px; opacity:.8;
+    }
 
-    .glass{background:rgba(var(--glass-bg), var(--glass-alpha)); backdrop-filter: blur(var(--glass-blur)) saturate(140%); -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(140%); border:1px solid var(--glass-border); box-shadow:0 1px 0 var(--glass-ring), var(--shadow); border-radius:var(--radius);}
-    .glass-strong{background:rgba(var(--glass-bg), var(--glass-alpha-strong)); backdrop-filter: blur(calc(var(--glass-blur) + 4px)) saturate(160%); -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 4px)) saturate(160%); border:1px solid var(--glass-border); box-shadow:0 1px 0 var(--glass-ring), var(--shadow); border-radius:var(--radius);}
+    .glass{
+      background:rgba(var(--glass-bg), var(--glass-alpha));
+      backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+      -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+      border:1px solid var(--glass-border);
+      box-shadow:0 1px 0 var(--glass-ring), var(--shadow);
+      border-radius:var(--radius);
+    }
+    .glass-strong{
+      background:rgba(var(--glass-bg), var(--glass-alpha-strong));
+      backdrop-filter: blur(calc(var(--glass-blur) + 4px)) saturate(160%);
+      -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 4px)) saturate(160%);
+      border:1px solid var(--glass-border);
+      box-shadow:0 1px 0 var(--glass-ring), var(--shadow);
+      border-radius:var(--radius);
+    }
     @supports not (backdrop-filter: blur(1px)){ .glass,.glass-strong{background:#fffffff0;} }
 
+    /* ===== COVER ===== */
     .cover{
-      background:
-        radial-gradient(1200px 600px at 0% -10%, color-mix(in oklab, var(--brand) 85%, #fff 15%) 0%, transparent 55%),
-        radial-gradient(1000px 600px at 100% 0%, color-mix(in oklab, var(--mint) 85%, #fff 15%) 0%, transparent 50%),
-        linear-gradient(180deg, #ffedf7 0%, #f8e9ff 100%);
+      {% if page.get('cover_image') %}
+        background:
+          linear-gradient(120deg, rgba(255,247,251,.4) 0%, rgba(255,247,251,0) 35%),
+          url("{{ url_for('uploaded_file', filename=page.cover_image) }}") center/cover no-repeat;
+      {% else %}
+        background:
+          radial-gradient(1200px 600px at 0% -10%, color-mix(in oklab, var(--brand) 85%, #fff 15%) 0%, transparent 55%),
+          radial-gradient(1000px 600px at 100% 0%, color-mix(in oklab, var(--mint) 85%, #fff 15%) 0%, transparent 50%),
+          linear-gradient(180deg, #ffedf7 0%, #f8e9ff 100%);
+      {% endif %}
     }
-    .nb{position:sticky; top:0; z-index:1020; border-bottom:1px solid rgba(255,255,255,.4);}
+    .nb{
+      position:sticky; top:0; z-index:1020;
+      border-bottom:1px solid rgba(255,255,255,.4);
+      background:rgba(255,255,255,.52);
+      backdrop-filter: blur(8px);
+    }
     .navbar-brand{font-weight:800; letter-spacing:.3px; color:#4b1f3d !important;}
     .nav-link{font-weight:700; color:#5d2c4e !important;}
     .nav-link:hover{color:#3b1933 !important; text-decoration:underline;}
 
+    /* HERO */
     .hero{padding:clamp(40px, 6vw, 80px) 0 clamp(24px,4vw,48px);}
-    .avatar{width:220px; height:220px; object-fit:cover; border-radius:24px; border:6px solid #fff; box-shadow:var(--shadow);}
-    .badge-soft{display:inline-block; padding:.45rem .9rem; border-radius:999px; background:#ffe6ef; color:#8b3a5b; font-weight:800; border:1px solid #f3cfe0;}
+    .avatar{
+      width:220px; height:220px; object-fit:cover;
+      border-radius:24px; border:6px solid #fff; box-shadow:var(--shadow);
+    }
+    .badge-soft{
+      display:inline-block; padding:.45rem .9rem; border-radius:999px;
+      background:color-mix(in oklab, var(--brand) 10%, #fff 90%);
+      color:#8b3a5b; font-weight:800; border:1px solid rgba(248,124,163,.14);
+    }
     .brand-script{font-family:"Parisienne", cursive; color:#6f2e57;}
-    .btn-craft{border:2px dashed #d9b7c9; background:rgba(255,255,255,.9); color:#7d4564; font-weight:800; border-radius:999px; padding:.6rem 1.05rem; box-shadow:var(--shadow);}
+    .btn-craft{
+      border:2px dashed color-mix(in oklab, var(--brand) 40%, #fff 60%);
+      background:rgba(255,255,255,.95);
+      color:#7d4564; font-weight:800; border-radius:999px; padding:.6rem 1.05rem;
+      box-shadow:var(--shadow);
+    }
     .btn-craft:hover{background:#fff0f6; color:#5a2a48;}
 
     .sec-title{font-weight:900; letter-spacing:.2px; display:flex; align-items:center; gap:.6rem;}
     .sec-title .dot{width:12px; height:12px; border-radius:50%; background:var(--brand);}
-    .card-craft{background:#fff; border:1px dashed #e7c5d9; border-radius:var(--radius); box-shadow:var(--shadow);}
+    .card-craft{
+      background:#fff; border:1px dashed rgba(232,143,188,.36);
+      border-radius:var(--radius); box-shadow:var(--shadow);
+    }
     .price-tag{background:#222; color:#fff; border-radius:999px; padding:.25rem .6rem; font-weight:800;}
 
     .fab-wa{position:fixed; left:18px; bottom:12%; z-index:1050; text-decoration:none;}
-    #map{height:300px; border-radius:12px; border:1px dashed #e7c5d9; box-shadow:var(--shadow);}
+    #map{height:300px; border-radius:12px; border:1px dashed rgba(232,143,188,.36); box-shadow:var(--shadow);}
 
-    .ticker{position:fixed; left:0; right:0; bottom:0; z-index:1030; padding:.55rem 0; background:rgba(255,255,255,.22); backdrop-filter: blur(10px) saturate(150%); -webkit-backdrop-filter: blur(10px) saturate(150%); border-top:1px solid rgba(255,255,255,.55); box-shadow:0 -6px 24px rgba(0,0,0,.08); color:#3b1933;}
-    .ticker-pill{display:inline-flex; align-items:center; gap:.45rem; font-weight:800; padding:.35rem .8rem; border-radius:999px; background:rgba(255,255,255,.6); border:1px solid rgba(0,0,0,.06);}
-    .navbar-toggler{border:2px dashed rgba(93,44,78,.4); background:rgba(255,255,255,.6);}
-    .navbar-toggler-icon{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 16 16'%3E%3Cpath stroke='%235d2c4e' stroke-linecap='round' stroke-width='2' d='M2 4h12M2 8h12M2 12h12'/%3E%3C/svg%3E");}
+    /* GALERÍA */
+    .gallery-grid{
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap:1rem;
+    }
+    .gal-item{
+      position:relative;
+      border-radius:14px;
+      overflow:hidden;
+      aspect-ratio:4/3;
+      background:#fef4f9;
+      border:1px solid rgba(232,143,188,.26);
+      cursor:pointer;
+    }
+    .gal-item img,.gal-item video{width:100%;height:100%;object-fit:cover;display:block;}
+    .gal-item::after{
+      content:"";position:absolute;inset:0;
+      background:linear-gradient(180deg,transparent 50%,rgba(107,36,70,.45) 100%);
+      opacity:0;transition:.2s;
+    }
+    .gal-item:hover::after{opacity:1;}
+    .badge-type{
+      position:absolute;top:.5rem;left:.5rem;
+      background:rgba(197,7,98,.85);color:#fff;border-radius:999px;
+      padding:.25rem .6rem;font-size:.7rem;
+      backdrop-filter:blur(2px);
+    }
+
+    .ticker{
+      position:fixed; left:0; right:0; bottom:0; z-index:1030;
+      padding:.55rem 0; background:rgba(255,255,255,.72);
+      backdrop-filter: blur(10px) saturate(150%);
+      -webkit-backdrop-filter: blur(10px) saturate(150%);
+      border-top:1px solid rgba(255,255,255,.55);
+      box-shadow:0 -6px 24px rgba(0,0,0,.08); color:#3b1933;
+    }
+    .ticker-pill{display:inline-flex; align-items:center; gap:.45rem; font-weight:800; padding:.35rem .8rem; border-radius:999px; background:rgba(255,255,255,.6); border:1px solid rgba(0,0,0,.02);}
+
     .ft{padding-bottom:10% !important; background:rgba(255,255,255,.6);}
-    @media (max-width:768px){ .ft{padding-bottom:20% !important;} }
-
-    .info-chip{display:inline-flex; align-items:center; gap:.45rem; padding:.42rem .85rem; border-radius:999px; background:rgba(255,255,255,.72); backdrop-filter: blur(10px) saturate(150%); -webkit-backdrop-filter: blur(10px) saturate(150%); border:1px solid rgba(0,0,0,.06); box-shadow:0 6px 20px rgba(0,0,0,.06); font-weight:800; color:#5d2c4e; line-height:1;}
-    .info-chip--brand{background: color-mix(in oklab, var(--brand) 20%, #ffffff 80%);}
-    .info-chip--ghost{background: rgba(255,255,255,.55);}
-    .info-chip i{font-size:1rem; opacity:.9;}
+    @media (max-width:768px){
+      .ft{padding-bottom:20% !important;}
+      .gallery-grid{grid-template-columns:1fr 1fr;}
+    }
   </style>
 </head>
 <body>
@@ -101,12 +206,11 @@
         <div id="nv" class="collapse navbar-collapse justify-content-end">
           <ul class="navbar-nav">
             <li class="nav-item"><a class="nav-link" href="#info">Información</a></li>
+            <li class="nav-item"><a class="nav-link" href="#galeria">Galería</a></li>
             <li class="nav-item"><a class="nav-link" href="#contacto">Contacto</a></li>
             {% if posts %}<li class="nav-item"><a class="nav-link" href="#publicaciones">Tutoriales</a></li>{% endif %}
-            {% if (servicios and servicios|length>0) or (productos_fisicos and productos_fisicos|length>0) %}
+            {% if (servicios and servicios|length>0) or (productos_fisicos and productos_fisicos|length>0) or productos %}
               <li class="nav-item"><a class="nav-link" href="#productos">Servicios & Productos</a></li>
-            {% elif productos %}
-              <li class="nav-item"><a class="nav-link" href="#productos">Kits & Productos</a></li>
             {% endif %}
             <li class="nav-item"><a class="nav-link" href="#reseñas">Reseñas</a></li>
           </ul>
@@ -132,9 +236,15 @@
               <h1 class="mb-1" style="font-weight:900; color:#2b193b;">{{ page.get('business_name','Taller de Manualidades') }}</h1>
               {% if page.get('slogan') %}<p class="brand-script fs-3">“{{ page['slogan'] }}”</p>{% endif %}
               <div class="d-flex flex-wrap gap-2 mt-3">
-                {% if page.get('website') %}<a class="btn btn-craft" href="{{ page.website }}" target="_blank"><i class="bi bi-globe2 me-1"></i> Visitar web</a>{% endif %}
-                {% if page.get('phone') %}<a class="btn btn-craft" href="tel:{{ page.phone }}"><i class="bi bi-telephone-outbound me-1"></i> Llamar</a>{% endif %}
-                {% if page.get('instagram') %}<a class="btn btn-craft" href="{{ page.instagram }}" target="_blank"><i class="bi bi-instagram me-1"></i> Instagram</a>{% endif %}
+                {% if page.get('website') %}
+                  <a class="btn btn-craft" href="{{ page.website }}" target="_blank"><i class="bi bi-globe2 me-1"></i> Visitar web</a>
+                {% endif %}
+                {% if page.get('phone') %}
+                  <a class="btn btn-craft" href="tel:{{ page.phone }}"><i class="bi bi-telephone-outbound me-1"></i> Llamar</a>
+                {% endif %}
+                {% if page.get('instagram') %}
+                  <a class="btn btn-craft" href="{{ page.instagram }}" target="_blank"><i class="bi bi-instagram me-1"></i> Instagram</a>
+                {% endif %}
               </div>
             </div>
           </div>
@@ -200,6 +310,60 @@
     </div>
   </section>
 
+  <!-- GALERÍA -->
+  <section class="container my-5" id="galeria">
+    <h2 class="sec-title mb-3"><span class="dot"></span> Galería de piezas</h2>
+    {% set tiene_portada = page.get('cover_image') %}
+    {% set tiene_media = page.get('media_gallery') and page.media_gallery|length > 0 %}
+    {% set tiene_galeria_vieja = galeria and galeria|length > 0 %}
+    {% if tiene_portada or tiene_media or tiene_galeria_vieja %}
+      <div class="gallery-grid">
+        {% if tiene_portada %}
+          <div class="gal-item" data-type="image" data-src="{{ url_for('uploaded_file', filename=page.cover_image) }}">
+            <img src="{{ url_for('uploaded_file', filename=page.cover_image) }}" alt="Portada taller">
+            <span class="badge-type"><i class="bi bi-image"></i> Portada</span>
+          </div>
+        {% endif %}
+
+        {% if tiene_media %}
+          {% for item in page.media_gallery %}
+            {% if item is string %}
+              <div class="gal-item" data-type="image" data-src="{{ url_for('uploaded_file', filename=item) }}">
+                <img src="{{ url_for('uploaded_file', filename=item) }}" alt="Pieza">
+                <span class="badge-type"><i class="bi bi-palette"></i> Pieza</span>
+              </div>
+            {% else %}
+              {% set fpath = item.path %}
+              {% set ftype = item.type or 'image' %}
+              {% if ftype == 'video' %}
+                <div class="gal-item" data-type="video" data-src="{{ url_for('uploaded_file', filename=fpath) }}">
+                  <video src="{{ url_for('uploaded_file', filename=fpath) }}" muted playsinline></video>
+                  <span class="badge-type"><i class="bi bi-camera-reels"></i> Video</span>
+                </div>
+              {% else %}
+                <div class="gal-item" data-type="image" data-src="{{ url_for('uploaded_file', filename=fpath) }}">
+                  <img src="{{ url_for('uploaded_file', filename=fpath) }}" alt="Pieza">
+                  <span class="badge-type"><i class="bi bi-palette"></i> Pieza</span>
+                </div>
+              {% endif %}
+            {% endif %}
+          {% endfor %}
+        {% endif %}
+
+        {% if tiene_galeria_vieja %}
+          {% for g in (galeria or [])[:8] %}
+            <div class="gal-item" data-type="image" data-src="{{ url_for('uploaded_file', filename=g) }}">
+              <img src="{{ url_for('uploaded_file', filename=g) }}" alt="Foto {{ loop.index }}">
+              <span class="badge-type"><i class="bi bi-brush"></i> Galería</span>
+            </div>
+          {% endfor %}
+        {% endif %}
+      </div>
+    {% else %}
+      <div class="card-craft p-3">Aún no hay imágenes. Sube portada o usa <strong>media_gallery</strong>.</div>
+    {% endif %}
+  </section>
+
   <!-- CONTACTO -->
   <section class="container my-5" id="contacto">
     <h2 class="sec-title"><span class="dot"></span> Contacto</h2>
@@ -246,14 +410,14 @@
     {% endif %}
   </section>
 
-  <!-- SERVICIOS & PRODUCTOS (con cotizador y modal de nombre) -->
+  <!-- SERVICIOS & PRODUCTOS (con cotizar) -->
   <section class="container my-5" id="productos">
     <h2 class="sec-title"><span class="dot"></span> Servicios & Productos artesanales</h2>
 
     {% if (servicios and servicios|length>0) or (productos_fisicos and productos_fisicos|length>0) %}
       <div class="glass p-3 mb-3">
         <strong><i class="bi bi-info-circle me-1"></i> ¿Quieres cotizar?</strong>
-        Selecciona cantidades, pulsa <b>Cotizar</b>, te pediremos tu nombre y abriremos WhatsApp con el detalle.
+        Selecciona cantidades, pulsa <b>Cotizar</b> y te abrimos WhatsApp con el detalle.
       </div>
 
       <form id="form-cotizar" class="row g-3">
@@ -323,7 +487,7 @@
         </div>
       </div>
 
-      <!-- Modal Cotizar (pide nombre + resumen) -->
+      <!-- Modal Cotizar -->
       <div class="modal fade" id="cotizarModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
           <div class="modal-content" style="border-radius:16px;">
@@ -350,8 +514,7 @@
         </div>
       </div>
     {% else %}
-      {# fallback antiguo si aún usas "productos" sin tipo #}
-      <h2 class="visually-hidden">Kits & Productos artesanales</h2>
+      {# fallback antiguo #}
       {% if productos and productos|length>0 %}
         <div class="glass p-3 mb-3">
           <strong><i class="bi bi-info-circle me-1"></i> ¿Quieres cotizar?</strong> Elige cantidades y envíanos por WhatsApp.
@@ -382,36 +545,6 @@
           {% endfor %}
           <div class="col-12 text-center"><button class="btn btn-craft px-4 py-2" type="submit"><i class="bi bi-whatsapp me-1"></i> Cotizar</button></div>
         </form>
-
-        <div class="modal fade" id="zoomModal" tabindex="-1" aria-hidden="true">
-          <div class="modal-dialog modal-dialog-centered" style="max-width:72vw;"><div class="modal-content p-2"><img id="zoomedImage" class="img-fluid" alt="Zoom"></div></div>
-        </div>
-
-        <div class="modal fade" id="cotizarModal" tabindex="-1" aria-hidden="true">
-          <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content" style="border-radius:16px;">
-              <div class="modal-header" style="background:linear-gradient(90deg, var(--brand), var(--mint)); color:#3b1933; border:none;">
-                <h5 class="modal-title fw-bold">¡Casi listo! ✍️</h5>
-                <button class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-              </div>
-              <div class="modal-body">
-                <div class="mb-3">
-                  <label class="form-label">Tu nombre</label>
-                  <input type="text" class="form-control" id="nombreClienteInput" placeholder="Ej. Ana Pérez">
-                  <div class="text-danger small mt-1 d-none" id="errorModalNombre">Por favor, escribe tu nombre.</div>
-                </div>
-                <div>
-                  <div class="form-label mb-1">Tu selección:</div>
-                  <div id="resumenSeleccion" class="border rounded p-2 small" style="max-height:220px; overflow-y:auto;"></div>
-                </div>
-              </div>
-              <div class="modal-footer" style="border:none;">
-                <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button class="btn btn-craft" id="enviarCotizacionBtn"><i class="bi bi-whatsapp me-1"></i> Enviar a WhatsApp</button>
-              </div>
-            </div>
-          </div>
-        </div>
       {% else %}
         <div class="card-craft p-3">No hay productos disponibles por ahora.</div>
       {% endif %}
@@ -508,11 +641,75 @@
 
   <!-- JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 
   <script>
-    // Zoom
+    // Zoom galería
+    (function(){
+      const items = document.querySelectorAll('.gal-item');
+      const zoomModal = document.getElementById('zoomModal');
+      let zoomImg = document.getElementById('zoomedImage');
+      let videoEl = null;
+
+      if (!zoomModal) {
+        // si no existe el modal de productos lo creamos rápido
+        const modalHtml = `
+          <div class="modal fade" id="zoomModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+              <div class="modal-content bg-transparent border-0">
+                <div class="modal-body p-0 text-center">
+                  <img id="zoomedImage" class="img-fluid rounded shadow d-none" alt="Zoom">
+                </div>
+                <div class="modal-footer border-0 justify-content-center">
+                  <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+              </div>
+            </div>
+          </div>`;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+      }
+
+      const modalEl = document.getElementById('zoomModal');
+      zoomImg = document.getElementById('zoomedImage');
+
+      items.forEach(it=>{
+        it.addEventListener('click', ()=>{
+          const type = it.dataset.type;
+          const src = it.dataset.src;
+          const modal = new bootstrap.Modal(modalEl);
+
+          if (type === 'video') {
+            if (!videoEl) {
+              videoEl = document.createElement('video');
+              videoEl.controls = true;
+              videoEl.style.width = '100%';
+              videoEl.style.borderRadius = '16px';
+              modalEl.querySelector('.modal-body').prepend(videoEl);
+            }
+            zoomImg.classList.add('d-none');
+            videoEl.src = src;
+            videoEl.classList.remove('d-none');
+            modal.show();
+          } else {
+            if (videoEl) {
+              videoEl.pause();
+              videoEl.classList.add('d-none');
+            }
+            zoomImg.src = src;
+            zoomImg.classList.remove('d-none');
+            modal.show();
+          }
+        });
+      });
+
+      if (modalEl) {
+        modalEl.addEventListener('hidden.bs.modal', ()=>{
+          if (videoEl) videoEl.pause();
+        });
+      }
+    })();
+
+    // Zoom de productos (ya lo traías)
     document.querySelectorAll('.img-zoom-trigger').forEach(img=>{
       img.addEventListener('click', e=>{
         const src = e.currentTarget.getAttribute('data-img-src');
@@ -521,7 +718,7 @@
       });
     });
 
-    // Cotizar con modal (pide nombre y muestra resumen)
+    // Cotizar
     (function(){
       const form = document.getElementById('form-cotizar');
       if (!form) return;
@@ -581,10 +778,10 @@
       if (!stars.length || !input) return;
       stars.forEach(s=>{
         s.addEventListener('click', ()=>{
-          const v = parseInt(s.getAttribute('data-value'));
+          const v = parseInt(s.dataset.value);
           input.value = v;
           stars.forEach(x=>{
-            const xv = parseInt(x.getAttribute('data-value'));
+            const xv = parseInt(x.dataset.value);
             x.classList.remove('text-warning','text-secondary');
             x.classList.add(xv<=v ? 'text-warning' : 'text-secondary');
           });
