@@ -15,6 +15,7 @@ import re
 from dotenv import load_dotenv
 import requests
 from jinja2 import TemplateNotFound
+from urllib.parse import urlparse
 
 load_dotenv()
 RECAPTCHA_SECRET_KEY = os.getenv("RECAPTCHA_SECRET_KEY")
@@ -1752,6 +1753,79 @@ def manage_page_compat():
     page = ensure_page_has_slug(page)
     return redirect(url_for('manage_page_slug', slug=page['slug']))
 
+@app.route('/negocio/<nombre>/media/delete', methods=['POST'])
+def borrar_media(nombre):
+    negocio = mongo.db.page_data.find_one({'business_name': nombre})
+    if not negocio:
+        flash('Negocio no encontrado.')
+        return redirect(url_for('index'))
+
+    media_path = request.form.get('path')   # viene del form
+    # puede venir, pero ya no lo vamos a usar para filtrar:
+    # media_type = request.form.get('type')
+
+    if not media_path:
+        flash('No se indicó el archivo a borrar.')
+        return redirect(url_for('detalle_negocio', nombre=nombre))
+
+    # helper para quedarnos con el nombre real aunque venga URL completa
+    def _basename(p: str) -> str:
+        parsed = urlparse(p)
+        if parsed.scheme and parsed.path:
+            return os.path.basename(parsed.path)
+        return os.path.basename(p)
+
+    clean_name = _basename(media_path)
+
+    # =============================
+    # 1) Intento 1: borrar por path EXACTO
+    # =============================
+    res1 = mongo.db.page_data.update_one(
+        {'_id': negocio['_id']},
+        {
+            '$pull': {
+                'media_gallery': {
+                    'path': media_path  # sin checar type
+                }
+            }
+        }
+    )
+
+    # =============================
+    # 2) Intento 2: borrar por basename
+    #    (por si en la BD se guardó solo el nombre)
+    # =============================
+    if res1.modified_count == 0 and clean_name != media_path:
+        mongo.db.page_data.update_one(
+            {'_id': negocio['_id']},
+            {
+                '$pull': {
+                    'media_gallery': {
+                        'path': clean_name
+                    }
+                }
+            }
+        )
+
+    # =============================
+    # 3) Borrar archivo físico (opcional)
+    # =============================
+    upload_dir = app.config.get('UPLOAD_FOLDER', 'uploads')
+    file_abs_path = os.path.join(upload_dir, clean_name)
+    try:
+        if os.path.exists(file_abs_path):
+            os.remove(file_abs_path)
+    except Exception as e:
+        app.logger.warning(f"No se pudo borrar archivo {file_abs_path}: {e}")
+
+    flash('Archivo de galería eliminado ✅')
+
+    # sacar el slug del negocio para regresar al admin
+    slug = negocio.get('slug')
+    if slug:
+        return redirect(url_for('manage_page_slug', slug=slug))
+    else:
+        return redirect(url_for('detalle_negocio', nombre=nombre))
 
 @app.route('/manage_page/<slug>', methods=['GET', 'POST'])
 @login_required

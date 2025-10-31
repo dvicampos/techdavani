@@ -165,6 +165,10 @@
   width:100%; height:100%; border:0;
   pointer-events:none; /* evita clicks dentro de la miniatura */
 }
+.media-grid video {
+  pointer-events: none;
+}
+
 
 </style>
 
@@ -425,17 +429,64 @@
   <input type="file" name="media_gallery[]" class="form-control" multiple>
   <small class="text-muted">Puedes subir JPG, PNG y también MP4 / WEBM.</small>
 
-  {% if data.media_gallery %}
-    <div class="d-flex gap-3 flex-wrap mt-3">
+  <!-- Galería del lugar (imágenes y videos) -->
+<div class="mb-3">
+  <label class="form-label">Galería del lugar (imágenes y videos)</label>
+  <input type="file" name="media_gallery[]" class="form-control" multiple>
+  <small class="text-muted">Puedes subir JPG, PNG y también MP4 / WEBM.</small>
+
+  {% if data and data.media_gallery and data.media_gallery|length > 0 %}
+  <div class="mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h6 class="mb-0">📸 Archivos actuales</h6>
+      <span class="text-muted small">{{ data.media_gallery|length }} archivo(s)</span>
+    </div>
+
+    <div class="media-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;">
       {% for item in data.media_gallery %}
-        {% if item.type == 'video' %}
-          <video src="{{ url_for('uploaded_file', filename=item.path) }}" style="width:140px;height:90px;object-fit:cover" controls></video>
+      <div class="position-relative rounded-3 overflow-hidden"
+           style="background:#0f172a;min-height:120px;">
+
+        {# IMAGEN #}
+        {% if item.type != 'video' %}
+          <img src="{{ url_for('uploaded_file', filename=item.path) }}"
+               alt="Imagen del lugar"
+               style="width:100%;height:100%;object-fit:cover;display:block;">
         {% else %}
-          <img src="{{ url_for('uploaded_file', filename=item.path) }}" style="width:140px;height:90px;object-fit:cover;border-radius:6px;">
+        {# VIDEO #}
+          <video src="{{ url_for('uploaded_file', filename=item.path) }}"
+                 muted
+                 playsinline
+                 style="width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;">
+          </video>
+          <span class="badge bg-dark position-absolute top-0 start-0 m-1 d-flex align-items-center gap-1"
+                style="z-index:12;">
+            <i class="bi bi-play-fill"></i> Video
+          </span>
         {% endif %}
+
+        {# 👇 ESTE ES EL BOTÓN DE BORRAR (sin form anidado) #}
+        <button type="submit"
+                formaction="{{ url_for('borrar_media', nombre=data.business_name) }}"
+                formmethod="POST"
+                name="path"
+                value="{{ item.path }}"
+                class="btn btn-sm btn-danger d-grid place-items-center position-absolute"
+                style="top:6px;right:6px;z-index:20;width:30px;height:30px;border-radius:999px;">
+          <i class="bi bi-trash" style="font-size:.7rem;"></i>
+        </button>
+
+        {# si quieres mandar también el type, puedes poner un input hidden extra #}
+        <input type="hidden" name="type" value="{{ item.type }}">
+      </div>
       {% endfor %}
     </div>
+  </div>
+  {% else %}
+    <p class="text-muted small mt-2">No hay archivos en la galería todavía.</p>
   {% endif %}
+</div>
+
 </div>
 
     </div>
