@@ -12,7 +12,7 @@
   <!-- Open Graph -->
   <meta property="og:title" content="{{ page.get('business_name', '') }}">
   <meta property="og:description" content="{{ page.get('slogan') or page.get('description', '')[:200] }}">
-  <meta property="og:image" content="{{ url_for('static', filename=page.get('image') or 'images/default.png', _external=True) }}">
+  <meta property="og:image" content="{% if page.cover_image %}{{ url_for('uploaded_file', filename=page.cover_image, _external=True) }}{% else %}{{ url_for('static', filename=page.get('image') or 'images/default.png', _external=True) }}{% endif %}">
   <meta property="og:url" content="{{ request.url }}">
   <meta property="og:type" content="website">
 
@@ -20,7 +20,7 @@
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="{{ page.get('business_name', '') }}" />
   <meta name="twitter:description" content="{{ page.get('slogan') or page.get('description', '')[:200] }}" />
-  <meta name="twitter:image" content="{{ url_for('static', filename=page.get('image') or 'images/default.png', _external=True) }}" />
+  <meta name="twitter:image" content="{% if page.cover_image %}{{ url_for('uploaded_file', filename=page.cover_image, _external=True) }}{% else %}{{ url_for('static', filename=page.get('image') or 'images/default.png', _external=True) }}{% endif %}" />
 
   <title>{{ page['business_name'] }} | Cafetería</title>
 
@@ -36,7 +36,6 @@
 
   <style>
     :root {
-      /* Paleta coffee premium */
       --cafe-base: {{ "'" ~ (page['color'] if page['color'] else '#4b2e21') ~ "'" }};
       --cafe-dark: #2a1811;
       --moka: #8c5b3f;
@@ -46,7 +45,7 @@
       --ink: #2b1f1a;
       --radius: 18px;
       --shadow: 0 16px 40px rgba(34, 21, 15, 0.12);
-      --h-banner: 54px; /* altura del banner inferior */
+      --h-banner: 54px;
     }
 
     body {
@@ -54,11 +53,9 @@
       background-color: var(--latte);
       color: var(--ink);
       scroll-behavior: smooth;
-      /* 👇 para que el footer no se esconda con el banner de avisos */
       padding-bottom: calc(var(--h-banner) + 20px);
     }
 
-    /* NAV */
     #mainNavbar {
       background:
         radial-gradient(circle at top, rgba(245, 237, 228, 0.12), rgba(10, 10, 10, 0) 35%),
@@ -66,34 +63,31 @@
       backdrop-filter: blur(12px);
     }
 
-    .navbar-brand {
-      font-weight: 700;
-      letter-spacing: .04em;
-    }
+    .navbar-brand { font-weight: 700; letter-spacing: .04em; }
 
-    .nav-link {
-      font-weight: 500;
-      transition: .2s;
-    }
-
+    .nav-link { font-weight: 500; transition: .2s; }
     .nav-link:hover,
     .nav-link:focus {
       color: #fff !important;
       transform: translateY(-1px);
     }
 
-    /* HERO */
     .hero-cafe {
+      {% if page.cover_image %}
+      background:
+        linear-gradient(135deg, rgba(43, 31, 26, 0.85) 0%, rgba(75, 46, 33, 0.48) 55%, rgba(245, 237, 228, 0) 100%),
+        url("{{ url_for('uploaded_file', filename=page.cover_image) }}") center/cover no-repeat;
+      {% else %}
       background:
         linear-gradient(135deg, rgba(43, 31, 26, 0.98) 0%, rgba(75, 46, 33, 0.9) 35%, rgba(245, 237, 228, 0) 100%),
         url("https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?q=80&w=1600&auto=format&fit=crop") center/cover fixed;
+      {% endif %}
       color: #fff;
       padding: 110px 0 80px;
       position: relative;
       overflow: hidden;
       isolation: isolate;
     }
-
     .hero-cafe::before {
       content: "";
       position: absolute;
@@ -103,7 +97,6 @@
       mix-blend-mode: screen;
     }
 
-    /* granos flotando */
     .bean {
       position: absolute;
       width: 55px;
@@ -114,7 +107,7 @@
       animation: float 7s ease-in-out infinite;
       opacity: 0.35;
     }
-    .bean.b1 { top: 15%; right: 12%; animation-delay: 0s; }
+    .bean.b1 { top: 15%; right: 12%; }
     .bean.b2 { top: 50%; right: 4%; animation-delay: 1.5s; transform: rotate(18deg); }
     .bean.b3 { top: 78%; right: 20%; animation-delay: 3s; transform: rotate(-12deg); }
 
@@ -123,16 +116,8 @@
       50% { transform: translateY(-16px) rotate(10deg); }
     }
 
-    .hero-title {
-      font-size: clamp(2.6rem, 4vw, 3.3rem);
-      font-weight: 700;
-      letter-spacing: -0.02em;
-    }
-    .hero-subtitle {
-      font-size: 1.05rem;
-      max-width: 540px;
-      opacity: .9;
-    }
+    .hero-title { font-size: clamp(2.6rem, 4vw, 3.3rem); font-weight: 700; letter-spacing: -0.02em; }
+    .hero-subtitle { font-size: 1.05rem; max-width: 540px; opacity: .9; }
     .hero-badge {
       background: rgba(245, 237, 228, .14);
       border: 1px solid rgba(245, 237, 228, .5);
@@ -153,12 +138,6 @@
       border: 6px solid rgba(246, 239, 233, .78);
       box-shadow: 0 16px 50px rgba(0, 0, 0, .28);
       background: #fff;
-      animation: scaleIn 1.3s ease;
-    }
-
-    @keyframes scaleIn {
-      from { transform: scale(.7); opacity: 0; }
-      to { transform: scale(1); opacity: 1; }
     }
 
     .btn-cafe {
@@ -170,14 +149,19 @@
       font-weight: 500;
       transition: .2s;
     }
-    .btn-cafe:hover {
-      background: #c68440;
-      transform: translateY(-1px);
-    }
+    .btn-cafe:hover { background: #c68440; transform: translateY(-1px); }
 
     /* franja parallax extra */
     .parallax-band {
-      background: url("https://images.unsplash.com/photo-1494314671902-399b18174975?q=80&w=1600&auto=format&fit=crop") center/cover fixed;
+      {% if page.cover_image %}
+      background:
+        linear-gradient(0deg, rgba(42,24,17,.65) 0%, rgba(42,24,17,.15) 80%),
+        url("{{ url_for('uploaded_file', filename=page.cover_image) }}") center/cover fixed;
+      {% else %}
+      background:
+        linear-gradient(0deg, rgba(42,24,17,.65) 0%, rgba(42,24,17,.15) 80%),
+        url("https://images.unsplash.com/photo-1494314671902-399b18174975?q=80&w=1600&auto=format&fit=crop") center/cover fixed;
+      {% endif %}
       min-height: 150px;
       display: flex;
       align-items: center;
@@ -201,12 +185,65 @@
       text-transform: uppercase;
     }
 
-    /* cards generales */
-    .section-title {
-      font-weight: 700;
-      margin-bottom: 1.5rem;
-      color: var(--ink);
+    .galeria-wrap{
+      background: #fff;
+      border-radius: 22px;
+      box-shadow: 0 16px 40px rgba(0,0,0,.04);
+      padding: clamp(1.4rem, 2vw, 1.8rem);
     }
+    .galeria-grid{
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 1rem;
+    }
+    .gal-item{
+      position: relative;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #131313;
+      aspect-ratio: 4/3;
+      cursor: pointer;
+    }
+    .gal-item img,
+    .gal-item video{
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .gal-item .badge-type{
+      position: absolute;
+      top: .5rem;
+      left: .5rem;
+      z-index: 4;
+      background: rgba(0,0,0,.55);
+      color: #fff;
+      backdrop-filter: blur(6px);
+    }
+    .gal-item .gal-overlay{
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.55) 95%);
+      opacity: 0;
+      transition: .2s;
+    }
+    .gal-item:hover .gal-overlay{
+      opacity: 1;
+    }
+    .gal-item .gal-action{
+      position: absolute;
+      bottom: .7rem;
+      right: .7rem;
+      background: rgba(255,255,255,.9);
+      border-radius: 999px;
+      padding: .25rem .5rem;
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      font-size: .75rem;
+    }
+
+    .section-title { font-weight: 700; margin-bottom: 1.5rem; color: var(--ink); }
     .info-card,
     .contact-card {
       background: #fff;
@@ -216,10 +253,8 @@
       transition: transform .25s ease, box-shadow .25s ease;
     }
     .info-card:hover,
-    .contact-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 20px 40px rgba(0, 0, 0, .08);
-    }
+    .contact-card:hover { transform: translateY(-3px); box-shadow: 0 20px 40px rgba(0, 0, 0, .08); }
+
     .info-icon {
       width: 38px;
       height: 38px;
@@ -232,18 +267,7 @@
       margin-right: .45rem;
     }
 
-    /* MENÚ tarjetas */
-    .card-menu {
-      border-radius: 14px;
-      overflow: hidden;
-      background: #fff;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, .05);
-      transition: transform .2s, box-shadow .2s;
-    }
-    .card-menu:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 16px 30px rgba(0, 0, 0, .07);
-    }
+    .card-menu { border-radius: 14px; overflow: hidden; background: #fff; box-shadow: 0 10px 30px rgba(0, 0, 0, .05); }
     .menu-tag {
       font-size: .7rem;
       text-transform: uppercase;
@@ -255,7 +279,6 @@
       display: inline-block;
     }
 
-    /* banner inferior (promos del día) */
     .noticias-section {
       background: linear-gradient(100deg, rgba(75, 46, 33, 1) 0%, rgba(212, 148, 83, .4) 90%);
       height: var(--h-banner);
@@ -276,7 +299,6 @@
       white-space: nowrap;
     }
 
-    /* MAPA */
     #map {
       height: 260px;
       border-radius: 14px;
@@ -284,7 +306,6 @@
       box-shadow: 0 10px 30px rgba(0, 0, 0, .06);
     }
 
-    /* flotante whatsapp */
     .wa-fab {
       position: fixed;
       bottom: calc(var(--h-banner) + 15px);
@@ -297,7 +318,6 @@
       box-shadow: 0 10px 30px rgba(0, 0, 0, .22);
     }
 
-    /* footer */
     footer {
       background: linear-gradient(130deg, #2a1811 0%, #4b2e21 50%, #2a1811 100%);
       margin-top: 5rem;
@@ -305,25 +325,12 @@
       padding-bottom: 1rem;
     }
 
-    /* responsive del menú: scroll en móvil */
-    .menus-grid-row {
-      --bs-gutter-x: 1rem;
-    }
+    .menus-grid-row { --bs-gutter-x: 1rem; }
     @media (max-width: 768px) {
-      .hero-cafe {
-        text-align: center;
-        padding-top: 95px;
-      }
-      .hero-subtitle {
-        margin: 0 auto;
-      }
-      .aviso-banner {
-        white-space: normal;
-        font-size: .8rem;
-      }
-      .wa-fab {
-        bottom: calc(var(--h-banner) + 60px);
-      }
+      .hero-cafe { text-align: center; padding-top: 95px; }
+      .hero-subtitle { margin: 0 auto; }
+      .aviso-banner { white-space: normal; font-size: .8rem; }
+      .wa-fab { bottom: calc(var(--h-banner) + 60px); }
     }
     @media (max-width: 576px) {
       .menus-grid-row {
@@ -339,9 +346,7 @@
       }
     }
 
-    .modal-70 .modal-dialog {
-      max-width: 70vw;
-    }
+    .modal-70 .modal-dialog { max-width: 70vw; }
   </style>
 </head>
 <body data-bs-spy="scroll" data-bs-target="#mainNavbar" data-bs-offset="80" tabindex="0">
@@ -358,6 +363,9 @@
       <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
         <ul class="navbar-nav">
           <li class="nav-item"><a class="nav-link" href="#info">La cafetería</a></li>
+          {% if page.cover_image or (page.media_gallery and page.media_gallery|length > 0) %}
+          <li class="nav-item"><a class="nav-link" href="#galeria">Galería</a></li>
+          {% endif %}
           <li class="nav-item"><a class="nav-link" href="#productos">Menú</a></li>
           {% if posts %}
           <li class="nav-item"><a class="nav-link" href="#publicaciones">Blog / Recetas</a></li>
@@ -404,7 +412,7 @@
     </div>
   </header>
 
-  <!-- BANNER PROMOS DEL DÍA (fijo abajo) -->
+  <!-- BANNER PROMOS DEL DÍA -->
   <div class="noticias-section fixed-bottom w-100 shadow-sm" style="z-index:1030;">
     <div class="container-fluid">
       <div id="noticiasCarousel" class="carousel slide" data-bs-ride="carousel">
@@ -431,10 +439,70 @@
     </div>
   </div>
 
-  <!-- Franja parallax extra -->
+  <!-- Franja parallax -->
   <section class="parallax-band">
     <h3>“El mejor café es el que disfrutas aquí.”</h3>
   </section>
+
+  <!-- GALERÍA -->
+  {% if page.cover_image or (page.media_gallery and page.media_gallery|length > 0) %}
+  <section class="container my-5" id="galeria">
+    <div class="d-flex justify-content-between align-items-center mb-3 gap-2 flex-wrap">
+      <h2 class="section-title mb-0 d-flex align-items-center gap-2">
+        <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill"><i class="bi bi-images"></i></span>
+        Galería del lugar
+      </h2>
+      {% if page.address %}
+      <span class="text-muted small d-flex align-items-center gap-2">
+        <i class="bi bi-geo-alt"></i> {{ page.address }}
+      </span>
+      {% endif %}
+    </div>
+    <div class="galeria-wrap">
+      <div class="galeria-grid">
+        {% if page.cover_image %}
+        <div class="gal-item" data-type="image" data-src="{{ url_for('uploaded_file', filename=page.cover_image) }}">
+          <img src="{{ url_for('uploaded_file', filename=page.cover_image) }}" alt="Portada del negocio">
+          <span class="badge badge-type"><i class="bi bi-image"></i> Portada</span>
+          <div class="gal-overlay"></div>
+          <div class="gal-action"><i class="bi bi-arrows-fullscreen"></i> Ver</div>
+        </div>
+        {% endif %}
+
+        {% if page.media_gallery and page.media_gallery|length > 0 %}
+          {% for item in page.media_gallery %}
+            {% if item is string %}
+              <div class="gal-item" data-type="image" data-src="{{ url_for('uploaded_file', filename=item) }}">
+                <img src="{{ url_for('uploaded_file', filename=item) }}" alt="Imagen del lugar">
+                <span class="badge badge-type"><i class="bi bi-image"></i> Imagen</span>
+                <div class="gal-overlay"></div>
+                <div class="gal-action"><i class="bi bi-arrows-fullscreen"></i> Ver</div>
+              </div>
+            {% else %}
+              {% set fpath = item.path %}
+              {% set ftype = item.type or 'image' %}
+              {% if ftype == 'video' %}
+                <div class="gal-item" data-type="video" data-src="{{ url_for('uploaded_file', filename=fpath) }}">
+                  <video src="{{ url_for('uploaded_file', filename=fpath) }}" muted playsinline></video>
+                  <span class="badge badge-type"><i class="bi bi-play-fill"></i> Video</span>
+                  <div class="gal-overlay"></div>
+                  <div class="gal-action"><i class="bi bi-play-circle"></i> Reproducir</div>
+                </div>
+              {% else %}
+                <div class="gal-item" data-type="image" data-src="{{ url_for('uploaded_file', filename=fpath) }}">
+                  <img src="{{ url_for('uploaded_file', filename=fpath) }}" alt="Imagen del lugar">
+                  <span class="badge badge-type"><i class="bi bi-image"></i> Imagen</span>
+                  <div class="gal-overlay"></div>
+                  <div class="gal-action"><i class="bi bi-arrows-fullscreen"></i> Ver</div>
+                </div>
+              {% endif %}
+            {% endif %}
+          {% endfor %}
+        {% endif %}
+      </div>
+    </div>
+  </section>
+  {% endif %}
 
   <!-- INFO -->
   <section class="container my-5" id="info">
@@ -522,7 +590,7 @@
     </div>
   </section>
 
-  <!-- PUBLICACIONES / BLOG / RECETAS -->
+  <!-- PUBLICACIONES -->
   <section class="container my-5" id="publicaciones">
     <h2 class="section-title">📝 Recetas, novedades y promos</h2>
     {% if posts and posts|length > 0 %}
@@ -554,7 +622,7 @@
     {% endif %}
   </section>
 
-  <!-- MENÚ / SERVICIOS (SIN TABS) -->
+  <!-- MENÚ / SERVICIOS -->
   <section class="container my-5" id="productos">
     <h2 class="section-title d-flex align-items-center gap-2">
       <span>🍽️ Carta & Servicios</span>
@@ -573,8 +641,6 @@
     </div>
 
     <form id="form-cotizar" class="d-flex flex-column gap-4">
-
-      <!-- 1. SERVICIOS -->
       {% if servicios and servicios|length > 0 %}
       <div class="servicios-grid">
         <div class="d-flex justify-content-between align-items-center mb-3 gap-2 flex-wrap">
@@ -630,7 +696,6 @@
       </div>
       {% endif %}
 
-      <!-- 2. MENÚ (TODO lo que hay en productos_fisicos) -->
       {% if productos_fisicos and productos_fisicos|length > 0 %}
       <div class="menu-cafe-block">
         <div class="d-flex justify-content-between align-items-center mb-3 gap-2 flex-wrap">
@@ -675,7 +740,6 @@
       </div>
       {% endif %}
 
-      <!-- BOTÓN COTIZAR -->
       <div class="text-center">
         <button type="submit" class="btn btn-success btn-lg px-4 py-2" id="btnAbrirModalCotizar">
           <i class="bi bi-whatsapp fs-5 me-2"></i>
@@ -683,7 +747,6 @@
         </button>
       </div>
 
-      <!-- Modal de cotización -->
       <div class="modal fade" id="cotizarModal" tabindex="-1" aria-labelledby="cotizarModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
           <div class="modal-content shadow">
@@ -726,12 +789,10 @@
     {% endif %}
   </section>
 
-  <!-- FAB WhatsApp -->
   <a href="https://wa.me/{{ page.whatsapp | replace(' ', '') }}" target="_blank" class="wa-fab d-flex align-items-center justify-content-center">
     <i class="bi bi-whatsapp fs-4"></i>
   </a>
 
-  <!-- RESEÑAS -->
   <div class="container card shadow-sm border-0 mb-5" id="reseñas">
     <div class="card-body">
       <h3 class="mt-2">⭐ Deja tu reseña</h3>
@@ -767,7 +828,6 @@
     </div>
   </div>
 
-  <!-- LISTA DE RESEÑAS -->
   <div class="container mb-5">
     <h4 class="mb-4 text-center">⭐ Opiniones de clientes</h4>
     {% if reseñas %}
@@ -800,7 +860,6 @@
     {% endif %}
   </div>
 
-  <!-- FOOTER (respetando espacio) -->
   <footer class="text-white">
     <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
       <div class="text-center text-md-start">
@@ -818,107 +877,7 @@
     </div>
   </footer>
 
-  <!-- SCRIPTS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-  <!-- Leaflet -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-
-  <script>
-    // Cotización (servicios + menú)
-    const formCotizar = document.getElementById('form-cotizar');
-    const resumenSeleccionDiv = document.getElementById('resumenSeleccion');
-    const nombreClienteInput = document.getElementById('nombreClienteInput');
-    const errorModalNombre = document.getElementById('errorModalNombre');
-    let cotizacionLineas = [];
-
-    if (formCotizar) {
-      formCotizar.addEventListener('submit', function (e) {
-        e.preventDefault();
-        cotizacionLineas = [];
-        const inputs = formCotizar.querySelectorAll('input[type=number]');
-        inputs.forEach(input => {
-          const cantidad = parseInt(input.value);
-          if (cantidad > 0) {
-            const nombreItem = input.getAttribute('data-item-nombre') ||
-              input.name.replace('prod_', '').replace(/_/g, ' ');
-            cotizacionLineas.push(`- ${nombreItem}: ${cantidad}`);
-          }
-        });
-
-        if (cotizacionLineas.length === 0) {
-          alert("Selecciona al menos un producto o servicio ☕");
-          return;
-        }
-
-        resumenSeleccionDiv.innerHTML = cotizacionLineas.map(l => `<div>${l}</div>`).join('');
-        errorModalNombre.classList.add('d-none');
-        nombreClienteInput.classList.remove('is-invalid');
-
-        const cotizarModal = new bootstrap.Modal(document.getElementById('cotizarModal'));
-        cotizarModal.show();
-      });
-    }
-
-    // Enviar a WhatsApp
-    const enviarCotizacionBtn = document.getElementById('enviarCotizacionBtn');
-    if (enviarCotizacionBtn) {
-      enviarCotizacionBtn.addEventListener('click', () => {
-        const nombreCliente = (nombreClienteInput.value || '').trim();
-        if (!nombreCliente) {
-          errorModalNombre.classList.remove('d-none');
-          nombreClienteInput.classList.add('is-invalid');
-          nombreClienteInput.focus();
-          return;
-        }
-
-        const whatsappNumber = "{{ page.whatsapp | replace(' ', '') }}";
-        let mensaje = `Hola, soy ${nombreCliente} y quiero pedir:%0A`;
-        cotizacionLineas.forEach(linea => {
-          mensaje += encodeURIComponent(linea) + "%0A";
-        });
-
-        const urlWhatsapp = `https://wa.me/${whatsappNumber}?text=${mensaje}`;
-        window.open(urlWhatsapp, '_blank');
-      });
-    }
-
-    // Estrellas reseña
-    const stars = document.querySelectorAll('.star-icon');
-    const inputEstrellas = document.getElementById('estrellas');
-    if (stars && inputEstrellas) {
-      stars.forEach(star => {
-        star.addEventListener('click', () => {
-          const valor = parseInt(star.getAttribute('data-value'));
-          inputEstrellas.value = valor;
-          stars.forEach(s => {
-            const sVal = parseInt(s.getAttribute('data-value'));
-            s.classList.remove('text-warning', 'text-secondary');
-            s.classList.add(sVal <= valor ? 'text-warning' : 'text-secondary');
-          });
-        });
-      });
-    }
-
-    // Mapa Leaflet
-    (function () {
-      const lat = {{ page.get('lat') if page.get('lat') is not none else 'null' }};
-      const lng = {{ page.get('lng') if page.get('lng') is not none else 'null' }};
-      if (lat !== null && lng !== null) {
-        const map = L.map('map', { scrollWheelZoom: false }).setView([lat, lng], 16);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          maxZoom: 19,
-          attribution: '&copy; OSM'
-        }).addTo(map);
-        const marker = L.marker([lat, lng]).addTo(map);
-        marker.bindPopup(`<strong>{{ page['business_name']|e }}</strong><br>{{ (page['address'] or '')|e }}`).openPopup();
-        setTimeout(() => { map.invalidateSize(); }, 300);
-      }
-    })();
-  </script>
-
-  <!-- Modal zoom (opcional) -->
+  <!-- MODAL ZOOM (ANTES DEL SCRIPT) -->
   <div class="modal fade" id="zoomModal" tabindex="-1" aria-labelledby="zoomModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-70">
       <div class="modal-content bg-transparent border-0">
@@ -931,6 +890,156 @@
       </div>
     </div>
   </div>
+
+  <!-- SCRIPTS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      // Cotizar
+      const formCotizar = document.getElementById('form-cotizar');
+      const resumenSeleccionDiv = document.getElementById('resumenSeleccion');
+      const nombreClienteInput = document.getElementById('nombreClienteInput');
+      const errorModalNombre = document.getElementById('errorModalNombre');
+      let cotizacionLineas = [];
+
+      if (formCotizar) {
+        formCotizar.addEventListener('submit', function (e) {
+          e.preventDefault();
+          cotizacionLineas = [];
+          const inputs = formCotizar.querySelectorAll('input[type=number]');
+          inputs.forEach(input => {
+            const cantidad = parseInt(input.value);
+            if (cantidad > 0) {
+              const nombreItem = input.getAttribute('data-item-nombre') ||
+                input.name.replace('prod_', '').replace(/_/g, ' ');
+              cotizacionLineas.push(`- ${nombreItem}: ${cantidad}`);
+            }
+          });
+
+          if (cotizacionLineas.length === 0) {
+            alert("Selecciona al menos un producto o servicio ☕");
+            return;
+          }
+
+          resumenSeleccionDiv.innerHTML = cotizacionLineas.map(l => `<div>${l}</div>`).join('');
+          errorModalNombre.classList.add('d-none');
+          nombreClienteInput.classList.remove('is-invalid');
+
+          const cotizarModal = new bootstrap.Modal(document.getElementById('cotizarModal'));
+          cotizarModal.show();
+        });
+      }
+
+      // Enviar Whats
+      const enviarCotizacionBtn = document.getElementById('enviarCotizacionBtn');
+      if (enviarCotizacionBtn) {
+        enviarCotizacionBtn.addEventListener('click', () => {
+          const nombreCliente = (nombreClienteInput.value || '').trim();
+          if (!nombreCliente) {
+            errorModalNombre.classList.remove('d-none');
+            nombreClienteInput.classList.add('is-invalid');
+            nombreClienteInput.focus();
+            return;
+          }
+          const whatsappNumber = "{{ page.whatsapp | replace(' ', '') }}";
+          let mensaje = `Hola, soy ${nombreCliente} y quiero pedir:%0A`;
+          cotizacionLineas.forEach(linea => {
+            mensaje += encodeURIComponent(linea) + "%0A";
+          });
+          const urlWhatsapp = `https://wa.me/${whatsappNumber}?text=${mensaje}`;
+          window.open(urlWhatsapp, '_blank');
+        });
+      }
+
+      // Estrellas
+      const stars = document.querySelectorAll('.star-icon');
+      const inputEstrellas = document.getElementById('estrellas');
+      if (stars && inputEstrellas) {
+        stars.forEach(star => {
+          star.addEventListener('click', () => {
+            const valor = parseInt(star.getAttribute('data-value'));
+            inputEstrellas.value = valor;
+            stars.forEach(s => {
+              const sVal = parseInt(s.getAttribute('data-value'));
+              s.classList.remove('text-warning', 'text-secondary');
+              s.classList.add(sVal <= valor ? 'text-warning' : 'text-secondary');
+            });
+          });
+        });
+      }
+
+      // Mapa
+      const lat = {{ page.get('lat') if page.get('lat') is not none else 'null' }};
+      const lng = {{ page.get('lng') if page.get('lng') is not none else 'null' }};
+      if (lat !== null && lng !== null) {
+        const map = L.map('map', { scrollWheelZoom: false }).setView([lat, lng], 16);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '&copy; OSM'
+        }).addTo(map);
+        const marker = L.marker([lat, lng]).addTo(map);
+        marker.bindPopup(`<strong>{{ page['business_name']|e }}</strong><br>{{ (page['address'] or '')|e }}`).openPopup();
+        setTimeout(() => { map.invalidateSize(); }, 300);
+      }
+
+      // ===== GALERÍA =====
+      const galItems = document.querySelectorAll('.gal-item');
+      const zoomModalEl = document.getElementById('zoomModal');
+      const zoomedImage = document.getElementById('zoomedImage');
+      let modalVideo = null;
+
+      if (galItems.length && zoomModalEl && zoomedImage) {
+        const modal = new bootstrap.Modal(zoomModalEl);
+
+        galItems.forEach(item => {
+          item.addEventListener('click', () => {
+            const type = item.getAttribute('data-type');
+            const src = item.getAttribute('data-src');
+
+            if (type === 'video') {
+              // ocultar imagen
+              zoomedImage.classList.add('d-none');
+
+              // crear video una vez
+              if (!modalVideo) {
+                modalVideo = document.createElement('video');
+                modalVideo.controls = true;
+                modalVideo.style.width = '100%';
+                modalVideo.style.borderRadius = '14px';
+                zoomedImage.parentNode.insertBefore(modalVideo, zoomedImage);
+              }
+
+              modalVideo.src = src;
+              modalVideo.classList.remove('d-none');
+              modal.show();
+              modalVideo.play().catch(()=>{});
+            } else {
+              // imagen
+              zoomedImage.src = src;
+              zoomedImage.classList.remove('d-none');
+              if (modalVideo) {
+                modalVideo.pause();
+                modalVideo.classList.add('d-none');
+              }
+              modal.show();
+            }
+          });
+        });
+
+        zoomModalEl.addEventListener('hidden.bs.modal', () => {
+          if (modalVideo) {
+            modalVideo.pause();
+          }
+        });
+      }
+
+    });
+  </script>
 
 </body>
 </html>
