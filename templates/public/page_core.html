@@ -9,13 +9,13 @@
   <meta name="description" content="{{ page.get('slogan') or page.get('description','')[:160] }}">
   <meta name="author" content="{{ page.get('business_name','') }}">
 
-  <!-- OG / Twitter -->
-  <meta property="og:title" content="{{ page.get('business_name','') }}">
-  <meta property="og:description" content="{{ page.get('slogan') or page.get('description','')[:200] }}">
-  {% set og_img = page.get('image') %}
+  {# ====== OG / Twitter ====== #}
+  {% set og_img = page.get('cover_image') or page.get('image') %}
   {% if og_img and not (og_img.startswith('http://') or og_img.startswith('https://')) %}
     {% set og_img = url_for('uploaded_file', filename=og_img, _external=True) %}
   {% endif %}
+  <meta property="og:title" content="{{ page.get('business_name','') }}">
+  <meta property="og:description" content="{{ page.get('slogan') or page.get('description','')[:200] }}">
   <meta property="og:image" content="{{ og_img or url_for('static', filename='images/default.png', _external=True) }}">
   <meta property="og:type" content="website">
   <meta property="og:url" content="{{ request.url }}">
@@ -30,7 +30,6 @@
   <link
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
     crossorigin=""
   />
 
@@ -59,6 +58,9 @@
       background: var(--card);
       border-bottom: 3px solid var(--border);
       box-shadow: var(--shadow-xs);
+      position: sticky;
+      top: 0;
+      z-index: 1020;
     }
     .nb .navbar-brand{
       font-weight: 800; letter-spacing: .2px;
@@ -77,17 +79,24 @@
       padding: 54px 0 36px;
       overflow: hidden;
       border-bottom: 3px solid var(--border);
+      {% if page.get('cover_image') %}
+      background:
+        linear-gradient(90deg, rgba(250,250,250,.85) 0%, rgba(250,250,250,0) 50%),
+        url("{{ url_for('uploaded_file', filename=page.cover_image) }}") center/cover no-repeat;
+      {% else %}
       background:
         linear-gradient(135deg, rgba(0,0,0,.04) 25%, transparent 25%) -10px 0/40px 40px,
         linear-gradient(225deg, rgba(0,0,0,.04) 25%, transparent 25%) -10px 0/40px 40px,
         linear-gradient(45deg, rgba(0,0,0,.04) 25%, transparent 25%) 0 0/40px 40px,
         linear-gradient(315deg, rgba(0,0,0,.04) 25%, #fff 25%) 0 0/40px 40px;
+      {% endif %}
     }
     .hero-card{
       border: 4px solid var(--border);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
-      background: var(--card);
+      background: rgba(255,255,255,.9);
+      backdrop-filter: blur(6px);
       padding: 24px;
     }
     .hero-avatar{
@@ -151,6 +160,69 @@
     }
     .text-muted-2{ color: var(--muted); }
 
+    /* GALERÍA */
+    .gallery-wrap{
+      background: #fff;
+      border:3px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow-sm);
+      padding: 1.5rem;
+    }
+    .gallery-grid{
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap:1rem;
+    }
+    .gal-item{
+      position:relative;
+      border:3px solid var(--border);
+      border-radius: 14px;
+      overflow:hidden;
+      background:#e2e8f0;
+      aspect-ratio: 4/3;
+      cursor:pointer;
+      box-shadow: var(--shadow-xs);
+    }
+    .gal-item img,
+    .gal-item video{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      display:block;
+    }
+    .gal-item::after{
+      content:"";
+      position:absolute; inset:0;
+      background:linear-gradient(180deg, transparent 55%, rgba(0,0,0,.55) 100%);
+      opacity:0; transition:.15s ease-out;
+    }
+    .gal-item:hover::after{opacity:1;}
+    .badge-type{
+      position:absolute; top:.5rem; left:.5rem;
+      background: var(--brand);
+      color:#fff;
+      border:2px solid #fff;
+      border-radius:999px;
+      padding:.25rem .55rem;
+      font-size:.7rem;
+      font-weight:700;
+      box-shadow: var(--shadow-xs);
+      display:flex; align-items:center; gap:.25rem;
+    }
+    @media (max-width: 768px){
+      .gallery-grid{
+        display:flex;
+        gap:1rem;
+        overflow-x:auto;
+        scroll-snap-type:x mandatory;
+        padding-bottom:.5rem;
+      }
+      .gal-item{
+        flex: 0 0 72vw;
+        scroll-snap-align: start;
+      }
+    }
+
     /* BANNER inferior */
     .ticker{
       position: fixed; left:0; right:0; bottom:0; z-index:1030;
@@ -187,9 +259,7 @@
       margin-top: 64px; padding: 24px 0; padding-bottom: 10%;
     }
     @media (max-width: 768px) {
-            .ft {
-                padding-bottom: 20%;
-            }
+      .ft { padding-bottom: 20%; }
     }
 
     .hover-raise:hover{ transform: translate(-2px, -2px); transition: .08s transform linear; }
@@ -209,11 +279,10 @@
       <div id="nv" class="collapse navbar-collapse justify-content-end">
         <ul class="navbar-nav gap-1">
           <li class="nav-item"><a class="nav-link" href="#info">Información</a></li>
+          <li class="nav-item"><a class="nav-link" href="#galeria">Galería</a></li>
           <li class="nav-item"><a class="nav-link" href="#contacto">Contacto</a></li>
           {% if posts %}<li class="nav-item"><a class="nav-link" href="#publicaciones">Publicaciones</a></li>{% endif %}
-          {% if (servicios and servicios|length>0) or (productos_fisicos and productos_fisicos|length>0) %}
-            <li class="nav-item"><a class="nav-link" href="#productos">Productos</a></li>
-          {% endif %}
+          {% if (servicios and servicios|length>0) or (productos_fisicos and productos_fisicos|length>0) %}<li class="nav-item"><a class="nav-link" href="#productos">Productos</a></li>{% endif %}
           <li class="nav-item"><a class="nav-link" href="#reseñas">Reseñas</a></li>
         </ul>
       </div>
@@ -309,6 +378,62 @@
     </div>
   </section>
 
+  <!-- GALERÍA -->
+  <section class="container my-5" id="galeria">
+    <h2 class="section-title brand-font">Galería</h2>
+    {% set tiene_portada = page.get('cover_image') %}
+    {% set tiene_media = page.get('media_gallery') and page.media_gallery|length > 0 %}
+    {% set tiene_galeria = galeria and galeria|length > 0 %}
+    {% if tiene_portada or tiene_media or tiene_galeria %}
+      <div class="gallery-wrap">
+        <div class="gallery-grid">
+          {% if tiene_portada %}
+            <div class="gal-item" data-type="image" data-src="{{ url_for('uploaded_file', filename=page.cover_image) }}">
+              <img src="{{ url_for('uploaded_file', filename=page.cover_image) }}" alt="Portada">
+              <span class="badge-type"><i class="bi bi-image"></i> Portada</span>
+            </div>
+          {% endif %}
+
+          {% if tiene_media %}
+            {% for item in page.media_gallery %}
+              {% if item is string %}
+                <div class="gal-item" data-type="image" data-src="{{ url_for('uploaded_file', filename=item) }}">
+                  <img src="{{ url_for('uploaded_file', filename=item) }}" alt="Media">
+                  <span class="badge-type"><i class="bi bi-palette"></i> Media</span>
+                </div>
+              {% else %}
+                {% set fpath = item.path %}
+                {% set ftype = item.type or 'image' %}
+                {% if ftype == 'video' %}
+                  <div class="gal-item" data-type="video" data-src="{{ url_for('uploaded_file', filename=fpath) }}">
+                    <video src="{{ url_for('uploaded_file', filename=fpath) }}" muted playsinline></video>
+                    <span class="badge-type"><i class="bi bi-camera-reels"></i> Video</span>
+                  </div>
+                {% else %}
+                  <div class="gal-item" data-type="image" data-src="{{ url_for('uploaded_file', filename=fpath) }}">
+                    <img src="{{ url_for('uploaded_file', filename=fpath) }}" alt="Media">
+                    <span class="badge-type"><i class="bi bi-palette"></i> Media</span>
+                  </div>
+                {% endif %}
+              {% endif %}
+            {% endfor %}
+          {% endif %}
+
+          {% if tiene_galeria %}
+            {% for g in (galeria or [])[:12] %}
+              <div class="gal-item" data-type="image" data-src="{{ url_for('uploaded_file', filename=g) }}">
+                <img src="{{ url_for('uploaded_file', filename=g) }}" alt="Foto {{ loop.index }}">
+                <span class="badge-type"><i class="bi bi-brush"></i> Galería</span>
+              </div>
+            {% endfor %}
+          {% endif %}
+        </div>
+      </div>
+    {% else %}
+      <div class="card card-brutal p-3">Aún no hay imágenes. Sube una portada o envía <code>media_gallery</code>. 🖼️</div>
+    {% endif %}
+  </section>
+
   <!-- CONTACTO -->
   <section class="container my-5" id="contacto">
     <h2 class="section-title brand-font">Contacto</h2>
@@ -363,188 +488,179 @@
     {% endif %}
   </section>
 
-  <!-- PRODUCTOS / COTIZAR -->
   <!-- PRODUCTOS / SERVICIOS / COTIZAR -->
-<section class="container my-5" id="productos">
-  <h2 class="section-title brand-font">Productos y Servicios</h2>
+  <section class="container my-5" id="productos">
+    <h2 class="section-title brand-font">Productos y Servicios</h2>
 
-  {% if (servicios and servicios|length>0) or (productos_fisicos and productos_fisicos|length>0) %}
+    {% if (servicios and servicios|length>0) or (productos_fisicos and productos_fisicos|length>0) %}
 
-    <div class="card card-brutal p-3 mb-3">
-      <div class="d-flex align-items-center gap-2">
-        <span class="pill-invert"><i class="bi bi-info-circle"></i></span>
-        <div>
-          <strong>Cotiza fácil:</strong> elige cantidades de servicios o productos, luego pulsa <em>Cotizar</em>.
-          Te pediremos tu nombre y abriremos WhatsApp con todo listo.
-        </div>
-      </div>
-    </div>
-
-    <form id="form-cotizar" class="row g-3">
-
-      <!-- ===== SERVICIOS ===== -->
-      {% if servicios and servicios|length>0 %}
-        <div class="col-12">
-          <h3 class="h5 brand-font d-flex align-items-center gap-2">
-            <i class="bi bi-wrench-adjustable-circle text-primary"></i> Servicios
-          </h3>
-        </div>
-
-        {% for item in servicios %}
-        <div class="col-12 col-sm-6 col-md-4">
-          <div class="card card-brutal h-100">
-            {% if item.image %}
-              <img
-                src="{{ url_for('uploaded_file', filename=item.image) }}"
-                alt="{{ item.title }}"
-                class="card-img-top img-zoom-trigger"
-                data-bs-toggle="modal" data-bs-target="#zoomModal"
-                data-img-src="{{ url_for('uploaded_file', filename=item.image) }}"
-                style="object-fit:cover; height:220px; cursor: zoom-in;"
-              >
-            {% endif %}
-            <div class="card-body d-flex flex-column">
-              <div class="mb-1">
-                <span class="badge-pill" style="background:#111;color:#fff;border-color:#fff;">Servicio</span>
-              </div>
-              <h6 class="brand-font mb-1">{{ item.title }}</h6>
-              {% if item.description %}
-                <p class="text-muted-2 small">{{ item.description }}</p>
-              {% endif %}
-              {% if item.show_price %}
-                <div class="mb-2">
-                  <span class="badge-pill" style="background:#0b1321;color:#fff;border-color:#fff;">
-                    ${{ "%.2f"|format(item.price) }}
-                  </span>
-                </div>
-              {% endif %}
-              <div class="mt-auto">
-                <label class="form-label small">Cantidad / Nº de citas</label>
-                <input
-                  type="number" min="0" value="0"
-                  class="form-control" style="border:3px solid var(--border)"
-                  id="serv_{{ loop.index0 }}"
-                  name="prod_{{ item.title | replace(' ','_') }}"
-                  data-item-nombre="{{ item.title }}"
-                >
-              </div>
-            </div>
-          </div>
-        </div>
-        {% endfor %}
-      {% endif %}
-
-      <!-- ===== PRODUCTOS FÍSICOS ===== -->
-      {% if productos_fisicos and productos_fisicos|length>0 %}
-        <div class="col-12 mt-2">
-          <h3 class="h5 brand-font d-flex align-items-center gap-2">
-            <i class="bi bi-box-seam text-success"></i> Productos
-          </h3>
-        </div>
-
-        {% for item in productos_fisicos %}
-        <div class="col-12 col-sm-6 col-md-4">
-          <div class="card card-brutal h-100">
-            {% if item.image %}
-              <img
-                src="{{ url_for('uploaded_file', filename=item.image) }}"
-                alt="{{ item.title }}"
-                class="card-img-top img-zoom-trigger"
-                data-bs-toggle="modal" data-bs-target="#zoomModal"
-                data-img-src="{{ url_for('uploaded_file', filename=item.image) }}"
-                style="object-fit:cover; height:220px; cursor: zoom-in;"
-              >
-            {% endif %}
-            <div class="card-body d-flex flex-column">
-              <div class="mb-1">
-                <span class="badge-pill" style="background:#666;color:#fff;border-color:#fff;">Producto</span>
-              </div>
-              <h6 class="brand-font mb-1">{{ item.title }}</h6>
-              {% if item.description %}
-                <p class="text-muted-2 small">{{ item.description }}</p>
-              {% endif %}
-              {% if item.show_price %}
-                <div class="mb-2">
-                  <span class="badge-pill" style="background:#0b1321;color:#fff;border-color:#fff;">
-                    ${{ "%.2f"|format(item.price) }}
-                  </span>
-                </div>
-              {% endif %}
-              <div class="mt-auto">
-                <label class="form-label small">Cantidad</label>
-                <input
-                  type="number" min="0" value="0"
-                  class="form-control" style="border:3px solid var(--border)"
-                  id="prod_{{ loop.index0 }}"
-                  name="prod_{{ item.title | replace(' ','_') }}"
-                  data-item-nombre="{{ item.title }}"
-                >
-              </div>
-            </div>
-          </div>
-        </div>
-        {% endfor %}
-      {% endif %}
-
-      <!-- Botón principal -->
-      <div class="col-12 text-center">
-        <button type="submit" class="btn btn-brutal btn-brand px-4 py-2 hover-raise">
-          <i class="bi bi-whatsapp me-1"></i> Cotizar
-        </button>
-      </div>
-    </form>
-
-  {% else %}
-    <div class="card card-brutal p-3">No hay productos ni servicios disponibles.</div>
-  {% endif %}
-
-  <!-- Modal zoom (igual que tenías) -->
-  <div class="modal fade" id="zoomModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" style="max-width: 72vw;">
-      <div class="modal-content" style="border:3px solid var(--border); box-shadow: var(--shadow);">
-        <img id="zoomedImage" src="" class="img-fluid" alt="Zoom">
-        <div class="p-2 text-end">
-          <button class="btn btn-brutal btn-ghost" data-bs-dismiss="modal">Cerrar</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal de cotización: pide nombre y muestra preview -->
-  <div class="modal fade" id="cotizarModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content" style="border:3px solid var(--border); box-shadow: var(--shadow);">
-        <div class="modal-header" style="background: var(--brand); color:#fff;">
-          <h5 class="modal-title">Antes de cotizar ✍️</h5>
-          <button class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-        </div>
-        <div class="modal-body">
-          <p class="small text-muted">
-            Déjanos tu nombre para dirigirnos a ti cuando te contactemos por WhatsApp.
-          </p>
-
-          <div class="mb-3">
-            <label class="form-label">Tu nombre</label>
-            <input type="text" class="form-control" id="nombreClienteInput" placeholder="Ej. Ana Martínez" style="border:3px solid var(--border);">
-            <div class="text-danger small mt-1 d-none" id="errorModalNombre">Por favor escribe tu nombre 🙏</div>
-          </div>
-
+      <div class="card card-brutal p-3 mb-3">
+        <div class="d-flex align-items-center gap-2">
+          <span class="pill-invert"><i class="bi bi-info-circle"></i></span>
           <div>
-            <div class="form-label mb-1">Tu selección:</div>
-            <div id="resumenSeleccion" class="bg-light border rounded p-2 small" style="max-height: 220px; overflow-y:auto; border:3px solid var(--border);"></div>
+            <strong>Cotiza fácil:</strong> elige cantidades de servicios o productos, luego pulsa <em>Cotizar</em>.
+            Te pediremos tu nombre y abriremos WhatsApp con todo listo.
           </div>
         </div>
-        <div class="modal-footer justify-content-between">
-          <button class="btn btn-brutal btn-ghost" data-bs-dismiss="modal">Cancelar</button>
-          <button class="btn btn-brutal btn-brand" id="enviarCotizacionBtn">
-            <i class="bi bi-whatsapp me-1"></i> Enviar por WhatsApp
+      </div>
+
+      <form id="form-cotizar" class="row g-3">
+
+        <!-- SERVICIOS -->
+        {% if servicios and servicios|length>0 %}
+          <div class="col-12">
+            <h3 class="h5 brand-font d-flex align-items-center gap-2">
+              <i class="bi bi-wrench-adjustable-circle text-primary"></i> Servicios
+            </h3>
+          </div>
+
+          {% for item in servicios %}
+          <div class="col-12 col-sm-6 col-md-4">
+            <div class="card card-brutal h-100">
+              {% if item.image %}
+                <img
+                  src="{{ url_for('uploaded_file', filename=item.image) }}"
+                  alt="{{ item.title }}"
+                  class="card-img-top img-zoom-trigger"
+                  data-bs-toggle="modal" data-bs-target="#zoomModal"
+                  data-img-src="{{ url_for('uploaded_file', filename=item.image) }}"
+                  style="object-fit:cover; height:220px; cursor: zoom-in;"
+                >
+              {% endif %}
+              <div class="card-body d-flex flex-column">
+                <div class="mb-1">
+                  <span class="badge-pill" style="background:#111;color:#fff;border-color:#fff;">Servicio</span>
+                </div>
+                <h6 class="brand-font mb-1">{{ item.title }}</h6>
+                {% if item.description %}<p class="text-muted-2 small">{{ item.description }}</p>{% endif %}
+                {% if item.show_price %}
+                  <div class="mb-2">
+                    <span class="badge-pill" style="background:var(--brand);color:#fff;border-color:#fff;">
+                      ${{ "%.2f"|format(item.price) }}
+                    </span>
+                  </div>
+                {% endif %}
+                <div class="mt-auto">
+                  <label class="form-label small">Cantidad / Nº de citas</label>
+                  <input
+                    type="number" min="0" value="0"
+                    class="form-control" style="border:3px solid var(--border)"
+                    name="prod_{{ item.title | replace(' ','_') }}"
+                    data-item-nombre="{{ item.title }}"
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        {% endif %}
+
+        <!-- PRODUCTOS -->
+        {% if productos_fisicos and productos_fisicos|length>0 %}
+          <div class="col-12 mt-2">
+            <h3 class="h5 brand-font d-flex align-items-center gap-2">
+              <i class="bi bi-box-seam text-success"></i> Productos
+            </h3>
+          </div>
+
+          {% for item in productos_fisicos %}
+          <div class="col-12 col-sm-6 col-md-4">
+            <div class="card card-brutal h-100">
+              {% if item.image %}
+                <img
+                  src="{{ url_for('uploaded_file', filename=item.image) }}"
+                  alt="{{ item.title }}"
+                  class="card-img-top img-zoom-trigger"
+                  data-bs-toggle="modal" data-bs-target="#zoomModal"
+                  data-img-src="{{ url_for('uploaded_file', filename=item.image) }}"
+                  style="object-fit:cover; height:220px; cursor: zoom-in;"
+                >
+              {% endif %}
+              <div class="card-body d-flex flex-column">
+                <div class="mb-1">
+                  <span class="badge-pill" style="background:#666;color:#fff;border-color:#fff;">Producto</span>
+                </div>
+                <h6 class="brand-font mb-1">{{ item.title }}</h6>
+                {% if item.description %}<p class="text-muted-2 small">{{ item.description }}</p>{% endif %}
+                {% if item.show_price %}
+                  <div class="mb-2">
+                    <span class="badge-pill" style="background:var(--brand);color:#fff;border-color:#fff;">
+                      ${{ "%.2f"|format(item.price) }}
+                    </span>
+                  </div>
+                {% endif %}
+                <div class="mt-auto">
+                  <label class="form-label small">Cantidad</label>
+                  <input
+                    type="number" min="0" value="0"
+                    class="form-control" style="border:3px solid var(--border)"
+                    name="prod_{{ item.title | replace(' ','_') }}"
+                    data-item-nombre="{{ item.title }}"
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        {% endif %}
+
+        <div class="col-12 text-center">
+          <button type="submit" class="btn btn-brutal btn-brand px-4 py-2 hover-raise">
+            <i class="bi bi-whatsapp me-1"></i> Cotizar
           </button>
         </div>
-      </div>
-    </div>
-  </div>
-</section>
+      </form>
 
+      <!-- Modal zoom -->
+      <div class="modal fade" id="zoomModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 72vw;">
+          <div class="modal-content" style="border:3px solid var(--border); box-shadow: var(--shadow);">
+            <img id="zoomedImage" src="" class="img-fluid" alt="Zoom">
+            <div class="p-2 text-end">
+              <button class="btn btn-brutal btn-ghost" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal de cotización -->
+      <div class="modal fade" id="cotizarModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content" style="border:3px solid var(--border); box-shadow: var(--shadow);">
+            <div class="modal-header" style="background: var(--brand); color:#fff;">
+              <h5 class="modal-title">Antes de cotizar ✍️</h5>
+              <button class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+              <p class="small text-muted">
+                Déjanos tu nombre para dirigirnos a ti cuando te contactemos por WhatsApp.
+              </p>
+
+              <div class="mb-3">
+                <label class="form-label">Tu nombre</label>
+                <input type="text" class="form-control" id="nombreClienteInput" placeholder="Ej. Ana Martínez" style="border:3px solid var(--border);">
+                <div class="text-danger small mt-1 d-none" id="errorModalNombre">Por favor escribe tu nombre 🙏</div>
+              </div>
+
+              <div>
+                <div class="form-label mb-1">Tu selección:</div>
+                <div id="resumenSeleccion" class="bg-light border rounded p-2 small" style="max-height: 220px; overflow-y:auto; border:3px solid var(--border);"></div>
+              </div>
+            </div>
+            <div class="modal-footer justify-content-between">
+              <button class="btn btn-brutal btn-ghost" data-bs-dismiss="modal">Cancelar</button>
+              <button class="btn btn-brutal btn-brand" id="enviarCotizacionBtn">
+                <i class="bi bi-whatsapp me-1"></i> Enviar por WhatsApp
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    {% else %}
+      <div class="card card-brutal p-3">No hay productos ni servicios disponibles.</div>
+    {% endif %}
+  </section>
 
   <!-- RESEÑAS -->
   <section class="container my-5" id="reseñas">
@@ -591,11 +707,7 @@
                 <h5 class="brand-font text-center">{{ r.nombre }}</h5>
                 <div class="text-center mb-2">
                   {% for i in range(1,6) %}
-                    {% if i <= r.estrellas %}
-                      <i class="bi bi-star-fill text-warning"></i>
-                    {% else %}
-                      <i class="bi bi-star text-secondary"></i>
-                    {% endif %}
+                    {% if i <= r.estrellas %}<i class="bi bi-star-fill text-warning"></i>{% else %}<i class="bi bi-star text-secondary"></i>{% endif %}
                   {% endfor %}
                 </div>
                 <p>{{ r.comentario }}</p>
@@ -664,14 +776,10 @@
 
   <!-- JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-  <script
-    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-    crossorigin=""
-  ></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 
   <script>
-    // zoom modal
+    // zoom de productos
     document.querySelectorAll('.img-zoom-trigger').forEach(img=>{
       img.addEventListener('click', e=>{
         const src = e.currentTarget.getAttribute('data-img-src');
@@ -679,79 +787,121 @@
       });
     });
 
-    // cotizar
-    // cotizar con modal (productos + servicios)
-const formCotizar = document.getElementById('form-cotizar');
-const resumenSeleccionDiv = document.getElementById('resumenSeleccion');
-const nombreClienteInput = document.getElementById('nombreClienteInput');
-const errorModalNombre = document.getElementById('errorModalNombre');
-let cotizacionLineas = [];
+    // zoom de galería
+    (function(){
+      const gals = document.querySelectorAll('.gal-item');
+      const modal = new bootstrap.Modal(document.getElementById('zoomModal'));
+      const zoomImg = document.getElementById('zoomedImage');
+      let videoEl = null;
 
-if (formCotizar){
-  formCotizar.addEventListener('submit', (e)=>{
-    e.preventDefault();
+      gals.forEach(item=>{
+        item.addEventListener('click', ()=>{
+          const type = item.dataset.type;
+          const src = item.dataset.src;
+          const modalBody = document.querySelector('#zoomModal .modal-content');
 
-    cotizacionLineas = [];
-    const inputs = formCotizar.querySelectorAll('input[type=number]');
-    inputs.forEach(inp=>{
-      const n = parseInt(inp.value || "0");
-      if (n>0){
-        const nombre = inp.getAttribute('data-item-nombre') ||
-                       inp.name.replace('prod_','').replaceAll('_',' ');
-        cotizacionLineas.push(`- ${nombre}: ${n}`);
-      }
-    });
-
-    if (cotizacionLineas.length===0){
-      alert("Ingresa cantidad para al menos un servicio o producto 🙏");
-      return;
-    }
-
-    // preview en el modal
-    resumenSeleccionDiv.innerHTML = cotizacionLineas.map(l=>`<div>${l}</div>`).join('');
-    errorModalNombre.classList.add('d-none');
-    nombreClienteInput.classList.remove('is-invalid');
-
-    const modal = new bootstrap.Modal(document.getElementById('cotizarModal'));
-    modal.show();
-    setTimeout(()=> nombreClienteInput && nombreClienteInput.focus(), 250);
-  });
-}
-
-const enviarCotizacionBtn = document.getElementById('enviarCotizacionBtn');
-if (enviarCotizacionBtn){
-  enviarCotizacionBtn.addEventListener('click', ()=>{
-    const nombre = (nombreClienteInput.value || '').trim();
-    if (!nombre){
-      errorModalNombre.classList.remove('d-none');
-      nombreClienteInput.classList.add('is-invalid');
-      nombreClienteInput.focus();
-      return;
-    }
-
-    const wa = "{{ page.get('whatsapp','')|replace(' ','') }}";
-    let msj = `Hola, soy ${encodeURIComponent(nombre)} y quiero cotizar:%0A`;
-    cotizacionLineas.forEach(l=>{ msj += encodeURIComponent(l) + "%0A"; });
-
-    window.open(`https://wa.me/${wa}?text=${msj}`, "_blank");
-  });
-}
-
-
-    // estrellas
-    const stars = document.querySelectorAll('.star-icon');
-    const inputEst = document.getElementById('estrellas');
-    stars.forEach(s=>{
-      s.addEventListener('click',()=>{
-        const v = parseInt(s.getAttribute('data-value'));
-        inputEst.value = v;
-        stars.forEach(x=>{
-          const xv = parseInt(x.getAttribute('data-value'));
-          x.classList.remove('text-warning','text-secondary');
-          x.classList.add(xv<=v ? 'text-warning':'text-secondary');
+          if (type === 'video') {
+            if (!videoEl){
+              videoEl = document.createElement('video');
+              videoEl.controls = true;
+              videoEl.style.width = '100%';
+            }
+            zoomImg.classList.add('d-none');
+            videoEl.src = src;
+            if (!modalBody.querySelector('video')){
+              modalBody.insertBefore(videoEl, modalBody.firstChild);
+            }
+            videoEl.classList.remove('d-none');
+            modal.show();
+          } else {
+            if (videoEl){
+              videoEl.pause();
+              videoEl.classList.add('d-none');
+            }
+            zoomImg.src = src;
+            zoomImg.classList.remove('d-none');
+            modal.show();
+          }
         });
       });
-    });
+
+      document.getElementById('zoomModal').addEventListener('hidden.bs.modal', ()=>{
+        if (videoEl){ videoEl.pause(); }
+      });
+
+    })();
+
+    // cotizar
+    (function(){
+      const formCotizar = document.getElementById('form-cotizar');
+      const resumenSeleccionDiv = document.getElementById('resumenSeleccion');
+      const nombreClienteInput = document.getElementById('nombreClienteInput');
+      const errorModalNombre = document.getElementById('errorModalNombre');
+      let cotizacionLineas = [];
+
+      if (formCotizar){
+        formCotizar.addEventListener('submit', (e)=>{
+          e.preventDefault();
+
+          cotizacionLineas = [];
+          formCotizar.querySelectorAll('input[type=number]').forEach(inp=>{
+            const n = parseInt(inp.value || "0");
+            if (n>0){
+              const nombre = inp.getAttribute('data-item-nombre') || inp.name.replace('prod_','').replaceAll('_',' ');
+              cotizacionLineas.push(`- ${nombre}: ${n}`);
+            }
+          });
+
+          if (cotizacionLineas.length===0){
+            alert("Ingresa cantidad para al menos un servicio o producto 🙏");
+            return;
+          }
+
+          resumenSeleccionDiv.innerHTML = cotizacionLineas.map(l=>`<div>${l}</div>`).join('');
+          errorModalNombre.classList.add('d-none');
+          nombreClienteInput.classList.remove('is-invalid');
+
+          new bootstrap.Modal(document.getElementById('cotizarModal')).show();
+          setTimeout(()=> nombreClienteInput && nombreClienteInput.focus(), 250);
+        });
+      }
+
+      const enviarCotizacionBtn = document.getElementById('enviarCotizacionBtn');
+      if (enviarCotizacionBtn){
+        enviarCotizacionBtn.addEventListener('click', ()=>{
+          const nombre = (nombreClienteInput.value || '').trim();
+          if (!nombre){
+            errorModalNombre.classList.remove('d-none');
+            nombreClienteInput.classList.add('is-invalid');
+            nombreClienteInput.focus();
+            return;
+          }
+
+          const wa = "{{ page.get('whatsapp','')|replace(' ','') }}";
+          let msj = `Hola, soy ${encodeURIComponent(nombre)} y quiero cotizar:%0A`;
+          cotizacionLineas.forEach(l=>{ msj += encodeURIComponent(l) + "%0A"; });
+
+          window.open(`https://wa.me/${wa}?text=${msj}`, "_blank");
+        });
+      }
+    })();
+
+    // estrellas
+    (function(){
+      const stars = document.querySelectorAll('.star-icon');
+      const inputEst = document.getElementById('estrellas');
+      stars.forEach(s=>{
+        s.addEventListener('click',()=>{
+          const v = parseInt(s.getAttribute('data-value'));
+          inputEst.value = v;
+          stars.forEach(x=>{
+            const xv = parseInt(x.getAttribute('data-value'));
+            x.classList.remove('text-warning','text-secondary');
+            x.classList.add(xv<=v ? 'text-warning':'text-secondary');
+          });
+        });
+      });
+    })();
 
     // mapa
     (function(){
