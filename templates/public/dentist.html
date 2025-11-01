@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ page.business_name }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  {# ==== META DINÁMICOS (solo si hay datos) ==== #}
+  {% if page.description %}
+    <meta name="description" content="{{ page.description[:160] }}">
+  {% endif %}
+  {% if page.category %}
+    <meta name="keywords" content="{{ page.category }}">
+  {% endif %}
+  {% if page.business_name %}
+    <meta name="author" content="{{ page.business_name }}">
+  {% endif %}
+
+  {# ==== OG ==== #}
+  {% if page.business_name %}
+  <meta property="og:title" content="{{ page.business_name }}">
+  {% endif %}
+  {% if page.slogan or page.description %}
+  <meta property="og:description" content="{{ page.slogan or page.description[:200] }}">
+  {% endif %}
+  <meta property="og:image" content="{{ url_for('static', filename=page.get('image') or 'images/default.png', _external=True) }}">
+  <meta property="og:url" content="{{ request.url }}">
+  <meta property="og:type" content="website">
+
+  <!-- Bootstrap / Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
+  <style>
+    :root{
+      --brand: {{ "'" ~ (page['color'] if page['color'] else '#0ea5e9') ~ "'" }};
+      --brand-soft: rgba(14,165,233,.12);
+      --ink: #0f172a;
+      --ink-soft: #475569;
+      --paper: #ffffff;
+      --bg: #ebf6ff;
+      --radius: 20px;
+      --shadow-soft: 0 20px 50px rgba(15,23,42,.18);
+      --wa: #25D366;
+      --odont-bg: radial-gradient(circle at 10% 20%, rgba(14,165,233,.35) 0%, #0f172a 56%, #020617 90%);
+    }
+    *{box-sizing:border-box;}
+
+    body{
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      background:#0f172a;
+      color:#0f172a;
+      scroll-behavior:smooth;
+    }
+
+    /* NAV */
+    .navbar-main{
+      position:fixed;
+      top:0; left:0; right:0;
+      z-index:1100;
+      backdrop-filter: blur(16px);
+      background: rgba(2,6,23,.18);
+      border-bottom:1px solid rgba(255,255,255,.05);
+      transition:.25s ease;
+    }
+    .navbar-main.scrolled{
+      background: radial-gradient(circle at top, color-mix(in srgb, var(--brand) 60%, #000 40%), rgba(0,0,0,.9));
+      box-shadow:0 12px 30px rgba(0,0,0,.35);
+    }
+    .navbar-brand{
+      font-weight:700;
+      letter-spacing:-.02em;
+      display:flex;
+      align-items:center;
+      gap:.6rem;
+      color:#fff;
+    }
+    .navbar-logo{
+      width:44px;
+      height:44px;
+      border-radius:14px;
+      overflow:hidden;
+      background:rgba(255,255,255,.08);
+      display:grid;
+      place-items:center;
+      border:1px solid rgba(255,255,255,.25);
+      font-size:1.3rem;
+      color:#fff;
+    }
+    .navbar-logo img{
+      width:100%; height:100%; object-fit:cover;
+    }
+    .navbar-brand small{
+      font-size:.6rem;
+      background:rgba(255,255,255,.08);
+      padding:.12rem .45rem;
+      border-radius:999px;
+    }
+    .nav-link{
+      font-weight:500;
+      color:rgba(255,255,255,.75);
+      position:relative;
+    }
+    .nav-link::after{
+      content:"";
+      position:absolute;
+      bottom:-6px; left:10px; right:10px;
+      height:3px;
+      background:linear-gradient(90deg, #fff, rgba(255,255,255,0));
+      border-radius:99px;
+      transform:scaleX(0);
+      transform-origin:left;
+      transition:.25s;
+    }
+    .nav-link:hover,
+    .nav-link.active{
+      color:#fff;
+    }
+    .nav-link:hover::after{
+      transform:scaleX(1);
+    }
+
+    /* HERO */
+    .hero{
+      position:relative;
+      min-height: 88vh;
+      padding-top: 82px;
+      display:flex;
+      align-items:center;
+      overflow:hidden;
+      background:
+        {% if page.cover_image %}
+          url("{{ url_for('uploaded_file', filename=page.cover_image) }}") center/cover no-repeat;
+        {% else %}
+          var(--odont-bg);
+        {% endif %}
+    }
+    .hero-layer{
+      position:absolute;
+      inset:0;
+      background-image: linear-gradient(130deg, rgba(255,255,255,.10) 0%, rgba(255,255,255,0) 46%);
+      opacity:.25;
+      pointer-events:none;
+    }
+    .hero-overlay{
+      position:absolute;
+      inset:0;
+      background: radial-gradient(circle at center, rgba(15,23,42,0) 0%, rgba(15,23,42,1) 90%);
+      pointer-events:none;
+    }
+    .blob{
+      position:absolute;
+      border-radius:999px;
+      opacity:.3;
+      animation: floaty 12s ease-in-out infinite;
+      pointer-events:none;
+    }
+    .blob-1{
+      width:260px; height:260px;
+      background: radial-gradient(circle, rgba(186,230,253,.7), rgba(186,230,253,0));
+      top:-40px; right:6%;
+      animation-delay:-4s;
+    }
+    .blob-2{
+      width:210px; height:210px;
+      background: radial-gradient(circle, rgba(59,130,246,.55), rgba(59,130,246,0));
+      bottom:7%; left:5%;
+    }
+    .blob-3{
+      width:170px; height:170px;
+      background: radial-gradient(circle, rgba(236,252,203,.5), rgba(236,252,203,0));
+      top:36%; left:42%;
+      animation-duration:14s;
+    }
+    @keyframes floaty{
+      0%,100%{transform:translateY(0) translateX(0);}
+      50%{transform:translateY(14px) translateX(6px);}
+    }
+
+    .hero-content{position:relative; z-index:2; color:white;}
+    .hero-tag{
+      display:inline-flex;
+      align-items:center;
+      gap:.5rem;
+      background:rgba(15,23,42,.35);
+      border:1px solid rgba(255,255,255,.25);
+      border-radius:999px;
+      padding:.4rem 1.05rem;
+      font-size:.7rem;
+      margin-bottom:1rem;
+      backdrop-filter:blur(8px);
+      text-transform:uppercase;
+      letter-spacing:.08em;
+    }
+    .hero-title{
+      display:flex;
+      gap:1rem;
+      align-items:center;
+      flex-wrap:wrap;
+      font-size: clamp(2.3rem, 6.3vw, 3.5rem);
+      font-weight:700;
+      line-height: 1.02;
+      letter-spacing:-.04em;
+    }
+    .hero-logo{
+      width:72px;
+      height:72px;
+      border-radius:22px;
+      overflow:hidden;
+      border:2px solid rgba(255,255,255,.4);
+      background:rgba(15,23,42,.25);
+      display:grid;
+      place-items:center;
+      font-size:2.2rem;
+    }
+    .hero-logo img{width:100%; height:100%; object-fit:cover;}
+    .hero-sub{
+      color:rgba(255,255,255,.7);
+      max-width:560px;
+      margin-top:1.2rem;
+    }
+    .hero-card{
+      background: radial-gradient(circle at top, rgba(2,6,23,.55), rgba(2,6,23,.1));
+      border:1px solid rgba(255,255,255,.1);
+      backdrop-filter: blur(14px);
+      border-radius: 18px;
+      padding:1.5rem;
+      color:#fff;
+      box-shadow:0 20px 45px rgba(15,23,42,.25);
+    }
+    .hero-divider{
+      position:absolute;
+      bottom:-1px; left:0; right:0;
+      height:70px;
+      background:linear-gradient(to bottom, rgba(248,250,252,0) 0%, {{ page.color or '#ebf6ff' }} 90%);
+      z-index:2;
+    }
+
+    /* MAIN */
+    .section-shell{
+      background: {{ page.color or '#ebf6ff' }};
+      position:relative;
+      z-index:10;
+      padding: 3.6rem 0 6.8rem;
+    }
+
+    .card-soft{
+      background:#fff;
+      border:1px solid rgba(14,165,233,.1);
+      border-radius:18px;
+      box-shadow:0 18px 45px rgba(15,23,42,.03);
+      transition:.25s ease;
+    }
+    .card-soft:hover{
+      transform:translateY(-3px);
+      box-shadow:0 18px 65px rgba(15,23,42,.08);
+    }
+
+    .reveal-y{
+      opacity:0;
+      transform:translateY(22px);
+      transition:.5s ease;
+    }
+    .reveal-y.show{
+      opacity:1;
+      transform:translateY(0);
+    }
+
+    /* GALERÍA */
+    .media-grid{
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap:14px;
+    }
+    .media-card{
+      border-radius:16px;
+      overflow:hidden;
+      position:relative;
+      cursor:pointer;
+      min-height:160px;
+      background:#0f172a;
+      transition:.15s ease-out;
+    }
+    .media-card:hover{
+      transform:translateY(-4px);
+      box-shadow:0 15px 40px rgba(15,23,42,.12);
+    }
+    .media-card img,
+    .media-card video{width:100%; height:100%; object-fit:cover;}
+    .media-badge{
+      position:absolute;
+      top:10px; left:10px;
+      background: rgba(15,23,42,.6);
+      color:#fff;
+      padding:3px 10px;
+      border-radius:999px;
+      font-size:.7rem;
+    }
+
+    /* SERVICIOS DENTALES */
+    .odont-serv-box{
+      border:1px solid rgba(14,165,233,.1);
+      border-radius:16px;
+      background:#fff;
+      display:flex;
+      gap:.75rem;
+      padding:.85rem;
+      align-items:flex-start;
+    }
+    .odont-serv-icon{
+      width:40px;height:40px;
+      background:rgba(14,165,233,.12);
+      border-radius:999px;
+      display:grid;place-items:center;
+      color:#0ea5e9;
+    }
+
+    /* POSTS (FIX DEL BOTÓN) */
+    .post-card{
+      display:flex;
+      flex-direction:column;
+      height:100%;
+    }
+    .post-card .post-thumb{
+      flex:0 0 170px;
+      border-radius:16px 16px 0 0;
+      overflow:hidden;
+      background:#e2e8f0;
+    }
+    .post-card .post-thumb img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+    }
+    .post-card .post-body{
+      display:flex;
+      flex-direction:column;
+      flex:1 1 auto;
+    }
+    .post-card .post-body .btn{
+      margin-top:auto;
+    }
+
+    /* Avisos bottom */
+    .avisos-shell{
+      position: fixed;
+      bottom: 1.15rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1090;
+      width: min(1180px, 96%);
+      display:flex;
+      justify-content:center;
+      pointer-events:none;
+    }
+    .avisos-box{
+      pointer-events:all;
+      background: radial-gradient(circle at top, color-mix(in srgb, var(--brand) 55%, #000 40%), rgba(15,23,42,1));
+      border:1px solid rgba(255,255,255,.08);
+      backdrop-filter: blur(12px);
+      border-radius: 18px;
+      box-shadow: 0 18px 40px rgba(15,23,42,.25);
+      display:flex;
+      align-items:center;
+      gap:1rem;
+      padding:.6rem 1rem;
+      width:100%;
+      min-height:3.2rem;
+    }
+    .aviso-icon{
+      width:36px; height:36px;
+      border-radius:999px;
+      background:rgba(0,0,0,.22);
+      display:grid; place-items:center;
+      color:#fff;
+      flex:0 0 auto;
+    }
+    .aviso-content{flex:1; overflow:hidden;}
+    .aviso-chip{
+      background: rgba(0,0,0,.04);
+      border:1px solid rgba(255,255,255,.08);
+      display:inline-flex;
+      gap:.4rem;
+      align-items:center;
+      color:#fff;
+      border-radius:999px;
+      padding:.25rem .85rem;
+      font-size:.82rem;
+      white-space:nowrap;
+    }
+    .aviso-close{
+      background:rgba(0,0,0,.25);
+      border:1px solid rgba(255,255,255,.12);
+      width:30px; height:30px;
+      border-radius:999px;
+      display:grid; place-items:center;
+      color:#fff;
+      cursor:pointer;
+    }
+
+    /* whatsapp float */
+    .wa-float{
+      position: fixed;
+      bottom: 6rem;
+      right: 1.25rem;
+      z-index: 1089;
+    }
+
+    /* responsive */
+    @media (max-width: 992px){
+      .hero{min-height: 95vh;}
+      .hero-card{margin-top:2.5rem;}
+      .avisos-box{gap:.6rem;}
+    }
+    @media (max-width: 768px){
+      .wa-float{right:1rem; bottom:6.3rem;}
+      .hero-sub{max-width:100%;}
+      .hero-title{font-size: clamp(2.05rem, 10vw, 3rem);}
+      .avisos-box{flex-wrap:wrap; justify-content:space-between;}
+      .aviso-content{width:100%;}
+    }
+
+    footer{
+      background: radial-gradient(circle at top, #0f172a, #020617);
+      color:white;
+      padding:2.4rem 0 5.4rem;
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="mainNavbar" class="navbar navbar-expand-lg navbar-dark navbar-main">
+  <div class="container">
+    <a class="navbar-brand" href="#inicio">
+      {% if page.image %}
+      <span class="navbar-logo">
+        <img src="{{ url_for('uploaded_file', filename=page.image) }}" alt="{{ page.business_name }}">
+      </span>
+      {% else %}
+      <span class="navbar-logo">
+        <i class="bi bi-tooth"></i>
+      </span>
+      {% endif %}
+      {% if page.business_name %}
+      <span>{{ page.business_name }}</span>
+      {% endif %}
+      {% if page.category %}
+      <small>{{ page.category }}</small>
+      {% endif %}
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+      <ul class="navbar-nav align-items-lg-center gap-lg-2">
+        <li class="nav-item"><a class="nav-link" href="#info">La clínica</a></li>
+        <li class="nav-item"><a class="nav-link" href="#odont-servicios">Tratamientos</a></li>
+        <li class="nav-item"><a class="nav-link" href="#contacto">Contacto</a></li>
+        {% if page.media_gallery %}<li class="nav-item"><a class="nav-link" href="#galeria">Instalaciones</a></li>{% endif %}
+        {% if posts %}<li class="nav-item"><a class="nav-link" href="#publicaciones">Consejos dentales</a></li>{% endif %}
+        <li class="nav-item"><a class="nav-link" href="#reseñas">Pacientes</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header id="inicio" class="hero">
+  <div class="hero-layer" id="heroLayer"></div>
+  <div class="hero-overlay"></div>
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+
+  <div class="container hero-content">
+    <div class="row align-items-center">
+      <div class="col-lg-7">
+        {% if page.category or page.city %}
+        <span class="hero-tag">
+          {% if page.category %}{{ page.category }}{% endif %}
+          {% if page.city %} · {{ page.city }}{% endif %}
+        </span>
+        {% endif %}
+        <h1 class="hero-title">
+          {% if page.image %}
+          <span class="hero-logo">
+            <img src="{{ url_for('uploaded_file', filename=page.image) }}" alt="{{ page.business_name }}">
+          </span>
+          {% else %}
+          <span class="hero-logo"><i class="bi bi-tooth"></i></span>
+          {% endif %}
+          {% if page.business_name %}
+            <span>{{ page.business_name }}</span>
+          {% endif %}
+        </h1>
+        {% if page.slogan %}
+        <p class="hero-sub">{{ page.slogan }}</p>
+        {% endif %}
+        <div class="d-flex flex-wrap gap-2 mt-3 hero-actions">
+          {% if page.whatsapp %}
+          <a href="https://wa.me/{{ page.whatsapp | replace(' ', '') }}" target="_blank" class="btn btn-success d-flex align-items-center gap-2">
+            <i class="bi bi-whatsapp"></i> Agendar por WhatsApp
+          </a>
+          {% endif %}
+          {% if page.address or page.operating_hours %}
+          <a href="#info" class="btn btn-outline-light d-flex align-items-center gap-2">
+            <i class="bi bi-list-check"></i> Ver información
+          </a>
+          {% endif %}
+        </div>
+      </div>
+      <div class="col-lg-4 offset-lg-1 mt-4 mt-lg-0">
+        <div class="hero-card">
+          {% if page.operating_hours %}
+          <p class="text-white-50 small mb-1 text-uppercase">Horario</p>
+          <p class="mb-2 fw-semibold">{{ page.operating_hours }}</p>
+          {% endif %}
+          {% if page.address %}
+          <p class="text-white-50 small mb-1 text-uppercase">Dirección</p>
+          <p class="mb-3">{{ page.address }}</p>
+          {% endif %}
+          {% if page.phone %}
+          <a href="tel:{{ page.phone }}" class="btn btn-outline-light btn-sm mb-2 w-100"><i class="bi bi-telephone"></i> Llamar</a>
+          {% endif %}
+          {% if page.website %}
+          <a href="{{ page.website }}" target="_blank" class="btn btn-outline-light btn-sm w-100"><i class="bi bi-globe"></i> Sitio web</a>
+          {% endif %}
+          {% if page.whatsapp %}
+          <hr class="border-secondary my-3">
+          <a href="https://wa.me/{{ page.whatsapp | replace(' ','') }}?text=Urgencia%20dental" class="btn btn-danger btn-sm w-100"><i class="bi bi-exclamation-triangle"></i> Urgencia dental</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-divider"></div>
+</header>
+
+<!-- CONTENIDO -->
+<main class="section-shell" id="contenido">
+
+  <!-- INFO -->
+  <section class="container mb-5" id="info">
+    <div class="row g-4">
+      <div class="col-lg-6 reveal-y">
+        <div class="card-soft p-4 h-100">
+          <h2 class="h5 d-flex gap-2 align-items-center mb-3">
+            <i class="bi bi-hospital text-info fs-5"></i> Sobre la clínica dental
+          </h2>
+          {% if page.description %}
+          <p class="mb-2"><strong>Descripción:</strong> {{ page.description }}</p>
+          {% endif %}
+          {% if page.category %}
+          <p class="mb-2"><strong>Especialidad:</strong> {{ page.category }}</p>
+          {% endif %}
+          {% if page.founding_date %}
+          <p class="mb-2"><strong>Fundación / Experiencia:</strong> {{ page.founding_date }}</p>
+          {% endif %}
+          {% if services_list and services_list|length > 0 %}
+          <p class="mb-2"><strong>Tratamientos:</strong></p>
+          <div class="d-flex flex-wrap gap-2 mb-2">
+            {% for s in services_list %}
+            <span class="badge bg-light text-dark border">{{ s }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+          {% if pm_list and pm_list|length > 0 %}
+          <p class="mb-2"><strong>Métodos de pago:</strong></p>
+          <div class="d-flex flex-wrap gap-2">
+            {% for p in pm_list %}
+            <span class="badge" style="background:rgba(14,165,233,.12);color:#0f172a;border:1px solid rgba(14,165,233,.3);">{{ p }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      <div class="col-lg-6 reveal-y">
+        <div class="card-soft p-4 h-100">
+          <h2 class="h5 d-flex gap-2 align-items-center mb-3">
+            <i class="bi bi-geo-alt text-danger fs-5"></i> Ubicación
+          </h2>
+          {% if page.address %}<p class="mb-2"><strong>Dirección:</strong> {{ page.address }}</p>{% endif %}
+          {% if page.city %}<p class="mb-2"><strong>Ciudad:</strong> {{ page.city }}</p>{% endif %}
+          {% if page.state %}<p class="mb-2"><strong>Estado:</strong> {{ page.state }}</p>{% endif %}
+          {% if page.postal_code %}<p class="mb-3"><strong>Código Postal:</strong> {{ page.postal_code }}</p>{% endif %}
+          {% set has_coords = page.get('lat') is not none and page.get('lng') is not none %}
+          {% if has_coords %}
+          <div id="map" style="height:240px;border-radius:16px;overflow:hidden;"></div>
+          <a class="btn btn-outline-info btn-sm mt-3" target="_blank" href="https://www.google.com/maps/dir/?api=1&destination={{ page.lat }},{{ page.lng }}">Cómo llegar</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TRATAMIENTOS DENTALES -->
+  <section class="container mb-5" id="odont-servicios">
+    <div class="card-soft p-4">
+      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-3">
+        <div>
+          <h2 class="h5 mb-1 d-flex gap-2 align-items-center"><i class="bi bi-tooth text-info"></i> Tratamientos dentales</h2>
+        </div>
+        {% if page.whatsapp %}
+        <a href="https://wa.me/{{ page.whatsapp | replace(' ','') }}" class="btn btn-success btn-sm">
+          <i class="bi bi-whatsapp"></i> Pedir información
+        </a>
+        {% endif %}
+      </div>
+      <div class="row g-3">
+        {% if services_list and services_list|length > 0 %}
+          {% for s in services_list %}
+          <div class="col-md-6 col-lg-4">
+            <div class="odont-serv-box">
+              <div class="odont-serv-icon"><i class="bi bi-check2"></i></div>
+              <div>
+                <h3 class="h6 mb-1">{{ s }}</h3>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        {% endif %}
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACTO -->
+  <section class="container mb-5" id="contacto">
+    <div class="row g-4 align-items-stretch">
+      <div class="col-lg-4 reveal-y">
+        <div class="card-soft p-3 gap-3 align-items-center mb-2">
+            <h2 class="h5 mb-3 d-flex gap-2 align-items-center"><i class="bi bi-chat-dots text-info"></i> Contacto</h2>
+        </div>
+        {% if page.phone %}
+        <div class="card-soft p-3 d-flex gap-3 align-items-center mb-2">
+          <div class="icon bg-light rounded-circle d-grid place-items-center" style="width:42px;height:42px;"><i class="bi bi-telephone-fill text-info"></i></div>
+          <div>
+            <p class="mb-0 small text-muted">Teléfono</p>
+            <p class="mb-0 fw-semibold">{{ page.phone }}</p>
+          </div>
+        </div>
+        {% endif %}
+        {% if page.email %}
+        <div class="card-soft p-3 d-flex gap-3 align-items-center mb-2">
+          <div class="icon bg-light rounded-circle d-grid place-items-center" style="width:42px;height:42px;"><i class="bi bi-envelope-fill text-info"></i></div>
+          <div>
+            <p class="mb-0 small text-muted">Email</p>
+            <p class="mb-0 fw-semibold">{{ page.email }}</p>
+          </div>
+        </div>
+        {% endif %}
+        {% if page.website %}
+        <div class="card-soft p-3 d-flex gap-3 align-items-center mb-2">
+          <div class="icon bg-light rounded-circle d-grid place-items-center" style="width:42px;height:42px;"><i class="bi bi-globe2 text-info"></i></div>
+          <div>
+            <p class="mb-0 small text-muted">Sitio</p>
+            <a href="{{ page.website }}" target="_blank" class="fw-semibold text-decoration-none">{{ page.website }}</a>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+      <div class="col-lg-8 reveal-y">
+        <div class="card-soft p-4 h-100">
+          <h3 class="h6 mb-3">Redes sociales</h3>
+          <div class="d-flex flex-wrap gap-3">
+            {% if page.facebook %}
+            <a href="{{ page.facebook }}" target="_blank" class="btn btn-light d-flex gap-2 align-items-center">
+              <i class="bi bi-facebook text-primary"></i> Facebook
+            </a>
+            {% endif %}
+            {% if page.instagram %}
+            <a href="{{ page.instagram }}" target="_blank" class="btn btn-light d-flex gap-2 align-items-center">
+              <i class="bi bi-instagram text-danger"></i> Instagram
+            </a>
+            {% endif %}
+            {% if page.tiktok %}
+            <a href="{{ page.tiktok }}" target="_blank" class="btn btn-light d-flex gap-2 align-items-center">
+              <i class="bi bi-tiktok"></i> TikTok
+            </a>
+            {% endif %}
+            {% if page.whatsapp %}
+            <a href="https://wa.me/{{ page.whatsapp | replace(' ', '') }}" target="_blank" class="btn btn-success d-flex gap-2 align-items-center">
+              <i class="bi bi-whatsapp"></i> WhatsApp
+            </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- GALERÍA / INSTALACIONES -->
+  {% if page.media_gallery and page.media_gallery|length > 0 %}
+  <section class="container mb-5 card-soft p-4" id="galeria">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h2 class="h5 mb-0">Instalaciones</h2>
+    </div>
+    <div class="media-grid">
+      {% for item in page.media_gallery %}
+        {% if item.type == 'video' %}
+        <div class="media-card reveal-y" data-type="video" data-src="{{ url_for('uploaded_file', filename=item.path) }}">
+          <video src="{{ url_for('uploaded_file', filename=item.path) }}" muted playsinline></video>
+          <div class="media-badge"><i class="bi bi-play-fill"></i> Video</div>
+        </div>
+        {% else %}
+        <div class="media-card reveal-y" data-type="image" data-src="{{ url_for('uploaded_file', filename=item.path) }}">
+          <img src="{{ url_for('uploaded_file', filename=item.path) }}" alt="">
+        </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- PUBLICACIONES -->
+  <section class="container mb-5 card-soft p-4" id="publicaciones">
+    <h2 class="h5 mb-3">Publicaciones</h2>
+    {% if posts and posts|length > 0 %}
+    <div class="row g-4">
+      {% for post in posts %}
+      <div class="col-md-4 reveal-y">
+        <article class="card-soft post-card">
+          <div class="post-thumb">
+            {% if post.cabecera %}
+            <img src="{{ url_for('uploaded_file', filename=post.cabecera) }}" alt="">
+            {% endif %}
+          </div>
+          <div class="p-3 post-body">
+            {% if post.date %}
+            <span class="badge bg-light text-dark mb-2 d-inline-flex gap-1 align-items-center">
+              <i class="bi bi-calendar-event"></i>{{ post.date.strftime("%d/%m/%Y") }}
+            </span>
+            {% endif %}
+            {% if post.title %}
+            <h3 class="h6">{{ post.title }}</h3>
+            {% endif %}
+            {% if post.content %}
+            <p class="text-muted small mb-3">{{ post.content[:110] }}...</p>
+            {% endif %}
+            <a href="{{ url_for('ver_post', post_id=post._id) }}" class="btn btn-outline-info btn-sm">Leer más</a>
+          </div>
+        </article>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </section>
+
+  <!-- PRODUCTOS / SERVICIOS -->
+  <section class="container mb-5 card-soft p-4" id="productos">
+    <h2 class="h5 mb-3">Productos / servicios odontológicos</h2>
+    {% if (productos_fisicos and productos_fisicos|length > 0) or (servicios and servicios|length > 0) %}
+    <form id="form-cotizar" class="row g-4">
+      {% if servicios %}
+      <div class="col-12"><h3 class="h6 text-muted text-uppercase">Servicios</h3></div>
+      {% for item in servicios %}
+      <div class="col-md-4 reveal-y">
+        <div class="card-soft h-100 d-flex flex-column">
+          <div class="product-thumb" style="height:170px;background:#e0f2fe;border-radius:16px 16px 0 0;overflow:hidden;">
+            {% if item.image %}
+            <img src="{{ url_for('uploaded_file', filename=item.image) }}" alt="{{ item.title }}" style="width:100%;height:100%;object-fit:cover;">
+            {% endif %}
+          </div>
+          <div class="p-3 d-flex flex-column h-100">
+            <span class="badge bg-dark align-self-start mb-2">Servicio</span>
+            {% if item.title %}<h4 class="h6 mb-1">{{ item.title }}</h4>{% endif %}
+            {% if item.description %}<p class="text-muted small mb-2">{{ item.description }}</p>{% endif %}
+            {% if item.show_price %}
+            <span class="badge bg-success mb-2">Precio: ${{ "%.2f"|format(item.price) }}</span>
+            {% endif %}
+            <label class="small mb-1">Cantidad:</label>
+            <input type="number" name="prod_{{ item.title | replace(' ', '_') }}" min="0" value="0" class="form-control form-control-sm mt-auto" data-item-nombre="{{ item.title }}">
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+      {% endif %}
+
+      {% if productos_fisicos %}
+      <div class="col-12 mt-3"><h3 class="h6 text-muted text-uppercase">Productos</h3></div>
+      {% for item in productos_fisicos %}
+      <div class="col-md-4 reveal-y">
+        <div class="card-soft h-100 d-flex flex-column">
+          <div class="product-thumb" style="height:170px;background:#e0f2fe;border-radius:16px 16px 0 0;overflow:hidden;">
+            {% if item.image %}
+            <img src="{{ url_for('uploaded_file', filename=item.image) }}" alt="{{ item.title }}" style="width:100%;height:100%;object-fit:cover;">
+            {% endif %}
+          </div>
+          <div class="p-3 d-flex flex-column h-100">
+            <span class="badge bg-secondary align-self-start mb-2">Producto</span>
+            {% if item.title %}<h4 class="h6 mb-1">{{ item.title }}</h4>{% endif %}
+            {% if item.description %}<p class="text-muted small mb-2">{{ item.description }}</p>{% endif %}
+            {% if item.show_price %}
+            <span class="badge bg-success mb-2">Precio: ${{ "%.2f"|format(item.price) }}</span>
+            {% endif %}
+            <label class="small mb-1">Cantidad:</label>
+            <input type="number" name="prod_{{ item.title | replace(' ', '_') }}" min="0" value="0" class="form-control form-control-sm mt-auto" data-item-nombre="{{ item.title }}">
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+      {% endif %}
+
+      {% if page.whatsapp %}
+      <div class="col-12 text-center">
+        <button type="submit" class="btn btn-success btn-lg mt-2"><i class="bi bi-whatsapp"></i> Cotizar</button>
+      </div>
+      {% endif %}
+    </form>
+    {% endif %}
+  </section>
+
+  <!-- RESEÑAS -->
+  <section class="container mb-5" id="reseñas">
+    <div class="card shadow-sm border-0 mb-4" style="border-radius:18px;">
+      <div class="card-body">
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <span class="badge" style="background:var(--brand);">Nuevo</span>
+          <h3 class="mt-2 mb-0">Reseñas</h3>
+        </div>
+
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <div class="alert alert-info mt-2">
+          {% for message in messages %}
+          <p class="mb-0">{{ message }}</p>
+          {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <form method="POST" class="mb-1">
+          <div class="mb-3">
+            <label for="nombre" class="form-label">Tu nombre</label>
+            <input type="text" name="nombre" id="nombre" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label for="comentario" class="form-label">Comentario</label>
+            <textarea name="comentario" id="comentario" class="form-control" rows="3" required></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Calificación</label>
+            <div id="starRating" class="mb-2">
+              {% for i in range(1, 6) %}
+              <i class="bi bi-star-fill star-icon fs-3 me-1 text-secondary" data-value="{{ i }}" style="cursor:pointer;"></i>
+              {% endfor %}
+            </div>
+            <input type="hidden" name="estrellas" id="estrellas" value="0" required>
+          </div>
+          <button type="submit" class="btn btn-success">
+            <i class="bi bi-send"></i> Enviar reseña
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="card border-0 shadow-sm" style="border-radius:18px;">
+      <div class="card-body">
+        <h4 class="mb-4 text-center d-flex gap-2 justify-content-center align-items-center">
+          <i class="bi bi-chat-right-quote text-warning"></i>
+          Opiniones de pacientes
+        </h4>
+        {% if reseñas %}
+        <div class="row row-cols-1 row-cols-md-2 g-4">
+          {% for r in reseñas %}
+          <div class="col">
+            <div class="card h-100 shadow-sm border-0" style="border-radius:16px;">
+              <div class="card-body">
+                {% if r.nombre %}<h5 class="card-title text-center mb-2">{{ r.nombre }}</h5>{% endif %}
+                <div class="text-center mb-3">
+                  {% for i in range(1, 6) %}
+                    {% if i <= r.estrellas %}
+                      <i class="bi bi-star-fill text-warning fs-5"></i>
+                    {% else %}
+                      <i class="bi bi-star text-secondary fs-5"></i>
+                    {% endif %}
+                  {% endfor %}
+                </div>
+                {% if r.comentario %}<p class="card-text">{{ r.comentario }}</p>{% endif %}
+              </div>
+              <div class="card-footer text-end bg-transparent border-0 pt-0 pb-3">
+                {% if r.fecha %}
+                <small class="text-muted">{{ r.fecha.strftime('%d/%m/%Y') }}</small>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- MODAL GALERÍA -->
+<div class="modal fade" id="mediaModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content bg-dark border-0">
+      <div class="modal-body p-0 position-relative">
+        <button type="button" class="btn btn-sm btn-light position-absolute top-0 end-0 m-2" data-bs-dismiss="modal">
+          <i class="bi bi-x-lg"></i>
+        </button>
+        <img id="mediaModalImg" src="" class="w-100 d-none" alt="">
+        <video id="mediaModalVideo" src="" class="w-100 d-none" controls></video>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL COTIZAR -->
+<div class="modal fade" id="cotizarModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header" style="background:linear-gradient(to right, var(--brand), #0f172a);color:#fff;">
+        <h5 class="modal-title">Cotizar</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p class="small text-muted mb-3">Escribe tu nombre:</p>
+        <input type="text" id="nombreClienteInput" class="form-control mb-2">
+        <div id="resumenSeleccion" class="bg-light border rounded p-2 small" style="max-height:200px;overflow-y:auto;"></div>
+        <div class="text-danger small mt-2 d-none" id="errorModalNombre">Escribe tu nombre</div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-success" id="enviarCotizacionBtn"><i class="bi bi-whatsapp"></i> Enviar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Avisos bottom -->
+{% if avisos %}
+<div class="avisos-shell" id="avisosShell">
+  <div class="avisos-box">
+    <div class="aviso-icon">
+      <i class="bi bi-bell-fill"></i>
+    </div>
+    <div class="aviso-content">
+      <div id="noticiasCarousel" class="carousel slide" data-bs-ride="carousel">
+        <div class="carousel-inner">
+          {% for aviso in avisos %}
+          <div class="carousel-item {% if loop.first %}active{% endif %}">
+            <div class="aviso-chip">
+              {% if aviso.title %}<strong>{{ aviso.title }}:</strong>{% endif %} {{ aviso.content }}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    <div class="d-flex gap-1">
+      <button class="carousel-control-prev btn btn-sm" type="button" data-bs-target="#noticiasCarousel" data-bs-slide="prev" style="position:static;width:auto;">
+        <span class="carousel-control-prev-icon" aria-hidden="true" style="filter:invert(1);"></span>
+      </button>
+      <button class="carousel-control-next btn btn-sm" type="button" data-bs-target="#noticiasCarousel" data-bs-slide="next" style="position:static;width:auto;">
+        <span class="carousel-control-next-icon" aria-hidden="true" style="filter:invert(1);"></span>
+      </button>
+      <div class="aviso-close" id="avisoCloseBtn">
+        <i class="bi bi-x-lg" style="font-size:.7rem;"></i>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% if page.whatsapp %}
+<div class="wa-float">
+  <a href="https://wa.me/{{ page.whatsapp | replace(' ', '') }}" target="_blank" class="btn btn-success rounded-pill shadow-lg">
+    <i class="bi bi-whatsapp fs-4"></i>
+  </a>
+</div>
+{% endif %}
+
+<!-- FOOTER -->
+<footer>
+  <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+    <p class="mb-0">&copy; {{ now().year if now else '2025' }} DavaniTechnology.</p>
+    <div>
+      {% if page.facebook %}<a href="{{ page.facebook }}" target="_blank" class="text-white me-3"><i class="bi bi-facebook fs-4"></i></a>{% endif %}
+      {% if page.tiktok %}<a href="{{ page.tiktok }}" target="_blank" class="text-white me-3"><i class="bi bi-tiktok fs-4"></i></a>{% endif %}
+      {% if page.instagram %}<a href="{{ page.instagram }}" target="_blank" class="text-white"><i class="bi bi-instagram fs-4"></i></a>{% endif %}
+    </div>
+  </div>
+</footer>
+
+<!-- JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+<script>
+  // navbar scroll
+  const nav = document.getElementById('mainNavbar');
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 60) nav.classList.add('scrolled');
+    else nav.classList.remove('scrolled');
+  });
+
+  // parallax
+  const heroLayer = document.getElementById('heroLayer');
+  window.addEventListener('scroll', () => {
+    const y = window.scrollY * 0.25;
+    if(heroLayer) heroLayer.style.transform = `translateY(${y}px)`;
+  });
+
+  // reveal
+  const revealEls = document.querySelectorAll('.reveal-y');
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      if(entry.isIntersecting){
+        entry.target.classList.add('show');
+      }
+    });
+  }, {threshold:.18});
+  revealEls.forEach(el=>io.observe(el));
+
+  // mapa
+  (function(){
+    const lat = {{ page.get('lat') if page.get('lat') is not none else 'null' }};
+    const lng = {{ page.get('lng') if page.get('lng') is not none else 'null' }};
+    if(lat !== null && lng !== null){
+      const map = L.map('map', {scrollWheelZoom:false}).setView([lat,lng], 16);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19}).addTo(map);
+      L.marker([lat,lng]).addTo(map).bindPopup(`{{ page.business_name|e }}`).openPopup();
+      setTimeout(()=>map.invalidateSize(), 300);
+    }
+  })();
+
+  // galería
+  const mediaCards = document.querySelectorAll('.media-card');
+  const mediaModal = document.getElementById('mediaModal');
+  const mediaModalImg = document.getElementById('mediaModalImg');
+  const mediaModalVideo = document.getElementById('mediaModalVideo');
+  if(mediaCards.length && mediaModal){
+    const bsMediaModal = new bootstrap.Modal(mediaModal);
+    mediaCards.forEach(card=>{
+      card.addEventListener('click', ()=>{
+        const type = card.dataset.type;
+        const src = card.dataset.src;
+        if(type === 'video'){
+          mediaModalImg.classList.add('d-none');
+          mediaModalVideo.classList.remove('d-none');
+          mediaModalVideo.src = src;
+        }else{
+          mediaModalVideo.classList.add('d-none');
+          mediaModalImg.classList.remove('d-none');
+          mediaModalImg.src = src;
+        }
+        bsMediaModal.show();
+      });
+    });
+    mediaModal.addEventListener('hidden.bs.modal', ()=>{
+      mediaModalVideo.pause();
+      mediaModalVideo.src = "";
+    });
+  }
+
+  // cotizar
+  const formCotizar = document.getElementById('form-cotizar');
+  const cotizarModalEl = document.getElementById('cotizarModal');
+  const cotizarModal = cotizarModalEl ? new bootstrap.Modal(cotizarModalEl) : null;
+  const resumenSeleccion = document.getElementById('resumenSeleccion');
+  const nombreClienteInput = document.getElementById('nombreClienteInput');
+  const errorModalNombre = document.getElementById('errorModalNombre');
+  const enviarCotizacionBtn = document.getElementById('enviarCotizacionBtn');
+  let cotizacionLineas = [];
+
+  if(formCotizar && cotizarModal){
+    formCotizar.addEventListener('submit', (e)=>{
+      e.preventDefault();
+      cotizacionLineas = [];
+      formCotizar.querySelectorAll('input[type="number"]').forEach(inp=>{
+        const qty = parseInt(inp.value);
+        if(qty > 0){
+          const nombre = inp.dataset.itemNombre || inp.name.replace('prod_','').replace(/_/g,' ');
+          cotizacionLineas.push(`- ${nombre}: ${qty}`);
+        }
+      });
+      if(!cotizacionLineas.length){
+        return;
+      }
+      resumenSeleccion.innerHTML = cotizacionLineas.map(l=>`<div>${l}</div>`).join('');
+      errorModalNombre.classList.add('d-none');
+      cotizarModal.show();
+      setTimeout(()=>nombreClienteInput && nombreClienteInput.focus(), 300);
+    });
+  }
+
+  if(enviarCotizacionBtn){
+    enviarCotizacionBtn.addEventListener('click', ()=>{
+      const nombre = (nombreClienteInput.value || '').trim();
+      if(!nombre){
+        errorModalNombre.classList.remove('d-none');
+        nombreClienteInput.classList.add('is-invalid');
+        nombreClienteInput.focus();
+        return;
+      }
+      const whatsappNumber = "{{ page.whatsapp | replace(' ', '') }}";
+      let mensaje = `Hola, soy ${nombre} y quiero cotizar:%0A`;
+      cotizacionLineas.forEach(l=>{mensaje += encodeURIComponent(l) + "%0A";});
+      const url = `https://wa.me/${whatsappNumber}?text=${mensaje}`;
+      window.open(url, '_blank');
+    });
+  }
+
+  // cerrar avisos
+  const avisoCloseBtn = document.getElementById('avisoCloseBtn');
+  const avisosShell = document.getElementById('avisosShell');
+  if(avisoCloseBtn && avisosShell){
+    avisoCloseBtn.addEventListener('click', ()=>{
+      avisosShell.style.opacity = '0';
+      avisosShell.style.pointerEvents = 'none';
+      setTimeout(()=>avisosShell.style.display='none', 350);
+    });
+  }
+
+  // estrellas reseñas
+  const stars = document.querySelectorAll('#starRating .star-icon');
+  const estrellasInput = document.getElementById('estrellas');
+
+  if (stars.length && estrellasInput) {
+    stars.forEach(star => {
+      star.addEventListener('click', () => {
+        const val = parseInt(star.dataset.value);
+        estrellasInput.value = val;
+        stars.forEach(s => s.classList.remove('text-warning'));
+        stars.forEach(s => s.classList.add('text-secondary'));
+        for (let i = 0; i < val; i++) {
+          stars[i].classList.remove('text-secondary');
+          stars[i].classList.add('text-warning');
+        }
+      });
+    });
+  }
+</script>
+
+</body>
+</html>

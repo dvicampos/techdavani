@@ -1736,10 +1736,11 @@ DEFAULT_HTML_TEMPLATES = {
     "barber": "public/barber.html",
     "rope": "public/rope.html",
     "coffe": "public/coffe.html",
+    "dentist": "public/dentist.html",
 }
 
 @app.route('/manage_page')
-# @require_active_subscription
+@require_active_subscription
 @login_required
 def manage_page_compat():
     page_id = get_current_page_id()
@@ -1829,7 +1830,7 @@ def borrar_media(nombre):
 
 @app.route('/manage_page/<slug>', methods=['GET', 'POST'])
 @login_required
-# @require_active_subscription
+@require_active_subscription
 @roles_required('admin')
 def manage_page_slug(slug):
     if current_user.role != 'admin':
