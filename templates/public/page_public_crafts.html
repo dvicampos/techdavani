@@ -4,17 +4,17 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
 
-  <title>{{ page.get('business_name','Taller de Manualidades') }}</title>
-  <meta name="description" content="{{ page.get('slogan') or page.get('description','')[:160] }}">
+  <title>{{ page.get('business_name','') }}</title>
+  <meta name="description" content="{{ (page.get('slogan') or page.get('description') or '')[:160] }}">
   <meta name="author" content="{{ page.get('business_name','') }}">
 
-  {# ======== Open Graph / Twitter ======== #}
+  {# ======== OG ======== #}
   {% set og_img = page.get('cover_image') or page.get('image') %}
   {% if og_img and not (og_img.startswith('http://') or og_img.startswith('https://')) %}
     {% set og_img = url_for('uploaded_file', filename=og_img, _external=True) %}
   {% endif %}
   <meta property="og:title" content="{{ page.get('business_name','') }}">
-  <meta property="og:description" content="{{ page.get('slogan') or page.get('description','')[:200] }}">
+  <meta property="og:description" content="{{ (page.get('slogan') or page.get('description') or '')[:200] }}">
   <meta property="og:image" content="{{ og_img or url_for('static', filename='images/default.png', _external=True) }}">
   <meta property="og:url" content="{{ request.url }}">
   <meta property="og:type" content="website">
@@ -30,182 +30,573 @@
 
   <style>
     :root{
-      --brand: {{ page.get('color') or '#e18dac' }};
+      --brand: {{ page.get('color') or '#ff5b8a' }};
       --ink:#3a3a3a;
-      --bg:#fff7fb;
+      --bg:#fff3ff;
       --paper:#ffffff;
       --accent: color-mix(in oklab, var(--brand) 70%, #ffe7f3 30%);
-      --accent-soft: color-mix(in oklab, var(--brand) 12%, #ffffff 88%);
       --mint:#b8e0d2;
       --lilac:#c9b7f3;
+      --yellow:#ffe08a;
+      --blue:#a3d8ff;
       --radius:16px;
       --shadow:0 10px 28px rgba(28,25,23,.08);
       --glass-bg:255,255,255;
-      --glass-alpha:.18;
-      --glass-alpha-strong:.28;
+      --glass-alpha:.2;
+      --glass-alpha-strong:.33;
       --glass-blur:14px;
       --glass-border:rgba(255,255,255,.45);
       --glass-ring:rgba(0,0,0,.06);
     }
     html,body{background:var(--bg); color:var(--ink)}
-    body{font-family:Quicksand,system-ui,-apple-system,"Segoe UI",sans-serif}
+    body{
+      font-family:Quicksand,system-ui,-apple-system,"Segoe UI",sans-serif;
+      min-height:100vh; position:relative;
+      cursor:url('https://upload.wikimedia.org/wikipedia/commons/2/29/Gold_Star.svg') 12 12, auto;
+    }
 
-    .paper{
+    /* fondo base desde python */
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      z-index:-200;
+      {% if page.get('bg_image') %}
+        background: url("{{ url_for('uploaded_file', filename=page.bg_image) }}") center/cover no-repeat fixed;
+      {% elif page.get('background') %}
+        background: url("{{ url_for('uploaded_file', filename=page.background) }}") center/cover no-repeat fixed;
+      {% elif page.get('hero_bg') %}
+        background: url("{{ url_for('static', filename=page.hero_bg) }}") center/cover no-repeat fixed;
+      {% else %}
+        background:
+          radial-gradient(circle at 0% 30%, rgba(255,116,160,.28) 0, rgba(255,116,160,0) 46%),
+          radial-gradient(circle at 110% 20%, rgba(183,227,226,.3) 0, rgba(183,227,226,0) 55%),
+          radial-gradient(circle at 40% 110%, rgba(201,183,243,.25) 0, rgba(201,183,243,0) 54%),
+          linear-gradient(180deg, #fff3ff 0%, #fff 36%, #fff 100%);
+      {% endif %}
+    }
+
+    /* banderines fiesta */
+    .garlands-layer{
+      position:fixed; top:0; left:0; right:0; height:180px; pointer-events:none; z-index:-140;
+    }
+    .garland{
+      position:absolute; left:0; right:0; height:120px;
+      background:
+        linear-gradient(to right,
+          #ff6384 0 16px, transparent 16px 24px,
+          #ffd472 24px 40px, transparent 40px 50px,
+          #b3e2df 50px 66px, transparent 66px 74px,
+          #c9b7f3 74px 90px, transparent 90px 100px);
+      background-size:110px 20px;
+      mask: radial-gradient(42px 42px at 20px 1px, #000 55%, transparent 57%) repeat-x 0 10px;
+    }
+    .garland.g2{top:55px; opacity:.6; transform:scaleX(-1);}
+    @media(max-width:768px){
+      .garlands-layer{height:130px;}
+      .garland{background-size:90px 20px;}
+    }
+
+    /* globos */
+    .balloons-layer{
+      position:fixed; inset:0; pointer-events:none; z-index:-150;
+    }
+    .balloon{
+      position:absolute;
+      width:90px; height:125px;
+      border-radius:46% 54% 44% 56%;
+      background:
+        radial-gradient(circle at 30% 28%, rgba(255,255,255,1) 0 38%, rgba(255,255,255,0) 44%),
+        radial-gradient(circle at 50% 70%, rgba(255,91,138,1) 0 60%, rgba(255,91,138,0.2) 90%),
+        rgba(255,91,138,1);
+      box-shadow:0 16px 40px rgba(255,91,138,.4);
+      animation: floatBal 10s ease-in-out infinite;
+      transform-origin:50% 100%;
+      opacity:.65;
+    }
+    .balloon::after{
+      content:"";
+      position:absolute;
+      bottom:-55px; left:50%;
+      width:54px; height:60px;
+      border:1.5px solid rgba(143,91,117,.25);
+      border-color: rgba(143,91,117,.35) transparent transparent transparent;
+      border-radius:0 0 46px 46px;
+      transform:translateX(-50%);
+    }
+    .balloon.b2{width:78px; height:110px; left:5%; top:60%; animation-duration:12s; background:radial-gradient(circle at 35% 28%, #fff 0 40%, rgba(255,255,255,0) 48%), radial-gradient(circle at 40% 60%, #ffc87d 0 65%, rgba(255,200,125,0.3) 90%), #ffc87d;}
+    .balloon.b3{width:82px; height:116px; right:7%; top:46%; animation-duration:14s; background:radial-gradient(circle at 30% 28%, #fff 0 36%, rgba(255,255,255,0) 44%), radial-gradient(circle at 46% 72%, #b8e0d2 0 60%, rgba(184,224,210,0.25) 90%), #7fd8c6;}
+    .balloon.b4{width:72px; height:102px; left:48%; top:14%; animation-duration:11s; background:radial-gradient(circle at 38% 22%, #fff 0 40%, rgba(255,255,255,0) 50%), radial-gradient(circle at 45% 76%, #c9b7f3 0 58%, rgba(201,183,243,0.2) 85%), #9b8af8;}
+    .balloon.b5{width:65px; height:92px; right:22%; bottom:10%; animation-duration:15s; opacity:.55;}
+    @keyframes floatBal{0%{transform:translateY(0) rotate(-2deg);}50%{transform:translateY(-26px) rotate(2deg);}100%{transform:translateY(0) rotate(-2deg);}}
+    @media(max-width:768px){.balloon{display:none;}}
+
+    /* postings chuequitos */
+    .postings-layer{
+      position:fixed; inset:0; pointer-events:none; z-index:-120;
+    }
+    .posting{
+      position:absolute; min-width:125px; background:#fff7d3; color:#6f4d24;
+      padding:.45rem .7rem .6rem .8rem; font-size:.68rem; font-weight:600;
+      border-radius: 12px 28px 14px 12px; box-shadow:0 10px 26px rgba(0,0,0,.08);
+      transform-origin:center;
+      display:flex; gap:.45rem; align-items:flex-start;
+    }
+    .posting::after{content:""; position:absolute; right:-18px; top:18px; width:0; height:0; border-top:10px solid transparent; border-bottom:10px solid transparent; border-left:18px solid rgba(255,247,211,.92);}
+    .posting small{display:block; opacity:.7;}
+    .posting .emoji{font-size:1.1rem; line-height:1;}
+    .posting.blue{background:#eef6ff; color:#1d3a51;}
+    .posting.blue::after{border-left-color:#eef6ff;}
+    .posting.pink{background:#ffe7f0; color:#6c2149;}
+    .posting.pink::after{border-left-color:#ffe7f0;}
+    .posting.purple{background:#f3edff; color:#362b54;}
+    .posting.purple::after{border-left-color:#f3edff;}
+    .posting.p1{top:14%; left:1.5%; transform:rotate(-6deg);}
+    .posting.p2{top:60%; left:2.5%; transform:rotate(4deg);}
+    .posting.p3{top:16%; right:3%; transform:rotate(5deg);}
+    .posting.p4{top:72%; right:10%; transform:rotate(-4deg);}
+    @media(max-width:992px){.posting{display:none;}}
+
+    .arrow-note{
+      position:fixed; top:31%; right:15%; width:110px; height:110px; pointer-events:none; z-index:-100;
+    }
+    .arrow-note svg{width:110px; height:110px; transform:rotate(-18deg); stroke:#ff5b8a; stroke-width:3; stroke-linecap:round; fill:none; filter:drop-shadow(0 8px 18px rgba(255,91,138,.35)); animation:wobble 2.3s ease-in-out infinite;}
+    .arrow-note span{position:absolute; top:60%; left:-5px; background:rgba(255,255,255,.85); padding:.25rem .65rem; border-radius:999px; font-size:.6rem; font-weight:700; color:#5c1f34; transform:rotate(-7deg);}
+    @keyframes wobble{0%,100%{transform:rotate(-18deg) translateY(0);}50%{transform:rotate(-20deg) translateY(-4px);}}
+    @media(max-width:992px){.arrow-note{display:none;}}
+
+    /* base */
+    .card-craft{
       background:var(--paper);
       border-radius:var(--radius);
       box-shadow:var(--shadow);
       position:relative;
       overflow:hidden;
-      border:1px solid rgba(255,101,174,.09);
+      border:1px solid rgba(255,101,174,.04);
+      z-index:1;
     }
-    .paper::before{
-      content:""; position:absolute; inset:0;
-      background-image:radial-gradient(rgba(0,0,0,.03) 1px, transparent 1px);
-      background-size:12px 12px; opacity:.5; pointer-events:none;
-    }
-    .washi{
-      --col:var(--accent);
-      position:absolute; top:-10px; left:16px; width:120px; height:32px;
-      background:var(--col); transform:rotate(-5deg); opacity:.9;
-      border-radius:4px; box-shadow:0 4px 10px rgba(0,0,0,.12); mix-blend-mode:multiply;
-    }
-    .washi::after{
-      content:""; position:absolute; inset:0;
-      background:repeating-linear-gradient(45deg, rgba(255,255,255,.45) 0 6px, transparent 6px 12px);
-      border-radius:4px; opacity:.8;
-    }
-
-    .glass{
-      background:rgba(var(--glass-bg), var(--glass-alpha));
-      backdrop-filter: blur(var(--glass-blur)) saturate(140%);
-      -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(140%);
-      border:1px solid var(--glass-border);
-      box-shadow:0 1px 0 var(--glass-ring), var(--shadow);
-      border-radius:var(--radius);
-    }
-    .glass-strong{
-      background:rgba(var(--glass-bg), var(--glass-alpha-strong));
-      backdrop-filter: blur(calc(var(--glass-blur) + 4px)) saturate(160%);
-      -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 4px)) saturate(160%);
-      border:1px solid var(--glass-border);
-      box-shadow:0 1px 0 var(--glass-ring), var(--shadow);
-      border-radius:var(--radius);
-    }
+    .glass{background:rgba(var(--glass-bg), var(--glass-alpha)); backdrop-filter: blur(var(--glass-blur)) saturate(150%); border:1px solid var(--glass-border); box-shadow:0 1px 0 var(--glass-ring), var(--shadow); border-radius:var(--radius);}
+    .glass-strong{background:rgba(var(--glass-bg), var(--glass-alpha-strong)); backdrop-filter: blur(calc(var(--glass-blur) + 4px)) saturate(160%); border:1px solid var(--glass-border); border-radius:var(--radius);}
     @supports not (backdrop-filter: blur(1px)){ .glass,.glass-strong{background:#fffffff0;} }
 
-    /* ===== COVER ===== */
+    /* ✂️✂️ CINTITAS EN TARJETAS (card-craft + fiesta-card) ✂️✂️ */
+    .card-craft,
+    .fiesta-card{
+      position: relative;
+    }
+    .card-craft::before,
+    .fiesta-card::before{
+      content:"";
+      position:absolute;
+      top:-12px;
+      left:22px;
+      width:62px;
+      height:30px;
+      background:linear-gradient(120deg, rgba(255,227,235,.9) 0%, rgba(255,161,202,.95) 100%);
+      border-radius:6px 6px 2px 2px;
+      box-shadow:0 6px 12px rgba(0,0,0,.08);
+      transform:rotate(-4deg);
+      opacity:.9;
+      pointer-events:none;
+    }
+    .card-craft::after,
+    .fiesta-card::after{
+      content:"";
+      position:absolute;
+      top:12px;
+      left:24px;
+      width:46px;
+      height:6px;
+      background:radial-gradient(circle, rgba(0,0,0,.16) 0%, rgba(0,0,0,0) 80%);
+      filter:blur(3px);
+      transform:rotate(-4deg);
+      pointer-events:none;
+    }
+    /* variar las cintas de las tarjetas de fiesta para que se vean más reales */
+    .fiesta-card:nth-child(2n)::before{
+      background:linear-gradient(140deg, rgba(184,224,210,.9) 0%, rgba(106,191,162,.95) 100%);
+      transform:rotate(3deg);
+    }
+    .fiesta-card:nth-child(3n)::before{
+      background:linear-gradient(140deg, rgba(201,183,243,.9) 0%, rgba(155,138,248,.95) 100%);
+      transform:rotate(-1deg);
+    }
+    .fiesta-card:nth-child(4n)::before{
+      background:linear-gradient(140deg, rgba(255,246,196,.9) 0%, rgba(255,208,102,.95) 100%);
+      transform:rotate(5deg);
+    }
+    /* mobile, que no se salgan tanto */
+    @media(max-width:576px){
+      .card-craft::before,
+      .fiesta-card::before{
+        top:-10px;
+        left:16px;
+        width:54px;
+        height:26px;
+      }
+      .card-craft::after,
+      .fiesta-card::after{
+        top:10px;
+        left:18px;
+      }
+    }
+    /* si le pones has-label dentro puedes tener texto en la cintita */
+    .fiesta-card.has-label .fiesta-label,
+    .card-craft.has-label .fiesta-label{
+      position:absolute;
+      top:-6px;
+      left:26px;
+      font-size:.62rem;
+      font-weight:700;
+      background:rgba(11,11,38,.08);
+      color:#4d1430;
+      padding:.1rem .55rem;
+      border-radius:999px;
+      z-index:3;
+      pointer-events:none;
+    }
+
+    /* cover */
     .cover{
       {% if page.get('cover_image') %}
         background:
-          linear-gradient(120deg, rgba(255,247,251,.4) 0%, rgba(255,247,251,0) 35%),
+          linear-gradient(120deg, rgba(255,247,251,.35) 0%, rgba(255,247,251,0) 35%),
           url("{{ url_for('uploaded_file', filename=page.cover_image) }}") center/cover no-repeat;
       {% else %}
-        background:
-          radial-gradient(1200px 600px at 0% -10%, color-mix(in oklab, var(--brand) 85%, #fff 15%) 0%, transparent 55%),
-          radial-gradient(1000px 600px at 100% 0%, color-mix(in oklab, var(--mint) 85%, #fff 15%) 0%, transparent 50%),
-          linear-gradient(180deg, #ffedf7 0%, #f8e9ff 100%);
+        background:transparent;
       {% endif %}
+      position:relative;
+      z-index:2;
     }
-    .nb{
-      position:sticky; top:0; z-index:1020;
-      border-bottom:1px solid rgba(255,255,255,.4);
-      background:rgba(255,255,255,.52);
-      backdrop-filter: blur(8px);
-    }
-    .navbar-brand{font-weight:800; letter-spacing:.3px; color:#4b1f3d !important;}
-    .nav-link{font-weight:700; color:#5d2c4e !important;}
-    .nav-link:hover{color:#3b1933 !important; text-decoration:underline;}
 
-    /* HERO */
-    .hero{padding:clamp(40px, 6vw, 80px) 0 clamp(24px,4vw,48px);}
-    .avatar{
-      width:220px; height:220px; object-fit:cover;
-      border-radius:24px; border:6px solid #fff; box-shadow:var(--shadow);
-    }
-    .badge-soft{
-      display:inline-block; padding:.45rem .9rem; border-radius:999px;
-      background:color-mix(in oklab, var(--brand) 10%, #fff 90%);
-      color:#8b3a5b; font-weight:800; border:1px solid rgba(248,124,163,.14);
-    }
+    /* nav */
+    .nb{position:sticky; top:0; z-index:1020; background:rgba(255,255,255,.62); backdrop-filter: blur(8px); border-bottom:1px solid rgba(255,141,171,.2);}
+    .navbar-brand{font-weight:900; letter-spacing:.3px; background:linear-gradient(90deg, #ff5b8a, #c9b7f3, #ffd86f); -webkit-background-clip:text; color:transparent;}
+    .nav-link{font-weight:700; color:#5d2c4e !important; transition:.12s;}
+    .nav-link:hover{color:#35132a !important; text-decoration:underline; text-underline-offset:4px; transform:translateY(-1px);}
+
+    /* hero */
+    .hero{padding:clamp(38px, 6vw, 70px) 0 clamp(24px,4vw,48px);}
+    .avatar{width:220px; height:220px; object-fit:cover; border-radius:24px; border:6px solid #fff; box-shadow:var(--shadow); animation: popIn .9s ease-out;}
+    @keyframes popIn{0%{transform:scale(.6) rotate(-4deg); opacity:0;}100%{transform:scale(1) rotate(0); opacity:1;}}
+
+    .badge-soft{display:inline-block; padding:.45rem .9rem; border-radius:999px; background:color-mix(in oklab, var(--brand) 10%, #fff 90%); color:#8b3a5b; font-weight:800; border:1px solid rgba(248,124,163,.14); animation: pulseGlow 3.2s ease-in-out infinite;}
+    @keyframes pulseGlow{0%,100%{box-shadow:0 0 0 0 rgba(255,91,138,.18);}50%{box-shadow:0 0 0 9px rgba(255,91,138,0);}}
     .brand-script{font-family:"Parisienne", cursive; color:#6f2e57;}
-    .btn-craft{
-      border:2px dashed color-mix(in oklab, var(--brand) 40%, #fff 60%);
-      background:rgba(255,255,255,.95);
-      color:#7d4564; font-weight:800; border-radius:999px; padding:.6rem 1.05rem;
-      box-shadow:var(--shadow);
-    }
-    .btn-craft:hover{background:#fff0f6; color:#5a2a48;}
 
-    .sec-title{font-weight:900; letter-spacing:.2px; display:flex; align-items:center; gap:.6rem;}
-    .sec-title .dot{width:12px; height:12px; border-radius:50%; background:var(--brand);}
-    .card-craft{
-      background:#fff; border:1px dashed rgba(232,143,188,.36);
-      border-radius:var(--radius); box-shadow:var(--shadow);
+    .btn-craft{border:2px dashed color-mix(in oklab, var(--brand) 40%, #fff 60%); background:rgba(255,255,255,.95); color:#7d4564; font-weight:800; border-radius:999px; padding:.6rem 1.05rem; box-shadow:var(--shadow); transition:.1s;}
+    .btn-craft:hover{background:#fff0f6; color:#5a2a48; transform:translateY(-1.5px) rotate(-1deg);}
+
+    .sec-title{font-weight:900; letter-spacing:.2px; display:flex; align-items:center; gap:.6rem; font-size:clamp(1.35rem, 2vw, 1.6rem);}
+    .sec-title .dot{width:14px; height:14px; border-radius:50%; background:#0b0b26; box-shadow:0 0 0 6px rgba(255,91,138,.12);}
+
+    /* ====== SERVICIOS DE FIESTA ====== */
+    #fiesta{
+      background:linear-gradient(160deg, rgba(255,236,247,.85) 0%, rgba(255,243,255,0) 60%);
+      border-radius:26px;
+      padding:clamp(28px,4vw,46px);
     }
-    .price-tag{background:#222; color:#fff; border-radius:999px; padding:.25rem .6rem; font-weight:800;}
+    .fiesta-sub{color:#6a4a6e; max-width:560px;}
+    .fiesta-grid{
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap:1.4rem;
+      margin-top:1.5rem;
+    }
+    .fiesta-card{
+      background:#fff;
+      border:1.5px dashed rgba(241,147,191,.42);
+      border-radius:20px;
+      box-shadow:0 14px 38px rgba(255,91,138,.08);
+      position:relative;
+      overflow:hidden;
+      min-height:270px;
+      display:flex;
+      flex-direction:column;
+      gap:.8rem;
+      transition:.15s;
+    }
+    .fiesta-card:hover{transform:translateY(-3px); box-shadow:0 18px 50px rgba(255,91,138,.12);}
+    .fiesta-img{height:145px; background:#ffe8f1; overflow:hidden;}
+    .fiesta-img img{width:100%; height:100%; object-fit:cover;}
+    .fiesta-img.fallback{display:flex; align-items:center; justify-content:center; font-size:2.4rem; color:rgba(114,46,88,.42); background:radial-gradient(circle at 40% 40%, rgba(255,91,138,.38) 0, rgba(255,91,138,0) 60%), #ffe8f1;}
+    .fiesta-body{padding:1rem 1.1rem 1.1rem;}
+    .fiesta-title{font-weight:800; color:#392130; margin-bottom: .25rem;}
+    .fiesta-desc{font-size:.78rem; color:#6f6073; line-height:1.35;}
+    .fiesta-price{margin-top:.3rem;}
+    .fiesta-price span{background:#0b0b26; color:#fff; padding:.3rem .7rem; border-radius:999px; font-weight:700; font-size:.74rem;}
+    .fiesta-tag{
+      position:absolute; top:10px; left:10px;
+      background:rgba(255,255,255,.97);
+      border-radius:999px;
+      padding:.3rem .7rem .3rem .5rem;
+      font-size:.68rem; display:flex; align-items:center; gap:.35rem;
+      border:1px solid rgba(255,91,138,.15);
+      z-index:5;
+    }
+    .fiesta-tag i{font-size:.8rem; color:#ff5b8a;}
+    .fiesta-washi{
+      position:absolute; top:-14px; right:12px;
+      width:100px; height:34px;
+      background:linear-gradient(120deg, rgba(200,202,248,.9) 0%, rgba(255,140,189,.9) 100%);
+      transform:rotate(6deg);
+      border-radius:6px;
+      box-shadow:0 5px 16px rgba(0,0,0,.09);
+      opacity:.85;
+      z-index:4;
+    }
+    .fiesta-actions{display:flex; gap:.5rem; margin-top:1rem; flex-wrap:wrap;}
+    .fiesta-wa{display:inline-flex; align-items:center; gap:.4rem; background:#fff; border:2px dashed rgba(255,91,138,.4); border-radius:999px; padding:.42rem .7rem; font-weight:700; font-size:.71rem; color:#4a1730; box-shadow:0 5px 16px rgba(255,91,138,.08);}
+    .fiesta-ghost{border:1px solid rgba(110,65,91,.1); background:rgba(255,255,255,.7); border-radius:999px; padding:.42rem .95rem; font-size:.7rem; color:#6f3a58;}
+
+    @media(max-width:576px){
+      #fiesta{padding:1.6rem 1rem;}
+      .fiesta-grid{grid-template-columns:1fr;}
+    }
+
+    /* gallery */
+    .gallery-grid{display:grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap:1rem;}
+    .gal-item{position:relative; border-radius:14px; overflow:hidden; aspect-ratio:4/3; background:#fef4f9; border:1px solid rgba(232,143,188,.26); cursor:pointer; transition:.15s;}
+    .gal-item:hover{transform:translateY(-3px) scale(1.01);}
+    .gal-item img,.gal-item video{width:100%;height:100%;object-fit:cover;display:block;}
+    .badge-type{position:absolute;top:.5rem;left:.5rem; background:rgba(197,7,98,.85);color:#fff;border-radius:999px; padding:.25rem .6rem;font-size:.7rem; backdrop-filter:blur(2px);}
+
+    /* ticker */
+    .ticker{position:fixed; left:0; right:0; bottom:0; z-index:1030; padding:.55rem 0; background:rgba(255,255,255,.88); backdrop-filter: blur(10px) saturate(150%); border-top:1px solid rgba(255,92,140,.3); box-shadow:0 -6px 24px rgba(0,0,0,.08); color:#3b1933;}
+    .ticker-pill{display:inline-flex; align-items:center; gap:.45rem; font-weight:800; padding:.35rem .8rem; border-radius:999px; background:rgba(255,96,146,.12); border:1px solid rgba(255,96,146,.08);}
+
+    .ft{padding-bottom:10% !important; background:rgba(255,255,255,.6); z-index:2; position:relative;}
+    @media (max-width:768px){.ft{padding-bottom:20% !important;} .gallery-grid{grid-template-columns:1fr 1fr;}}
 
     .fab-wa{position:fixed; left:18px; bottom:12%; z-index:1050; text-decoration:none;}
     #map{height:300px; border-radius:12px; border:1px dashed rgba(232,143,188,.36); box-shadow:var(--shadow);}
+    /* =========================================================
+   WASHI / CINTAS PEGADAS SOBRE LAS TARJETAS
+   versión pro 😎
+   ========================================================= */
+.card-craft,
+.fiesta-card{
+  position:relative;
+  overflow:visible; /* que se vea la cinta */
+}
 
-    /* GALERÍA */
-    .gallery-grid{
-      display:grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap:1rem;
-    }
-    .gal-item{
-      position:relative;
-      border-radius:14px;
-      overflow:hidden;
-      aspect-ratio:4/3;
-      background:#fef4f9;
-      border:1px solid rgba(232,143,188,.26);
-      cursor:pointer;
-    }
-    .gal-item img,.gal-item video{width:100%;height:100%;object-fit:cover;display:block;}
-    .gal-item::after{
-      content:"";position:absolute;inset:0;
-      background:linear-gradient(180deg,transparent 50%,rgba(107,36,70,.45) 100%);
-      opacity:0;transition:.2s;
-    }
-    .gal-item:hover::after{opacity:1;}
-    .badge-type{
-      position:absolute;top:.5rem;left:.5rem;
-      background:rgba(197,7,98,.85);color:#fff;border-radius:999px;
-      padding:.25rem .6rem;font-size:.7rem;
-      backdrop-filter:blur(2px);
-    }
+/* capa principal de cinta */
+.card-craft::before,
+.fiesta-card::before{
+  content: attr(data-washi);
+  position:absolute;
+  top:-18px;
+  left:14px;
+  min-width:110px;
+  max-width:150px;
+  height:46px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:.35rem;
+  padding:0 .65rem;
+  font-size:.63rem;
+  font-weight:700;
+  letter-spacing:.02em;
+  color:#52303a;
+  text-transform:uppercase;
 
-    .ticker{
-      position:fixed; left:0; right:0; bottom:0; z-index:1030;
-      padding:.55rem 0; background:rgba(255,255,255,.72);
-      backdrop-filter: blur(10px) saturate(150%);
-      -webkit-backdrop-filter: blur(10px) saturate(150%);
-      border-top:1px solid rgba(255,255,255,.55);
-      box-shadow:0 -6px 24px rgba(0,0,0,.08); color:#3b1933;
-    }
-    .ticker-pill{display:inline-flex; align-items:center; gap:.45rem; font-weight:800; padding:.35rem .8rem; border-radius:999px; background:rgba(255,255,255,.6); border:1px solid rgba(0,0,0,.02);}
+  /* textura combinada */
+  background:
+    repeating-linear-gradient(135deg, rgba(255,255,255,.35) 0 6px, rgba(255,255,255,0) 6px 12px),
+    linear-gradient(120deg, rgba(255,225,234,1) 0%, rgba(255,144,188,1) 100%);
+  border-radius:8px;
+  box-shadow:0 6px 18px rgba(0,0,0,.08);
+  transform:rotate(-6deg);
+  pointer-events:none;
+  z-index:12;
 
-    .ft{padding-bottom:10% !important; background:rgba(255,255,255,.6);}
-    @media (max-width:768px){
-      .ft{padding-bottom:20% !important;}
-      .gallery-grid{grid-template-columns:1fr 1fr;}
-    }
+  /* efecto “mordisqueado” en bordes */
+  -webkit-mask:
+    radial-gradient(12px 12px at 3px 6px, #000 85%, transparent 100%) 0 0 / 46px 46px repeat-x,
+    linear-gradient(#000 0 0);
+  mask:
+    radial-gradient(12px 12px at 3px 6px, #000 85%, transparent 100%) 0 0 / 46px 46px repeat-x,
+    linear-gradient(#000 0 0);
+}
+
+/* sombrita bajo la cinta */
+.card-craft::after,
+.fiesta-card::after{
+  content:"";
+  position:absolute;
+  top:18px;
+  left:38px;
+  width:74px;
+  height:14px;
+  background:radial-gradient(circle, rgba(0,0,0,.16) 0, rgba(0,0,0,0) 60%);
+  filter:blur(5px);
+  transform:rotate(-6deg);
+  pointer-events:none;
+  z-index:2;
+  opacity:.9;
+}
+
+/* alfiler / chincheta */
+.card-craft::marker, /* 😅 no se usa, es para que no marque listas */
+.fiesta-card::marker{content:"";}
+
+.card-craft > .washi-pin,
+.fiesta-card > .washi-pin{
+  position:absolute;
+  top:-30px;
+  left:26px;
+  width:20px;
+  height:20px;
+  background:radial-gradient(circle, #fff 0 30%, #ff8ebc 40%, #ff5b8a 80%);
+  border:2px solid rgba(255,255,255,.6);
+  border-radius:999px;
+  box-shadow:0 6px 12px rgba(0,0,0,.12);
+  z-index:30;
+}
+
+/* ========= VARIACIONES POR TIPO Y ORDEN ========= */
+
+/* 1) las de fiesta: más juguetonas */
+.fiesta-card::before{
+  background:
+    radial-gradient(circle at 8px 10px, rgba(255,255,255,.8) 0 3px, rgba(255,255,255,0) 4px 20px),
+    linear-gradient(120deg, rgba(255,229,245,1) 0%, rgba(255,171,206,1) 48%, rgba(201,183,243,1) 100%);
+  transform:rotate(7deg);
+  top:-20px;
+}
+
+/* 2) cada 2da fiesta → menta/agua */
+.fiesta-card:nth-child(2n)::before{
+  background:
+    repeating-linear-gradient(135deg, rgba(255,255,255,.4) 0 5px, rgba(255,255,255,0) 5px 11px),
+    linear-gradient(130deg, rgba(184,224,210,1) 0%, rgba(126,210,175,1) 45%, rgba(96,192,239,1) 100%);
+  transform:rotate(-3deg);
+  left:10px;
+  top:-18px;
+}
+.fiesta-card:nth-child(2n)::after{
+  transform:rotate(-3deg);
+  left:32px;
+}
+
+/* 3) cada 3ra fiesta → amarillita */
+.fiesta-card:nth-child(3n)::before{
+  background:
+    radial-gradient(circle at 9px 9px, rgba(255,255,255,.5) 0 3px, rgba(255,255,255,0) 4px 17px),
+    linear-gradient(120deg, rgba(255,241,214,1) 0%, rgba(255,212,117,1) 45%, rgba(255,153,134,1) 100%);
+  transform:rotate(4deg);
+  min-width:95px;
+}
+
+/* 4) cards globales: más sobrio */
+.card-craft:nth-of-type(2n)::before{
+  background:
+    repeating-linear-gradient(135deg, rgba(255,255,255,.35) 0 6px, rgba(255,255,255,0) 6px 12px),
+    linear-gradient(135deg, rgba(161,204,255,1) 0%, rgba(106,159,231,1) 100%);
+  transform:rotate(-2deg);
+  top:-16px;
+  left:20px;
+}
+.card-craft:nth-of-type(3n)::before{
+  background:
+    radial-gradient(circle at 9px 9px, rgba(255,255,255,.4) 0 2.5px, rgba(255,255,255,0) 4px 14px),
+    linear-gradient(138deg, rgba(255,221,196,1) 0%, rgba(255,176,120,1) 60%);
+  transform:rotate(5deg);
+  left:15px;
+}
+
+/* si NO quieres cinta en alguna */
+.no-washi::before,
+.no-washi::after{
+  content:none !important;
+}
+
+/* MOBILE: cintas más pequeñas y menos rotadas */
+@media (max-width: 576px){
+  .card-craft::before,
+  .fiesta-card::before{
+    top:-14px;
+    left:10px;
+    min-width:82px;
+    max-width:120px;
+    height:34px;
+    font-size:.6rem;
+    transform:rotate(-3deg);
+  }
+  .card-craft::after,
+  .fiesta-card::after{
+    top:12px;
+    left:22px;
+    width:50px;
+    height:10px;
+  }
+  .card-craft > .washi-pin,
+  .fiesta-card > .washi-pin{
+    top:-26px;
+    left:18px;
+    width:16px;
+    height:16px;
+  }
+}
+
   </style>
 </head>
 <body>
 
-  <!-- COVER + NAV -->
+  <!-- banderines -->
+  <div class="garlands-layer" aria-hidden="true">
+    <div class="garland"></div>
+    <div class="garland g2"></div>
+  </div>
+
+  <!-- globos -->
+  <div class="balloons-layer" aria-hidden="true">
+    <div class="balloon" style="left:10%;top:18%;"></div>
+    <div class="balloon b2"></div>
+    <div class="balloon b3"></div>
+    <div class="balloon b4"></div>
+    <div class="balloon b5"></div>
+  </div>
+
+  {# POSTINGS DINÁMICOS #}
+  {% set has_postings = page.get('postings') and page.postings|length > 0 %}
+  {% if has_postings %}
+    <div class="postings-layer" aria-hidden="true">
+      {% for p in page.postings %}
+        <div class="posting {{ p.tone or '' }} {% if loop.index == 1 %}p1{% elif loop.index == 2 %}p2{% elif loop.index == 3 %}p3{% else %}p4{% endif %}">
+          {% if p.emoji %}<span class="emoji">{{ p.emoji }}</span>{% endif %}
+          <div>
+            {{ p.text }}
+            {% if p.note %}<small>{{ p.note }}</small>{% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+    <div class="arrow-note" aria-hidden="true">
+      <svg viewBox="0 0 120 120">
+        <path d="M20 90 Q 50 50 90 40" />
+        <path d="M78 37 L 90 40 L 85 52" />
+      </svg>
+      <span>mira éstos 👇</span>
+    </div>
+  {% endif %}
+
+  <!-- confetti canvas -->
+  <canvas id="confettiCanvas" style="position:fixed; inset:0; pointer-events:none; z-index:1100;"></canvas>
+
+  <!-- NAV + HERO -->
   <div class="cover">
     <nav class="navbar navbar-expand-lg glass nb">
       <div class="container">
-        <a class="navbar-brand" href="/">{{ page.get('business_name','Taller de Manualidades') }}</a>
+        <a class="navbar-brand" href="/">{{ page.get('business_name','') }}</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nv" aria-label="Menú">
           <span class="navbar-toggler-icon"></span>
         </button>
         <div id="nv" class="collapse navbar-collapse justify-content-end">
-          <ul class="navbar-nav">
+          <ul class="navbar-nav gap-1">
             <li class="nav-item"><a class="nav-link" href="#info">Información</a></li>
+            <li class="nav-item"><a class="nav-link" href="#fiesta">Servicios de fiesta</a></li>
             <li class="nav-item"><a class="nav-link" href="#galeria">Galería</a></li>
             <li class="nav-item"><a class="nav-link" href="#contacto">Contacto</a></li>
             {% if posts %}<li class="nav-item"><a class="nav-link" href="#publicaciones">Tutoriales</a></li>{% endif %}
@@ -218,11 +609,9 @@
       </div>
     </nav>
 
-    <!-- HERO -->
     <section class="hero">
       <div class="container">
         <div class="glass-strong p-4 p-md-5 position-relative">
-          <span class="washi" style="--col: var(--lilac); transform: rotate(-7deg);"></span>
           <div class="row g-4 align-items-center">
             <div class="col-md-4 text-center">
               {% if page.get('image') %}
@@ -232,18 +621,29 @@
               {% endif %}
             </div>
             <div class="col-md-8">
-              <span class="badge-soft mb-2">{{ page.get('category','Manualidades & DIY') }}</span>
-              <h1 class="mb-1" style="font-weight:900; color:#2b193b;">{{ page.get('business_name','Taller de Manualidades') }}</h1>
-              {% if page.get('slogan') %}<p class="brand-script fs-3">“{{ page['slogan'] }}”</p>{% endif %}
-              <div class="d-flex flex-wrap gap-2 mt-3">
-                {% if page.get('website') %}
-                  <a class="btn btn-craft" href="{{ page.website }}" target="_blank"><i class="bi bi-globe2 me-1"></i> Visitar web</a>
+              {% if page.get('category') %}
+                <span class="badge-soft mb-2 d-inline-flex align-items-center gap-2">
+                  <i class="bi bi-balloon-heart-fill text-danger"></i>{{ page['category'] }}
+                </span>
+              {% endif %}
+              {% if page.get('business_name') %}
+                <h1 class="mb-1" style="font-weight:900; color:#2b193b;">{{ page['business_name'] }}</h1>
+              {% endif %}
+              {% if page.get('slogan') %}
+                <p class="brand-script fs-3 mb-1">“{{ page['slogan'] }}”</p>
+              {% endif %}
+              {% if page.get('description') %}
+                <p class="mb-3 text-muted">{{ page['description'] }}</p>
+              {% endif %}
+              <div class="d-flex flex-wrap gap-2 mt-2">
+                {% if page.get('whatsapp') %}
+                  <a class="btn-craft party-trigger" data-party="wa" href="https://wa.me/{{ page.whatsapp | replace(' ','') }}" target="_blank">
+                    <i class="bi bi-whatsapp"></i> Cotizar
+                  </a>
                 {% endif %}
-                {% if page.get('phone') %}
-                  <a class="btn btn-craft" href="tel:{{ page.phone }}"><i class="bi bi-telephone-outbound me-1"></i> Llamar</a>
-                {% endif %}
+                <a class="btn-craft party-trigger" data-party="fiesta" href="#fiesta"><i class="bi bi-stars"></i> Ver servicios</a>
                 {% if page.get('instagram') %}
-                  <a class="btn btn-craft" href="{{ page.instagram }}" target="_blank"><i class="bi bi-instagram me-1"></i> Instagram</a>
+                  <a class="btn-craft party-trigger" data-party="ig" href="{{ page.instagram }}" target="_blank"><i class="bi bi-instagram"></i> Instagram</a>
                 {% endif %}
               </div>
             </div>
@@ -253,61 +653,240 @@
     </section>
   </div>
 
+  {# ===== AVISOS EN SECCIÓN ===== #}
+  <section class="container my-4" id="avisos">
+    <h2 class="sec-title mb-3">
+      <span class="dot"></span> Avisos
+    </h2>
+    {% if avisos and avisos|length > 0 %}
+      <div class="row g-3">
+        {% for a in avisos %}
+          {% set a_title = a.title or a.titulo or a.name or 'Aviso' %}
+          {% set a_body  = a.content or a.mensaje or a.texto or a.text or a.descripcion or '' %}
+          <div class="col-md-6">
+            <div class="card-craft p-3 d-flex gap-3 align-items-start" style="background:#fffef7;">
+              <div class="rounded-circle d-inline-flex align-items-center justify-content-center" style="width:38px;height:38px;background:#ff5b8a;color:#fff;">
+                <i class="bi bi-megaphone-fill"></i>
+              </div>
+              <div>
+                <div class="fw-bold mb-1">{{ a_title }}</div>
+                {% if a_body %}
+                  <div class="small text-muted">{{ a_body }}</div>
+                {% else %}
+                  <div class="small text-muted">{{ a|string }}</div>
+                {% endif %}
+                {% if a.date %}
+                  <div class="mt-1 badge bg-light text-dark">
+                    {% if a.date.__class__.__name__ == 'datetime' %}
+                      {{ a.date.strftime('%d/%m/%Y') }}
+                    {% else %}
+                      {{ a.date }}
+                    {% endif %}
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="card-craft p-3">Aún no hay avisos.</div>
+    {% endif %}
+  </section>
+
   <!-- INFO -->
   <section class="container my-5" id="info">
-    <h2 class="sec-title"><span class="dot"></span> Información del taller</h2>
+    <h2 class="sec-title mb-3"><span class="dot"></span> Información del taller</h2>
     <div class="row g-4">
       <div class="col-md-6">
         <div class="card-craft p-4 position-relative">
-          <span class="washi" style="left:auto; right:18px; top:-12px; --col: var(--accent); transform: rotate(6deg);"></span>
-          <p class="mb-2"><strong>¿Quiénes somos?</strong></p>
-          <p>{{ page.get('description','Realizamos piezas únicas hechas a mano con amor y materiales de calidad.') }}</p>
+          {% if page.get('description') %}
+            <p class="mb-2"><strong>¿Quiénes somos?</strong></p>
+            <p>{{ page.get('description') }}</p>
+          {% endif %}
 
           {% set services = (services_list if services_list is defined and services_list else []) %}
           {% set pmethods = (pm_list if pm_list is defined and pm_list else []) %}
 
-          <div class="d-flex flex-wrap gap-2 mt-2">
-            {% for s in services %}
-              <span class="info-chip info-chip--brand"><i class="bi bi-scissors"></i>{{ s }}</span>
-            {% endfor %}
-            {% for m in pmethods %}
-              <span class="info-chip"><i class="bi bi-credit-card-2-front"></i>{{ m }}</span>
-            {% endfor %}
-            {% if page.get('founding_date') %}<span class="info-chip info-chip--ghost"><i class="bi bi-calendar-heart"></i>Desde {{ page.founding_date }}</span>{% endif %}
-            {% if page.get('delivery_available') %}<span class="info-chip"><i class="bi bi-truck"></i>Envíos</span>{% endif %}
-          </div>
+          {% if services or pmethods or page.get('founding_date') or page.get('delivery_available') %}
+            <div class="d-flex flex-wrap gap-2 mt-2">
+              {% for s in services %}
+                <span class="badge bg-light text-dark d-flex align-items-center gap-1"><i class="bi bi-scissors"></i>{{ s }}</span>
+              {% endfor %}
+              {% for m in pmethods %}
+                <span class="badge bg-light text-dark d-flex align-items-center gap-1"><i class="bi bi-credit-card-2-front"></i>{{ m }}</span>
+              {% endfor %}
+              {% if page.get('founding_date') %}
+                <span class="badge bg-warning-subtle text-dark d-flex align-items-center gap-1">
+                  <i class="bi bi-calendar-heart"></i>Desde {{ page.founding_date }}
+                </span>
+              {% endif %}
+              {% if page.get('delivery_available') %}
+                <span class="badge bg-success-subtle text-dark d-flex align-items-center gap-1">
+                  <i class="bi bi-truck"></i>Envíos
+                </span>
+              {% endif %}
+            </div>
+          {% endif %}
         </div>
       </div>
 
       <div class="col-md-6">
         <div class="card-craft p-4">
-          <div class="d-flex align-items-center justify-content-between">
-            <h6 class="mb-0" style="background: var(--mint); padding:.35rem .7rem; border-radius:999px; border:1px solid #96cab9; font-weight:800;">Taller & Tienda</h6>
+          {% if page.get('address') or page.get('city') or page.get('state') or page.get('operating_hours') %}
+            <h6 class="mb-2 d-flex gap-1 align-items-center">
+              <i class="bi bi-geo-alt-fill text-danger"></i> Taller & Tienda
+            </h6>
+          {% endif %}
+          {% if page.get('address') %}
+            <p class="mb-2"><strong>Dirección: </strong>{{ page.get('address','') }}</p>
+          {% endif %}
+          <div class="row g-2">
+            {% if page.get('postal_code') %}
+              <div class="col-6">
+                <small class="text-muted">CP</small>
+                <div>{{ page.get('postal_code','') }}</div>
+              </div>
+            {% endif %}
+            {% if page.get('city') %}
+              <div class="col-6">
+                <small class="text-muted">Ciudad</small>
+                <div>{{ page.get('city','') }}</div>
+              </div>
+            {% endif %}
           </div>
-          <div class="mt-3">
-            <p class="mb-2"><i class="bi bi-geo-alt-fill me-1" style="color:var(--brand)"></i><strong>Dirección:</strong> {{ page.get('address','') }}</p>
-            <div class="row g-2">
-              <div class="col-6"><small class="text-muted">CP</small><div>{{ page.get('postal_code','') }}</div></div>
-              <div class="col-6"><small class="text-muted">Ciudad</small><div>{{ page.get('city','') }}</div></div>
-            </div>
-            <div class="mt-2"><small class="text-muted">Estado</small><div>{{ page.get('state','') }}</div></div>
-            <div class="mt-2"><small class="text-muted">Horario</small><div>{{ page.get('operating_hours','') }}</div></div>
+          {% if page.get('state') %}
+            <div class="mt-1"><small class="text-muted">Estado</small><div>{{ page.get('state','') }}</div></div>
+          {% endif %}
+          {% if page.get('operating_hours') %}
+            <div class="mt-1"><small class="text-muted">Horario</small><div>{{ page.get('operating_hours','') }}</div></div>
+          {% endif %}
 
-            {% set has_coords = (page.get('lat') is not none) and (page.get('lng') is not none) %}
-            <div class="mt-3">
-              {% if has_coords %}
-                <div id="map" class="mb-3"></div>
-                <a class="btn btn-craft" target="_blank" href="https://www.google.com/maps/dir/?api=1&destination={{ page.lat }},{{ page.lng }}"><i class="bi bi-geo-alt me-1"></i> Cómo llegar</a>
-              {% elif page.get('address') %}
-                <a class="btn btn-craft" target="_blank" href="https://www.google.com/maps/search/?api=1&query={{ page.address | urlencode }}"><i class="bi bi-search me-1"></i> Buscar dirección</a>
-              {% else %}
-                <div class="alert alert-warning py-2 px-3 mt-2">Aún no hay ubicación definida.</div>
-              {% endif %}
-            </div>
+          {% set has_coords = (page.get('lat') is not none) and (page.get('lng') is not none) %}
+          <div class="mt-3">
+            {% if has_coords %}
+              <div id="map" class="mb-3"></div>
+              <a class="btn-craft party-trigger" data-party="maps" target="_blank"
+                 href="https://www.google.com/maps/dir/?api=1&destination={{ page.lat }},{{ page.lng }}">
+                <i class="bi bi-geo-alt me-1"></i> Cómo llegar
+              </a>
+            {% elif page.get('address') %}
+              <a class="btn-craft party-trigger" data-party="maps" target="_blank"
+                 href="https://www.google.com/maps/search/?api=1&query={{ page.address | urlencode }}">
+                <i class="bi bi-search me-1"></i> Buscar dirección
+              </a>
+            {% endif %}
           </div>
         </div>
       </div>
     </div>
+  </section>
+
+  <!-- ===== SERVICIOS DE FIESTA ===== -->
+  <section class="container my-5" id="fiesta">
+    <div class="d-flex gap-2 align-items-center mb-2">
+      <h2 class="sec-title mb-0"><span class="dot"></span> Servicios de fiesta 🎉</h2>
+    </div>
+    <p class="fiesta-sub">Se cargan desde tu backend (servicios o productos). Personaliza por WhatsApp.</p>
+
+    {% set hay_servicios = servicios and servicios|length > 0 %}
+    {% set hay_prod = not hay_servicios and productos_fisicos and productos_fisicos|length > 0 %}
+    {% set hay_prod2 = not hay_servicios and not hay_prod and productos and productos|length > 0 %}
+
+    {% if hay_servicios or hay_prod or hay_prod2 %}
+      <div class="fiesta-grid">
+        {% if hay_servicios %}
+          {% for item in servicios %}
+            <article class="fiesta-card">
+              <span class="fiesta-washi" aria-hidden="true"></span>
+              <div class="fiesta-tag"><i class="bi bi-balloon"></i> Servicio</div>
+              <div class="fiesta-img">
+                {% if item.image %}
+                  <img src="{{ url_for('uploaded_file', filename=item.image) }}" alt="{{ item.title }}">
+                {% else %}
+                  <div class="fiesta-img fallback" aria-hidden="true">🎀</div>
+                {% endif %}
+              </div>
+              <div class="fiesta-body">
+                <h5 class="fiesta-title">{{ item.title }}</h5>
+                {% if item.description %}<p class="fiesta-desc">{{ item.description }}</p>{% endif %}
+                {% if item.show_price %}<div class="fiesta-price"><span>${{ "%.2f"|format(item.price) }}</span></div>{% endif %}
+                <div class="fiesta-actions">
+                  {% if page.get('whatsapp') %}
+                    <a class="fiesta-wa party-trigger" data-party="cotizar"
+                       href="https://wa.me/{{ page.whatsapp | replace(' ','') }}?text={{ ('Hola, quiero cotizar el servicio: ' ~ (item.title or '')) | urlencode }}"
+                       target="_blank">
+                      <i class="bi bi-whatsapp"></i> Cotizar
+                    </a>
+                  {% endif %}
+                  <a class="fiesta-ghost" href="#galeria"><i class="bi bi-images me-1"></i>Ver ideas</a>
+                </div>
+              </div>
+            </article>
+          {% endfor %}
+        {% elif hay_prod %}
+          {% for item in productos_fisicos %}
+            <article class="fiesta-card">
+              <span class="fiesta-washi" aria-hidden="true"></span>
+              <div class="fiesta-tag"><i class="bi bi-gift"></i> Kit</div>
+              <div class="fiesta-img">
+                {% if item.image %}
+                  <img src="{{ url_for('uploaded_file', filename=item.image) }}" alt="{{ item.title }}">
+                {% else %}
+                  <div class="fiesta-img fallback" aria-hidden="true">🎁</div>
+                {% endif %}
+              </div>
+              <div class="fiesta-body">
+                <h5 class="fiesta-title">{{ item.title }}</h5>
+                {% if item.description %}<p class="fiesta-desc">{{ item.description }}</p>{% endif %}
+                {% if item.show_price %}<div class="fiesta-price"><span>${{ "%.2f"|format(item.price) }}</span></div>{% endif %}
+                <div class="fiesta-actions">
+                  {% if page.get('whatsapp') %}
+                    <a class="fiesta-wa party-trigger" data-party="cotizar"
+                       href="https://wa.me/{{ page.whatsapp | replace(' ','') }}?text={{ ('Hola, quiero este producto: ' ~ (item.title or '')) | urlencode }}"
+                       target="_blank">
+                      <i class="bi bi-whatsapp"></i> Cotizar
+                    </a>
+                  {% endif %}
+                  <a class="fiesta-ghost" href="#galeria">Ver ideas</a>
+                </div>
+              </div>
+            </article>
+          {% endfor %}
+        {% elif hay_prod2 %}
+          {% for item in productos %}
+            <article class="fiesta-card">
+              <span class="fiesta-washi" aria-hidden="true"></span>
+              <div class="fiesta-tag"><i class="bi bi-stars"></i> Deco</div>
+              <div class="fiesta-img">
+                {% if item.image %}
+                  <img src="{{ url_for('uploaded_file', filename=item.image) }}" alt="{{ item.title }}">
+                {% else %}
+                  <div class="fiesta-img fallback" aria-hidden="true">⭐</div>
+                {% endif %}
+              </div>
+              <div class="fiesta-body">
+                <h5 class="fiesta-title">{{ item.title }}</h5>
+                {% if item.description %}<p class="fiesta-desc">{{ item.description }}</p>{% endif %}
+                {% if item.show_price %}<div class="fiesta-price"><span>${{ "%.2f"|format(item.price) }}</span></div>{% endif %}
+                <div class="fiesta-actions">
+                  {% if page.get('whatsapp') %}
+                    <a class="fiesta-wa party-trigger" data-party="cotizar"
+                       href="https://wa.me/{{ page.whatsapp | replace(' ','') }}?text={{ ('Hola, quiero este servicio: ' ~ (item.title or '')) | urlencode }}"
+                       target="_blank">
+                      <i class="bi bi-whatsapp"></i> Cotizar
+                    </a>
+                  {% endif %}
+                  <a class="fiesta-ghost" href="#galeria">Ver ideas</a>
+                </div>
+              </div>
+            </article>
+          {% endfor %}
+        {% endif %}
+      </div>
+    {% else %}
+      <div class="card-craft p-3 mt-3">Aún no hay servicios/paquetes cargados.</div>
+    {% endif %}
   </section>
 
   <!-- GALERÍA -->
@@ -324,7 +903,6 @@
             <span class="badge-type"><i class="bi bi-image"></i> Portada</span>
           </div>
         {% endif %}
-
         {% if tiene_media %}
           {% for item in page.media_gallery %}
             {% if item is string %}
@@ -349,7 +927,6 @@
             {% endif %}
           {% endfor %}
         {% endif %}
-
         {% if tiene_galeria_vieja %}
           {% for g in (galeria or [])[:8] %}
             <div class="gal-item" data-type="image" data-src="{{ url_for('uploaded_file', filename=g) }}">
@@ -360,13 +937,13 @@
         {% endif %}
       </div>
     {% else %}
-      <div class="card-craft p-3">Aún no hay imágenes. Sube portada o usa <strong>media_gallery</strong>.</div>
+      <div class="card-craft p-3">Aún no hay imágenes.</div>
     {% endif %}
   </section>
 
   <!-- CONTACTO -->
   <section class="container my-5" id="contacto">
-    <h2 class="sec-title"><span class="dot"></span> Contacto</h2>
+    <h2 class="sec-title mb-3"><span class="dot"></span> Contacto</h2>
     <div class="row g-4">
       <div class="col-md-6">
         <div class="card-craft p-4">
@@ -387,7 +964,7 @@
 
   <!-- PUBLICACIONES -->
   <section class="container my-5" id="publicaciones">
-    <h2 class="sec-title"><span class="dot"></span> Tutoriales & Novedades</h2>
+    <h2 class="sec-title mb-3"><span class="dot"></span> Tutoriales & Novedades</h2>
     {% if posts and posts|length>0 %}
       <div class="row g-4">
         {% for post in posts %}
@@ -398,8 +975,8 @@
               {% endif %}
               <div class="p-3 d-flex flex-column">
                 <h5 style="font-weight:800">{{ post.title }}</h5>
-                <p class="text-muted">{{ post.content[:110] }}...</p>
-                <a class="btn btn-craft mt-auto" href="{{ url_for('ver_post', post_id=post._id) }}">Leer más</a>
+                {% if post.content %}<p class="text-muted">{{ post.content[:110] }}...</p>{% endif %}
+                <a class="btn-craft mt-auto party-trigger" data-party="post" href="{{ url_for('ver_post', post_id=post._id) }}">Leer más</a>
               </div>
             </div>
           </div>
@@ -410,9 +987,9 @@
     {% endif %}
   </section>
 
-  <!-- SERVICIOS & PRODUCTOS (con cotizar) -->
+  <!-- PRODUCTOS / FORM COTIZAR -->
   <section class="container my-5" id="productos">
-    <h2 class="sec-title"><span class="dot"></span> Servicios & Productos artesanales</h2>
+    <h2 class="sec-title mb-3"><span class="dot"></span> Servicios & Productos artesanales</h2>
 
     {% if (servicios and servicios|length>0) or (productos_fisicos and productos_fisicos|length>0) %}
       <div class="glass p-3 mb-3">
@@ -435,7 +1012,7 @@
                 <div class="p-3 d-flex flex-column">
                   <h6 class="mb-1" style="font-weight:800">{{ item.title }}</h6>
                   {% if item.description %}<p class="text-muted small">{{ item.description }}</p>{% endif %}
-                  {% if item.show_price %}<div class="mb-2"><span class="price-tag">${{ "%.2f"|format(item.price) }}</span></div>{% endif %}
+                  {% if item.show_price %}<div class="mb-2"><span class="badge bg-dark text-white rounded-pill">${{ "%.2f"|format(item.price) }}</span></div>{% endif %}
                   <div class="mt-auto">
                     <label class="form-label small">Cantidad / Nº sesiones</label>
                     <input type="number" class="form-control" min="0" value="0"
@@ -462,7 +1039,7 @@
                 <div class="p-3 d-flex flex-column">
                   <h6 class="mb-1" style="font-weight:800">{{ item.title }}</h6>
                   {% if item.description %}<p class="text-muted small">{{ item.description }}</p>{% endif %}
-                  {% if item.show_price %}<div class="mb-2"><span class="price-tag">${{ "%.2f"|format(item.price) }}</span></div>{% endif %}
+                  {% if item.show_price %}<div class="mb-2"><span class="badge bg-dark text-white rounded-pill">${{ "%.2f"|format(item.price) }}</span></div>{% endif %}
                   <div class="mt-auto">
                     <label class="form-label small">Cantidad</label>
                     <input type="number" class="form-control" min="0" value="0"
@@ -476,14 +1053,16 @@
         {% endif %}
 
         <div class="col-12 text-center">
-          <button class="btn btn-craft px-4 py-2" type="submit"><i class="bi bi-whatsapp me-1"></i> Cotizar</button>
+          <button class="btn-craft party-trigger px-4 py-2" data-party="cotizar" type="submit">
+            <i class="bi bi-whatsapp me-1"></i> Cotizar
+          </button>
         </div>
       </form>
 
       <!-- Modal zoom -->
       <div class="modal fade" id="zoomModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered" style="max-width:72vw;">
-          <div class="modal-content p-2"><img id="zoomedImage" class="img-fluid" alt="Zoom"></div>
+          <div class="modal-content p-2 bg-transparent border-0"><img id="zoomedImage" class="img-fluid" alt="Zoom"></div>
         </div>
       </div>
 
@@ -498,7 +1077,7 @@
             <div class="modal-body">
               <div class="mb-3">
                 <label class="form-label">Tu nombre</label>
-                <input type="text" class="form-control" id="nombreClienteInput" placeholder="Ej. Ana Pérez">
+                <input type="text" class="form-control" id="nombreClienteInput" placeholder="Escribe tu nombre">
                 <div class="text-danger small mt-1 d-none" id="errorModalNombre">Por favor, escribe tu nombre.</div>
               </div>
               <div>
@@ -508,67 +1087,50 @@
             </div>
             <div class="modal-footer" style="border:none;">
               <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-              <button class="btn btn-craft" id="enviarCotizacionBtn"><i class="bi bi-whatsapp me-1"></i> Enviar a WhatsApp</button>
+              <button class="btn-craft party-trigger" data-party="sendWA" id="enviarCotizacionBtn">
+                <i class="bi bi-whatsapp me-1"></i> Enviar a WhatsApp
+              </button>
             </div>
           </div>
         </div>
       </div>
     {% else %}
-      {# fallback antiguo #}
-      {% if productos and productos|length>0 %}
-        <div class="glass p-3 mb-3">
-          <strong><i class="bi bi-info-circle me-1"></i> ¿Quieres cotizar?</strong> Elige cantidades y envíanos por WhatsApp.
-        </div>
-        <form id="form-cotizar" class="row g-3">
-          {% for producto in productos %}
-            <div class="col-12 col-sm-6 col-md-4">
-              <div class="card-craft h-100">
-                {% if producto.image %}
-                  <img src="{{ url_for('uploaded_file', filename=producto.image) }}" alt="{{ producto.title }}"
-                      class="w-100 img-zoom-trigger" data-bs-toggle="modal" data-bs-target="#zoomModal"
-                      data-img-src="{{ url_for('uploaded_file', filename=producto.image) }}"
-                      style="object-fit:cover; height:220px; cursor:zoom-in;">
-                {% endif %}
-                <div class="p-3 d-flex flex-column">
-                  <h6 class="mb-1" style="font-weight:800">{{ producto.title }}</h6>
-                  {% if producto.description %}<p class="text-muted small">{{ producto.description }}</p>{% endif %}
-                  {% if producto.show_price %}<div class="mb-2"><span class="price-tag">${{ "%.2f"|format(producto.price) }}</span></div>{% endif %}
-                  <div class="mt-auto">
-                    <label class="form-label small">Cantidad</label>
-                    <input type="number" class="form-control" min="0"
-                          name="prod_{{ producto.title | replace(' ','_') }}" value="0"
-                          data-item-nombre="{{ producto.title }}">
-                  </div>
-                </div>
-              </div>
-            </div>
-          {% endfor %}
-          <div class="col-12 text-center"><button class="btn btn-craft px-4 py-2" type="submit"><i class="bi bi-whatsapp me-1"></i> Cotizar</button></div>
-        </form>
-      {% else %}
-        <div class="card-craft p-3">No hay productos disponibles por ahora.</div>
-      {% endif %}
+      <div class="card-craft p-3">No hay productos disponibles por ahora.</div>
     {% endif %}
   </section>
 
   <!-- RESEÑAS -->
   <section class="container my-5" id="reseñas">
-    <h2 class="sec-title"><span class="dot"></span> Reseñas</h2>
+    <h2 class="sec-title mb-3"><span class="dot"></span> Reseñas</h2>
     <div class="card-craft p-3 mb-4">
       {% with messages = get_flashed_messages() %}
         {% if messages %}
-          <div class="alert alert-info mb-3">{% for m in messages %}<div>{{ m }}</div>{% endfor %}</div>
+          <div class="alert alert-info mb-3">
+            {% for m in messages %}<div>{{ m }}</div>{% endfor %}
+          </div>
         {% endif %}
       {% endwith %}
       <form method="POST" class="row g-3">
-        <div class="col-md-6"><label class="form-label">Tu nombre</label><input type="text" name="nombre" class="form-control" required></div>
+        <div class="col-md-6">
+          <label class="form-label">Tu nombre</label>
+          <input type="text" name="nombre" class="form-control" required>
+        </div>
         <div class="col-md-6">
           <label class="form-label">Calificación</label>
-          <div id="starRating">{% for i in range(1,6) %}<i class="bi bi-star-fill fs-3 me-1 text-secondary star-icon" data-value="{{ i }}"></i>{% endfor %}</div>
+          <div id="starRating">
+            {% for i in range(1,6) %}
+              <i class="bi bi-star-fill fs-3 me-1 text-secondary star-icon party-trigger" data-party="stars" data-value="{{ i }}"></i>
+            {% endfor %}
+          </div>
           <input type="hidden" name="estrellas" id="estrellas" value="0" required>
         </div>
-        <div class="col-12"><label class="form-label">Comentario</label><textarea name="comentario" class="form-control" rows="3" required></textarea></div>
-        <div class="col-12"><button class="btn btn-craft" type="submit">Enviar reseña</button></div>
+        <div class="col-12">
+          <label class="form-label">Comentario</label>
+          <textarea name="comentario" class="form-control" rows="3" required></textarea>
+        </div>
+        <div class="col-12">
+          <button class="btn-craft party-trigger" data-party="review" type="submit">Enviar reseña</button>
+        </div>
       </form>
     </div>
 
@@ -579,10 +1141,20 @@
             <div class="card-craft h-100 p-3">
               <h5 class="text-center" style="font-weight:800">{{ r.nombre }}</h5>
               <div class="text-center mb-2">
-                {% for i in range(1,6) %}{% if i <= r.estrellas %}<i class="bi bi-star-fill text-warning"></i>{% else %}<i class="bi bi-star text-secondary"></i>{% endif %}{% endfor %}
+                {% for i in range(1,6) %}
+                  {% if i <= r.estrellas %}
+                    <i class="bi bi-star-fill text-warning"></i>
+                  {% else %}
+                    <i class="bi bi-star text-secondary"></i>
+                  {% endif %}
+                {% endfor %}
               </div>
-              <p>{{ r.comentario }}</p>
-              <div class="text-end"><small class="text-muted">{{ r.fecha.strftime('%d/%m/%Y') }}</small></div>
+              {% if r.comentario %}<p>{{ r.comentario }}</p>{% endif %}
+              <div class="text-end">
+                {% if r.fecha %}
+                  <small class="text-muted">{{ r.fecha.strftime('%d/%m/%Y') }}</small>
+                {% endif %}
+              </div>
             </div>
           </div>
         {% endfor %}
@@ -592,46 +1164,52 @@
     </div>
   </section>
 
-  <!-- Avisos / Ticker -->
+  <!-- TICKER (tolerante) -->
   <div class="ticker">
     <div class="container">
-      <div id="avCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="4600">
+      <div id="avCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="4800">
         <div class="carousel-inner text-center">
           {% if avisos and avisos|length>0 %}
             {% for a in avisos %}
+              {% set a_title = a.title or a.titulo or a.name or 'Aviso' %}
+              {% set a_body  = a.content or a.mensaje or a.texto or a.text or a.descripcion or '' %}
               <div class="carousel-item {% if loop.first %}active{% endif %}">
-                <span class="ticker-pill"><i class="bi bi-megaphone-fill"></i> {{ a.title }}</span>
-                <span class="ms-2">{{ a.content }}</span>
+                <span class="ticker-pill"><i class="bi bi-bell-fill text-danger"></i> {{ a_title }}</span>
+                {% if a_body %}<span class="ms-2">{{ a_body }}</span>{% endif %}
               </div>
             {% endfor %}
           {% else %}
             <div class="carousel-item active">
-              <span class="ticker-pill"><i class="bi bi-megaphone-fill"></i> Bienvenid@</span>
-              <span class="ms-2">¡Gracias por visitar nuestro taller creativo! ✂️🧵</span>
+              <span class="ticker-pill"><i class="bi bi-bell-fill text-danger"></i> Bienvenido</span>
+              <span class="ms-2">No hay avisos publicados para {{ page.get('business_name','este negocio') }}.</span>
             </div>
           {% endif %}
         </div>
-        <button class="carousel-control-prev" type="button" data-bs-target="#avCarousel" data-bs-slide="prev">
-          <span class="carousel-control-prev-icon"></span><span class="visually-hidden">Anterior</span>
-        </button>
-        <button class="carousel-control-next" type="button" data-bs-target="#avCarousel" data-bs-slide="next">
-          <span class="carousel-control-next-icon"></span><span class="visually-hidden">Siguiente</span>
-        </button>
+        {% if avisos and avisos|length>1 %}
+          <button class="carousel-control-prev" type="button" data-bs-target="#avCarousel" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon"></span><span class="visually-hidden">Anterior</span>
+          </button>
+          <button class="carousel-control-next" type="button" data-bs-target="#avCarousel" data-bs-slide="next">
+            <span class="carousel-control-next-icon"></span><span class="visually-hidden">Siguiente</span>
+          </button>
+        {% endif %}
       </div>
     </div>
   </div>
 
-  {# WhatsApp FAB #}
   {% if page.get('whatsapp') %}
-    <a class="fab-wa" href="https://wa.me/{{ page.whatsapp | replace(' ','') }}" target="_blank" aria-label="WhatsApp">
-      <span class="btn btn-craft d-flex align-items-center gap-2"><i class="bi bi-whatsapp"></i></span>
+    <a class="fab-wa party-trigger" data-party="wa" href="https://wa.me/{{ page.whatsapp | replace(' ','') }}" target="_blank" aria-label="WhatsApp">
+      <span class="btn-craft d-flex align-items-center gap-2"><i class="bi bi-whatsapp"></i></span>
     </a>
   {% endif %}
 
-  <!-- FOOTER -->
   <footer class="py-4 mt-5 ft">
     <div class="container d-flex flex-column flex-md-row align-items-center justify-content-between">
-      <div><strong>{{ page.get('business_name','Taller de Manualidades') }}</strong> · &copy; 2025</div>
+      {% if page.get('business_name') %}
+        <div><strong>{{ page.get('business_name') }}</strong> · &copy; {{ now().year if now is defined else '2025' }}</div>
+      {% else %}
+        <div>&copy; {{ now().year if now is defined else '2025' }}</div>
+      {% endif %}
       <div class="d-flex align-items-center gap-3">
         {% if page.get('facebook') %}<a href="{{ page.facebook }}" target="_blank" class="text-decoration-none text-dark"><i class="bi bi-facebook fs-4"></i></a>{% endif %}
         {% if page.get('tiktok') %}<a href="{{ page.tiktok }}" target="_blank" class="text-decoration-none text-dark"><i class="bi bi-tiktok fs-4"></i></a>{% endif %}
@@ -644,15 +1222,98 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 
   <script>
-    // Zoom galería
+    // confetti
+    (function(){
+      const canvas = document.getElementById('confettiCanvas');
+      const ctx = canvas.getContext('2d');
+      let W,H;
+      function resize(){ W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+      window.addEventListener('resize', resize); resize();
+      const colors = ['#ff5b8a','#ffcf60','#b8e0d2','#c9b7f3','#ffffff','#ffa7d7'];
+      let confettis = [];
+
+      function addConfetti({x=W/2, y=H/2, count=90, spread=Math.PI*1.2, power=8}={}){
+        for (let i=0;i<count;i++){
+          const angle = (i / count) * spread + (Math.random() * 0.4 - 0.2);
+          const speed = power * (0.5 + Math.random());
+          confettis.push({
+            x:x, y:y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            g: 0.13 + Math.random()*0.23,
+            s: 5 + Math.random()*6,
+            c: colors[Math.floor(Math.random()*colors.length)],
+            life: 120 + Math.random()*30,
+            rotation: Math.random() * Math.PI * 2,
+            vr: (Math.random() - .5) * .2
+          });
+        }
+      }
+
+      function loop(){
+        ctx.clearRect(0,0,W,H);
+        confettis = confettis.filter(c => c.life > 0 && c.y < H+50);
+        for (const c of confettis){
+          c.vy += c.g;
+          c.x += c.vx;
+          c.y += c.vy;
+          c.rotation += c.vr;
+          c.life--;
+          ctx.save();
+          ctx.translate(c.x, c.y);
+          ctx.rotate(c.rotation);
+          ctx.fillStyle = c.c;
+          ctx.fillRect(-c.s/2, -c.s/2, c.s, c.s*0.6);
+          ctx.restore();
+        }
+        requestAnimationFrame(loop);
+      }
+      loop();
+
+      window.addEventListener('load', ()=>{ addConfetti({x: W*0.5, y: 90, count: 95, power: 7}); });
+
+      document.querySelectorAll('.party-trigger').forEach(btn=>{
+        btn.addEventListener('click', (e)=>{
+          const rect = btn.getBoundingClientRect();
+          addConfetti({x: rect.left + rect.width/2, y: rect.top + window.scrollY, count: 55, power: 7});
+        });
+      });
+
+      window.__confetti = addConfetti;
+    })();
+
+    // cursor estrellas
+    (function(){
+      const colors = ['#ff5b8a','#fff','#ffe08a','#c9b7f3'];
+      document.addEventListener('pointermove', (e)=>{
+        const star = document.createElement('span');
+        star.textContent = '✦';
+        star.style.position = 'fixed';
+        star.style.left = e.clientX + 'px';
+        star.style.top = e.clientY + 'px';
+        star.style.transform = 'translate(-50%, -50%)';
+        star.style.fontSize = (8 + Math.random()*10) + 'px';
+        star.style.color = colors[Math.floor(Math.random()*colors.length)];
+        star.style.pointerEvents = 'none';
+        star.style.zIndex = 999;
+        document.body.appendChild(star);
+        requestAnimationFrame(()=>{
+          star.style.transition = 'opacity .35s, transform .35s';
+          star.style.opacity = '0';
+          star.style.transform = 'translate(-50%, -80%)';
+        });
+        setTimeout(()=> star.remove(), 380);
+      });
+    })();
+
+    // galería zoom
     (function(){
       const items = document.querySelectorAll('.gal-item');
-      const zoomModal = document.getElementById('zoomModal');
+      let zoomModal = document.getElementById('zoomModal');
       let zoomImg = document.getElementById('zoomedImage');
       let videoEl = null;
 
       if (!zoomModal) {
-        // si no existe el modal de productos lo creamos rápido
         const modalHtml = `
           <div class="modal fade" id="zoomModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -667,16 +1328,15 @@
             </div>
           </div>`;
         document.body.insertAdjacentHTML('beforeend', modalHtml);
+        zoomModal = document.getElementById('zoomModal');
+        zoomImg = document.getElementById('zoomedImage');
       }
-
-      const modalEl = document.getElementById('zoomModal');
-      zoomImg = document.getElementById('zoomedImage');
 
       items.forEach(it=>{
         it.addEventListener('click', ()=>{
           const type = it.dataset.type;
           const src = it.dataset.src;
-          const modal = new bootstrap.Modal(modalEl);
+          const modal = new bootstrap.Modal(zoomModal);
 
           if (type === 'video') {
             if (!videoEl) {
@@ -684,7 +1344,7 @@
               videoEl.controls = true;
               videoEl.style.width = '100%';
               videoEl.style.borderRadius = '16px';
-              modalEl.querySelector('.modal-body').prepend(videoEl);
+              zoomModal.querySelector('.modal-body').prepend(videoEl);
             }
             zoomImg.classList.add('d-none');
             videoEl.src = src;
@@ -702,27 +1362,15 @@
         });
       });
 
-      if (modalEl) {
-        modalEl.addEventListener('hidden.bs.modal', ()=>{
-          if (videoEl) videoEl.pause();
-        });
+      if (zoomModal) {
+        zoomModal.addEventListener('hidden.bs.modal', ()=>{ if (videoEl) videoEl.pause(); });
       }
     })();
 
-    // Zoom de productos (ya lo traías)
-    document.querySelectorAll('.img-zoom-trigger').forEach(img=>{
-      img.addEventListener('click', e=>{
-        const src = e.currentTarget.getAttribute('data-img-src');
-        const el = document.getElementById('zoomedImage');
-        if (el) el.src = src;
-      });
-    });
-
-    // Cotizar
+    // cotizar
     (function(){
       const form = document.getElementById('form-cotizar');
       if (!form) return;
-
       const modalEl = document.getElementById('cotizarModal');
       const nombreInput = document.getElementById('nombreClienteInput');
       const errorNombre = document.getElementById('errorModalNombre');
@@ -733,7 +1381,6 @@
       form.addEventListener('submit', (e)=>{
         e.preventDefault();
         lineas = [];
-
         form.querySelectorAll('input[type=number]').forEach(inp=>{
           const n = parseInt(inp.value||"0");
           if (n>0){
@@ -742,11 +1389,9 @@
           }
         });
 
-        if (!lineas.length){ alert("Ingresa cantidad para al menos un servicio o producto."); return; }
+        if (!lineas.length){ alert("Ingresa cantidad para al menos un servicio o producto 🎈"); return; }
 
-        if (resumenDiv){
-          resumenDiv.innerHTML = lineas.map(l=>`<div>${l}</div>`).join('');
-        }
+        if (resumenDiv){ resumenDiv.innerHTML = lineas.map(l=>`<div>${l}</div>`).join(''); }
         if (errorNombre){ errorNombre.classList.add('d-none'); }
         if (nombreInput){ nombreInput.classList.remove('is-invalid'); }
 
@@ -766,12 +1411,16 @@
           const wa = "{{ page.get('whatsapp','')|replace(' ','') }}";
           let msj = `Hola, soy ${encodeURIComponent(nombre)} y quiero cotizar:%0A`;
           lineas.forEach(l=> msj += encodeURIComponent(l) + "%0A");
-          window.open(`https://wa.me/${wa}?text=${msj}`, "_blank");
+          if (wa){
+            window.open(`https://wa.me/${wa}?text=${msj}`, "_blank");
+          } else {
+            alert("No hay WhatsApp configurado 🥲");
+          }
         });
       }
     })();
 
-    // Reseñas estrellas
+    // estrellas
     (function(){
       const stars = document.querySelectorAll('.star-icon');
       const input = document.getElementById('estrellas');
@@ -785,11 +1434,14 @@
             x.classList.remove('text-warning','text-secondary');
             x.classList.add(xv<=v ? 'text-warning' : 'text-secondary');
           });
+          if (window.__confetti){
+            window.__confetti({x: window.innerWidth * .65, y: window.innerHeight * .25, count: 50, power: 6});
+          }
         });
       });
     })();
 
-    // Mapa
+    // mapa
     (function(){
       const lat = {{ page.get('lat') if page.get('lat') is not none else 'null' }};
       const lng = {{ page.get('lng') if page.get('lng') is not none else 'null' }};
