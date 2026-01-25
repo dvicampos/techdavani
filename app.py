@@ -1900,6 +1900,8 @@ DEFAULT_HTML_TEMPLATES = {
     "rope": "public/rope.html",
     "coffe": "public/coffe.html",
     "dentist": "public/dentist.html",
+    "flowers": "public/floreria.html",
+    "restaurantblack": "public/restaurant_min.html",
 }
 
 @app.route('/manage_page')
