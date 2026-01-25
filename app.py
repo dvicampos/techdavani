@@ -129,23 +129,56 @@ def get_current_page_id():
             return oid
     return None
 
-def set_current_page_id(page_id):
+def set_current_page_id(page_id, user_id: str | None = None):
+    """
+    Guarda el sitio actual en sesión SIEMPRE.
+    Y si hay user autenticado (o se pasa user_id), también lo guarda en BD.
+    """
     session['current_page_id'] = str(page_id)
-    mongo.db.users.update_one({'_id': ObjectId(current_user.id)},
-                              {'$set': {'current_page_id': ObjectId(str(page_id))}})
 
-def ensure_user_page_lists(user_id: str, page_id: ObjectId):
-    """Asegura que el usuario tenga page_ids[] y current_page_id set."""
-    u = mongo.db.users.find_one({'_id': ObjectId(user_id)})
+    # Si no hay user autenticado, ya con sesión estamos bien
+    uid = user_id
+    if not uid and getattr(current_user, "is_authenticated", False):
+        uid = current_user.id
+
+    if not uid:
+        return  # anónimo, no hay nada que actualizar en users
+
+    try:
+        mongo.db.users.update_one(
+            {'_id': ObjectId(str(uid))},
+            {'$set': {'current_page_id': ObjectId(str(page_id))}}
+        )
+    except Exception as e:
+        app.logger.warning(f"set_current_page_id error: {e}")
+
+def ensure_user_page_lists(user_id, page_id: ObjectId):
+    u = mongo.db.users.find_one({'_id': ObjectId(str(user_id))})
+    if not u:
+        return
+
     updates = {}
     page_ids = list(u.get('page_ids', []))
-    if page_id not in page_ids:
-        page_ids.append(page_id)
+
+    # normaliza page_ids a ObjectId
+    norm = []
+    for x in page_ids:
+        try:
+            norm.append(ObjectId(str(x)))
+        except:
+            pass
+    page_ids = norm
+
+    if ObjectId(str(page_id)) not in page_ids:
+        page_ids.append(ObjectId(str(page_id)))
         updates['page_ids'] = page_ids
+
     if not u.get('current_page_id'):
-        updates['current_page_id'] = page_id
+        updates['current_page_id'] = ObjectId(str(page_id))
+
     if updates:
-        mongo.db.users.update_one({'_id': ObjectId(user_id)}, {'$set': updates})
+        mongo.db.users.update_one({'_id': ObjectId(str(user_id))}, {'$set': updates})
+
      
 from pymongo import ASCENDING
 

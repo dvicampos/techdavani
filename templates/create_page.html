@@ -1,276 +1,672 @@
 {% extends "layout.html" %}
-
 {% block content %}
 
-<h1>Crear Empresa / Página</h1>
-<form method="POST" enctype="multipart/form-data">
-    <!-- Campos básicos -->
-    <div class="mb-3">
-        <label class="form-label">Nombre de la empresa</label>
-        <input type="text" name="business_name" class="form-control" required />
+<style>
+  :root{
+    --card-bg: rgba(255,255,255,.06);
+    --card-brd: rgba(255,255,255,.10);
+    --ink: #e9eefc;
+    --muted: rgba(233,238,252,.72);
+    --soft: rgba(233,238,252,.10);
+    --soft2: rgba(233,238,252,.16);
+    --accent: #7c5cff;
+    --accent2:#22d3ee;
+    --ok:#34d399;
+    --warn:#f59e0b;
+    --shadow: 0 18px 50px rgba(0,0,0,.35);
+    --r: 18px;
+  }
+
+  .create-wrap{
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 18px 12px 30px;
+  }
+
+  .create-hero{
+    display:flex;
+    gap:16px;
+    align-items:flex-start;
+    justify-content:space-between;
+    margin-bottom:16px;
+  }
+
+  .hero-left{
+    display:flex;
+    gap:14px;
+    align-items:flex-start;
+  }
+
+  .hero-mark{
+    width:48px;height:48px;border-radius:14px;
+    background:
+      radial-gradient(80% 80% at 25% 25%, rgba(124,92,255,.9), rgba(124,92,255,.15) 60%, transparent 70%),
+      radial-gradient(90% 90% at 75% 65%, rgba(34,211,238,.75), rgba(34,211,238,.10) 60%, transparent 70%),
+      rgba(255,255,255,.05);
+    border:1px solid var(--card-brd);
+    box-shadow: var(--shadow);
+  }
+
+  .hero-title{
+    margin:0;
+    font-size: clamp(22px, 3vw, 30px);
+    letter-spacing: .2px;
+    color: var(--ink);
+    line-height: 1.15;
+  }
+  .hero-sub{
+    margin:6px 0 0;
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  .hero-actions{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:flex-end;
+  }
+
+  .btnx{
+    border-radius: 14px;
+    border:1px solid var(--card-brd);
+    padding:10px 14px;
+    font-weight: 600;
+    background: rgba(255,255,255,.06);
+    color: var(--ink);
+    display:inline-flex;
+    gap:8px;
+    align-items:center;
+    text-decoration:none;
+    transition: transform .15s ease, background .15s ease, border-color .15s ease;
+    user-select:none;
+  }
+  .btnx:hover{ transform: translateY(-1px); background: rgba(255,255,255,.09); border-color: rgba(255,255,255,.18); color: var(--ink); }
+  .btnx-primary{
+    background: linear-gradient(135deg, rgba(124,92,255,.92), rgba(34,211,238,.72));
+    border-color: rgba(255,255,255,.22);
+    color:#06101a;
+  }
+  .btnx-primary:hover{ background: linear-gradient(135deg, rgba(124,92,255,1), rgba(34,211,238,.85)); }
+  .btnx-danger{
+    background: rgba(255,255,255,.05);
+  }
+
+  .grid{
+    display:grid;
+    grid-template-columns: 1fr;
+    gap:14px;
+  }
+  @media (min-width: 992px){
+    .grid{ grid-template-columns: 1.2fr .8fr; }
+  }
+
+  .cardx{
+    border-radius: var(--r);
+    background: var(--card-bg);
+    border: 1px solid var(--card-brd);
+    box-shadow: var(--shadow);
+    overflow:hidden;
+  }
+  .cardx-h{
+    padding:14px 16px;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    background: linear-gradient(180deg, rgba(255,255,255,.06), transparent);
+  }
+  .cardx-title{
+    margin:0;
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--ink);
+    letter-spacing:.2px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .pill{
+    font-size:12px;
+    color: rgba(6,16,26,.95);
+    background: linear-gradient(135deg, rgba(34,211,238,.85), rgba(124,92,255,.85));
+    padding:4px 10px;
+    border-radius: 999px;
+    font-weight: 800;
+  }
+  .cardx-b{
+    padding:16px;
+  }
+
+  .form-grid{
+    display:grid;
+    grid-template-columns: 1fr;
+    gap:12px;
+  }
+  @media (min-width: 768px){
+    .form-grid.two{ grid-template-columns: 1fr 1fr; }
+    .form-grid.three{ grid-template-columns: 1fr 1fr 1fr; }
+  }
+
+  .fx{
+    display:flex;
+    flex-direction:column;
+    gap:7px;
+  }
+  .fx label{
+    color: rgba(233,238,252,.90);
+    font-weight: 700;
+    font-size: 13px;
+  }
+  .hint{
+    color: rgba(233,238,252,.62);
+    font-size: 12px;
+  }
+
+  /* Inputs (Bootstrap friendly) */
+  .create-wrap .form-control,
+  .create-wrap .form-select{
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,.14);
+    background: rgba(10,16,25,.35);
+    color: var(--ink);
+    padding: 10px 12px;
+  }
+  .create-wrap .form-control::placeholder{ color: rgba(233,238,252,.45); }
+  .create-wrap .form-control:focus,
+  .create-wrap .form-select:focus{
+    box-shadow: 0 0 0 .2rem rgba(124,92,255,.15);
+    border-color: rgba(124,92,255,.55);
+    background: rgba(10,16,25,.42);
+    color: var(--ink);
+  }
+  .create-wrap textarea.form-control{ min-height: 110px; resize: vertical; }
+
+  .checkline{
+    display:flex;
+    gap:10px;
+    align-items:center;
+    padding:10px 12px;
+    border-radius: 14px;
+    border:1px solid rgba(255,255,255,.12);
+    background: rgba(255,255,255,.04);
+  }
+  .checkline input{ width: 18px; height: 18px; }
+  .checkline .txt{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+  }
+  .checkline .txt b{ color: var(--ink); font-size: 13px; }
+  .checkline .txt span{ color: rgba(233,238,252,.65); font-size: 12px; }
+
+  /* Map */
+  #map{
+    height: 360px;
+    border-radius: 16px;
+    overflow:hidden;
+    border: 1px solid rgba(255,255,255,.12);
+  }
+
+  .mini-actions{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-top:10px;
+  }
+
+  .divider{
+    height:1px;
+    background: rgba(255,255,255,.08);
+    margin: 14px 0;
+  }
+
+  .preview{
+    display:flex;
+    gap:12px;
+    align-items:center;
+    padding:12px;
+    border-radius: 16px;
+    background: rgba(255,255,255,.04);
+    border:1px dashed rgba(255,255,255,.16);
+  }
+  .preview .dot{
+    width:14px;height:14px;border-radius:999px;
+    background: var(--accent);
+    box-shadow: 0 0 0 6px rgba(124,92,255,.12);
+  }
+  .preview .meta{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    min-width: 0;
+  }
+  .preview .meta b{ color: var(--ink); font-size: 13px; }
+  .preview .meta span{ color: rgba(233,238,252,.65); font-size: 12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  /* Leaflet control theme a bit */
+  .leaflet-control a{ border-radius: 10px !important; }
+  .leaflet-control-layers, .leaflet-bar{
+    border: 1px solid rgba(255,255,255,.12) !important;
+    background: rgba(10,16,25,.55) !important;
+    backdrop-filter: blur(10px);
+  }
+  .leaflet-control-geocoder{
+    border-radius: 14px !important;
+    overflow:hidden;
+    border:1px solid rgba(255,255,255,.12) !important;
+    background: rgba(10,16,25,.55) !important;
+  }
+  .leaflet-control-geocoder input{
+    background: transparent !important;
+    color: var(--ink) !important;
+  }
+</style>
+
+<div class="create-wrap">
+
+  <div class="create-hero">
+    <div class="hero-left">
+      <div class="hero-mark"></div>
+      <div>
+        <h1 class="hero-title">Crear Empresa</h1>
+        <p class="hero-sub">Arma tu perfil en 2–3 minutos. Después activas tu suscripción y listo ✨</p>
+      </div>
     </div>
 
-    <div class="mb-3">
-        <label class="form-label">Descripción</label>
-        <textarea name="description" rows="3" class="form-control" required></textarea>
+    <div class="hero-actions">
+      <a class="btnx" href="{{ url_for('dashboard') }}">
+        <span>←</span> Regresar
+      </a>
+      <button form="createForm" class="btnx btnx-primary" type="submit">
+        <span>✨</span> Crear empresa
+      </button>
     </div>
+  </div>
 
-    <div class="mb-3">
-        <label for="category" class="form-label">Categoría</label>
-        <select name="category" id="category" class="form-select" required>
-            <option value="" selected disabled>Selecciona una categoría</option>
+  <form id="createForm" method="POST" enctype="multipart/form-data">
+    <div class="grid">
 
-            <!-- Alimentos y Bebidas -->
-            <option value="Restaurante">Restaurante</option>
-            <option value="Cafetería">Cafetería</option>
-            <option value="Bar">Bar</option>
-            <option value="Panadería">Panadería</option>
-            <option value="Comida rápida">Comida rápida</option>
-            <option value="Pastelería">Pastelería</option>
+      <!-- LEFT: Form -->
+      <div class="cardx">
+        <div class="cardx-h">
+          <h3 class="cardx-title">🧾 Información básica <span class="pill">Paso 1</span></h3>
+          <span class="hint">Lo esencial para mostrar tu negocio.</span>
+        </div>
+        <div class="cardx-b">
+          <div class="form-grid two">
+            <div class="fx">
+              <label>Nombre de la empresa <span class="text-danger">*</span></label>
+              <input type="text" name="business_name" class="form-control" required
+                     placeholder="Ej. Taquería El Primo, Davani Studio, etc.">
+              <div class="hint">Este nombre se verá público en tu página.</div>
+            </div>
 
-            <!-- Comercio y Tiendas -->
-            <option value="Supermercado">Supermercado</option>
-            <option value="Tienda de ropa">Tienda de ropa</option>
-            <option value="Zapatería">Zapatería</option>
-            <option value="Ferretería">Ferretería</option>
-            <option value="Papelería">Papelería</option>
-            <option value="Tienda de regalos">Tienda de regalos</option>
-            <option value="Floristería">Floristería</option>
-            <option value="Joyería">Joyería</option>
-            <option value="Tienda de mascotas">Tienda de mascotas</option>
-            <option value="Librería">Librería</option>
-            <option value="Tienda de electrónica">Tienda de electrónica</option>
+            <div class="fx">
+              <label>Categoría <span class="text-danger">*</span></label>
+              <select name="category" id="category" class="form-select" required>
+                <option value="" selected disabled>Selecciona una categoría</option>
 
-            <!-- Salud y Belleza -->
-            <option value="Farmacia">Farmacia</option>
-            <option value="Consultorio médico">Consultorio médico</option>
-            <option value="Dentista">Dentista</option>
-            <option value="Salón de belleza">Salón de belleza</option>
-            <option value="Peluquería">Peluquería</option>
-            <option value="Spa">Spa</option>
-            <option value="Veterinaria">Veterinaria</option>
+                <optgroup label="Alimentos y Bebidas">
+                  <option value="Restaurante">Restaurante</option>
+                  <option value="Cafetería">Cafetería</option>
+                  <option value="Bar">Bar</option>
+                  <option value="Panadería">Panadería</option>
+                  <option value="Comida rápida">Comida rápida</option>
+                  <option value="Pastelería">Pastelería</option>
+                </optgroup>
 
-            <!-- Servicios -->
-            <option value="Taller mecánico">Taller mecánico</option>
-            <option value="Lavandería">Lavandería</option>
-            <option value="Inmobiliaria">Inmobiliaria</option>
-            <option value="Agencia de viajes">Agencia de viajes</option>
-            <option value="Servicio de transporte">Servicio de transporte</option>
-            <option value="Mensajería">Mensajería</option>
-            <option value="Asesoría legal">Asesoría legal</option>
-            <option value="Contabilidad">Contabilidad</option>
-            <option value="Diseño gráfico">Diseño gráfico</option>
-            <option value="Estudio fotográfico">Estudio fotográfico</option>
+                <optgroup label="Comercio y Tiendas">
+                  <option value="Supermercado">Supermercado</option>
+                  <option value="Tienda de ropa">Tienda de ropa</option>
+                  <option value="Zapatería">Zapatería</option>
+                  <option value="Ferretería">Ferretería</option>
+                  <option value="Papelería">Papelería</option>
+                  <option value="Tienda de regalos">Tienda de regalos</option>
+                  <option value="Floristería">Floristería</option>
+                  <option value="Joyería">Joyería</option>
+                  <option value="Tienda de mascotas">Tienda de mascotas</option>
+                  <option value="Librería">Librería</option>
+                  <option value="Tienda de electrónica">Tienda de electrónica</option>
+                </optgroup>
 
-            <!-- Educación y Tecnología -->
-            <option value="Centro educativo">Centro educativo</option>
-            <option value="Escuela de idiomas">Escuela de idiomas</option>
-            <option value="Clases particulares">Clases particulares</option>
-            <option value="Servicios de TI">Servicios de TI</option>
-            <option value="Desarrollo web">Desarrollo web</option>
-            <option value="Marketing digital">Marketing digital</option>
-            <option value="Soporte técnico">Soporte técnico</option>
+                <optgroup label="Salud y Belleza">
+                  <option value="Farmacia">Farmacia</option>
+                  <option value="Consultorio médico">Consultorio médico</option>
+                  <option value="Dentista">Dentista</option>
+                  <option value="Salón de belleza">Salón de belleza</option>
+                  <option value="Peluquería">Peluquería</option>
+                  <option value="Spa">Spa</option>
+                  <option value="Veterinaria">Veterinaria</option>
+                </optgroup>
 
-            <!-- Ocio y Entretenimiento -->
-            <option value="Cine">Cine</option>
-            <option value="Gimnasio">Gimnasio</option>
-            <option value="Centro deportivo">Centro deportivo</option>
-            <option value="Sala de eventos">Sala de eventos</option>
-            <option value="Parque de diversiones">Parque de diversiones</option>
-            <option value="Streaming o medios">Streaming o medios</option>
-            <option value="Gaming o eSports">Gaming o eSports</option>
+                <optgroup label="Servicios">
+                  <option value="Taller mecánico">Taller mecánico</option>
+                  <option value="Lavandería">Lavandería</option>
+                  <option value="Inmobiliaria">Inmobiliaria</option>
+                  <option value="Agencia de viajes">Agencia de viajes</option>
+                  <option value="Servicio de transporte">Servicio de transporte</option>
+                  <option value="Mensajería">Mensajería</option>
+                  <option value="Asesoría legal">Asesoría legal</option>
+                  <option value="Contabilidad">Contabilidad</option>
+                  <option value="Diseño gráfico">Diseño gráfico</option>
+                  <option value="Estudio fotográfico">Estudio fotográfico</option>
+                </optgroup>
 
-            <!-- Otros -->
-            <option value="ONG / Asociación">ONG / Asociación</option>
-            <option value="Freelancer / Independiente">Freelancer / Independiente</option>
-            <option value="Otro">Otro</option>
-        </select>
-    </div>
+                <optgroup label="Educación y Tecnología">
+                  <option value="Centro educativo">Centro educativo</option>
+                  <option value="Escuela de idiomas">Escuela de idiomas</option>
+                  <option value="Clases particulares">Clases particulares</option>
+                  <option value="Servicios de TI">Servicios de TI</option>
+                  <option value="Desarrollo web">Desarrollo web</option>
+                  <option value="Marketing digital">Marketing digital</option>
+                  <option value="Soporte técnico">Soporte técnico</option>
+                </optgroup>
 
+                <optgroup label="Ocio y Entretenimiento">
+                  <option value="Cine">Cine</option>
+                  <option value="Gimnasio">Gimnasio</option>
+                  <option value="Centro deportivo">Centro deportivo</option>
+                  <option value="Sala de eventos">Sala de eventos</option>
+                  <option value="Parque de diversiones">Parque de diversiones</option>
+                  <option value="Streaming o medios">Streaming o medios</option>
+                  <option value="Gaming o eSports">Gaming o eSports</option>
+                </optgroup>
 
-    <div class="mb-3">
-        <label class="form-label">Eslogan</label>
-        <input type="text" name="slogan" class="form-control" />
-    </div>
+                <optgroup label="Otros">
+                  <option value="ONG / Asociación">ONG / Asociación</option>
+                  <option value="Freelancer / Independiente">Freelancer / Independiente</option>
+                  <option value="Otro">Otro</option>
+                </optgroup>
+              </select>
+              <div class="hint">Esto ayuda a tu diseño y a que te encuentren.</div>
+            </div>
+          </div>
 
-    <div class="mb-3">
-        <label class="form-label">Fecha de fundación</label>
-        <input type="date" name="founding_date" class="form-control" />
-    </div>
+          <div class="fx mt-2">
+            <label>Descripción <span class="text-danger">*</span></label>
+            <textarea name="description" rows="3" class="form-control" required
+                      placeholder="Cuenta en una frase o dos qué haces y qué te hace diferente."></textarea>
+            <div class="hint">Tip: menciona tu especialidad + zona + algo único.</div>
+          </div>
 
-    <!-- Contacto y ubicación -->
-    <div class="mb-3">
-        <label class="form-label">Teléfono</label>
-        <input type="text" name="phone" class="form-control" />
-    </div>
+          <div class="divider"></div>
 
-    <div class="mb-3">
-        <label class="form-label">WhatsApp</label>
-        <input type="text" name="whatsapp" class="form-control" />
-    </div>
+          <div class="form-grid two">
+            <div class="fx">
+              <label>Eslogan</label>
+              <input type="text" name="slogan" class="form-control" placeholder="Ej. 'Calidad que se nota'">
+            </div>
+            <div class="fx">
+              <label>Fecha de fundación</label>
+              <input type="date" name="founding_date" class="form-control">
+            </div>
+          </div>
+        </div>
+      </div>
 
-    <div class="mb-3">
-        <label class="form-label">Correo electrónico</label>
-        <input type="email" name="email" class="form-control" />
-    </div>
+      <!-- RIGHT: Contact & branding quick -->
+      <div class="cardx">
+        <div class="cardx-h">
+          <h3 class="cardx-title">🎨 Branding rápido <span class="pill">Paso 2</span></h3>
+          <span class="hint">Se ve pro con 2 cosas.</span>
+        </div>
+        <div class="cardx-b">
 
-    <div class="mb-3">
-        <label class="form-label">Sitio web</label>
-        <input type="url" name="website" class="form-control" />
-    </div>
+          <div class="fx">
+            <label>Imagen principal</label>
+            <input type="file" name="image" class="form-control" accept="image/*">
+            <div class="hint">Logo o foto del negocio (recomendado cuadrada).</div>
+          </div>
 
-    <div class="mb-3">
-        <label class="form-label">Dirección</label>
-        <input type="text" name="address" class="form-control" />
-    </div>
+          <div class="fx mt-2">
+            <label>Color principal</label>
+            <input type="color" name="color" class="form-control form-control-color" value="#7c5cff">
+            <div class="hint">Se usa para botones y acentos.</div>
+          </div>
 
-    <div class="mb-3">
-        <label class="form-label">Código postal</label>
-        <input type="text" name="postal_code" class="form-control" />
-    </div>
+          <div class="divider"></div>
 
-    <div class="mb-3">
-        <label class="form-label">Ciudad</label>
-        <input type="text" name="city" class="form-control" />
-    </div>
+          <div class="preview" id="brandPreview">
+            <div class="dot" id="brandDot"></div>
+            <div class="meta">
+              <b id="prevName">Tu Empresa</b>
+              <span id="prevLine">Vista previa del tema • color y nombre</span>
+            </div>
+          </div>
 
-    <div class="mb-3">
-        <label class="form-label">Estado</label>
-        <select name="state" class="form-control" required>
-            <option value="">Selecciona un estado</option>
-            {% set estados = [
-            'Aguascalientes', 'Baja California', 'Baja California Sur', 'Campeche',
-            'Chiapas', 'Chihuahua', 'Ciudad de México', 'Coahuila', 'Colima', 'Durango',
-            'Estado de México', 'Guanajuato', 'Guerrero', 'Hidalgo', 'Jalisco', 'Michoacán',
-            'Morelos', 'Nayarit', 'Nuevo León', 'Oaxaca', 'Puebla', 'Querétaro', 'Quintana Roo',
-            'San Luis Potosí', 'Sinaloa', 'Sonora', 'Tabasco', 'Tamaulipas', 'Tlaxcala',
-            'Veracruz', 'Yucatán', 'Zacatecas'
-            ] %}
-            {% for estado in estados %}
-            <option>{{ estado }}</option>
-            {% endfor %}
-        </select>
-    </div>
+        </div>
+      </div>
 
-        <!-- Google Maps (URL o coordenadas) -->
-        <div class="mb-3">
-            <label class="form-label">Dirección (opcional)</label>
-            <input type="text" id="address" name="address" class="form-control"
-                    value="{{ (data.address if data else '') or '' }}" placeholder="Calle, colonia, ciudad…">
-            <small class="text-muted">También puedes escribir y luego afinar con el mapa.</small>
+      <!-- FULL WIDTH: Contact & location -->
+      <div class="cardx" style="grid-column: 1 / -1;">
+        <div class="cardx-h">
+          <h3 class="cardx-title">📍 Contacto y ubicación <span class="pill">Paso 3</span></h3>
+          <span class="hint">Así te encuentran y te contactan rápido.</span>
         </div>
 
-        <div class="mb-3">
-        <label class="form-label d-flex justify-content-between align-items-center">
-            Ubicación en el mapa
-            <small class="text-muted">Haz clic para colocar/ajustar el pin</small>
-        </label>
-        <div id="map" style="height: 360px; border-radius: 12px; overflow: hidden;"></div>
+        <div class="cardx-b">
+
+          <div class="form-grid three">
+            <div class="fx">
+              <label>Teléfono</label>
+              <input type="tel" name="phone" class="form-control" placeholder="Ej. 246 123 4567">
+            </div>
+            <div class="fx">
+              <label>WhatsApp</label>
+              <input type="tel" name="whatsapp" class="form-control" placeholder="Ej. +52 246 123 4567">
+            </div>
+            <div class="fx">
+              <label>Correo</label>
+              <input type="email" name="email" class="form-control" placeholder="Ej. contacto@miempresa.com">
+            </div>
+          </div>
+
+          <div class="form-grid two mt-2">
+            <div class="fx">
+              <label>Sitio web</label>
+              <input type="url" name="website" class="form-control" placeholder="https://...">
+            </div>
+            <div class="fx">
+              <label>Estado <span class="text-danger">*</span></label>
+              <select name="state" class="form-select" required>
+                <option value="" selected disabled>Selecciona un estado</option>
+                {% set estados = [
+                  'Aguascalientes', 'Baja California', 'Baja California Sur', 'Campeche',
+                  'Chiapas', 'Chihuahua', 'Ciudad de México', 'Coahuila', 'Colima', 'Durango',
+                  'Estado de México', 'Guanajuato', 'Guerrero', 'Hidalgo', 'Jalisco', 'Michoacán',
+                  'Morelos', 'Nayarit', 'Nuevo León', 'Oaxaca', 'Puebla', 'Querétaro', 'Quintana Roo',
+                  'San Luis Potosí', 'Sinaloa', 'Sonora', 'Tabasco', 'Tamaulipas', 'Tlaxcala',
+                  'Veracruz', 'Yucatán', 'Zacatecas'
+                ] %}
+                {% for estado in estados %}
+                  <option value="{{ estado }}">{{ estado }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="form-grid three mt-2">
+            <div class="fx" style="grid-column: 1 / -1;">
+              <label>Dirección (opcional)</label>
+              {# OJO: solo 1 input "address" (antes lo tenías duplicado) #}
+              <input type="text" id="address" name="address" class="form-control"
+                     placeholder="Calle, colonia, ciudad… (Enter para buscar)">
+              <div class="hint">Puedes escribir la dirección y afinar el pin en el mapa.</div>
+            </div>
+
+            <div class="fx">
+              <label>Código postal</label>
+              <input type="text" name="postal_code" class="form-control" placeholder="Ej. 90000">
+            </div>
+            <div class="fx">
+              <label>Ciudad</label>
+              <input type="text" name="city" class="form-control" placeholder="Ej. Tlaxcala">
+            </div>
+            <div class="fx">
+              <label>Ubicación exacta</label>
+              <div class="hint">Clic en el mapa para colocar el pin • arrastra para ajustar.</div>
+            </div>
+          </div>
+
+          <div class="mt-2">
+            <div id="map"></div>
+            <div class="mini-actions">
+              <button class="btnx" type="button" id="btnLocate">📌 Usar mi ubicación</button>
+              <button class="btnx" type="button" id="btnClearPin">🧹 Quitar pin</button>
+              <span class="hint" id="coordHint">Sin pin todavía</span>
+            </div>
+          </div>
+
+          <input type="hidden" id="lat" name="lat" value="">
+          <input type="hidden" id="lng" name="lng" value="">
         </div>
+      </div>
 
-        <input type="hidden" id="lat" name="lat" value="{{ (data.lat if data else '') or '' }}">
-        <input type="hidden" id="lng" name="lng" value="{{ (data.lng if data else '') or '' }}">
+      <!-- FULL WIDTH: Social + ops -->
+      <div class="cardx" style="grid-column: 1 / -1;">
+        <div class="cardx-h">
+          <h3 class="cardx-title">🚀 Redes y operación <span class="pill">Paso 4</span></h3>
+          <span class="hint">Opcional, pero se ve más completo.</span>
+        </div>
+        <div class="cardx-b">
 
-    <!-- Redes sociales -->
-    <div class="mb-3">
-        <label class="form-label">Facebook</label>
-        <input type="url" name="facebook" class="form-control" />
+          <div class="form-grid three">
+            <div class="fx">
+              <label>Facebook</label>
+              <input type="url" name="facebook" class="form-control" placeholder="https://facebook.com/...">
+            </div>
+            <div class="fx">
+              <label>Instagram</label>
+              <input type="url" name="instagram" class="form-control" placeholder="https://instagram.com/...">
+            </div>
+            <div class="fx">
+              <label>TikTok</label>
+              <input type="url" name="tiktok" class="form-control" placeholder="https://tiktok.com/@...">
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="form-grid two">
+            <div class="fx">
+              <label>Horario de operación</label>
+              <input type="text" name="operating_hours" class="form-control"
+                     placeholder="Ej. Lun–Vie 9am–6pm | Sáb 10am–2pm">
+            </div>
+            <div class="fx">
+              <label>Métodos de pago</label>
+              <input type="text" name="payment_methods" class="form-control"
+                     placeholder="Efectivo, transferencia, tarjeta...">
+            </div>
+          </div>
+
+          <div class="fx mt-2">
+            <label>Servicios (separados por coma)</label>
+            <textarea name="services" rows="3" class="form-control"
+                      placeholder="Ej. Envíos, Reservaciones, Atención a domicilio, Garantía..."></textarea>
+          </div>
+
+          <div class="mt-2 checkline">
+            <input type="checkbox" name="delivery_available" class="form-check-input" id="delivery_available" />
+            <div class="txt">
+              <b>Servicio a domicilio</b>
+              <span>Actívalo si llevas pedidos o brindas servicio en casa.</span>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="hero-actions" style="justify-content:flex-end;">
+            <a class="btnx btnx-danger" href="{{ url_for('dashboard') }}">Cancelar</a>
+            <button class="btnx btnx-primary" type="submit">✨ Crear empresa</button>
+          </div>
+
+        </div>
+      </div>
+
     </div>
-
-    <div class="mb-3">
-        <label class="form-label">Instagram</label>
-        <input type="url" name="instagram" class="form-control" />
-    </div>
-
-    <div class="mb-3">
-        <label class="form-label">TikTok</label>
-        <input type="url" name="tiktok" class="form-control" />
-    </div>
-
-    <!-- Operación y servicios -->
-    <div class="mb-3">
-        <label class="form-label">Horario de operación</label>
-        <input type="text" name="operating_hours" class="form-control" />
-    </div>
-
-    <div class="mb-3">
-        <label class="form-label">Servicios (separados por coma o descripción)</label>
-        <textarea name="services" rows="3" class="form-control"></textarea>
-    </div>
-
-    <div class="mb-3">
-        <label class="form-label">Métodos de pago</label>
-        <input type="text" name="payment_methods" class="form-control" />
-    </div>
-
-    <div class="mb-3 form-check">
-        <input type="checkbox" name="delivery_available" class="form-check-input" id="delivery_available" />
-        <label for="delivery_available" class="form-check-label">¿Cuenta con servicio a domicilio?</label>
-    </div>
-
-    <div class="mb-3">
-        <label class="form-label">Imagen principal</label>
-        <input type="file" name="image" class="form-control" />
-    </div>
-
-    <div class="mb-3">
-        <label class="form-label">Color principal</label><br>
-        <input type="color" name="color" class="form-control-color">
-    </div>
-
-    <button class="btn btn-primary">Crear empresa</button>
-</form>
-<div class="mt-4 text-center">
-    <a href="{{ url_for('dashboard')}}" class="btn btn-outline-dark">
-        <i class="bi bi-arrow-left-circle"></i> Regresar
-    </a>
+  </form>
 </div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-  // Valores iniciales
+  // ===== Branding preview =====
+  const nameInput = document.querySelector('input[name="business_name"]');
+  const colorInput = document.querySelector('input[name="color"]');
+  const prevName = document.getElementById('prevName');
+  const brandDot = document.getElementById('brandDot');
+
+  function syncPreview(){
+    const name = (nameInput.value || '').trim();
+    prevName.textContent = name ? name : 'Tu Empresa';
+    const c = colorInput.value || '#7c5cff';
+    brandDot.style.background = c;
+    brandDot.style.boxShadow = `0 0 0 6px rgba(124,92,255,.12)`;
+  }
+  nameInput && nameInput.addEventListener('input', syncPreview);
+  colorInput && colorInput.addEventListener('input', syncPreview);
+  syncPreview();
+
+  // ===== Leaflet map =====
   const latInput = document.getElementById('lat');
   const lngInput = document.getElementById('lng');
   const addrInput = document.getElementById('address');
+  const coordHint = document.getElementById('coordHint');
 
-  // Centro por defecto (México)
   const defaultLat = latInput.value ? parseFloat(latInput.value) : 23.6345;
   const defaultLng = lngInput.value ? parseFloat(lngInput.value) : -102.5528;
-  const defaultZoom = latInput.value && lngInput.value ? 14 : 5;
+  const defaultZoom = (latInput.value && lngInput.value) ? 14 : 5;
 
-  // Crear mapa
-  const map = L.map('map').setView([defaultLat, defaultLng], defaultZoom);
+  const map = L.map('map', { zoomControl: true }).setView([defaultLat, defaultLng], defaultZoom);
 
-  // Capa de tiles (usa OSM pública; para producción pesada, usa un proveedor dedicado)
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
-    attribution:
-      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    attribution: '&copy; OpenStreetMap'
   }).addTo(map);
 
-  // Marcador (si hay coordenadas guardadas)
   let marker = null;
-  function placeMarker(lat, lng) {
+
+  function updateHint(){
+    if (latInput.value && lngInput.value){
+      coordHint.textContent = `📍 ${latInput.value}, ${lngInput.value}`;
+    } else {
+      coordHint.textContent = 'Sin pin todavía';
+    }
+  }
+
+  function placeMarker(lat, lng, pan=true) {
     if (!marker) {
       marker = L.marker([lat, lng], { draggable: true }).addTo(map);
       marker.on('dragend', function(e) {
-        const { lat, lng } = e.target.getLatLng();
-        latInput.value = lat.toFixed(6);
-        lngInput.value = lng.toFixed(6);
+        const p = e.target.getLatLng();
+        latInput.value = p.lat.toFixed(6);
+        lngInput.value = p.lng.toFixed(6);
+        updateHint();
       });
     } else {
       marker.setLatLng([lat, lng]);
     }
     latInput.value = lat.toFixed(6);
     lngInput.value = lng.toFixed(6);
+    if (pan) map.panTo([lat, lng]);
+    updateHint();
   }
 
-  if (latInput.value && lngInput.value) {
-    placeMarker(parseFloat(latInput.value), parseFloat(lngInput.value));
+  function clearMarker(){
+    if (marker){
+      map.removeLayer(marker);
+      marker = null;
+    }
+    latInput.value = '';
+    lngInput.value = '';
+    updateHint();
   }
 
-  // Click en mapa → colocar/ajustar pin
   map.on('click', function(e) {
-    placeMarker(e.latlng.lat, e.latlng.lng);
+    placeMarker(e.latlng.lat, e.latlng.lng, false);
   });
 
   // Geocoder (Nominatim)
@@ -280,29 +676,55 @@ document.addEventListener('DOMContentLoaded', function () {
   .on('markgeocode', function(result) {
     const center = result.geocode.center;
     map.setView(center, 16);
-    placeMarker(center.lat, center.lng);
-    // llena address si viene algo útil
-    if (result.geocode && result.geocode.name) {
+    placeMarker(center.lat, center.lng, false);
+    if (result.geocode && result.geocode.name && addrInput) {
       addrInput.value = result.geocode.name;
     }
   })
   .addTo(map);
 
-  // Si el usuario escribe dirección y presiona Enter, buscarla
+  // Enter en address -> geocode
   addrInput && addrInput.addEventListener('keydown', function(e){
     if (e.key === 'Enter') {
       e.preventDefault();
-      if (addrInput.value.trim().length > 0 && geocoder && geocoder.options.geocoder) {
-        geocoder.options.geocoder.geocode(addrInput.value, function(results) {
+      const q = (addrInput.value || '').trim();
+      if (q.length > 0 && geocoder && geocoder.options.geocoder) {
+        geocoder.options.geocoder.geocode(q, function(results) {
           if (results && results.length) {
             const r = results[0];
             map.setView(r.center, 16);
-            placeMarker(r.center.lat, r.center.lng);
+            placeMarker(r.center.lat, r.center.lng, false);
           }
         });
       }
     }
   });
+
+  // Buttons
+  const btnLocate = document.getElementById('btnLocate');
+  const btnClearPin = document.getElementById('btnClearPin');
+
+  btnClearPin && btnClearPin.addEventListener('click', clearMarker);
+
+  btnLocate && btnLocate.addEventListener('click', function(){
+    if (!navigator.geolocation){
+      alert('Tu navegador no soporta geolocalización.');
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        map.setView([lat, lng], 16);
+        placeMarker(lat, lng, false);
+      },
+      () => alert('No se pudo obtener tu ubicación. Revisa permisos del navegador.'),
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  });
+
+  updateHint();
 });
 </script>
+
 {% endblock %}
