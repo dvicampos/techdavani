@@ -217,6 +217,17 @@
         <div class="small muted mt-3 pt-2 border-top" style="border-color: rgba(255,255,255,.06)!important;">
           Estado actual: <strong class="text-uppercase">{{ st or '—' }}</strong>
         </div>
+        {% if trial.trial_until %}
+          {% if trial.active %}
+            <div class="alert alert-success">
+              ✨ Estás en prueba gratis. Te quedan <b>{{ trial.days_left }}</b> días.
+            </div>
+          {% else %}
+            <div class="alert alert-warning">
+              ⏳ Tu prueba gratis expiró. Activa tu suscripción para seguir usando el panel.
+            </div>
+          {% endif %}
+        {% endif %}
       </div>
     </div>
   </div>

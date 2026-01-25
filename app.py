@@ -16,6 +16,7 @@ from dotenv import load_dotenv
 import requests
 from jinja2 import TemplateNotFound
 from urllib.parse import urlparse
+from datetime import datetime, date, timedelta
 
 load_dotenv()
 RECAPTCHA_SECRET_KEY = os.getenv("RECAPTCHA_SECRET_KEY")
@@ -213,21 +214,83 @@ def require_active_subscription(fn):
     def wrapper(*args, **kwargs):
         if not current_user.is_authenticated:
             return redirect(url_for('login'))
+
         page_id = get_current_page_id()
         if not page_id:
             flash('Crea o selecciona un sitio para continuar.')
             return redirect(url_for('create_page'))
 
-        if not site_has_active_subscription(page_id):
-            flash('Activa tu suscripción mensual para continuar.')
-            return redirect(url_for('billing_portal'))
-        return fn(*args, **kwargs)
+        # Backfill trial si tu página es vieja
+        ensure_trial_on_page(page_id)
+
+        # ✅ 1) Si tiene suscripción activa: OK
+        if site_has_active_subscription(page_id):
+            return fn(*args, **kwargs)
+
+        # ✅ 2) Si trial activo: OK
+        info = site_trial_info(page_id)
+        if info["active"]:
+            return fn(*args, **kwargs)
+
+        # ❌ 3) No pago y trial expiró
+        if info["trial_until"]:
+            flash('⏳ Tu prueba gratis expiró. Activa tu suscripción para continuar.', 'warning')
+        else:
+            flash('Activa tu suscripción mensual para continuar.', 'warning')
+
+        return redirect(url_for('billing_portal'))
     return wrapper
 
 @app.route('/uploads/<path:filename>')
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
+def get_trial_days() -> int:
+    try:
+        return int(os.getenv("TRIAL_DAYS", "7"))
+    except Exception:
+        return 7
+
+def site_trial_info(page_id: ObjectId) -> dict:
+    """
+    return:
+      {
+        "active": bool,
+        "trial_until": datetime|None,
+        "days_left": int|None
+      }
+    """
+    page = mongo.db.page_data.find_one(
+        {"_id": ObjectId(page_id)},
+        {"trial_until": 1, "plan": 1}
+    )
+    if not page:
+        return {"active": False, "trial_until": None, "days_left": None}
+
+    tu = page.get("trial_until")
+    if tu and isinstance(tu, datetime):
+        now = datetime.utcnow()
+        active = now <= tu
+        seconds_left = max((tu - now).total_seconds(), 0)
+        days_left = int((seconds_left + 86400 - 1) // 86400)  # ceil a días
+        return {"active": active, "trial_until": tu, "days_left": days_left}
+
+    return {"active": False, "trial_until": None, "days_left": None}
+
+def ensure_trial_on_page(page_id: ObjectId):
+    """
+    Backfill para páginas viejas: si no tienen trial_until, se les asigna.
+    """
+    page = mongo.db.page_data.find_one({"_id": ObjectId(page_id)}, {"trial_until": 1, "plan": 1})
+    if not page:
+        return
+
+    if not page.get("trial_until"):
+        tu = datetime.utcnow() + timedelta(days=get_trial_days())
+        mongo.db.page_data.update_one(
+            {"_id": ObjectId(page_id)},
+            {"$set": {"trial_until": tu, "plan": "trial"}}
+        )
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -445,8 +508,14 @@ def inject_sites():
 def billing_portal():
     page_id = get_current_page_id()
     page = mongo.db.page_data.find_one({'_id': page_id}) if page_id else None
-    sub = mongo.db.subscriptions.find_one({"page_id": page_id})
-    return render_template('billing.html', page=page, sub=sub)
+    sub = mongo.db.subscriptions.find_one({"page_id": page_id}) if page_id else None
+
+    trial = {"active": False, "trial_until": None, "days_left": None}
+    if page_id:
+        ensure_trial_on_page(page_id)
+        trial = site_trial_info(page_id)
+
+    return render_template('billing.html', page=page, sub=sub, trial=trial)
 
 MP_PREAPPROVALS_URL = "https://api.mercadopago.com/preapproval"
 
@@ -574,37 +643,53 @@ def mp_sub_webhook():
         data = request.get_json(silent=True) or {}
         query = request.args.to_dict()
 
-        # MP manda eventos distintos; extrae el ID del preapproval
-        pre_id = (data.get('id') or query.get('id') or
-                  (data.get('resource') or '').split('/')[-1])
+        pre_id = (
+            data.get('id')
+            or query.get('id')
+            or (data.get('resource') or '').split('/')[-1]
+        )
 
         if not pre_id:
             return "ignored", 200
 
         # Lee el preapproval completo
-        pre_r = requests.get(f"{MP_PREAPPROVALS_URL}/{pre_id}", headers=mp_headers())
+        pre_r = requests.get(f"{MP_PREAPPROVALS_URL}/{pre_id}", headers=mp_headers(), timeout=20)
         pre = pre_r.json()
 
-        status = pre.get('status')  # expected: authorized/paused/cancelled/...
+        status = pre.get('status')  # authorized / paused / cancelled / ...
         external_reference = pre.get('external_reference', '')
+
         try:
             uid, page_id, kind = external_reference.split('|', 2)
-        except:
+        except Exception:
             uid, page_id, kind = None, None, None
 
-        # Actualiza registro
         mongo.db.subscriptions.update_one(
             {"preapproval_id": pre_id},
             {"$set": {
+                "preapproval_id": pre_id,
                 "status": status,
                 "last_event": datetime.utcnow(),
                 "raw": pre,
                 "page_id": ObjectId(page_id) if page_id else None,
-                "user_id": ObjectId(uid) if uid else None
+                "user_id": ObjectId(uid) if uid else None,
+                "provider": "mercado_pago"
             }},
             upsert=True
         )
+
+        # ✅ Si se activó, marcamos el sitio como paid
+        if page_id and status in ["authorized", "active", "charged"]:
+            try:
+                mongo.db.page_data.update_one(
+                    {"_id": ObjectId(page_id)},
+                    {"$set": {"plan": "paid"}}
+                )
+            except Exception as e:
+                print("No se pudo marcar plan paid:", e)
+
         return "ok", 200
+
     except Exception as e:
         print("Sub webhook error:", e)
         return "error", 500
@@ -683,64 +768,59 @@ def index():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    # Debe venir con ?page_id=...
     page_id = request.args.get('page_id') if request.method == 'GET' else request.form.get('page_id')
     if not page_id:
-        flash('No se puede registrar un usuario sin una empresa asociada')
+        flash('No se puede registrar un usuario sin una empresa asociada.', 'warning')
         return redirect(url_for('create_page'))
 
     # Validar que la empresa exista
     try:
         page_oid = ObjectId(page_id)
     except Exception:
-        flash('ID de empresa inválido.')
+        flash('ID de empresa inválido.', 'danger')
         return redirect(url_for('create_page'))
 
     page = mongo.db.page_data.find_one({'_id': page_oid})
     if not page:
-        flash('Empresa no encontrada.')
+        flash('Empresa no encontrada.', 'danger')
         return redirect(url_for('create_page'))
 
     if request.method == 'POST':
         if request.form.get('accept_tos') != 'on':
-            flash('Debes aceptar los Términos y Condiciones para registrarte.')
+            flash('Debes aceptar los Términos y Condiciones para registrarte.', 'warning')
             return redirect(url_for('register', page_id=page_id))
 
-        nombre = request.form['nombre'].strip()
-        email = request.form['email'].strip().lower()
-        raw_password = request.form['password']
+        nombre = (request.form.get('nombre') or '').strip()
+        email = (request.form.get('email') or '').strip().lower()
+        raw_password = request.form.get('password') or ''
 
         if not nombre or not email or not raw_password:
-            flash('Completa todos los campos.')
+            flash('Completa todos los campos.', 'warning')
             return redirect(url_for('register', page_id=page_id))
 
         # ¿Existe ya el correo?
         if mongo.db.users.find_one({'email': email}):
-            flash('Este correo ya existe')
+            flash('Este correo ya existe.', 'danger')
             return redirect(url_for('register', page_id=page_id))
 
         # Primer usuario de la empresa = admin, siguientes = editor
         existing_count = mongo.db.users.count_documents({'page_id': page_oid})
         assigned_role = 'admin' if existing_count == 0 else 'editor'
 
-        # Crear usuario
         user_doc = {
             'nombre': nombre,
             'email': email,
             'password': generate_password_hash(raw_password),
             'confirmed': False,
             'role': assigned_role,
-            'page_id': page_oid,               # legacy
-            'page_ids': [page_oid],            # nuevo
-            'current_page_id': page_oid        # dejarlo activo
+            'page_id': page_oid,          # legacy
+            'page_ids': [page_oid],       # nuevo
+            'current_page_id': page_oid   # dejarlo activo
         }
         ins = mongo.db.users.insert_one(user_doc)
         user_doc['_id'] = ins.inserted_id
 
-        # Fijar current_page_id también en sesión
-        set_current_page_id(page_oid)
-
-        # Enviar confirmación
+        # Enviar confirmación (no bloquea onboarding)
         try:
             token = s.dumps(email, salt='email-confirm')
             confirm_url = url_for('confirm_email', token=token, _external=True)
@@ -748,19 +828,18 @@ def register():
             msg = Message('Confirma tu correo', sender=app.config['MAIL_USERNAME'], recipients=[email])
             msg.html = html
             mail.send(msg)
-            flash('Revisa tu correo para confirmar tu cuenta.')
-        except Exception as _e:
-            # No bloquees el onboarding por el correo; solo informa.
-            flash('No se pudo enviar el correo de confirmación ahora mismo. Podrás reintentar desde tu perfil.', 'warning')
+            flash('Revisa tu correo para confirmar tu cuenta.', 'info')
+        except Exception:
+            flash('No se pudo enviar el correo de confirmación ahora mismo. Puedes reintentar después.', 'warning')
 
-        # Loguear al usuario recién creado para que pueda pagar
+        # ✅ Importante: primero login, luego set_current_page_id
         login_user(User(user_doc))
+        set_current_page_id(page_oid)
         ensure_user_page_lists(current_user.id, page_oid)
 
-        # Ir directo a Facturación / Suscripción
+        flash('Cuenta creada ✅ Bienvenido!', 'success')
         return redirect(url_for('billing_portal'))
 
-    # GET: pintar formulario con page_id fijo
     return render_template('register.html', page_id=str(page_id))
 
 @app.route('/admin/register_user', methods=['GET', 'POST'])
@@ -830,19 +909,59 @@ def confirm_email(token):
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
-        
-        user_data = mongo.db.users.find_one({'email': email})
+        email = (request.form.get('email') or '').strip().lower()
+        password = request.form.get('password') or ''
 
-        if user_data and check_password_hash(user_data['password'], password):
-            user = User(user_data)  # aquí pasamos el diccionario completo
-            login_user(user)
-            flash('Inicio de sesión exitoso.')
-            return redirect(url_for('dashboard'))
-        else:
-            flash('Credenciales inválidas.')
+        if not email or not password:
+            flash('Completa correo y contraseña.', 'warning')
             return redirect(url_for('login'))
+
+        user_data = mongo.db.users.find_one({'email': email})
+        if not user_data:
+            flash('Credenciales inválidas.', 'danger')
+            return redirect(url_for('login'))
+
+        stored_hash = (
+            user_data.get('password')
+            or user_data.get('password_hash')
+            or user_data.get('hashed_password')
+        )
+
+        if not stored_hash:
+            flash('Tu cuenta no tiene contraseña configurada. Usa "Restablecer contraseña".', 'warning')
+            return redirect(url_for('reset_password'))
+
+        ok = False
+
+        # werkzeug (pbkdf2:, scrypt:)
+        try:
+            if isinstance(stored_hash, str) and (stored_hash.startswith('pbkdf2:') or stored_hash.startswith('scrypt:')):
+                ok = check_password_hash(stored_hash, password)
+        except Exception:
+            ok = False
+
+        # bcrypt ($2b$...)
+        if not ok:
+            try:
+                if isinstance(stored_hash, str) and stored_hash.startswith('$2'):
+                    ok = bcrypt.check_password_hash(stored_hash, password)
+            except Exception:
+                ok = False
+
+        # fallback
+        if not ok:
+            try:
+                ok = check_password_hash(stored_hash, password)
+            except Exception:
+                ok = False
+
+        if ok:
+            login_user(User(user_data))
+            flash('Inicio de sesión exitoso.', 'success')
+            return redirect(url_for('dashboard'))
+
+        flash('Credenciales inválidas.', 'danger')
+        return redirect(url_for('login'))
 
     return render_template('login.html')
 
@@ -1583,46 +1702,50 @@ def checkout_addon(slug):
     pref = r.json()
     return redirect(pref.get("init_point") or pref.get("sandbox_init_point") or url_for('dashboard'))
 
-app.config['UPLOAD_FOLDER'] = '/uploads'
 @app.route('/create_page', methods=['GET', 'POST'])
 def create_page():
     if request.method == 'POST':
-        business_name  = request.form['business_name']
-        description    = request.form['description']
-        category       = request.form['category']
-        slogan         = request.form['slogan']
-        founding_date  = request.form['founding_date']
+        business_name  = request.form.get('business_name', '').strip()
+        description    = request.form.get('description', '').strip()
+        category       = request.form.get('category', '').strip()
+        slogan         = request.form.get('slogan', '').strip()
+        founding_date  = request.form.get('founding_date', '').strip()
 
         # Contacto y ubicación
-        phone       = request.form['phone']
-        whatsapp    = request.form['whatsapp']
-        email_contact = request.form['email']
-        website     = request.form['website']
-        address     = request.form['address']
-        postal_code = request.form['postal_code']
-        city        = request.form['city']
-        state       = request.form['state']
-        color       = request.form['color']
+        phone         = request.form.get('phone', '').strip()
+        whatsapp      = request.form.get('whatsapp', '').strip()
+        email_contact = request.form.get('email', '').strip()
+        website       = request.form.get('website', '').strip()
+        address       = request.form.get('address', '').strip()
+        postal_code   = request.form.get('postal_code', '').strip()
+        city          = request.form.get('city', '').strip()
+        state         = request.form.get('state', '').strip()
+        color         = request.form.get('color', '').strip()
 
         # Coordenadas (opcionales)
         lat = request.form.get('lat')
         lng = request.form.get('lng')
 
         # Redes
-        facebook  = request.form['facebook']
-        instagram = request.form['instagram']
-        tiktok    = request.form['tiktok']
+        facebook  = request.form.get('facebook', '').strip()
+        instagram = request.form.get('instagram', '').strip()
+        tiktok    = request.form.get('tiktok', '').strip()
 
         # Operación y servicios
-        operating_hours = request.form['operating_hours']
-        services        = request.form['services']
-        payment_methods = request.form['payment_methods']
-        delivery_available = request.form.get('delivery_available') == 'on'
+        operating_hours     = request.form.get('operating_hours', '').strip()
+        services            = request.form.get('services', '').strip()
+        payment_methods     = request.form.get('payment_methods', '').strip()
+        delivery_available  = request.form.get('delivery_available') == 'on'
+
+        # Validación mínima
+        if not business_name or not description or not category or not state:
+            flash('Completa los campos obligatorios (nombre, descripción, categoría, estado).', 'warning')
+            return redirect(url_for('create_page'))
 
         # Imagen (opcional)
         image = request.files.get('image')
         image_path = None
-        if image and image.filename != '':
+        if image and image.filename:
             slug_empresa = slugify(business_name)
             today = datetime.utcnow().strftime('%Y-%m-%d')
             folder_path = os.path.join(app.config['UPLOAD_FOLDER'], slug_empresa, today)
@@ -1639,11 +1762,14 @@ def create_page():
         def _safe_float(v):
             try:
                 return float(v)
-            except:
+            except Exception:
                 return None
 
-        # ⚠️ Slug único desde el inicio
+        # Slug único desde el inicio
         page_slug = unique_slug_for_page(business_name)
+
+        # ✅ FREE TRIAL automático
+        trial_until = datetime.utcnow() + timedelta(days=get_trial_days())
 
         new_page = {
             'business_name':  business_name,
@@ -1670,8 +1796,12 @@ def create_page():
             'payment_methods': payment_methods,
             'delivery_available': delivery_available,
             'image':            image_path,
-            'slug':             page_slug,    # 👈 guardamos el slug
-            'default_html':     'classico'    # plantilla por defecto
+            'slug':             page_slug,
+            'default_html':     'classico',
+
+            # ✅ TRIAL
+            'trial_until': trial_until,
+            'plan': 'trial'
         }
 
         result = mongo.db.page_data.insert_one(new_page)
@@ -1680,9 +1810,8 @@ def create_page():
         # Si el usuario está logueado, asociamos el sitio y vamos a Facturación
         if current_user.is_authenticated:
             try:
-                ensure_user_page_lists(current_user.id, page_id)  # agrega a page_ids y current_page_id si faltan
+                ensure_user_page_lists(current_user.id, page_id)
             except Exception:
-                # fallback por si no tienes ensure_user_page_lists importado en este archivo
                 u = mongo.db.users.find_one({'_id': ObjectId(current_user.id)})
                 page_ids = u.get('page_ids') or []
                 if ObjectId(page_id) not in [ObjectId(str(x)) for x in page_ids]:
@@ -1691,12 +1820,13 @@ def create_page():
                     {'_id': ObjectId(current_user.id)},
                     {'$set': {'page_ids': page_ids, 'current_page_id': ObjectId(page_id)}}
                 )
+
             set_current_page_id(page_id)
-            flash('Empresa creada. Activa tu suscripción para comenzar.')
+            flash(f'Empresa creada ✅ Tienes prueba gratis por {get_trial_days()} días.', 'success')
             return redirect(url_for('billing_portal'))
 
         # Si NO está logueado, lo mandamos a crear su usuario admin
-        flash('Empresa creada. Crea tu usuario administrador para continuar.')
+        flash('Empresa creada ✅ Crea tu usuario administrador para continuar.', 'success')
         return redirect(url_for('register', page_id=str(page_id)))
 
     # GET

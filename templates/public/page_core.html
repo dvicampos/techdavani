@@ -353,17 +353,22 @@
             <div class="mt-2"><small class="text-muted-2"><i class="bi bi-flag"></i> Estado</small><div>{{ page.get('state','') }}</div></div>
             <div class="mt-2"><small class="text-muted-2"><i class="bi bi-clock-history"></i> Horario</small><div>{{ page.get('operating_hours','') }}</div></div>
 
-            {% set has_coords = page.get('lat') is not none and page.get('lng') is not none %}
+            {% set lat_val = page.get('lat') %}
+            {% set lng_val = page.get('lng') %}
+            {% set has_coords = (lat_val is not none) and (lng_val is not none) and (lat_val|string|trim != '') and (lng_val|string|trim != '') %}
+
             <div class="mt-3">
               {% if has_coords %}
                 <div id="map" class="mb-3"></div>
+
                 <a class="btn btn-brutal btn-ghost hover-raise me-2" target="_blank"
-                   href="https://www.google.com/maps/dir/?api=1&destination={{ page.lat }},{{ page.lng }}">
+                  href="https://www.google.com/maps/dir/?api=1&destination={{ lat_val }},{{ lng_val }}">
                   <i class="bi bi-geo me-1"></i> Cómo llegar
                 </a>
+
               {% elif page.get('address') %}
                 <a class="btn btn-brutal btn-ghost hover-raise me-2" target="_blank"
-                   href="https://www.google.com/maps/search/?api=1&query={{ page.address | urlencode }}">
+                  href="https://www.google.com/maps/search/?api=1&query={{ page.address | urlencode }}">
                   <i class="bi bi-search me-1"></i> Buscar dirección
                 </a>
               {% else %}
@@ -779,142 +784,87 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 
   <script>
-    // zoom de productos
-    document.querySelectorAll('.img-zoom-trigger').forEach(img=>{
-      img.addEventListener('click', e=>{
-        const src = e.currentTarget.getAttribute('data-img-src');
-        document.getElementById('zoomedImage').src = src;
-      });
+  // ===== MAPA (Leaflet) — robusto =====
+  (function () {
+    // 1) Si no existe el div, no hacemos nada (evita errores)
+    const el = document.getElementById('map');
+    if (!el) {
+      // console.info('[map] No #map element (no coords or not rendered)');
+      return;
+    }
+
+    // 2) Parse seguro de lat/lng desde Jinja
+    const latRaw = "{{ page.get('lat','') }}";
+    const lngRaw = "{{ page.get('lng','') }}";
+
+    const lat = Number.parseFloat(latRaw);
+    const lng = Number.parseFloat(lngRaw);
+
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      console.warn('[map] Invalid coords:', { latRaw, lngRaw });
+      el.innerHTML = `
+        <div class="alert alert-warning py-2 px-3" style="border:3px solid var(--border); box-shadow: var(--shadow-xs);">
+          No se pudo cargar el mapa porque las coordenadas no son válidas.
+        </div>`;
+      return;
+    }
+
+    // 3) Crear mapa
+    const map = L.map('map', {
+      scrollWheelZoom: false,
+      dragging: !L.Browser.mobile,
+      tap: true
+    }).setView([lat, lng], 16);
+
+    // 4) Tiles (OSM) con fallback
+    const tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap'
     });
 
-    // zoom de galería
-    (function(){
-      const gals = document.querySelectorAll('.gal-item');
-      const modal = new bootstrap.Modal(document.getElementById('zoomModal'));
-      const zoomImg = document.getElementById('zoomedImage');
-      let videoEl = null;
+    tiles.on('tileerror', function (err) {
+      console.warn('[map] tile error', err);
+      // fallback a otro proveedor (a veces OSM bloquea por rate)
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap &copy; CARTO'
+      }).addTo(map);
+    });
 
-      gals.forEach(item=>{
-        item.addEventListener('click', ()=>{
-          const type = item.dataset.type;
-          const src = item.dataset.src;
-          const modalBody = document.querySelector('#zoomModal .modal-content');
+    tiles.addTo(map);
 
-          if (type === 'video') {
-            if (!videoEl){
-              videoEl = document.createElement('video');
-              videoEl.controls = true;
-              videoEl.style.width = '100%';
-            }
-            zoomImg.classList.add('d-none');
-            videoEl.src = src;
-            if (!modalBody.querySelector('video')){
-              modalBody.insertBefore(videoEl, modalBody.firstChild);
-            }
-            videoEl.classList.remove('d-none');
-            modal.show();
-          } else {
-            if (videoEl){
-              videoEl.pause();
-              videoEl.classList.add('d-none');
-            }
-            zoomImg.src = src;
-            zoomImg.classList.remove('d-none');
-            modal.show();
-          }
-        });
-      });
+    // 5) Marker + popup
+    const name = "{{ page.get('business_name','')|e }}";
+    const addr = "{{ page.get('address','')|e }}";
+    const popupHtml = `
+      <div style="min-width:180px">
+        <strong>${name || 'Ubicación'}</strong><br>
+        <span style="opacity:.8">${addr || ''}</span>
+      </div>
+    `;
 
-      document.getElementById('zoomModal').addEventListener('hidden.bs.modal', ()=>{
-        if (videoEl){ videoEl.pause(); }
-      });
+    const marker = L.marker([lat, lng]).addTo(map);
+    marker.bindPopup(popupHtml);
 
-    })();
+    // 6) Asegurar que Leaflet calcule tamaño (por fonts/hero/animaciones)
+    const fixSize = () => {
+      try { map.invalidateSize(true); } catch(e){}
+    };
 
-    // cotizar
-    (function(){
-      const formCotizar = document.getElementById('form-cotizar');
-      const resumenSeleccionDiv = document.getElementById('resumenSeleccion');
-      const nombreClienteInput = document.getElementById('nombreClienteInput');
-      const errorModalNombre = document.getElementById('errorModalNombre');
-      let cotizacionLineas = [];
+    // primera corrección
+    setTimeout(fixSize, 120);
+    // segunda corrección (por si el layout tarda)
+    setTimeout(fixSize, 500);
 
-      if (formCotizar){
-        formCotizar.addEventListener('submit', (e)=>{
-          e.preventDefault();
+    // Si el usuario cambia el tamaño / rota
+    window.addEventListener('resize', () => setTimeout(fixSize, 80));
 
-          cotizacionLineas = [];
-          formCotizar.querySelectorAll('input[type=number]').forEach(inp=>{
-            const n = parseInt(inp.value || "0");
-            if (n>0){
-              const nombre = inp.getAttribute('data-item-nombre') || inp.name.replace('prod_','').replaceAll('_',' ');
-              cotizacionLineas.push(`- ${nombre}: ${n}`);
-            }
-          });
+    // Abre popup solo en desktop (en móvil luego estorba)
+    if (!L.Browser.mobile) {
+      setTimeout(() => marker.openPopup(), 250);
+    }
+  })();
+</script>
 
-          if (cotizacionLineas.length===0){
-            alert("Ingresa cantidad para al menos un servicio o producto 🙏");
-            return;
-          }
-
-          resumenSeleccionDiv.innerHTML = cotizacionLineas.map(l=>`<div>${l}</div>`).join('');
-          errorModalNombre.classList.add('d-none');
-          nombreClienteInput.classList.remove('is-invalid');
-
-          new bootstrap.Modal(document.getElementById('cotizarModal')).show();
-          setTimeout(()=> nombreClienteInput && nombreClienteInput.focus(), 250);
-        });
-      }
-
-      const enviarCotizacionBtn = document.getElementById('enviarCotizacionBtn');
-      if (enviarCotizacionBtn){
-        enviarCotizacionBtn.addEventListener('click', ()=>{
-          const nombre = (nombreClienteInput.value || '').trim();
-          if (!nombre){
-            errorModalNombre.classList.remove('d-none');
-            nombreClienteInput.classList.add('is-invalid');
-            nombreClienteInput.focus();
-            return;
-          }
-
-          const wa = "{{ page.get('whatsapp','')|replace(' ','') }}";
-          let msj = `Hola, soy ${encodeURIComponent(nombre)} y quiero cotizar:%0A`;
-          cotizacionLineas.forEach(l=>{ msj += encodeURIComponent(l) + "%0A"; });
-
-          window.open(`https://wa.me/${wa}?text=${msj}`, "_blank");
-        });
-      }
-    })();
-
-    // estrellas
-    (function(){
-      const stars = document.querySelectorAll('.star-icon');
-      const inputEst = document.getElementById('estrellas');
-      stars.forEach(s=>{
-        s.addEventListener('click',()=>{
-          const v = parseInt(s.getAttribute('data-value'));
-          inputEst.value = v;
-          stars.forEach(x=>{
-            const xv = parseInt(x.getAttribute('data-value'));
-            x.classList.remove('text-warning','text-secondary');
-            x.classList.add(xv<=v ? 'text-warning':'text-secondary');
-          });
-        });
-      });
-    })();
-
-    // mapa
-    (function(){
-      const lat = {{ page.get('lat') if page.get('lat') is not none else 'null' }};
-      const lng = {{ page.get('lng') if page.get('lng') is not none else 'null' }};
-      if (lat!==null && lng!==null){
-        const map = L.map('map',{scrollWheelZoom:false}).setView([lat,lng],16);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
-        const m = L.marker([lat,lng]).addTo(map);
-        m.bindPopup(`<strong>{{ page.get('business_name','')|e }}</strong><br>{{ page.get('address','')|e }}`).openPopup();
-        setTimeout(()=>map.invalidateSize(), 300);
-      }
-    })();
-  </script>
 </body>
 </html>
