@@ -299,18 +299,28 @@
     .text-brand { color: var(--brand); }
     .star-icon { cursor: pointer; transition: 0.2s; }
     .star-icon:hover { color: var(--brand) !important; transform: scale(1.2); }
+    /* --- FAB --- */
+    .fab-wa {
+      position: fixed;       /* Flotar sobre el contenido */
+      bottom: 60px;          /* Altura suficiente para no tapar el Ticker de noticias */
+      right: 20px;           /* Pegado a la derecha */
+      z-index: 1050;         /* Encima del Ticker (que tiene z-index 1030) */
+      text-decoration: none; /* Sin subrayado */
+    }
+
     .fab-wa .btn {
       border-radius: 50%; width: 60px; height: 60px;
-      background: #25D366; color: #fff; border: 4px solid #000;
+      background: #25D366; color: #fff; border: 2px solid #000;
       display: flex; align-items: center; justify-content: center;
       font-size: 2rem;
-      box-shadow: 5px 5px 0px #000;
-      transition: transform 0.1s, box-shadow 0.1s; /* Agregué transición suave */
+      box-shadow: 0 0 15px rgba(37, 211, 102, 0.5);
+      transition: transform 0.2s, box-shadow 0.2s;
     }
-    
-    .fab-wa .btn:active { 
-      transform: translate(2px, 2px); 
-      box-shadow: 3px 3px 0px #000; 
+
+    /* Efecto al presionar (opcional pero se ve genial) */
+    .fab-wa .btn:active {
+      transform: scale(0.95);
+      box-shadow: 0 0 5px rgba(37, 211, 102, 0.8);
     }
   </style>
 </head>
