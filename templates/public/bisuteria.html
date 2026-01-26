@@ -347,7 +347,35 @@
     .star-icon { cursor: pointer; transition: 0.2s; color: #ddd; }
     .star-icon:hover, .star-icon.active { color: var(--accent-gold); transform: scale(1.2) rotate(10deg); }
     .text-warning { color: var(--accent-gold) !important; }
+    /* --- FAB WhatsApp --- */
+    .fab-wa {
+      position: fixed;       /* Para que flote fijo en la pantalla */
+      bottom: 60px;          /* 60px para no tapar la barra de noticias (Ticker) */
+      right: 20px;           /* Pegado a la derecha */
+      z-index: 1050;         /* Por encima del resto del contenido */
+      text-decoration: none; /* Quitamos el subrayado del enlace */
+    }
 
+    .fab-wa .btn {
+      width: 60px; height: 60px;
+      border-radius: 50%;
+      background: #25D366;
+      border: 3px solid #fff;
+      color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.8rem;
+      box-shadow: 0 5px 15px rgba(37, 211, 102, 0.4);
+      animation: pulse 2s infinite;
+      transition: transform 0.3s ease;
+    }
+    
+    /* Efecto al pasar el mouse */
+    .fab-wa:hover .btn {
+      transform: scale(1.1);
+      box-shadow: 0 8px 20px rgba(37, 211, 102, 0.6);
+    }
+
+    @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
   </style>
 </head>
 <body>

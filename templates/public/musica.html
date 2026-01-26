@@ -299,6 +299,34 @@
     .star-icon { cursor: pointer; transition: 0.2s; }
     .star-icon:hover { color: var(--highlight) !important; transform: scale(1.3) rotate(15deg); }
     .text-warning { color: var(--highlight) !important; }
+    /* --- FAB --- */
+    /* ESTO ES LO NUEVO: Posiciona el botón en la pantalla */
+    .fab-wa {
+      position: fixed;       /* Lo hace flotar */
+      bottom: 60px;          /* Altura perfecta para no tapar el Ticker de noticias */
+      right: 20px;           /* Pegado a la derecha */
+      z-index: 1050;         /* Encima de todo */
+      text-decoration: none; /* Sin subrayado */
+    }
+
+    /* ESTO YA ESTABA (Estilo visual del botón) */
+    .fab-wa .btn {
+      width: 60px; height: 60px; border-radius: 50%;
+      background: #25d366; color: #fff; border: 3px solid #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.8rem;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      animation: pulse 2s infinite; /* Tu animación de latido se mantiene */
+      transition: transform 0.3s;
+    }
+    
+    /* Un extra: que se detenga el latido al pasar el mouse */
+    .fab-wa:hover .btn {
+      animation: none;
+      transform: scale(1.1);
+    }
+
+    @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
   </style>
 </head>
 <body>
