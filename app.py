@@ -1915,6 +1915,7 @@ DEFAULT_HTML_TEMPLATES = {
     "belleza_premium": "public/belleza_premium.html",
     "tienda_regalos": "public/tienda_regalos.html",
     "bisuteria": "public/bisuteria.html",
+    "tinto": "public/tinto.html",
 }
 
 @app.route('/manage_page')
