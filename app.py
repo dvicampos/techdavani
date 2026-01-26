@@ -1905,6 +1905,16 @@ DEFAULT_HTML_TEMPLATES = {
     "festivo": "public/festivo.html",
     "salon_belleza": "public/barber_1.html",
     "dentista": "public/dentista.html",
+    "inflables": "public/inflables.html",
+    "alquiler": "public/alquiler.html",
+    "cafe_celebrate": "public/cafe_celebrate.html",
+    "bar_restaurant": "public/bar_restaurant.html",
+    "bar_rockandroll": "public/bar_rockandroll.html",
+    "videojuegos_sala": "public/videojuegos_sala.html",
+    "musica": "public/musica.html",
+    "belleza_premium": "public/belleza_premium.html",
+    "tienda_regalos": "public/tienda_regalos.html",
+    "bisuteria": "public/bisuteria.html",
 }
 
 @app.route('/manage_page')

@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+  <title>{{ page.get('business_name','Mi negocio') }}</title>
+  <meta name="description" content="{{ page.get('slogan') or page.get('description','')[:160] }}">
+  <meta name="author" content="{{ page.get('business_name','') }}">
+
+  {# ====== OG / Twitter ====== #}
+  {% set og_img = page.get('cover_image') or page.get('image') %}
+  {% if og_img and not (og_img.startswith('http://') or og_img.startswith('https://')) %}
+    {% set og_img = url_for('uploaded_file', filename=og_img, _external=True) %}
+  {% endif %}
+  <meta property="og:title" content="{{ page.get('business_name','') }}">
+  <meta property="og:description" content="{{ page.get('slogan') or page.get('description','')[:200] }}">
+  <meta property="og:image" content="{{ og_img or url_for('static', filename='images/default.png', _external=True) }}">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="{{ request.url }}">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+  
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+
+  <style>
+    :root {
+      /* Paleta Rock & Roll */
+      --brand: {{ page.get('color') or '#ff0055' }}; /* Rojo eléctrico por defecto */
+      --brand-glow: {{ page.get('color') or '#ff0055' }};
+      --bg-dark: #111111;
+      --bg-card: #1a1a1a;
+      --text-main: #eeeeee;
+      --text-muted: #aaaaaa;
+      --border-neon: 1px solid rgba(255,255,255,0.1);
+      
+      --radius: 8px; /* Bordes menos redondeados, más agresivos */
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 1.1rem;
+      /* Textura de fondo sutil (rejilla de amplificador) */
+      background-image: radial-gradient(#333 1px, transparent 1px);
+      background-size: 20px 20px;
+    }
+
+    h1, h2, h3, h4, h5, .brand-font, .navbar-brand {
+      font-family: 'Permanent Marker', cursive;
+      letter-spacing: 1px;
+    }
+
+    a { text-decoration: none; transition: 0.3s; }
+
+    /* --- ANIMACIONES --- */
+    @keyframes spin-vinyl {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    @keyframes neon-pulse {
+      0% { box-shadow: 0 0 5px var(--brand-glow); }
+      50% { box-shadow: 0 0 20px var(--brand-glow), 0 0 10px var(--brand-glow); }
+      100% { box-shadow: 0 0 5px var(--brand-glow); }
+    }
+
+    /* --- NAV --- */
+    .nb {
+      background: rgba(0,0,0,0.9);
+      border-bottom: 2px solid var(--brand);
+      position: sticky; top: 0; z-index: 1020;
+    }
+    .nb .navbar-brand {
+      color: #fff;
+      font-size: 1.5rem;
+      text-transform: uppercase;
+      text-shadow: 2px 2px 0 var(--brand);
+    }
+    .nb .nav-link {
+      color: #fff !important;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+    .nb .nav-link:hover {
+      color: var(--brand) !important;
+      text-shadow: 0 0 8px var(--brand);
+    }
+
+    /* --- HERO --- */
+    .hero {
+      position: relative;
+      padding: 80px 0 60px;
+      overflow: hidden;
+      border-bottom: 1px solid #333;
+      text-align: center;
+      /* Fondo dinámico */
+      {% if page.get('cover_image') %}
+        background: linear-gradient(rgba(17,17,17,0.8), rgba(17,17,17,0.9)), 
+                    url("{{ url_for('uploaded_file', filename=page.cover_image) }}") center/cover no-repeat;
+      {% else %}
+        background: repeating-linear-gradient(45deg, #111, #111 10px, #222 10px, #222 20px);
+      {% endif %}
+    }
+    
+    .hero-avatar {
+      width: 220px; height: 220px;
+      object-fit: cover;
+      border-radius: 50%;
+      border: 4px solid #111;
+      /* Efecto Vinilo */
+      box-shadow: 0 0 0 8px #333, 0 0 0 12px #111, 0 0 30px var(--brand);
+      animation: spin-vinyl 10s linear infinite; /* Gira como un disco */
+    }
+    .hero-avatar:hover { animation-play-state: paused; }
+
+    .badge-rock {
+      background: var(--brand);
+      color: #fff;
+      padding: 0.3rem 1rem;
+      font-family: 'Rajdhani', sans-serif;
+      font-weight: 700;
+      text-transform: uppercase;
+      transform: skew(-10deg); /* Inclinación agresiva */
+      display: inline-block;
+      box-shadow: 0 0 10px var(--brand);
+    }
+
+    .hero-title {
+      font-size: 3.5rem;
+      color: #fff;
+      margin-top: 1rem;
+      text-shadow: 3px 3px 0 #000, 0 0 15px var(--brand);
+    }
+
+    /* --- BUTTONS --- */
+    .btn-rock {
+      border: 2px solid var(--brand);
+      background: transparent;
+      color: var(--brand);
+      text-transform: uppercase;
+      font-weight: 800;
+      padding: 0.6rem 1.5rem;
+      border-radius: 0; /* Botones cuadrados */
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-rock:hover {
+      background: var(--brand);
+      color: #fff;
+      box-shadow: 0 0 20px var(--brand);
+      transform: translateY(-3px);
+    }
+    .btn-fill {
+      background: var(--brand);
+      color: #fff;
+    }
+    
+    /* --- CARDS & SECTIONS --- */
+    .section-title {
+      font-size: 2.5rem;
+      color: #fff;
+      margin-bottom: 2rem;
+      border-bottom: 2px solid #333;
+      display: inline-block;
+      padding-right: 2rem;
+    }
+    .section-title::after {
+      content: " 🤘";
+    }
+
+    .card-dark {
+      background: var(--bg-card);
+      border: 1px solid #333;
+      border-radius: var(--radius);
+      color: #fff;
+      transition: 0.3s;
+    }
+    .card-dark:hover {
+      border-color: var(--brand);
+      box-shadow: 0 0 15px rgba(255, 0, 85, 0.2);
+    }
+    .card-header-dark {
+      background: #000;
+      border-bottom: 1px solid #333;
+      font-family: 'Permanent Marker', cursive;
+      color: var(--brand);
+      font-size: 1.2rem;
+    }
+
+    /* --- CHIPS --- */
+    .chip {
+      background: #222;
+      border: 1px solid #444;
+      padding: 0.2rem 0.8rem;
+      font-size: 0.9rem;
+      color: #ccc;
+      display: inline-flex; align-items: center; gap:0.5rem;
+    }
+    .chip i { color: var(--brand); }
+
+    /* --- GALERÍA (Polaroids Oscuras) --- */
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 1.5rem;
+    }
+    .gal-item {
+      background: #fff;
+      padding: 5px 5px 25px 5px; /* Marco estilo Polaroid */
+      transform: rotate(-2deg);
+      transition: 0.3s;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+      cursor: pointer;
+    }
+    .gal-item:nth-child(even) { transform: rotate(2deg); }
+    .gal-item:hover { 
+      transform: scale(1.1) rotate(0deg); 
+      z-index: 10;
+      box-shadow: 0 0 20px var(--brand);
+    }
+    .gal-item img, .gal-item video {
+      width: 100%; height: 100%; object-fit: cover;
+      filter: grayscale(80%); /* Estilo vintage */
+      transition: 0.3s;
+    }
+    .gal-item:hover img { filter: grayscale(0%); }
+
+    .badge-type {
+      position: absolute; top: -10px; right: -10px;
+      background: #000; color: #fff;
+      padding: 2px 8px; font-size: 0.7rem;
+      border: 1px solid var(--brand);
+    }
+
+    /* --- MAPA --- */
+    #map {
+      height: 350px;
+      border: 2px solid #333;
+      /* Filtro para oscurecer el mapa de Leaflet sin romperlo */
+      filter: invert(100%) hue-rotate(180deg) brightness(0.95) contrast(0.9);
+    }
+
+    /* --- FORMS --- */
+    .form-control {
+      background: #000;
+      border: 1px solid #333;
+      color: #fff;
+      border-radius: 0;
+    }
+    .form-control:focus {
+      background: #111;
+      border-color: var(--brand);
+      color: #fff;
+      box-shadow: 0 0 10px var(--brand);
+    }
+
+    /* --- TICKER --- */
+    .ticker {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 1030;
+      background: #000;
+      border-top: 2px solid var(--brand);
+      color: #fff;
+      padding: 0.5rem 0;
+      font-family: 'Rajdhani', sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+    .pill-invert {
+      background: var(--brand); color: #fff;
+      padding: 0 8px; font-weight: bold; margin-right: 10px;
+    }
+
+    /* --- FAB --- */
+    .fab-wa .btn {
+      border-radius: 50%; width: 60px; height: 60px;
+      background: #25D366; color: #fff; border: 2px solid #000;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2rem;
+      box-shadow: 0 0 15px rgba(37, 211, 102, 0.5);
+    }
+
+    /* --- FOOTER --- */
+    .ft {
+      margin-top: 80px; padding: 50px 0 80px;
+      background: #000; border-top: 1px solid #333;
+      color: #666;
+    }
+
+    /* Utility */
+    .text-brand { color: var(--brand); }
+    .star-icon { cursor: pointer; transition: 0.2s; }
+    .star-icon:hover { color: var(--brand) !important; transform: scale(1.2); }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar navbar-expand-lg nb navbar-dark">
+    <div class="container">
+      <a class="navbar-brand" href="/">
+        <i class="bi bi-music-note-list me-1 text-brand"></i> {{ page.get('business_name','Negocio') }}
+      </a>
+
+      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#nv">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div id="nv" class="collapse navbar-collapse justify-content-end">
+        <ul class="navbar-nav gap-2 text-center mt-3 mt-lg-0">
+          <li class="nav-item"><a class="nav-link" href="#info">La Banda</a></li>
+          <li class="nav-item"><a class="nav-link" href="#galeria">Escenario</a></li>
+          <li class="nav-item"><a class="nav-link" href="#contacto">Backstage</a></li>
+          {% if posts %}<li class="nav-item"><a class="nav-link" href="#publicaciones">Gigs</a></li>{% endif %}
+          {% if (servicios and servicios|length>0) or (productos_fisicos and productos_fisicos|length>0) %}<li class="nav-item"><a class="nav-link" href="#productos">Merch/Bar</a></li>{% endif %}
+          <li class="nav-item"><a class="nav-link" href="#reseñas">Fans</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="container">
+      <div class="row align-items-center g-5">
+        <div class="col-md-5 text-center">
+          {% if page.get('image') %}
+            <img class="hero-avatar" src="{{ url_for('uploaded_file', filename=page['image']) }}" alt="Logo">
+          {% else %}
+            <img class="hero-avatar" src="{{ url_for('static', filename='images/default_image.png') }}" alt="Logo">
+          {% endif %}
+        </div>
+        <div class="col-md-7 text-center text-md-start">
+          <div class="mb-2">
+             <span class="badge-rock">{{ page.get('category','Bar & Venue') }}</span>
+          </div>
+          <h1 class="hero-title">{{ page.get('business_name','Mi negocio') }}</h1>
+          {% if page.get('slogan') %}
+            <p class="fs-4 text-muted mb-4 fst-italic">"{{ page['slogan'] }}"</p>
+          {% endif %}
+          
+          <div class="d-flex gap-3 justify-content-center justify-content-md-start flex-wrap">
+            {% if page.get('website') %}
+              <a class="btn btn-rock btn-fill" href="{{ page['website'] }}" target="_blank">
+                <i class="bi bi-ticket-perforated me-1"></i> Sitio Web
+              </a>
+            {% endif %}
+            {% if page.get('phone') %}
+              <a class="btn btn-rock" href="tel:{{ page['phone'] }}">
+                <i class="bi bi-lightning-charge-fill me-1"></i> Contactar
+              </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section class="container my-5" id="info">
+    <h2 class="section-title">Información</h2>
+    <div class="row g-4">
+      <div class="col-md-6">
+        <div class="card card-dark h-100">
+          <div class="card-header-dark p-3"><i class="bi bi-mic-fill me-2"></i> Nosotros</div>
+          <div class="card-body p-4">
+            <p class="mb-4 text-light" style="line-height: 1.6;">{{ page.get('description','') }}</p>
+            <div class="d-flex flex-wrap gap-2">
+              {% if page.get('services') %}<span class="chip"><i class="bi bi-speaker"></i> {{ page.services }}</span>{% endif %}
+              {% if page.get('payment_methods') %}<span class="chip"><i class="bi bi-cash-coin"></i> {{ page.payment_methods }}</span>{% endif %}
+              {% if page.get('founding_date') %}<span class="chip"><i class="bi bi-clock-history"></i> Est. {{ page.founding_date }}</span>{% endif %}
+              {% if page.get('delivery_available') %}<span class="chip"><i class="bi bi-truck"></i> Envíos</span>{% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-6">
+        <div class="card card-dark h-100">
+          <div class="card-header-dark p-3"><i class="bi bi-pin-map-fill me-2"></i> Coordenadas</div>
+          <div class="card-body p-4">
+            <p class="mb-2 fs-5"><strong class="text-brand">Dirección:</strong> {{ page.get('address','') }}</p>
+            <div class="row mb-3 text-muted small">
+              <div class="col-6">CP: {{ page.get('postal_code','') }}</div>
+              <div class="col-6">Ciudad: {{ page.get('city','') }}</div>
+            </div>
+            
+            <div class="mb-3">
+              <i class="bi bi-calendar-week text-brand"></i> <span class="text-light">{{ page.get('operating_hours','') }}</span>
+            </div>
+
+            {% set lat_val = page.get('lat') %}
+            {% set lng_val = page.get('lng') %}
+            {% set has_coords = (lat_val is not none) and (lng_val is not none) and (lat_val|string|trim != '') and (lng_val|string|trim != '') %}
+
+            <div class="mt-3">
+              {% if has_coords %}
+                <div id="map" class="mb-3"></div>
+                <a class="btn btn-sm btn-outline-light w-100" target="_blank"
+                   href="https://www.google.com/maps/dir/?api=1&destination={{ lat_val }},{{ lng_val }}">
+                  <i class="bi bi-map me-1"></i> Ver en Google Maps
+                </a>
+              {% elif page.get('address') %}
+                <a class="btn btn-rock w-100" target="_blank"
+                   href="https://www.google.com/maps/search/?api=1&query={{ page.address | urlencode }}">
+                  <i class="bi bi-search me-1"></i> Buscar Dirección
+                </a>
+              {% else %}
+                <div class="alert alert-secondary bg-dark text-light border-secondary">Ubicación no definida.</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="container my-5" id="galeria">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="section-title mb-0">Galería</h2>
+        <i class="bi bi-camera-reels-fill fs-2 text-brand"></i>
+    </div>
+    
+    {% set tiene_portada = page.get('cover_image') %}
+    {% set tiene_media = page.get('media_gallery') and page.media_gallery|length > 0 %}
+    {% set tiene_galeria = galeria and galeria|length > 0 %}
+    
+    {% if tiene_portada or tiene_media or tiene_galeria %}
+      <div class="gallery-grid py-4">
+        {% if tiene_portada %}
+          <div class="gal-item" data-src="{{ url_for('uploaded_file', filename=page.cover_image) }}">
+            <img src="{{ url_for('uploaded_file', filename=page.cover_image) }}" alt="Portada">
+            <span class="badge-type">PORTADA</span>
+          </div>
+        {% endif %}
+
+        {% if tiene_media %}
+          {% for item in page.media_gallery %}
+            {% if item is string %}
+              <div class="gal-item" data-src="{{ url_for('uploaded_file', filename=item) }}">
+                <img src="{{ url_for('uploaded_file', filename=item) }}" alt="Media">
+              </div>
+            {% else %}
+              {% set fpath = item.path %}
+              {% set ftype = item.type or 'image' %}
+              <div class="gal-item" data-src="{{ url_for('uploaded_file', filename=fpath) }}">
+                {% if ftype == 'video' %}
+                  <video src="{{ url_for('uploaded_file', filename=fpath) }}" muted playsinline autoplay loop></video>
+                  <span class="badge-type">VIDEO</span>
+                {% else %}
+                  <img src="{{ url_for('uploaded_file', filename=fpath) }}" alt="Media">
+                {% endif %}
+              </div>
+            {% endif %}
+          {% endfor %}
+        {% endif %}
+
+        {% if tiene_galeria %}
+          {% for g in (galeria or [])[:12] %}
+            <div class="gal-item" data-src="{{ url_for('uploaded_file', filename=g) }}">
+              <img src="{{ url_for('uploaded_file', filename=g) }}" alt="Foto">
+            </div>
+          {% endfor %}
+        {% endif %}
+      </div>
+    {% else %}
+      <div class="card card-dark p-4 text-center">
+        <p>El escenario está vacío por ahora. 🎸</p>
+      </div>
+    {% endif %}
+  </section>
+
+  <section class="container my-5" id="productos">
+    <h2 class="section-title">La Barra & Merch</h2>
+    
+    {% if (servicios and servicios|length>0) or (productos_fisicos and productos_fisicos|length>0) %}
+      <div class="alert alert-dark border border-secondary d-flex align-items-center gap-3 mb-4">
+        <i class="bi bi-whatsapp fs-3 text-brand"></i>
+        <div>
+          <strong>Haz tu pedido:</strong> Selecciona tus favoritos y pulsa el botón de Cotizar al final.
+        </div>
+      </div>
+
+      <form id="form-cotizar">
+        {% if servicios and servicios|length>0 %}
+          <h3 class="h4 text-brand mb-3 brand-font"><i class="bi bi-vinyl"></i> Reservas / Entradas</h3>
+          <div class="row g-4 mb-4">
+          {% for item in servicios %}
+            <div class="col-sm-6 col-md-4 col-lg-3">
+              <div class="card card-dark h-100">
+                {% if item.image %}
+                  <div style="height: 200px; overflow: hidden;">
+                    <img src="{{ url_for('uploaded_file', filename=item.image) }}" 
+                         class="w-100 h-100 object-fit-cover" 
+                         style="cursor: pointer;"
+                         data-bs-toggle="modal" data-bs-target="#zoomModal"
+                         data-img-src="{{ url_for('uploaded_file', filename=item.image) }}">
+                  </div>
+                {% endif %}
+                <div class="card-body">
+                  <h5 class="brand-font text-white">{{ item.title }}</h5>
+                  {% if item.description %}<p class="small text-muted mb-2">{{ item.description }}</p>{% endif %}
+                  {% if item.show_price %}
+                    <div class="text-brand fw-bold mb-2 fs-5">${{ "%.2f"|format(item.price) }}</div>
+                  {% endif %}
+                  <input type="number" min="0" value="0" class="form-control" 
+                         placeholder="Cantidad" name="prod_{{ item.title | replace(' ','_') }}"
+                         data-item-nombre="{{ item.title }}">
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+          </div>
+        {% endif %}
+
+        {% if productos_fisicos and productos_fisicos|length>0 %}
+          <h3 class="h4 text-brand mb-3 brand-font"><i class="bi bi-cup-straw"></i> Bebidas & Comida</h3>
+          <div class="row g-4">
+          {% for item in productos_fisicos %}
+            <div class="col-sm-6 col-md-4 col-lg-3">
+              <div class="card card-dark h-100">
+                {% if item.image %}
+                   <div style="height: 200px; overflow: hidden;">
+                    <img src="{{ url_for('uploaded_file', filename=item.image) }}" 
+                         class="w-100 h-100 object-fit-cover" 
+                         style="cursor: pointer;"
+                         data-bs-toggle="modal" data-bs-target="#zoomModal"
+                         data-img-src="{{ url_for('uploaded_file', filename=item.image) }}">
+                  </div>
+                {% endif %}
+                <div class="card-body">
+                  <h5 class="brand-font text-white">{{ item.title }}</h5>
+                  {% if item.description %}<p class="small text-muted mb-2">{{ item.description }}</p>{% endif %}
+                  {% if item.show_price %}
+                     <div class="text-brand fw-bold mb-2 fs-5">${{ "%.2f"|format(item.price) }}</div>
+                  {% endif %}
+                  <input type="number" min="0" value="0" class="form-control" 
+                         placeholder="Cantidad" name="prod_{{ item.title | replace(' ','_') }}"
+                         data-item-nombre="{{ item.title }}">
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+          </div>
+        {% endif %}
+
+        <div class="text-center mt-5">
+           <button type="submit" class="btn btn-rock btn-fill px-5 py-3">
+             <i class="bi bi-whatsapp me-2"></i> Confirmar Pedido
+           </button>
+        </div>
+      </form>
+
+      <div class="modal fade" id="zoomModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content bg-transparent border-0 text-center">
+            <img id="zoomedImage" src="" class="img-fluid border border-light shadow-lg">
+            <button class="btn btn-sm btn-dark mt-2" data-bs-dismiss="modal">Cerrar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal fade" id="cotizarModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content bg-dark border border-secondary text-light">
+            <div class="modal-header border-secondary">
+              <h5 class="modal-title brand-font text-brand">Tu Ticket 🎟️</h5>
+              <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <p class="small text-muted">¿A nombre de quién hacemos el pedido?</p>
+              <input type="text" class="form-control mb-3" id="nombreClienteInput" placeholder="Nombre (ej. Juan Rock)">
+              <div class="text-danger small mb-2 d-none" id="errorModalNombre">¡Falta el nombre!</div>
+              
+              <div class="p-3 border border-secondary bg-black" id="resumenSeleccion" style="max-height:200px; overflow-y:auto;"></div>
+            </div>
+            <div class="modal-footer border-secondary">
+              <button class="btn btn-sm btn-outline-light" data-bs-dismiss="modal">Cancelar</button>
+              <button class="btn btn-rock" id="enviarCotizacionBtn">Enviar WhatsApp</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    {% else %}
+      <p class="text-muted text-center py-5">Barra cerrada por el momento.</p>
+    {% endif %}
+  </section>
+
+  {% if posts and posts|length>0 %}
+  <section class="container my-5" id="publicaciones">
+    <h2 class="section-title">Noticias & Gigs</h2>
+    <div class="row g-4">
+      {% for post in posts %}
+        <div class="col-md-4">
+          <div class="card card-dark h-100">
+            {% if post.cabecera %}
+              <div style="height: 200px; overflow:hidden;">
+                <img src="{{ url_for('uploaded_file', filename=post.cabecera) }}" class="w-100 h-100 object-fit-cover">
+              </div>
+            {% endif %}
+            <div class="card-body d-flex flex-column">
+              <h5 class="brand-font text-light">{{ post.title }}</h5>
+              <p class="small text-muted">{{ post.content[:100] }}...</p>
+              <a href="{{ url_for('ver_post', post_id=post._id) }}" class="mt-auto btn btn-sm btn-outline-danger">Leer más</a>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="container my-5" id="contacto">
+    <div class="card card-dark p-5 text-center" style="background: linear-gradient(45deg, #111, #222);">
+      <h3 class="brand-font text-brand mb-4">¡Mantente Conectado!</h3>
+      <div class="row justify-content-center g-4 fs-5 mb-4">
+         {% if page.get('phone') %}<div class="col-md-4"><i class="bi bi-telephone-fill"></i> {{ page.phone }}</div>{% endif %}
+         {% if page.get('email') %}<div class="col-md-4"><i class="bi bi-envelope-fill"></i> {{ page.email }}</div>{% endif %}
+      </div>
+      <div class="d-flex justify-content-center gap-4">
+         {% if page.get('facebook') %}<a href="{{ page.facebook }}" target="_blank" class="text-light fs-2"><i class="bi bi-facebook"></i></a>{% endif %}
+         {% if page.get('instagram') %}<a href="{{ page.instagram }}" target="_blank" class="text-light fs-2"><i class="bi bi-instagram"></i></a>{% endif %}
+         {% if page.get('tiktok') %}<a href="{{ page.tiktok }}" target="_blank" class="text-light fs-2"><i class="bi bi-tiktok"></i></a>{% endif %}
+      </div>
+    </div>
+  </section>
+
+  <section class="container my-5" id="reseñas">
+    <h2 class="section-title">El Muro de los Fans</h2>
+    
+    <div class="card card-dark p-4 mb-5 border-secondary">
+      <h4 class="brand-font mb-3">Deja tu firma 🎸</h4>
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          <div class="alert alert-success bg-dark text-success border-success">
+            {% for m in messages %}<div>{{ m }}</div>{% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <form method="POST" class="row g-3">
+        <div class="col-md-6">
+          <input type="text" name="nombre" class="form-control" placeholder="Tu Nombre" required>
+        </div>
+        <div class="col-md-6 d-flex align-items-center">
+           <div id="starRating">
+             {% for i in range(1,6) %}
+               <i class="bi bi-star-fill fs-4 text-secondary star-icon" data-value="{{ i }}"></i>
+             {% endfor %}
+           </div>
+           <input type="hidden" name="estrellas" id="estrellas" value="0" required>
+        </div>
+        <div class="col-12">
+          <textarea name="comentario" class="form-control" rows="2" placeholder="¿Qué te pareció el show?" required></textarea>
+        </div>
+        <div class="col-12 text-end">
+          <button class="btn btn-rock" type="submit">Publicar</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="row g-4">
+      {% if reseñas and reseñas|length>0 %}
+        {% for r in reseñas %}
+          <div class="col-md-6">
+            <div class="card card-dark h-100">
+              <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                   <strong class="text-brand brand-font fs-5">{{ r.nombre }}</strong>
+                   <small class="text-muted">{{ r.fecha.strftime('%d/%m') }}</small>
+                </div>
+                <div class="mb-2">
+                  {% for i in range(1,6) %}
+                    {% if i <= r.estrellas %}<i class="bi bi-star-fill text-warning"></i>{% else %}<i class="bi bi-star text-secondary"></i>{% endif %}
+                  {% endfor %}
+                </div>
+                <p class="fst-italic">"{{ r.comentario }}"</p>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      {% endif %}
+    </div>
+  </section>
+
+  <div class="ticker">
+    <div class="container">
+      <div id="noticiasCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="4000">
+        <div class="carousel-inner text-center">
+          {% if avisos and avisos|length>0 %}
+            {% for aviso in avisos %}
+              <div class="carousel-item {% if loop.first %}active{% endif %}">
+                <span class="pill-invert">HOY</span> {{ aviso.title }} - {{ aviso.content }}
+              </div>
+            {% endfor %}
+          {% else %}
+            <div class="carousel-item active">🔥 BIENVENIDOS AL TEMPLO DEL ROCK 🔥</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% if page.get('whatsapp') %}
+  <a class="fab-wa" href="https://wa.me/{{ page.whatsapp | replace(' ','') }}" target="_blank">
+    <div class="btn">
+      <i class="bi bi-whatsapp"></i>
+    </div>
+  </a>
+  {% endif %}
+
+  <footer class="ft">
+    <div class="container text-center">
+      <p class="mb-0 text-uppercase tracking-wider">
+        © 2025 <strong class="text-brand">{{ page.get('business_name','Negocio') }}</strong>
+      </p>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+  <script>
+    // Lógica Estrellas
+    document.querySelectorAll('.star-icon').forEach(star => {
+      star.addEventListener('click', function() {
+        const val = this.getAttribute('data-value');
+        document.getElementById('estrellas').value = val;
+        document.querySelectorAll('.star-icon').forEach(s => {
+          if(s.getAttribute('data-value') <= val) {
+            s.classList.remove('text-secondary'); s.classList.add('text-warning');
+          } else {
+            s.classList.remove('text-warning'); s.classList.add('text-secondary');
+          }
+        });
+      });
+    });
+
+    // Zoom
+    const zoomModal = document.getElementById('zoomModal');
+    if(zoomModal){
+      zoomModal.addEventListener('show.bs.modal', function (e) {
+        document.getElementById('zoomedImage').src = e.relatedTarget.getAttribute('data-img-src');
+      });
+    }
+
+    // Cotizador
+    const formCotizar = document.getElementById('form-cotizar');
+    const modalCotizar = new bootstrap.Modal(document.getElementById('cotizarModal'));
+    const btnEnviarWa = document.getElementById('enviarCotizacionBtn');
+
+    if (formCotizar) {
+      formCotizar.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const inputs = formCotizar.querySelectorAll('input[type="number"]');
+        let html = '<ul class="list-unstyled mb-0">';
+        let hay = false;
+        inputs.forEach(inp => {
+          const v = parseInt(inp.value);
+          if(v > 0) {
+            hay = true;
+            html += `<li class="d-flex justify-content-between border-bottom border-secondary py-1"><span>${inp.getAttribute('data-item-nombre')}</span> <strong class="text-brand">x${v}</strong></li>`;
+          }
+        });
+        html += '</ul>';
+        if(!hay) { alert("¡Hey! Selecciona algo antes de pedir."); return; }
+        document.getElementById('resumenSeleccion').innerHTML = html;
+        modalCotizar.show();
+      });
+
+      btnEnviarWa.addEventListener('click', function() {
+        const nombre = document.getElementById('nombreClienteInput').value.trim();
+        if(!nombre) { document.getElementById('errorModalNombre').classList.remove('d-none'); return; }
+        
+        let msg = `🤘 Hola, soy *${nombre}*. Quiero pedir:\n\n`;
+        document.querySelectorAll('#resumenSeleccion li').forEach(li => {
+          msg += `• ${li.innerText.replace('\n', ' ')}\n`;
+        });
+        
+        const ph = "{{ page.get('whatsapp','') }}".replace(/\s+/g, '');
+        window.open(`https://wa.me/${ph}?text=${encodeURIComponent(msg)}`, '_blank');
+        modalCotizar.hide();
+      });
+    }
+
+    // Mapa
+    (function () {
+      const el = document.getElementById('map');
+      if (!el) return;
+      
+      const lat = parseFloat("{{ page.get('lat','') }}");
+      const lng = parseFloat("{{ page.get('lng','') }}");
+
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+        el.innerHTML = '<div class="text-center p-4 text-muted">Ubicación no disponible</div>';
+        return;
+      }
+      
+      const map = L.map('map', {scrollWheelZoom:false}).setView([lat, lng], 16);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap'
+      }).addTo(map);
+
+      const marker = L.marker([lat, lng]).addTo(map);
+      marker.bindPopup("<b>{{ page.get('business_name','')|e }}</b><br>¡Aquí es la fiesta!");
+      
+      setTimeout(() => map.invalidateSize(), 500);
+    })();
+  </script>
+</body>
+</html>

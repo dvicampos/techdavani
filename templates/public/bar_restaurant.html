@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+  <title>{{ page.get('business_name','Mi negocio') }}</title>
+  <meta name="description" content="{{ page.get('slogan') or page.get('description','')[:160] }}">
+  <meta name="author" content="{{ page.get('business_name','') }}">
+
+  {# ====== OG / Twitter ====== #}
+  {% set og_img = page.get('cover_image') or page.get('image') %}
+  {% if og_img and not (og_img.startswith('http://') or og_img.startswith('https://')) %}
+    {% set og_img = url_for('uploaded_file', filename=og_img, _external=True) %}
+  {% endif %}
+  <meta property="og:title" content="{{ page.get('business_name','') }}">
+  <meta property="og:description" content="{{ page.get('slogan') or page.get('description','')[:200] }}">
+  <meta property="og:image" content="{{ og_img or url_for('static', filename='images/default.png', _external=True) }}">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="{{ request.url }}">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Righteous&display=swap" rel="stylesheet">
+  
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+
+  <style>
+    :root {
+      /* Paleta Neon Party */
+      --brand: {{ page.get('color') or '#f09' }}; /* Rosa Neón por defecto si no hay color */
+      --brand-glow: {{ page.get('color') or '#f09' }};
+      --bg-dark: #120f1f;
+      --bg-card: rgba(30, 25, 45, 0.7);
+      --glass-border: rgba(255, 255, 255, 0.1);
+      --text-main: #ffffff;
+      --text-muted: #b8b2d1;
+      
+      --neon-cyan: #00f3ff;
+      --neon-yellow: #ffe600;
+      
+      --radius-xl: 24px;
+      --radius-md: 16px;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: 'Outfit', sans-serif;
+      overflow-x: hidden;
+      /* Fondo animado de celebración */
+      background-image: 
+        radial-gradient(circle at 15% 50%, rgba(255, 0, 153, 0.15), transparent 25%), 
+        radial-gradient(circle at 85% 30%, rgba(0, 243, 255, 0.15), transparent 25%);
+    }
+
+    /* Animación de partículas/confeti CSS */
+    body::before {
+      content: "";
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      z-index: -1;
+      animation: bgSlide 60s linear infinite;
+    }
+
+    @keyframes bgSlide { from { background-position: 0 0; } to { background-position: 0 600px; } }
+
+    /* Tipografía Neon */
+    h1, h2, h3, h4, h5, .brand-font, .navbar-brand {
+      font-family: 'Righteous', cursive;
+      letter-spacing: 1px;
+    }
+    
+    .neon-text {
+      text-shadow: 0 0 10px rgba(255,255,255,0.5), 0 0 20px var(--brand);
+    }
+
+    /* --- GLASSMORPHISM CARDS --- */
+    .card-glass {
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-xl);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+      color: #fff;
+      overflow: hidden;
+      transition: transform 0.3s, border-color 0.3s;
+    }
+    .card-glass:hover {
+      border-color: var(--brand);
+      transform: translateY(-5px);
+    }
+    .card-header-glass {
+      background: rgba(255,255,255,0.05);
+      border-bottom: 1px solid var(--glass-border);
+      font-weight: 700;
+      color: var(--neon-cyan);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* --- NAV --- */
+    .nb {
+      background: rgba(18, 15, 31, 0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--glass-border);
+      position: sticky; top: 0; z-index: 1020;
+    }
+    .nb .navbar-brand {
+      color: #fff;
+      font-size: 1.6rem;
+      text-shadow: 0 0 10px var(--brand);
+    }
+    .nb .nav-link {
+      color: var(--text-muted);
+      font-weight: 600;
+      transition: 0.3s;
+      text-transform: uppercase;
+      font-size: 0.9rem;
+      letter-spacing: 1px;
+    }
+    .nb .nav-link:hover {
+      color: var(--neon-cyan);
+      text-shadow: 0 0 8px var(--neon-cyan);
+    }
+
+    /* --- HERO --- */
+    .hero {
+      position: relative;
+      padding: 100px 0 80px;
+      overflow: hidden;
+      border-bottom: 1px solid var(--glass-border);
+      /* Sombra interior para oscurecer imagen de fondo */
+      {% if page.get('cover_image') %}
+        background: linear-gradient(180deg, rgba(18,15,31,0.8) 0%, rgba(18,15,31,0.95) 100%),
+                    url("{{ url_for('uploaded_file', filename=page.cover_image) }}") center/cover no-repeat;
+      {% else %}
+        background: linear-gradient(135deg, #2a0845 0%, #6441A5 50%, #2a0845 100%);
+      {% endif %}
+    }
+    .hero-avatar {
+      width: 200px; height: 200px; object-fit: cover;
+      border-radius: 50%;
+      border: 4px solid #fff;
+      box-shadow: 0 0 20px var(--brand), inset 0 0 20px var(--brand);
+      animation: pulseGlow 3s infinite;
+    }
+    @keyframes pulseGlow {
+      0% { box-shadow: 0 0 20px var(--brand); }
+      50% { box-shadow: 0 0 40px var(--brand), 0 0 60px var(--brand); }
+      100% { box-shadow: 0 0 20px var(--brand); }
+    }
+    
+    .badge-neon {
+      background: transparent;
+      border: 2px solid var(--neon-yellow);
+      color: var(--neon-yellow);
+      padding: 0.4rem 1rem;
+      border-radius: 50px;
+      font-weight: 800;
+      text-transform: uppercase;
+      box-shadow: 0 0 10px var(--neon-yellow);
+    }
+
+    /* --- BUTTONS --- */
+    .btn-neon {
+      border: none;
+      border-radius: 50px;
+      padding: 0.8rem 1.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-brand {
+      background: linear-gradient(90deg, var(--brand), #a0f);
+      color: white;
+      box-shadow: 0 0 15px var(--brand);
+    }
+    .btn-brand:hover {
+      color: #fff;
+      box-shadow: 0 0 30px var(--brand);
+      filter: brightness(1.2);
+    }
+    .btn-ghost {
+      background: transparent;
+      border: 2px solid #fff;
+      color: #fff;
+    }
+    .btn-ghost:hover {
+      background: #fff;
+      color: var(--bg-dark);
+      box-shadow: 0 0 15px #fff;
+    }
+
+    /* --- UTIL --- */
+    .section-title {
+      font-size: 2.5rem;
+      margin-bottom: 2rem;
+      color: #fff;
+      text-align: center;
+      text-shadow: 2px 2px 0 var(--brand);
+      position: relative;
+      display: inline-block;
+      width: 100%;
+    }
+    .section-title::after {
+      content: "✨";
+      position: absolute;
+      margin-left: 10px;
+      animation: spin 3s infinite linear;
+    }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+
+    .chip {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 20px;
+      padding: 0.3rem 0.8rem;
+      color: #fff;
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      font-size: 0.9rem;
+    }
+
+    /* --- GALERÍA --- */
+    .gallery-wrap {
+      background: transparent;
+      padding: 0;
+    }
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 15px;
+    }
+    .gal-item {
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+      aspect-ratio: 1/1;
+      border: 2px solid transparent;
+      transition: 0.3s;
+    }
+    .gal-item:hover {
+      border-color: var(--neon-cyan);
+      box-shadow: 0 0 15px var(--neon-cyan);
+      z-index: 2;
+      transform: scale(1.05);
+    }
+    .gal-item img, .gal-item video {
+      width: 100%; height: 100%; object-fit: cover;
+    }
+    .badge-type {
+      position: absolute; bottom: 5px; right: 5px;
+      background: rgba(0,0,0,0.8);
+      color: var(--neon-yellow);
+      font-size: 0.7rem; padding: 2px 8px; border-radius: 4px;
+      text-transform: uppercase; font-weight: bold;
+    }
+
+    /* --- FORMS --- */
+    .form-control {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #fff;
+      border-radius: 8px;
+    }
+    .form-control:focus {
+      background: rgba(255,255,255,0.1);
+      border-color: var(--brand);
+      color: #fff;
+      box-shadow: 0 0 10px var(--brand);
+    }
+    
+    /* --- MAP --- */
+    #map {
+      height: 320px; 
+      border-radius: var(--radius-md);
+      border: 2px solid var(--glass-border);
+      filter: invert(100%) hue-rotate(180deg) brightness(0.9); /* Mapa oscuro */
+    }
+
+    /* --- TICKER --- */
+    .ticker {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 1030;
+      background: linear-gradient(90deg, var(--brand), #60f);
+      padding: 0.5rem 0;
+      color: #fff;
+      font-weight: 700;
+      border-top: 2px solid var(--neon-yellow);
+    }
+    .pill-invert {
+      background: #000; color: var(--neon-yellow);
+      padding: 2px 10px; border-radius: 4px; text-transform: uppercase;
+      font-size: 0.8rem;
+    }
+
+    /* --- FAB --- */
+    .fab-wa .btn {
+      width: 60px; height: 60px; border-radius: 50%;
+      background: #25d366; color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.8rem;
+      border: 2px solid #fff;
+      box-shadow: 0 0 20px #25d366;
+    }
+    
+    /* Footer */
+    .ft {
+      margin-top: 50px;
+      background: rgba(0,0,0,0.5);
+      border-top: 1px solid var(--glass-border);
+      color: var(--text-muted);
+    }
+
+    /* Estrellas */
+    .star-icon { cursor: pointer; transition: 0.2s; }
+    .star-icon:hover { color: var(--neon-yellow) !important; transform: scale(1.3); text-shadow: 0 0 10px var(--neon-yellow); }
+    .text-warning { color: var(--neon-yellow) !important; text-shadow: 0 0 5px var(--neon-yellow); }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar navbar-expand-lg nb navbar-dark">
+    <div class="container">
+      <a class="navbar-brand brand-font" href="/">
+        <i class="bi bi-music-note-beamed me-1 text-info"></i> 
+        {{ page.get('business_name','Negocio') }}
+      </a>
+
+      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#nv">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div id="nv" class="collapse navbar-collapse justify-content-end">
+        <ul class="navbar-nav gap-3 text-center pt-3 pt-lg-0">
+          <li class="nav-item"><a class="nav-link" href="#info">Info</a></li>
+          <li class="nav-item"><a class="nav-link" href="#galeria">Ambiente</a></li>
+          <li class="nav-item"><a class="nav-link" href="#contacto">Reserva</a></li>
+          {% if posts %}<li class="nav-item"><a class="nav-link" href="#publicaciones">Eventos</a></li>{% endif %}
+          {% if (servicios and servicios|length>0) or (productos_fisicos and productos_fisicos|length>0) %}<li class="nav-item"><a class="nav-link" href="#productos">Menú/Carta</a></li>{% endif %}
+          <li class="nav-item"><a class="nav-link" href="#reseñas">Opiniones</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <header class="hero text-center text-lg-start">
+    <div class="container">
+      <div class="row align-items-center g-5">
+        <div class="col-lg-4 text-center">
+          {% if page.get('image') %}
+            <img class="hero-avatar" src="{{ url_for('uploaded_file', filename=page['image']) }}" alt="Logo">
+          {% else %}
+            <img class="hero-avatar" src="{{ url_for('static', filename='images/default_image.png') }}" alt="Logo">
+          {% endif %}
+        </div>
+        <div class="col-lg-8">
+          <div class="mb-3">
+             <span class="badge-neon brand-font">{{ page.get('category','Bar & Restaurant') }}</span>
+          </div>
+          <h1 class="display-3 mb-2 neon-text text-white fw-bold">{{ page.get('business_name','Mi negocio') }}</h1>
+          {% if page.get('slogan') %}
+            <p class="fs-4 text-white mb-4" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.8);">{{ page['slogan'] }} 🍸</p>
+          {% endif %}
+          
+          <div class="d-flex gap-3 justify-content-center justify-content-lg-start flex-wrap">
+            {% if page.get('website') %}
+              <a class="btn btn-neon btn-brand" href="{{ page['website'] }}" target="_blank">
+                <i class="bi bi-globe me-1"></i> Web Oficial
+              </a>
+            {% endif %}
+            {% if page.get('phone') %}
+              <a class="btn btn-neon btn-ghost" href="tel:{{ page['phone'] }}">
+                <i class="bi bi-telephone-fill me-1"></i> Reservar
+              </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section class="container my-5" id="info">
+    <h2 class="section-title brand-font">La Experiencia</h2>
+    <div class="row g-4">
+      <div class="col-md-6">
+        <div class="card card-glass h-100">
+          <div class="card-header-glass p-3"><i class="bi bi-stars me-2"></i> Nosotros</div>
+          <div class="card-body p-4">
+            <p class="mb-4" style="font-size:1.1rem; line-height:1.6;">{{ page.get('description','') }}</p>
+            <div class="d-flex flex-wrap gap-2">
+              {% if page.get('services') %}<span class="chip"><i class="bi bi-check-circle text-info"></i> {{ page.services }}</span>{% endif %}
+              {% if page.get('payment_methods') %}<span class="chip"><i class="bi bi-credit-card text-info"></i> {{ page.payment_methods }}</span>{% endif %}
+              {% if page.get('founding_date') %}<span class="chip"><i class="bi bi-calendar-event text-info"></i> Est. {{ page.founding_date }}</span>{% endif %}
+              {% if page.get('delivery_available') %}<span class="chip"><i class="bi bi-bicycle text-info"></i> Delivery</span>{% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card card-glass h-100">
+          <div class="card-header-glass p-3"><i class="bi bi-pin-map-fill me-2"></i> Encuéntranos</div>
+          <div class="card-body p-4">
+            <p class="mb-3 fs-5"><i class="bi bi-geo-alt text-danger"></i> {{ page.get('address','') }}</p>
+            
+            <div class="row mb-3 text-muted small">
+              <div class="col-6">CP: {{ page.get('postal_code','') }}</div>
+              <div class="col-6">{{ page.get('city','') }}, {{ page.get('state','') }}</div>
+            </div>
+            
+            <div class="mb-4">
+               <i class="bi bi-clock text-warning"></i> <strong class="text-white">Horario:</strong> <span class="text-muted-2">{{ page.get('operating_hours','') }}</span>
+            </div>
+
+            {% set lat_val = page.get('lat') %}
+            {% set lng_val = page.get('lng') %}
+            {% set has_coords = (lat_val is not none) and (lng_val is not none) and (lat_val|string|trim != '') and (lng_val|string|trim != '') %}
+
+            <div class="mt-3">
+              {% if has_coords %}
+                <div id="map" class="mb-3 shadow-lg"></div>
+                <div class="text-end">
+                  <a class="btn btn-sm btn-outline-light rounded-pill" target="_blank"
+                    href="https://www.google.com/maps/dir/?api=1&destination={{ lat_val }},{{ lng_val }}">
+                    <i class="bi bi-geo-fill"></i> Abrir en Maps
+                  </a>
+                </div>
+              {% elif page.get('address') %}
+                <a class="btn btn-neon btn-ghost w-100" target="_blank"
+                  href="https://www.google.com/maps/search/?api=1&query={{ page.address | urlencode }}">
+                  <i class="bi bi-search me-1"></i> Buscar Dirección
+                </a>
+              {% else %}
+                <div class="alert alert-dark border border-secondary">Ubicación no disponible</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="container my-5" id="galeria">
+    <h2 class="section-title brand-font">Vibra & Momentos</h2>
+    
+    {% set tiene_portada = page.get('cover_image') %}
+    {% set tiene_media = page.get('media_gallery') and page.media_gallery|length > 0 %}
+    {% set tiene_galeria = galeria and galeria|length > 0 %}
+    
+    {% if tiene_portada or tiene_media or tiene_galeria %}
+      <div class="gallery-wrap">
+        <div class="gallery-grid">
+          {% if tiene_portada %}
+            <div class="gal-item">
+              <img src="{{ url_for('uploaded_file', filename=page.cover_image) }}" alt="Portada">
+              <span class="badge-type">Portada</span>
+            </div>
+          {% endif %}
+
+          {% if tiene_media %}
+            {% for item in page.media_gallery %}
+              {% if item is string %}
+                <div class="gal-item">
+                  <img src="{{ url_for('uploaded_file', filename=item) }}" alt="Media">
+                </div>
+              {% else %}
+                {% set fpath = item.path %}
+                {% set ftype = item.type or 'image' %}
+                <div class="gal-item">
+                  {% if ftype == 'video' %}
+                    <video src="{{ url_for('uploaded_file', filename=fpath) }}" muted playsinline autoplay loop></video>
+                    <span class="badge-type"><i class="bi bi-play-circle"></i> Video</span>
+                  {% else %}
+                    <img src="{{ url_for('uploaded_file', filename=fpath) }}" alt="Media">
+                  {% endif %}
+                </div>
+              {% endif %}
+            {% endfor %}
+          {% endif %}
+
+          {% if tiene_galeria %}
+            {% for g in (galeria or [])[:12] %}
+              <div class="gal-item">
+                <img src="{{ url_for('uploaded_file', filename=g) }}" alt="Foto">
+              </div>
+            {% endfor %}
+          {% endif %}
+        </div>
+      </div>
+    {% else %}
+      <div class="text-center text-muted py-5 border border-secondary rounded-4">
+        <i class="bi bi-camera-video fs-1"></i>
+        <p>Pronto subiremos fotos de la fiesta.</p>
+      </div>
+    {% endif %}
+  </section>
+
+  <section class="container my-5" id="productos">
+    <div class="text-center mb-4">
+      <h2 class="section-title brand-font">La Carta & Eventos</h2>
+      <p class="text-info">Selecciona tus bebidas o reserva mesas y pide por WhatsApp</p>
+    </div>
+
+    {% if (servicios and servicios|length>0) or (productos_fisicos and productos_fisicos|length>0) %}
+      
+      <form id="form-cotizar">
+        {% if servicios and servicios|length>0 %}
+          <h3 class="h4 text-warning mb-3 brand-font"><i class="bi bi-ticket-perforated"></i> Reservas & VIP</h3>
+          <div class="row g-4 mb-5">
+          {% for item in servicios %}
+            <div class="col-sm-6 col-md-4 col-lg-3">
+              <div class="card card-glass h-100">
+                {% if item.image %}
+                  <div style="height:160px; overflow:hidden;">
+                    <img src="{{ url_for('uploaded_file', filename=item.image) }}" 
+                         class="w-100 h-100 object-fit-cover" 
+                         style="cursor:zoom-in"
+                         data-bs-toggle="modal" data-bs-target="#zoomModal"
+                         data-img-src="{{ url_for('uploaded_file', filename=item.image) }}">
+                  </div>
+                {% endif %}
+                <div class="card-body">
+                  <h5 class="fw-bold text-info">{{ item.title }}</h5>
+                  {% if item.description %}<p class="small text-muted mb-2">{{ item.description }}</p>{% endif %}
+                  {% if item.show_price %}
+                    <div class="fs-5 fw-bold text-white mb-2">${{ "%.2f"|format(item.price) }}</div>
+                  {% endif %}
+                  <input type="number" min="0" value="0" class="form-control text-center" 
+                         placeholder="Personas" name="prod_{{ item.title | replace(' ','_') }}"
+                         data-item-nombre="{{ item.title }}">
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+          </div>
+        {% endif %}
+
+        {% if productos_fisicos and productos_fisicos|length>0 %}
+          <h3 class="h4 text-neon-cyan mb-3 brand-font" style="color:var(--neon-cyan)"><i class="bi bi-cup-straw"></i> Bebidas & Botanas</h3>
+          <div class="row g-4">
+          {% for item in productos_fisicos %}
+             <div class="col-sm-6 col-md-4 col-lg-3">
+              <div class="card card-glass h-100">
+                {% if item.image %}
+                  <div style="height:160px; overflow:hidden;">
+                    <img src="{{ url_for('uploaded_file', filename=item.image) }}" 
+                         class="w-100 h-100 object-fit-cover" 
+                         style="cursor:zoom-in"
+                         data-bs-toggle="modal" data-bs-target="#zoomModal"
+                         data-img-src="{{ url_for('uploaded_file', filename=item.image) }}">
+                  </div>
+                {% endif %}
+                <div class="card-body">
+                  <h5 class="fw-bold text-white">{{ item.title }}</h5>
+                  {% if item.description %}<p class="small text-muted mb-2">{{ item.description }}</p>{% endif %}
+                  {% if item.show_price %}
+                    <div class="fs-5 fw-bold text-warning mb-2">${{ "%.2f"|format(item.price) }}</div>
+                  {% endif %}
+                  <input type="number" min="0" value="0" class="form-control text-center" 
+                         placeholder="Cantidad" name="prod_{{ item.title | replace(' ','_') }}"
+                         data-item-nombre="{{ item.title }}">
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+          </div>
+        {% endif %}
+
+        <div class="text-center mt-5">
+          <button type="submit" class="btn btn-neon btn-brand px-5 py-3">
+            <i class="bi bi-whatsapp me-2"></i> Enviar Pedido / Reserva
+          </button>
+        </div>
+      </form>
+
+      <div class="modal fade" id="zoomModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content bg-transparent border-0 text-center">
+             <img id="zoomedImage" src="" class="img-fluid rounded-3 shadow-lg border border-light">
+             <button class="btn btn-sm btn-light mt-2 rounded-pill" data-bs-dismiss="modal">Cerrar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal fade" id="cotizarModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content bg-dark border border-secondary text-white">
+            <div class="modal-header border-secondary">
+              <h5 class="modal-title brand-font text-warning">Confirmar 🥂</h5>
+              <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <p class="small text-muted">Ingresa tu nombre para la reserva/pedido:</p>
+              <input type="text" class="form-control mb-2" id="nombreClienteInput" placeholder="Tu Nombre">
+              <div class="text-danger small d-none" id="errorModalNombre">¡Necesitamos tu nombre!</div>
+              <div class="mt-3 p-2 border border-secondary rounded bg-black bg-opacity-25" id="resumenSeleccion" style="max-height:200px;overflow-y:auto;"></div>
+            </div>
+            <div class="modal-footer border-secondary">
+              <button class="btn btn-sm btn-outline-light" data-bs-dismiss="modal">Cancelar</button>
+              <button class="btn btn-neon btn-brand" id="enviarCotizacionBtn">Enviar WhatsApp 🚀</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    {% else %}
+      <div class="text-center text-muted">El menú se está actualizando...</div>
+    {% endif %}
+  </section>
+
+  {% if posts and posts|length>0 %}
+  <section class="container my-5" id="publicaciones">
+    <h2 class="section-title brand-font">Novedades</h2>
+    <div class="row g-4">
+      {% for post in posts %}
+        <div class="col-md-4">
+          <div class="card card-glass h-100">
+            {% if post.cabecera %}
+              <div style="height:200px; overflow:hidden">
+                <img src="{{ url_for('uploaded_file', filename=post.cabecera) }}" class="w-100 h-100 object-fit-cover">
+              </div>
+            {% endif %}
+            <div class="card-body d-flex flex-column">
+              <h5 class="brand-font text-warning">{{ post.title }}</h5>
+              <p class="small text-muted">{{ post.content[:100] }}...</p>
+              <a href="{{ url_for('ver_post', post_id=post._id) }}" class="mt-auto btn btn-sm btn-outline-info rounded-pill">Leer más</a>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="container my-5" id="contacto">
+    <div class="card card-glass p-5 text-center">
+      <h3 class="brand-font text-white mb-4">¿Listo para la fiesta? 🎉</h3>
+      <div class="row justify-content-center g-4 fs-5">
+        {% if page.get('phone') %}<div class="col-md-4"><i class="bi bi-whatsapp text-success"></i> {{ page.phone }}</div>{% endif %}
+        {% if page.get('email') %}<div class="col-md-4"><i class="bi bi-envelope text-info"></i> {{ page.email }}</div>{% endif %}
+      </div>
+      <div class="d-flex justify-content-center gap-4 mt-4">
+        {% if page.get('facebook') %}<a href="{{ page.facebook }}" target="_blank" class="text-white fs-3 hover-raise"><i class="bi bi-facebook"></i></a>{% endif %}
+        {% if page.get('instagram') %}<a href="{{ page.instagram }}" target="_blank" class="text-white fs-3 hover-raise"><i class="bi bi-instagram"></i></a>{% endif %}
+        {% if page.get('tiktok') %}<a href="{{ page.tiktok }}" target="_blank" class="text-white fs-3 hover-raise"><i class="bi bi-tiktok"></i></a>{% endif %}
+      </div>
+    </div>
+  </section>
+
+  <section class="container my-5" id="reseñas">
+    <h2 class="section-title brand-font">El Muro de la Fama</h2>
+    
+    <div class="card card-glass p-4 mb-5">
+      <h4 class="mb-3 text-info">¡Califícanos! ⭐</h4>
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          <div class="alert alert-success bg-opacity-25 bg-success text-white border-0">
+            {% for m in messages %}<div>{{ m }}</div>{% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+      
+      <form method="POST" class="row g-3">
+        <div class="col-md-6">
+          <input type="text" name="nombre" class="form-control" placeholder="Tu Nombre" required>
+        </div>
+        <div class="col-md-6 d-flex align-items-center">
+          <div id="starRating" class="fs-3">
+             {% for i in range(1,6) %}
+               <i class="bi bi-star-fill text-secondary star-icon" data-value="{{ i }}"></i>
+             {% endfor %}
+          </div>
+          <input type="hidden" name="estrellas" id="estrellas" value="0" required>
+        </div>
+        <div class="col-12">
+          <textarea name="comentario" class="form-control" rows="2" placeholder="¿Qué tal estuvo la noche?" required></textarea>
+        </div>
+        <div class="col-12 text-end">
+          <button class="btn btn-neon btn-brand" type="submit">Publicar Reseña</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="row g-4">
+      {% if reseñas and reseñas|length>0 %}
+        {% for r in reseñas %}
+          <div class="col-md-6">
+            <div class="card card-glass h-100">
+              <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                  <strong class="text-warning">{{ r.nombre }}</strong>
+                  <small class="text-muted">{{ r.fecha.strftime('%d/%m') }}</small>
+                </div>
+                <div class="mb-2">
+                  {% for i in range(1,6) %}
+                    {% if i <= r.estrellas %}<i class="bi bi-star-fill text-warning"></i>{% else %}<i class="bi bi-star text-secondary"></i>{% endif %}
+                  {% endfor %}
+                </div>
+                <p class="fst-italic text-white">"{{ r.comentario }}"</p>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      {% endif %}
+    </div>
+  </section>
+
+  <div class="ticker">
+    <div class="container">
+      <div id="noticiasCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="3000">
+        <div class="carousel-inner text-center">
+          {% if avisos and avisos|length>0 %}
+            {% for aviso in avisos %}
+              <div class="carousel-item {% if loop.first %}active{% endif %}">
+                <span class="pill-invert">NEWS</span> {{ aviso.title }} - {{ aviso.content }}
+              </div>
+            {% endfor %}
+          {% else %}
+            <div class="carousel-item active">🍹 ¡Hora Feliz de 6pm a 9pm! 🍹</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% if page.get('whatsapp') %}
+  <a class="fab-wa" href="https://wa.me/{{ page.whatsapp | replace(' ','') }}" target="_blank">
+    <span class="btn"><i class="bi bi-whatsapp"></i></span>
+  </a>
+  {% endif %}
+
+  <footer class="ft">
+    <div class="container text-center">
+      <p class="mb-0">© 2025 <strong class="text-white brand-font">{{ page.get('business_name','Negocio') }}</strong></p>
+      <small>Powered by Flask & Neon Vibes</small>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+  <script>
+    // Lógica Stars (Intacta)
+    document.querySelectorAll('.star-icon').forEach(star => {
+      star.addEventListener('click', function() {
+        const val = this.getAttribute('data-value');
+        document.getElementById('estrellas').value = val;
+        document.querySelectorAll('.star-icon').forEach(s => {
+          if(s.getAttribute('data-value') <= val) {
+            s.classList.remove('text-secondary'); s.classList.add('text-warning');
+          } else {
+            s.classList.remove('text-warning'); s.classList.add('text-secondary');
+          }
+        });
+      });
+    });
+
+    // Lógica Cotizar (Intacta)
+    const formCotizar = document.getElementById('form-cotizar');
+    const modalCotizar = new bootstrap.Modal(document.getElementById('cotizarModal'));
+    const btnEnviarWa = document.getElementById('enviarCotizacionBtn');
+    const zoomModal = document.getElementById('zoomModal');
+
+    if(zoomModal){
+      zoomModal.addEventListener('show.bs.modal', function (event) {
+        document.getElementById('zoomedImage').src = event.relatedTarget.getAttribute('data-img-src');
+      });
+    }
+
+    if (formCotizar) {
+      formCotizar.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const inputs = formCotizar.querySelectorAll('input[type="number"]');
+        let html = '<ul class="list-unstyled mb-0">';
+        let hay = false;
+        inputs.forEach(inp => {
+          const val = parseInt(inp.value);
+          if(val > 0) {
+            hay = true;
+            html += `<li class="d-flex justify-content-between"><span>${inp.getAttribute('data-item-nombre')}</span> <strong>x${val}</strong></li>`;
+          }
+        });
+        html += '</ul>';
+        if(!hay) { alert("Selecciona al menos un producto."); return; }
+        document.getElementById('resumenSeleccion').innerHTML = html;
+        modalCotizar.show();
+      });
+
+      btnEnviarWa.addEventListener('click', function() {
+        const nom = document.getElementById('nombreClienteInput').value.trim();
+        if(!nom){ document.getElementById('errorModalNombre').classList.remove('d-none'); return; }
+        
+        let msg = `Hola, soy *${nom}*. Quiero reservar/pedir:\n\n`;
+        document.querySelectorAll('#resumenSeleccion li').forEach(li => {
+          msg += `• ${li.innerText.replace('\n', ' ')}\n`;
+        });
+        
+        const tel = "{{ page.get('whatsapp','') }}".replace(/\s+/g, '');
+        window.open(`https://wa.me/${tel}?text=${encodeURIComponent(msg)}`, '_blank');
+        modalCotizar.hide();
+      });
+    }
+
+    // MAPA (Leaflet)
+    (function () {
+      const el = document.getElementById('map');
+      if (!el) return;
+      const lat = parseFloat("{{ page.get('lat','') }}");
+      const lng = parseFloat("{{ page.get('lng','') }}");
+      
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+        el.innerHTML = '<div class="p-3 text-white">Coordenadas no válidas</div>';
+        return;
+      }
+      
+      const map = L.map('map', {scrollWheelZoom:false}).setView([lat, lng], 16);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: 'Map data &copy; OpenStreetMap'
+      }).addTo(map);
+      
+      const marker = L.marker([lat, lng]).addTo(map);
+      marker.bindPopup("<b>{{ page.get('business_name','')|e }}</b><br>{{ page.get('address','')|e }}");
+      
+      setTimeout(()=>map.invalidateSize(), 500);
+    })();
+  </script>
+</body>
+</html>

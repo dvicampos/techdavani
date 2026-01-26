@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+  <title>{{ page.get('business_name','Mi negocio') }}</title>
+  <meta name="description" content="{{ page.get('slogan') or page.get('description','')[:160] }}">
+  <meta name="author" content="{{ page.get('business_name','') }}">
+
+  {# ====== OG / Twitter ====== #}
+  {% set og_img = page.get('cover_image') or page.get('image') %}
+  {% if og_img and not (og_img.startswith('http://') or og_img.startswith('https://')) %}
+    {% set og_img = url_for('uploaded_file', filename=og_img, _external=True) %}
+  {% endif %}
+  <meta property="og:title" content="{{ page.get('business_name','') }}">
+  <meta property="og:description" content="{{ page.get('slogan') or page.get('description','')[:200] }}">
+  <meta property="og:image" content="{{ og_img or url_for('static', filename='images/default.png', _external=True) }}">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="{{ request.url }}">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+  
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+
+  <style>
+    :root {
+      /* Paleta Arcade Neon */
+      --brand: {{ page.get('color') or '#d900ff' }}; /* Magenta por defecto */
+      --brand-glow: {{ page.get('color') or '#d900ff' }};
+      --bg-dark: #0f0b1e;
+      --bg-card: #1a162b;
+      --neon-cyan: #00f3ff;
+      --neon-green: #0aff00;
+      --text-main: #ffffff;
+      --text-muted: #b4b0c4;
+      
+      --radius: 8px; 
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 1.1rem;
+      /* Fondo de rejilla digital */
+      background-image: 
+        linear-gradient(rgba(15, 11, 30, 0.9), rgba(15, 11, 30, 0.9)),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 100% 100%, 40px 40px, 40px 40px;
+    }
+
+    /* Efecto Scanline (Monitor CRT) */
+    body::after {
+      content: "";
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+      background-size: 100% 2px, 3px 100%;
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    h1, h2, h3, h4, h5, .brand-font, .navbar-brand {
+      font-family: 'Press Start 2P', cursive;
+      line-height: 1.4;
+      text-transform: uppercase;
+    }
+    
+    .pixel-text-shadow {
+      text-shadow: 2px 2px 0px #000;
+    }
+
+    a { text-decoration: none; transition: 0.2s; }
+
+    /* --- ANIMACIONES --- */
+    @keyframes float-pixel {
+      0% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+      100% { transform: translateY(0px); }
+    }
+    
+    @keyframes border-flicker {
+      0%, 100% { border-color: var(--brand); box-shadow: 0 0 5px var(--brand); }
+      50% { border-color: var(--neon-cyan); box-shadow: 0 0 15px var(--neon-cyan); }
+    }
+
+    /* --- NAV --- */
+    .nb {
+      background: rgba(15, 11, 30, 0.95);
+      border-bottom: 2px solid var(--neon-cyan);
+      box-shadow: 0 0 15px var(--neon-cyan);
+      position: sticky; top: 0; z-index: 1020;
+    }
+    .nb .navbar-brand {
+      color: var(--neon-green);
+      font-size: 1rem; /* Pixel font es grande */
+      text-shadow: 0 0 5px var(--neon-green);
+    }
+    .nb .nav-link {
+      color: #fff !important;
+      font-family: 'Press Start 2P';
+      font-size: 0.6rem;
+      padding: 10px !important;
+    }
+    .nb .nav-link:hover {
+      color: var(--neon-cyan) !important;
+      text-shadow: 0 0 5px var(--neon-cyan);
+    }
+
+    /* --- HERO --- */
+    .hero {
+      position: relative;
+      padding: 80px 0 60px;
+      overflow: hidden;
+      border-bottom: 2px solid var(--brand);
+      text-align: center;
+      /* Fondo dinámico */
+      {% if page.get('cover_image') %}
+        background: linear-gradient(rgba(15,11,30,0.7), rgba(15,11,30,1)), 
+                    url("{{ url_for('uploaded_file', filename=page.cover_image) }}") center/cover no-repeat;
+      {% else %}
+        background: radial-gradient(circle at center, #2a1f45 0%, var(--bg-dark) 70%);
+      {% endif %}
+    }
+    
+    .hero-avatar {
+      width: 200px; height: 200px;
+      object-fit: cover;
+      border: 4px solid #fff;
+      box-shadow: 5px 5px 0px var(--brand);
+      animation: float-pixel 3s ease-in-out infinite;
+      image-rendering: pixelated;
+    }
+
+    .badge-pixel {
+      background: var(--neon-cyan);
+      color: #000;
+      padding: 0.5rem 1rem;
+      font-family: 'Press Start 2P';
+      font-size: 0.6rem;
+      box-shadow: 4px 4px 0px rgba(0,0,0,0.5);
+      display: inline-block;
+    }
+
+    .hero-title {
+      font-size: 2rem;
+      color: var(--brand);
+      margin-top: 1.5rem;
+      text-shadow: 3px 3px 0px var(--neon-cyan);
+    }
+
+    /* --- BUTTONS (Arcade Style) --- */
+    .btn-arcade {
+      font-family: 'Press Start 2P';
+      font-size: 0.7rem;
+      border: none;
+      padding: 1rem 1.5rem;
+      background: var(--brand);
+      color: #fff;
+      box-shadow: 0 4px 0 #8a00a3; /* Sombra 3D */
+      transition: all 0.1s;
+      position: relative;
+      top: 0;
+    }
+    .btn-arcade:hover {
+      background: #ff00ff;
+      color: #fff;
+      box-shadow: 0 4px 0 #a300a3;
+    }
+    .btn-arcade:active {
+      top: 4px;
+      box-shadow: 0 0 0 #8a00a3;
+    }
+    
+    .btn-ghost {
+      background: transparent;
+      border: 2px solid #fff;
+      box-shadow: 0 4px 0 #999;
+    }
+    .btn-ghost:hover {
+      background: #fff; color: #000;
+    }
+    .btn-ghost:active {
+      top: 4px; box-shadow: none;
+    }
+
+    /* --- CARDS & SECTIONS --- */
+    .section-title {
+      font-size: 1.5rem;
+      color: #fff;
+      margin-bottom: 2rem;
+      text-shadow: 3px 3px 0px var(--brand);
+      border-left: 5px solid var(--neon-green);
+      padding-left: 15px;
+    }
+
+    .card-arcade {
+      background: var(--bg-card);
+      border: 2px solid var(--brand);
+      box-shadow: 0 0 10px rgba(217, 0, 255, 0.2);
+      color: #fff;
+      height: 100%;
+      position: relative;
+    }
+    /* Decoración de esquinas */
+    .card-arcade::before {
+      content: ""; position: absolute; top: -2px; left: -2px;
+      width: 10px; height: 10px; background: var(--neon-cyan);
+      z-index: 2;
+    }
+    .card-arcade::after {
+      content: ""; position: absolute; bottom: -2px; right: -2px;
+      width: 10px; height: 10px; background: var(--neon-cyan);
+      z-index: 2;
+    }
+
+    .card-header-arcade {
+      background: rgba(0,0,0,0.3);
+      border-bottom: 1px dashed var(--brand);
+      font-family: 'Press Start 2P';
+      font-size: 0.8rem;
+      color: var(--neon-cyan);
+      padding: 1rem;
+    }
+
+    /* --- CHIPS --- */
+    .chip {
+      background: #000;
+      border: 1px solid var(--neon-green);
+      color: var(--neon-green);
+      padding: 0.3rem 0.8rem;
+      font-family: 'Rajdhani', monospace;
+      font-weight: bold;
+      font-size: 0.9rem;
+      display: inline-flex; align-items: center; gap:0.5rem;
+      text-transform: uppercase;
+    }
+
+    /* --- GALERÍA (Slots) --- */
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1rem;
+    }
+    .gal-item {
+      border: 2px solid #fff;
+      position: relative;
+      aspect-ratio: 1/1;
+      cursor: pointer;
+      transition: 0.2s;
+      overflow: hidden;
+    }
+    .gal-item:hover {
+      border-color: var(--neon-green);
+      transform: scale(1.05);
+      box-shadow: 0 0 15px var(--neon-green);
+      z-index: 10;
+    }
+    .gal-item img, .gal-item video {
+      width: 100%; height: 100%; object-fit: cover;
+    }
+
+    .badge-type {
+      position: absolute; bottom: 0; right: 0;
+      background: rgba(0,0,0,0.8); color: var(--neon-cyan);
+      padding: 4px; font-size: 0.6rem;
+      font-family: 'Press Start 2P';
+    }
+
+    /* --- MAPA --- */
+    #map {
+      height: 350px;
+      border: 2px solid var(--neon-cyan);
+      /* Invertir colores para mapa oscuro */
+      filter: invert(100%) hue-rotate(180deg) brightness(0.8) contrast(1.2);
+    }
+
+    /* --- FORMS --- */
+    .form-control {
+      background: #000;
+      border: 2px solid #333;
+      color: var(--neon-green);
+      border-radius: 0;
+      font-family: 'Rajdhani', monospace;
+    }
+    .form-control:focus {
+      background: #111;
+      border-color: var(--neon-green);
+      color: var(--neon-green);
+      box-shadow: 0 0 10px var(--neon-green);
+    }
+    .form-control::placeholder { color: #555; }
+
+    /* --- TICKER --- */
+    .ticker {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 1030;
+      background: #000;
+      border-top: 2px solid var(--neon-green);
+      color: var(--neon-green);
+      padding: 0.5rem 0;
+      font-family: 'Press Start 2P';
+      font-size: 0.7rem;
+    }
+    .pill-invert {
+      background: var(--neon-green); color: #000;
+      padding: 0 8px; margin-right: 10px;
+    }
+
+    /* --- FAB --- */
+    .fab-wa .btn {
+      border-radius: 50%; width: 60px; height: 60px;
+      background: #25D366; color: #fff; border: 4px solid #000;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2rem;
+      box-shadow: 5px 5px 0px #000;
+    }
+    .fab-wa .btn:active { transform: translate(2px, 2px); box-shadow: 3px 3px 0px #000; }
+
+    /* --- FOOTER --- */
+    .ft {
+      margin-top: 80px; padding: 50px 0 80px;
+      background: #000; border-top: 4px solid var(--brand);
+      color: #666;
+    }
+
+    /* Utility */
+    .text-brand { color: var(--brand); }
+    .star-icon { cursor: pointer; transition: 0.2s; }
+    .star-icon:hover { color: var(--neon-cyan) !important; transform: scale(1.2); text-shadow: 0 0 5px var(--neon-cyan); }
+    
+    /* Precios */
+    .price-tag {
+      font-family: 'Press Start 2P';
+      color: var(--neon-green);
+      font-size: 0.8rem;
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar navbar-expand-lg nb navbar-dark">
+    <div class="container">
+      <a class="navbar-brand" href="/">
+        <i class="bi bi-joystick me-2 text-warning"></i>{{ page.get('business_name','Arcade') }}
+      </a>
+
+      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#nv">
+        <span class="navbar-toggler-icon" style="filter: invert(1);"></span>
+      </button>
+
+      <div id="nv" class="collapse navbar-collapse justify-content-end">
+        <ul class="navbar-nav gap-2 text-center mt-3 mt-lg-0">
+          <li class="nav-item"><a class="nav-link" href="#info">Start</a></li>
+          <li class="nav-item"><a class="nav-link" href="#galeria">Niveles</a></li>
+          <li class="nav-item"><a class="nav-link" href="#productos">Power-Ups</a></li>
+          <li class="nav-item"><a class="nav-link" href="#reseñas">High Scores</a></li>
+          <li class="nav-item"><a class="nav-link" href="#contacto">Contacto</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="container">
+      <div class="row align-items-center g-5">
+        <div class="col-md-5 text-center order-md-2">
+          {% if page.get('image') %}
+            <img class="hero-avatar" src="{{ url_for('uploaded_file', filename=page['image']) }}" alt="Logo">
+          {% else %}
+            <img class="hero-avatar" src="{{ url_for('static', filename='images/default_image.png') }}" alt="Logo">
+          {% endif %}
+        </div>
+        <div class="col-md-7 text-center text-md-start order-md-1">
+          <div class="mb-3">
+             <span class="badge-pixel">PLAYER 1 READY</span>
+             <span class="badge-pixel ms-2" style="background: var(--brand); color:#fff;">{{ page.get('category','Arcade') }}</span>
+          </div>
+          <h1 class="hero-title">{{ page.get('business_name','Mi negocio') }}</h1>
+          {% if page.get('slogan') %}
+            <p class="fs-4 text-white mb-4" style="font-family: 'Rajdhani'; letter-spacing: 1px;">
+              <span class="text-warning">>> </span> {{ page['slogan'] }} <span class="text-warning"> <<</span>
+            </p>
+          {% endif %}
+          
+          <div class="d-flex gap-3 justify-content-center justify-content-md-start flex-wrap mt-4">
+            {% if page.get('website') %}
+              <a class="btn btn-arcade" href="{{ page['website'] }}" target="_blank">
+                <i class="bi bi-globe me-2"></i>WEBSITE
+              </a>
+            {% endif %}
+            {% if page.get('phone') %}
+              <a class="btn btn-arcade btn-ghost" href="tel:{{ page['phone'] }}">
+                <i class="bi bi-telephone-fill me-2"></i>CALL
+              </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section class="container my-5" id="info">
+    <h2 class="section-title">Mission Info</h2>
+    <div class="row g-4">
+      <div class="col-md-6">
+        <div class="card card-arcade">
+          <div class="card-header-arcade">WHO WE ARE</div>
+          <div class="card-body p-4">
+            <p class="mb-4 text-light" style="line-height: 1.6;">{{ page.get('description','') }}</p>
+            <div class="d-flex flex-wrap gap-2">
+              {% if page.get('services') %}<span class="chip"><i class="bi bi-controller"></i> {{ page.services }}</span>{% endif %}
+              {% if page.get('payment_methods') %}<span class="chip"><i class="bi bi-coin"></i> {{ page.payment_methods }}</span>{% endif %}
+              {% if page.get('founding_date') %}<span class="chip"><i class="bi bi-hourglass-split"></i> Lvl {{ page.founding_date }}</span>{% endif %}
+              {% if page.get('delivery_available') %}<span class="chip"><i class="bi bi-box-seam"></i> Loot Box</span>{% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-6">
+        <div class="card card-arcade">
+          <div class="card-header-arcade">MAP & HOURS</div>
+          <div class="card-body p-4">
+            <p class="mb-2 fs-5"><i class="bi bi-geo-alt-fill text-warning"></i> {{ page.get('address','') }}</p>
+            <div class="row mb-3 text-muted small" style="font-family: 'Rajdhani'">
+              <div class="col-6">ZONE: {{ page.get('city','') }}</div>
+              <div class="col-6">CODE: {{ page.get('postal_code','') }}</div>
+            </div>
+            
+            <div class="mb-3 border p-2 border-secondary bg-black">
+              <span class="text-success">OPEN:</span> <span class="text-white">{{ page.get('operating_hours','') }}</span>
+            </div>
+
+            {% set lat_val = page.get('lat') %}
+            {% set lng_val = page.get('lng') %}
+            {% set has_coords = (lat_val is not none) and (lng_val is not none) and (lat_val|string|trim != '') and (lng_val|string|trim != '') %}
+
+            <div class="mt-3">
+              {% if has_coords %}
+                <div id="map" class="mb-3"></div>
+                <a class="btn btn-sm btn-outline-info w-100" target="_blank"
+                   href="https://www.google.com/maps/dir/?api=1&destination={{ lat_val }},{{ lng_val }}" style="font-family: 'Press Start 2P'; font-size: 0.6rem;">
+                  <i class="bi bi-map me-2"></i>NAVIGATE
+                </a>
+              {% elif page.get('address') %}
+                <a class="btn btn-arcade w-100" target="_blank"
+                   href="https://www.google.com/maps/search/?api=1&query={{ page.address | urlencode }}">
+                  <i class="bi bi-search me-1"></i> SEARCH MAP
+                </a>
+              {% else %}
+                <div class="alert alert-secondary bg-dark text-light border-secondary">Location hidden.</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="container my-5" id="galeria">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="section-title mb-0">Screenshots</h2>
+        <i class="bi bi-images fs-2 text-warning"></i>
+    </div>
+    
+    {% set tiene_portada = page.get('cover_image') %}
+    {% set tiene_media = page.get('media_gallery') and page.media_gallery|length > 0 %}
+    {% set tiene_galeria = galeria and galeria|length > 0 %}
+    
+    {% if tiene_portada or tiene_media or tiene_galeria %}
+      <div class="gallery-grid">
+        {% if tiene_portada %}
+          <div class="gal-item" data-bs-toggle="modal" data-bs-target="#zoomModal" data-img-src="{{ url_for('uploaded_file', filename=page.cover_image) }}">
+            <img src="{{ url_for('uploaded_file', filename=page.cover_image) }}" alt="Portada">
+            <span class="badge-type">MAIN</span>
+          </div>
+        {% endif %}
+
+        {% if tiene_media %}
+          {% for item in page.media_gallery %}
+            {% if item is string %}
+              <div class="gal-item" data-bs-toggle="modal" data-bs-target="#zoomModal" data-img-src="{{ url_for('uploaded_file', filename=item) }}">
+                <img src="{{ url_for('uploaded_file', filename=item) }}" alt="Media">
+              </div>
+            {% else %}
+              {% set fpath = item.path %}
+              {% set ftype = item.type or 'image' %}
+              <div class="gal-item" data-bs-toggle="modal" data-bs-target="#zoomModal" data-img-src="{{ url_for('uploaded_file', filename=fpath) }}">
+                {% if ftype == 'video' %}
+                  <video src="{{ url_for('uploaded_file', filename=fpath) }}" muted playsinline autoplay loop></video>
+                  <span class="badge-type">REC</span>
+                {% else %}
+                  <img src="{{ url_for('uploaded_file', filename=fpath) }}" alt="Media">
+                {% endif %}
+              </div>
+            {% endif %}
+          {% endfor %}
+        {% endif %}
+
+        {% if tiene_galeria %}
+          {% for g in (galeria or [])[:12] %}
+            <div class="gal-item" data-bs-toggle="modal" data-bs-target="#zoomModal" data-img-src="{{ url_for('uploaded_file', filename=g) }}">
+              <img src="{{ url_for('uploaded_file', filename=g) }}" alt="Foto">
+            </div>
+          {% endfor %}
+        {% endif %}
+      </div>
+    {% else %}
+      <div class="card card-arcade p-4 text-center">
+        <p>No images found in database. 👾</p>
+      </div>
+    {% endif %}
+  </section>
+
+  <section class="container my-5" id="productos">
+    <h2 class="section-title">Item Shop</h2>
+    
+    {% if (servicios and servicios|length>0) or (productos_fisicos and productos_fisicos|length>0) %}
+      <div class="alert alert-dark border border-success text-success d-flex align-items-center gap-3 mb-4" style="font-family: 'Press Start 2P'; font-size: 0.7rem;">
+        <i class="bi bi-cart-check-fill fs-4"></i>
+        <div>SELECT ITEMS AND PRESS "ORDER"</div>
+      </div>
+
+      <form id="form-cotizar">
+        {% if servicios and servicios|length>0 %}
+          <h3 class="h5 text-warning mb-3 brand-font"><i class="bi bi-star-fill"></i> SERVICES</h3>
+          <div class="row g-4 mb-4">
+          {% for item in servicios %}
+            <div class="col-sm-6 col-md-4 col-lg-3">
+              <div class="card card-arcade">
+                {% if item.image %}
+                  <div style="height: 180px; overflow: hidden; border-bottom: 2px solid var(--brand);">
+                    <img src="{{ url_for('uploaded_file', filename=item.image) }}" 
+                         class="w-100 h-100 object-fit-cover" 
+                         style="cursor: pointer;"
+                         data-bs-toggle="modal" data-bs-target="#zoomModal"
+                         data-img-src="{{ url_for('uploaded_file', filename=item.image) }}">
+                  </div>
+                {% endif %}
+                <div class="card-body">
+                  <h5 class="brand-font text-white" style="font-size: 0.9rem;">{{ item.title }}</h5>
+                  {% if item.description %}<p class="small text-muted mb-2">{{ item.description }}</p>{% endif %}
+                  {% if item.show_price %}
+                    <div class="price-tag mb-2">${{ "%.2f"|format(item.price) }}</div>
+                  {% endif %}
+                  <input type="number" min="0" value="0" class="form-control text-center" 
+                         placeholder="QTY" name="prod_{{ item.title | replace(' ','_') }}"
+                         data-item-nombre="{{ item.title }}">
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+          </div>
+        {% endif %}
+
+        {% if productos_fisicos and productos_fisicos|length>0 %}
+          <h3 class="h5 text-info mb-3 brand-font"><i class="bi bi-box-fill"></i> INVENTORY</h3>
+          <div class="row g-4">
+          {% for item in productos_fisicos %}
+            <div class="col-sm-6 col-md-4 col-lg-3">
+              <div class="card card-arcade">
+                {% if item.image %}
+                   <div style="height: 180px; overflow: hidden; border-bottom: 2px solid var(--brand);">
+                    <img src="{{ url_for('uploaded_file', filename=item.image) }}" 
+                         class="w-100 h-100 object-fit-cover" 
+                         style="cursor: pointer;"
+                         data-bs-toggle="modal" data-bs-target="#zoomModal"
+                         data-img-src="{{ url_for('uploaded_file', filename=item.image) }}">
+                  </div>
+                {% endif %}
+                <div class="card-body">
+                  <h5 class="brand-font text-white" style="font-size: 0.9rem;">{{ item.title }}</h5>
+                  {% if item.description %}<p class="small text-muted mb-2">{{ item.description }}</p>{% endif %}
+                  {% if item.show_price %}
+                     <div class="price-tag mb-2">${{ "%.2f"|format(item.price) }}</div>
+                  {% endif %}
+                  <input type="number" min="0" value="0" class="form-control text-center" 
+                         placeholder="QTY" name="prod_{{ item.title | replace(' ','_') }}"
+                         data-item-nombre="{{ item.title }}">
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+          </div>
+        {% endif %}
+
+        <div class="text-center mt-5">
+           <button type="submit" class="btn btn-arcade px-5 py-3">
+             <i class="bi bi-whatsapp me-2"></i> CONFIRM ORDER
+           </button>
+        </div>
+      </form>
+
+      <div class="modal fade" id="zoomModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content bg-dark border-2 border-white text-center p-1">
+            <img id="zoomedImage" src="" class="img-fluid">
+            <button class="btn btn-sm btn-outline-light mt-2 w-100 font-monospace" data-bs-dismiss="modal">[ CLOSE ]</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal fade" id="cotizarModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content bg-dark border-2 border-success text-light">
+            <div class="modal-header border-bottom border-success">
+              <h5 class="modal-title brand-font text-success">CHECKOUT 🛒</h5>
+              <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <p class="small text-muted font-monospace">ENTER PLAYER NAME:</p>
+              <input type="text" class="form-control mb-3" id="nombreClienteInput" placeholder="PLAYER 1">
+              <div class="text-danger small mb-2 d-none font-monospace" id="errorModalNombre">NAME REQUIRED!</div>
+              
+              <div class="p-3 border border-secondary bg-black" id="resumenSeleccion" style="max-height:200px; overflow-y:auto; font-family: 'Rajdhani';"></div>
+            </div>
+            <div class="modal-footer border-top border-success">
+              <button class="btn btn-sm btn-outline-secondary font-monospace" data-bs-dismiss="modal">CANCEL</button>
+              <button class="btn btn-arcade" id="enviarCotizacionBtn">SEND WHATSAPP</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    {% else %}
+      <p class="text-muted text-center py-5 font-monospace">Shop is closed.</p>
+    {% endif %}
+  </section>
+
+  {% if posts and posts|length>0 %}
+  <section class="container my-5" id="publicaciones">
+    <h2 class="section-title">News Feed</h2>
+    <div class="row g-4">
+      {% for post in posts %}
+        <div class="col-md-4">
+          <div class="card card-arcade">
+            {% if post.cabecera %}
+              <div style="height: 200px; overflow:hidden; border-bottom: 2px solid var(--brand);">
+                <img src="{{ url_for('uploaded_file', filename=post.cabecera) }}" class="w-100 h-100 object-fit-cover">
+              </div>
+            {% endif %}
+            <div class="card-body d-flex flex-column">
+              <h5 class="brand-font text-warning" style="font-size: 0.8rem;">{{ post.title }}</h5>
+              <p class="small text-muted">{{ post.content[:100] }}...</p>
+              <a href="{{ url_for('ver_post', post_id=post._id) }}" class="mt-auto btn btn-sm btn-outline-light font-monospace">READ MORE ></a>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="container my-5" id="contacto">
+    <div class="card card-arcade p-5 text-center" style="background: linear-gradient(45deg, #111, #222);">
+      <h3 class="brand-font text-white mb-4">CONNECT WITH US</h3>
+      <div class="row justify-content-center g-4 fs-5 mb-4 font-monospace">
+         {% if page.get('phone') %}<div class="col-md-4"><i class="bi bi-telephone-fill text-success"></i> {{ page.phone }}</div>{% endif %}
+         {% if page.get('email') %}<div class="col-md-4"><i class="bi bi-envelope-fill text-primary"></i> {{ page.email }}</div>{% endif %}
+      </div>
+      <div class="d-flex justify-content-center gap-4">
+         {% if page.get('facebook') %}<a href="{{ page.facebook }}" target="_blank" class="text-light fs-2"><i class="bi bi-facebook"></i></a>{% endif %}
+         {% if page.get('instagram') %}<a href="{{ page.instagram }}" target="_blank" class="text-light fs-2"><i class="bi bi-instagram"></i></a>{% endif %}
+         {% if page.get('tiktok') %}<a href="{{ page.tiktok }}" target="_blank" class="text-light fs-2"><i class="bi bi-tiktok"></i></a>{% endif %}
+      </div>
+    </div>
+  </section>
+
+  <section class="container my-5" id="reseñas">
+    <h2 class="section-title">High Scores</h2>
+    
+    <div class="card card-arcade p-4 mb-5 border-warning">
+      <h4 class="brand-font mb-3 text-warning">WRITE A REVIEW</h4>
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          <div class="alert alert-success bg-dark text-success border-success font-monospace">
+            {% for m in messages %}<div>{{ m }}</div>{% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <form method="POST" class="row g-3">
+        <div class="col-md-6">
+          <input type="text" name="nombre" class="form-control" placeholder="YOUR NICKNAME" required>
+        </div>
+        <div class="col-md-6 d-flex align-items-center">
+           <div id="starRating">
+             {% for i in range(1,6) %}
+               <i class="bi bi-star-fill fs-4 text-secondary star-icon" data-value="{{ i }}"></i>
+             {% endfor %}
+           </div>
+           <input type="hidden" name="estrellas" id="estrellas" value="0" required>
+        </div>
+        <div class="col-12">
+          <textarea name="comentario" class="form-control" rows="2" placeholder="MESSAGE..." required></textarea>
+        </div>
+        <div class="col-12 text-end">
+          <button class="btn btn-arcade" type="submit">SUBMIT</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="row g-4">
+      {% if reseñas and reseñas|length>0 %}
+        {% for r in reseñas %}
+          <div class="col-md-6">
+            <div class="card card-arcade h-100">
+              <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                   <strong class="text-neon-cyan brand-font" style="font-size:0.7rem;">{{ r.nombre }}</strong>
+                   <small class="text-muted font-monospace">{{ r.fecha.strftime('%d/%m') }}</small>
+                </div>
+                <div class="mb-2">
+                  {% for i in range(1,6) %}
+                    {% if i <= r.estrellas %}<i class="bi bi-star-fill text-warning"></i>{% else %}<i class="bi bi-star text-secondary"></i>{% endif %}
+                  {% endfor %}
+                </div>
+                <p class="fst-italic">"{{ r.comentario }}"</p>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      {% endif %}
+    </div>
+  </section>
+
+  <div class="ticker">
+    <div class="container">
+      <div id="noticiasCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="4000">
+        <div class="carousel-inner text-center">
+          {% if avisos and avisos|length>0 %}
+            {% for aviso in avisos %}
+              <div class="carousel-item {% if loop.first %}active{% endif %}">
+                <span class="pill-invert">UPDATE</span> {{ aviso.title }} - {{ aviso.content }}
+              </div>
+            {% endfor %}
+          {% else %}
+            <div class="carousel-item active">INSERT COIN TO START... </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% if page.get('whatsapp') %}
+  <a class="fab-wa" href="https://wa.me/{{ page.whatsapp | replace(' ','') }}" target="_blank">
+    <div class="btn">
+      <i class="bi bi-whatsapp"></i>
+    </div>
+  </a>
+  {% endif %}
+
+  <footer class="ft">
+    <div class="container text-center font-monospace">
+      <p class="mb-0">
+        GAME OVER · <strong class="text-brand">{{ page.get('business_name','Negocio') }}</strong> © 2025
+      </p>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+  <script>
+    // Lógica Estrellas
+    document.querySelectorAll('.star-icon').forEach(star => {
+      star.addEventListener('click', function() {
+        const val = this.getAttribute('data-value');
+        document.getElementById('estrellas').value = val;
+        document.querySelectorAll('.star-icon').forEach(s => {
+          if(s.getAttribute('data-value') <= val) {
+            s.classList.remove('text-secondary'); s.classList.add('text-warning');
+          } else {
+            s.classList.remove('text-warning'); s.classList.add('text-secondary');
+          }
+        });
+      });
+    });
+
+    // Zoom
+    const zoomModal = document.getElementById('zoomModal');
+    if(zoomModal){
+      zoomModal.addEventListener('show.bs.modal', function (e) {
+        document.getElementById('zoomedImage').src = e.relatedTarget.getAttribute('data-img-src');
+      });
+    }
+
+    // Cotizador
+    const formCotizar = document.getElementById('form-cotizar');
+    const modalCotizar = new bootstrap.Modal(document.getElementById('cotizarModal'));
+    const btnEnviarWa = document.getElementById('enviarCotizacionBtn');
+
+    if (formCotizar) {
+      formCotizar.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const inputs = formCotizar.querySelectorAll('input[type="number"]');
+        let html = '<ul class="list-unstyled mb-0">';
+        let hay = false;
+        inputs.forEach(inp => {
+          const v = parseInt(inp.value);
+          if(v > 0) {
+            hay = true;
+            html += `<li class="d-flex justify-content-between border-bottom border-secondary py-1 text-neon-green"><span>${inp.getAttribute('data-item-nombre')}</span> <strong>x${v}</strong></li>`;
+          }
+        });
+        html += '</ul>';
+        if(!hay) { alert("INVENTORY EMPTY. SELECT ITEMS."); return; }
+        document.getElementById('resumenSeleccion').innerHTML = html;
+        modalCotizar.show();
+      });
+
+      btnEnviarWa.addEventListener('click', function() {
+        const nombre = document.getElementById('nombreClienteInput').value.trim();
+        if(!nombre) { document.getElementById('errorModalNombre').classList.remove('d-none'); return; }
+        
+        let msg = `👾 NEW PLAYER: *${nombre}*. REQUEST:\n\n`;
+        document.querySelectorAll('#resumenSeleccion li').forEach(li => {
+          msg += `• ${li.innerText.replace('\n', ' ')}\n`;
+        });
+        
+        const ph = "{{ page.get('whatsapp','') }}".replace(/\s+/g, '');
+        window.open(`https://wa.me/${ph}?text=${encodeURIComponent(msg)}`, '_blank');
+        modalCotizar.hide();
+      });
+    }
+
+    // Mapa
+    (function () {
+      const el = document.getElementById('map');
+      if (!el) return;
+      
+      const lat = parseFloat("{{ page.get('lat','') }}");
+      const lng = parseFloat("{{ page.get('lng','') }}");
+
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+        el.innerHTML = '<div class="text-center p-4 text-muted font-monospace">MAP DATA CORRUPTED</div>';
+        return;
+      }
+      
+      const map = L.map('map', {scrollWheelZoom:false}).setView([lat, lng], 16);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap'
+      }).addTo(map);
+
+      const marker = L.marker([lat, lng]).addTo(map);
+      marker.bindPopup("<b style='font-family:Rajdhani'>{{ page.get('business_name','')|e }}</b><br>BASE");
+      
+      setTimeout(() => map.invalidateSize(), 500);
+    })();
+  </script>
+</body>
+</html>
