@@ -1902,6 +1902,9 @@ DEFAULT_HTML_TEMPLATES = {
     "dentist": "public/dentist.html",
     "flowers": "public/floreria.html",
     "restaurantblack": "public/restaurant_min.html",
+    "festivo": "public/festivo.html",
+    "salon_belleza": "public/barber_1.html",
+    "dentista": "public/dentista.html",
 }
 
 @app.route('/manage_page')
