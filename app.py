@@ -2259,10 +2259,14 @@ def manage_page_slug(slug):
 
 @app.route('/negocio/<nombre>', methods=['GET', 'POST'])
 def detalle_negocio(nombre):
+    # trae querystring original (tpl, preview, ts...)
+    qs = request.query_string.decode("utf-8")
+    suffix = f"?{qs}" if qs else ""
+
     # 1) Si ya te mandaron un slug, redirige directo
     negocio = mongo.db.page_data.find_one({'slug': nombre})
     if negocio:
-        return redirect(url_for('negocio_por_slug', slug=negocio['slug']), code=301)
+        return redirect(url_for('negocio_por_slug', slug=negocio['slug']) + suffix, code=301)
 
     # 2) Legacy real: business_name (exact match)
     negocio = mongo.db.page_data.find_one({'business_name': nombre})
@@ -2270,9 +2274,9 @@ def detalle_negocio(nombre):
         flash('Negocio no encontrado.')
         return redirect(url_for('index'))
 
-    # 3) Asegura slug y redirige SEO-friendly
+    # 3) Asegura slug y redirige SEO-friendly (CON QS)
     negocio = ensure_page_has_slug(negocio)
-    return redirect(url_for('negocio_por_slug', slug=negocio['slug']), code=301)
+    return redirect(url_for('negocio_por_slug', slug=negocio['slug']) + suffix, code=301)
 
 @app.route('/api/leads', methods=['POST'])
 def api_create_lead():
