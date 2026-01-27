@@ -1186,18 +1186,79 @@ def dashboard_slug(slug):
         'posts':     mongo.db.posts.count_documents({'page_id': page_id}),
         'avisos':    mongo.db.avisos.count_documents({'page_id': page_id}),
         'productos': mongo.db.productos.count_documents({'page_id': page_id}),
-        'resenas':   mongo.db.resenas.count_documents({'page_id': page_id}) if 'resenas' in mongo.db.list_collection_names() else 0,
+        'resenas':   mongo.db.reseñas.count_documents({'page_id': page_id}) if 'reseñas' in mongo.db.list_collection_names() else 0,
         'usuarios':  mongo.db.users.count_documents({}) if current_user.role == 'admin' else 0,
     }
 
-    # --- Recientes (top 6 por fecha) ---
+    # --- Recientes (top 6) ---
     recientes = {
         'posts':     list(mongo.db.posts.find({'page_id': page_id}).sort('created_at', -1).limit(6)),
         'avisos':    list(mongo.db.avisos.find({'page_id': page_id}).sort('created_at', -1).limit(6)),
         'productos': list(mongo.db.productos.find({'page_id': page_id}).sort('created_at', -1).limit(6)),
     }
 
-    return render_template('dashboard.html', page=page, stats=stats, recientes=recientes)
+    # =========================
+    # Analytics 7 días
+    # =========================
+    since = datetime.utcnow() - timedelta(days=7)
+
+    analytics_rows = list(mongo.db.events.aggregate([
+        {"$match": {"page_id": page_id, "ts": {"$gte": since}}},
+        {"$group": {"_id": "$type", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}}
+    ]))
+    analytics = {r["_id"]: r["count"] for r in analytics_rows}
+
+    # Vistas últimos 7 días (serie simple por día)
+    daily = list(mongo.db.events.aggregate([
+        {"$match": {"page_id": page_id, "type": "view", "ts": {"$gte": since}}},
+        {"$project": {"d": {"$dateToString": {"format": "%Y-%m-%d", "date": "$ts"}}}},
+        {"$group": {"_id": "$d", "count": {"$sum": 1}}},
+        {"$sort": {"_id": 1}}
+    ]))
+
+    # =========================
+    # Leads
+    # =========================
+    leads_total = mongo.db.leads.count_documents({"page_id": page_id}) if "leads" in mongo.db.list_collection_names() else 0
+    leads_7d = mongo.db.leads.count_documents({"page_id": page_id, "created_at": {"$gte": since}}) if "leads" in mongo.db.list_collection_names() else 0
+    leads_recent = list(mongo.db.leads.find({"page_id": page_id}).sort("created_at", -1).limit(10)) if "leads" in mongo.db.list_collection_names() else []
+
+    # =========================
+    # Citas / Reservas
+    # =========================
+    appt_pending = mongo.db.appointments.count_documents({"page_id": page_id, "status": "pending"}) if "appointments" in mongo.db.list_collection_names() else 0
+    appt_total = mongo.db.appointments.count_documents({"page_id": page_id}) if "appointments" in mongo.db.list_collection_names() else 0
+    appt_upcoming = list(mongo.db.appointments.find({"page_id": page_id}).sort("start_at", 1).limit(10)) if "appointments" in mongo.db.list_collection_names() else []
+
+    # =========================
+    # Promos activas
+    # =========================
+    now = datetime.utcnow()
+    promos_active = mongo.db.promos.count_documents({
+        "page_id": page_id,
+        "active": True,
+        "starts_at": {"$lte": now},
+        "$or": [{"ends_at": None}, {"ends_at": {"$gte": now}}]
+    }) if "promos" in mongo.db.list_collection_names() else 0
+
+    return render_template(
+        'dashboard.html',
+        page=page,
+        stats=stats,
+        recientes=recientes,
+
+        # extras
+        analytics=analytics,
+        daily_views=daily,
+        leads_total=leads_total,
+        leads_7d=leads_7d,
+        leads_recent=leads_recent,
+        appt_total=appt_total,
+        appt_pending=appt_pending,
+        appt_upcoming=appt_upcoming,
+        promos_active=promos_active
+    )
 
 # Compat: /dashboard → /dashboard/<slug>
 @app.route('/dashboard')
@@ -2198,28 +2259,288 @@ def manage_page_slug(slug):
 
 @app.route('/negocio/<nombre>', methods=['GET', 'POST'])
 def detalle_negocio(nombre):
-    negocio = mongo.db.page_data.find_one({'business_name': nombre})
-    negocios = mongo.db.page_data.find()  # si lo usas en sidebars, etc.
+    # 1) Si ya te mandaron un slug, redirige directo
+    negocio = mongo.db.page_data.find_one({'slug': nombre})
+    if negocio:
+        return redirect(url_for('negocio_por_slug', slug=negocio['slug']), code=301)
 
+    # 2) Legacy real: business_name (exact match)
+    negocio = mongo.db.page_data.find_one({'business_name': nombre})
     if not negocio:
         flash('Negocio no encontrado.')
         return redirect(url_for('index'))
 
+    # 3) Asegura slug y redirige SEO-friendly
+    negocio = ensure_page_has_slug(negocio)
+    return redirect(url_for('negocio_por_slug', slug=negocio['slug']), code=301)
+
+@app.route('/api/leads', methods=['POST'])
+def api_create_lead():
+    data = request.get_json(silent=True) or {}
+
+    slug = (data.get("slug") or "").strip()
+    nombre = (data.get("nombre") or "").strip()
+    items = data.get("items") or []
+    canal = (data.get("canal") or "whatsapp").strip().lower()
+
+    if not slug or not nombre or not isinstance(items, list) or len(items) == 0:
+        return {"ok": False, "error": "payload_invalido"}, 400
+
+    page = mongo.db.page_data.find_one({"slug": slug}, {"_id": 1, "business_name": 1, "whatsapp": 1, "phone": 1})
+    if not page:
+        return {"ok": False, "error": "negocio_no_encontrado"}, 404
+
+    # normaliza items
+    clean_items = []
+    for it in items:
+        if not isinstance(it, dict):
+            continue
+        title = (it.get("title") or "").strip()
+        qty = int(it.get("qty") or 0)
+        if title and qty > 0:
+            clean_items.append({"title": title, "qty": qty})
+
+    if not clean_items:
+        return {"ok": False, "error": "sin_items"}, 400
+
+    lead = {
+        "page_id": page["_id"],
+        "slug": slug,
+        "customer_name": nombre,
+        "items": clean_items,
+        "channel": canal,
+        "status": "new",
+        "created_at": datetime.utcnow(),
+        "ip": request.headers.get("X-Forwarded-For", request.remote_addr),
+        "ua": request.headers.get("User-Agent", "")
+    }
+    ins = mongo.db.leads.insert_one(lead)
+
+    # evento analytics
+    mongo.db.events.insert_one({
+        "page_id": page["_id"],
+        "slug": slug,
+        "type": "lead_created",
+        "ts": datetime.utcnow(),
+        "meta": {"lead_id": str(ins.inserted_id), "items_count": len(clean_items)}
+    })
+
+    return {
+        "ok": True,
+        "lead_id": str(ins.inserted_id),
+        "whatsapp": (page.get("whatsapp") or "").strip(),
+        "phone": (page.get("phone") or "").strip()
+    }
+
+@app.route('/admin/leads')
+@require_active_subscription
+@current_site(required=True)
+@login_required
+@roles_required('admin')
+def admin_leads():
+    page_id = get_current_page_id()
+    leads = list(mongo.db.leads.find({"page_id": page_id}).sort("created_at", -1).limit(200))
+    return render_template("admin_leads.html", leads=leads)
+
+@app.route('/api/track', methods=['POST'])
+def api_track():
+    data = request.get_json(silent=True) or {}
+    slug = (data.get("slug") or "").strip()
+    etype = (data.get("type") or "").strip()
+
+    if not slug or not etype:
+        return {"ok": False}, 400
+
+    page = mongo.db.page_data.find_one({"slug": slug}, {"_id": 1})
+    if not page:
+        return {"ok": False}, 404
+
+    meta = data.get("meta") if isinstance(data.get("meta"), dict) else {}
+    doc = {
+        "page_id": page["_id"],
+        "slug": slug,
+        "type": etype,                 # view, click_whatsapp, click_phone, click_maps...
+        "ts": datetime.utcnow(),
+        "meta": meta,
+        "ip": request.headers.get("X-Forwarded-For", request.remote_addr),
+        "ua": request.headers.get("User-Agent", "")
+    }
+    mongo.db.events.insert_one(doc)
+    return {"ok": True}
+
+
+@app.route('/api/appointments', methods=['POST'])
+def api_create_appointment():
+    data = request.get_json(silent=True) or {}
+    slug = (data.get("slug") or "").strip()
+    name = (data.get("name") or "").strip()
+    phone = (data.get("phone") or "").strip()
+    service = (data.get("service") or "").strip()
+    start_iso = (data.get("start_at") or "").strip()
+
+    if not slug or not name or not phone or not service or not start_iso:
+        return {"ok": False, "error": "faltan_campos"}, 400
+
+    page = mongo.db.page_data.find_one({"slug": slug}, {"_id": 1})
+    if not page:
+        return {"ok": False, "error": "negocio_no_encontrado"}, 404
+
+    # parse ISO
+    try:
+        start_at = datetime.fromisoformat(start_iso.replace("Z",""))
+    except Exception:
+        return {"ok": False, "error": "fecha_invalida"}, 400
+
+    appt = {
+        "page_id": page["_id"],
+        "slug": slug,
+        "customer_name": name,
+        "phone": phone,
+        "service_title": service,
+        "start_at": start_at,
+        "status": "pending",
+        "created_at": datetime.utcnow()
+    }
+    ins = mongo.db.appointments.insert_one(appt)
+
+    mongo.db.events.insert_one({
+        "page_id": page["_id"],
+        "slug": slug,
+        "type": "appointment_created",
+        "ts": datetime.utcnow(),
+        "meta": {"appointment_id": str(ins.inserted_id)}
+    })
+
+    return {"ok": True, "appointment_id": str(ins.inserted_id)}
+
+@app.route('/admin/appointments')
+@require_active_subscription
+@current_site(required=True)
+@login_required
+@roles_required('admin')
+def admin_appointments():
+    page_id = get_current_page_id()
+    appts = list(mongo.db.appointments.find({"page_id": page_id}).sort("start_at", 1).limit(500))
+    return render_template("admin_appointments.html", appts=appts)
+
+@app.route('/admin/appointments/<appt_id>/<action>', methods=['POST'])
+@require_active_subscription
+@current_site(required=True)
+@login_required
+@roles_required('admin')
+def admin_appointments_action(appt_id, action):
+    page_id = get_current_page_id()
+    if action not in ["approve", "reject"]:
+        return redirect(url_for("admin_appointments"))
+
+    status = "approved" if action == "approve" else "rejected"
+    mongo.db.appointments.update_one(
+        {"_id": ObjectId(appt_id), "page_id": page_id},
+        {"$set": {"status": status, "updated_at": datetime.utcnow()}}
+    )
+    return redirect(url_for("admin_appointments"))
+
+@app.route('/admin/promos', methods=['GET', 'POST'])
+@require_active_subscription
+@current_site(required=True)
+@login_required
+@roles_required('admin')
+def admin_promos():
+    page_id = get_current_page_id()
+
+    if request.method == "POST":
+        title = (request.form.get("title") or "").strip()
+        desc = (request.form.get("description") or "").strip()
+        code = (request.form.get("code") or "").strip().upper()
+        discount_type = (request.form.get("discount_type") or "percent").strip()
+        value = float(request.form.get("value") or 0)
+        starts = (request.form.get("starts_at") or "").strip()  # yyyy-mm-dd
+        ends = (request.form.get("ends_at") or "").strip()
+
+        if not title:
+            flash("Título requerido", "warning")
+            return redirect(url_for("admin_promos"))
+
+        def _parse_date(s):
+            if not s:
+                return None
+            try:
+                y,m,d = [int(x) for x in s.split("-")]
+                return datetime(y,m,d)
+            except:
+                return None
+
+        doc = {
+            "page_id": page_id,
+            "title": title,
+            "description": desc,
+            "code": code or None,
+            "discount_type": discount_type,  # percent|fixed|text
+            "value": value,
+            "starts_at": _parse_date(starts) or datetime.utcnow(),
+            "ends_at": _parse_date(ends),
+            "active": True,
+            "priority": int(request.form.get("priority") or 0),
+            "created_at": datetime.utcnow()
+        }
+        mongo.db.promos.insert_one(doc)
+        flash("Promo creada ✅", "success")
+        return redirect(url_for("admin_promos"))
+
+    promos = list(mongo.db.promos.find({"page_id": page_id}).sort("created_at", -1))
+    return render_template("admin_promos.html", promos=promos)
+
+@app.route('/admin/promos/<promo_id>/toggle', methods=['POST'])
+@require_active_subscription
+@current_site(required=True)
+@login_required
+@roles_required('admin')
+def admin_promos_toggle(promo_id):
+    page_id = get_current_page_id()
+    p = mongo.db.promos.find_one({"_id": ObjectId(promo_id), "page_id": page_id})
+    if p:
+        mongo.db.promos.update_one({"_id": p["_id"]}, {"$set": {"active": not bool(p.get("active", True))}})
+    return redirect(url_for("admin_promos"))
+
+
+from flask import abort
+
+@app.route('/n/<slug>', methods=['GET', 'POST'])
+def negocio_por_slug(slug):
+    # ✅ Fuente de verdad: slug
+    negocio = mongo.db.page_data.find_one({'slug': slug})
+    if not negocio:
+        abort(404)
+
+    # Sidebars (si lo usas)
+    negocios = mongo.db.page_data.find()
+
     # Colecciones asociadas
-    posts     = list(mongo.db.posts.find({'page_id': negocio['_id']}).limit(3))
-    avisos    = list(mongo.db.avisos.find({'page_id': negocio['_id']}))
+    posts = list(mongo.db.posts.find({'page_id': negocio['_id']}).limit(3))
+    avisos = list(mongo.db.avisos.find({'page_id': negocio['_id']}))
     productos_all = list(mongo.db.productos.find({'page_id': negocio['_id']}))
 
     productos_fisicos = [p for p in productos_all if p.get('tipo', 'producto') == 'producto']
-    servicios        = [p for p in productos_all if p.get('tipo', 'producto') == 'servicio']
+    servicios = [p for p in productos_all if p.get('tipo', 'producto') == 'servicio']
 
-    reseñas   = list(mongo.db.reseñas.find({'page_id': negocio['_id']}))
+    reseñas = list(mongo.db.reseñas.find({'page_id': negocio['_id']}))
 
+    # ✅ Promos activas (marketing orgánico)
+    now = datetime.utcnow()
+    promos = list(mongo.db.promos.find({
+        "page_id": negocio["_id"],
+        "active": True,
+        "starts_at": {"$lte": now},
+        "$or": [
+            {"ends_at": None},
+            {"ends_at": {"$gte": now}}
+        ]
+    }).sort([("priority", -1), ("created_at", -1)]).limit(3))
 
     # Alta de reseña (POST)
     if request.method == 'POST':
         nombre_usuario = request.form.get('nombre')
-        comentario     = request.form.get('comentario')
+        comentario = request.form.get('comentario')
         try:
             estrellas = int(request.form.get('estrellas', 0))
         except (TypeError, ValueError):
@@ -2234,11 +2555,10 @@ def detalle_negocio(nombre):
                 'fecha': datetime.utcnow()
             })
             flash("Gracias por tu reseña 🙌")
-            return redirect(url_for('detalle_negocio', nombre=nombre))
+            return redirect(url_for('negocio_por_slug', slug=slug))
 
-    # ---- Normalizar a listas para evitar usar filtros no disponibles en Jinja ----
+    # Normalizar strings->listas para chips
     def _to_list(val):
-        """Acepta list o string con comas y devuelve lista limpia de strings."""
         if isinstance(val, list):
             return [str(x).strip() for x in val if str(x).strip()]
         if isinstance(val, str):
@@ -2246,9 +2566,9 @@ def detalle_negocio(nombre):
         return []
 
     services_list = _to_list(negocio.get('services', ''))
-    pm_list       = _to_list(negocio.get('payment_methods', ''))
+    pm_list = _to_list(negocio.get('payment_methods', ''))
 
-    # ===== Elegir plantilla por default_html o override via ?tpl= =====
+    # Elegir plantilla por default_html o override ?tpl=
     tpl_key = request.args.get('tpl') or negocio.get('default_html') or 'classico'
     template_name = DEFAULT_HTML_TEMPLATES.get(tpl_key, DEFAULT_HTML_TEMPLATES['classico'])
 
@@ -2260,14 +2580,15 @@ def detalle_negocio(nombre):
         productos_fisicos=productos_fisicos,
         servicios=servicios,
         reseñas=reseñas,
-        services_list=services_list,   # <-- para chips
-        pm_list=pm_list                # <-- para chips
+        services_list=services_list,
+        pm_list=pm_list,
+        promos=promos,      # ✅ para mostrar promos
+        slug=slug           # ✅ útil en JS para track/leads
     )
 
     try:
         return render_template(template_name, **ctx)
     except TemplateNotFound:
-        # Fallback duro
         return render_template(DEFAULT_HTML_TEMPLATES['classico'], **ctx)
 
 @app.route('/negocios')

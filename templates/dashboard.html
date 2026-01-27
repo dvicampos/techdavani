@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% block title %}Global PYMES{% endblock %}
+{% block title %}Dashboard · Global PYMES{% endblock %}
 
 {% block content %}
 {# ==== Defaults seguros ==== #}
@@ -7,268 +7,386 @@
 {% set S = stats|default({}) %}
 {% set R = recientes|default({'posts':[], 'avisos':[], 'productos':[]}) %}
 
+{# ====== NUEVOS (si existen) ====== #}
+{% set ANA = analytics|default({}) %}
+{% set DV  = daily_views|default([]) %}
+{% set LEADS_TOTAL = leads_total|default(0) %}
+{% set LEADS_7D    = leads_7d|default(0) %}
+{% set APPT_TOTAL  = appt_total|default(0) %}
+{% set APPT_PEND   = appt_pending|default(0) %}
+{% set PROMOS_ACT  = promos_active|default(0) %}
+
 <style>
-  /* ===== Dark dashboard fijo ===== */
-  :root {
-    --page-bg: #0b1020;        /* fondo detrás del contenedor */
-    --shell-bg: rgba(13,18,32,.35);
-    --panel: rgba(13,18,32,.35);
-    --panel-solid: #111827;
-    --ink: #e2e8f0;
-    --muted: #94a3b8;
-    --accent: #f3c623;
-    --accent-soft: rgba(243,198,35,.12);
-    --danger: #ef4444;
+  /* ===== Theme Blue + Green (Create) ===== */
+  :root{
+    --page-bg: #070b18;
+    --shell-bg: rgba(10,16,34,.52);
+    --panel: rgba(10,16,34,.45);
+    --panel-solid: #0b1226;
+    --ink: #e8eefc;
+    --muted: rgba(232,238,252,.58);
+
+    --blue: #2563eb;
+    --blue-2: #60a5fa;
+    --blue-soft: rgba(37,99,235,.16);
+
+    --green: #22c55e;
+    --green-2: #86efac;
+    --green-soft: rgba(34,197,94,.16);
+
+    --stroke: rgba(148,163,184,.16);
     --radius-sm: 14px;
     --radius-md: 18px;
-    --shadow: 0 18px 40px rgba(0,0,0,.35);
-    --stroke: rgba(148,163,184,.16);
-    --gradient-header: radial-gradient(circle at 10% 10%, rgba(243,198,35,.45), rgba(11,16,32,0) 44%), linear-gradient(130deg, #121a2f 0%, #172a4a 70%);
+    --shadow: 0 18px 44px rgba(0,0,0,.45);
+
+    --gradient-header:
+      radial-gradient(circle at 12% 18%, rgba(96,165,250,.35), rgba(7,11,24,0) 42%),
+      radial-gradient(circle at 85% -10%, rgba(34,197,94,.22), rgba(7,11,24,0) 42%),
+      linear-gradient(135deg, #0b1226 0%, #0e1a3b 52%, #0b1226 100%);
   }
 
-  .dash-shell {
-    max-width: 1180px;
-    margin: 1.6rem auto 3.2rem;
-    background: radial-gradient(circle at 20% -10%, rgba(243,198,35,.16), rgba(11,16,32,0) 38%), rgba(12,16,27,.6);
-    backdrop-filter: blur(24px);
+  .dash-shell{
+    max-width: 1220px;
+    margin: 1.4rem auto 3rem;
+    background:
+      radial-gradient(circle at 18% -12%, rgba(37,99,235,.22), rgba(7,11,24,0) 40%),
+      rgba(9,12,22,.62);
     border: 1px solid rgba(148,163,184,.12);
-    border-radius: 18px;
+    border-radius: var(--radius-md);
     box-shadow: var(--shadow);
     overflow: hidden;
+    backdrop-filter: blur(24px);
   }
 
-  /* ===== Header ===== */
-  .dash-header {
+  /* ===== Nav/Topbar ===== */
+  .dash-nav{
+    display:flex;
+    justify-content:space-between;
+    gap:1rem;
+    align-items:center;
+    padding: .95rem 1.2rem;
+    border-bottom: 1px solid rgba(148,163,184,.12);
+    background: rgba(7,11,24,.55);
+    backdrop-filter: blur(18px);
+  }
+  .nav-left{display:flex;align-items:center;gap:.75rem;min-width: 280px;}
+  .nav-pill{
+    background: rgba(37,99,235,.16);
+    border: 1px solid rgba(96,165,250,.28);
+    color: #dbeafe;
+    padding: .32rem .65rem;
+    border-radius: 999px;
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+  }
+  .nav-title{display:flex;flex-direction:column;line-height:1.15;}
+  .nav-title strong{color:#fff;font-size:.92rem;}
+  .nav-title small{color:rgba(232,238,252,.55);font-size:.7rem;}
+
+  .nav-actions{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;justify-content:flex-end;}
+  .btnx{
+    display:inline-flex;
+    align-items:center;
+    gap:.45rem;
+    padding: .45rem .75rem;
+    border-radius: 999px;
+    border: 1px solid rgba(148,163,184,.18);
+    background: rgba(15,23,42,.25);
+    color: #fff;
+    text-decoration:none;
+    font-size: .72rem;
+    font-weight: 650;
+    transition: transform .08s linear, filter .08s linear, background .12s ease;
+  }
+  .btnx:hover{transform: translateY(-1px); filter:brightness(1.05);}
+  .btnx-blue{background: rgba(37,99,235,.22); border-color: rgba(96,165,250,.28);}
+  .btnx-green{background: rgba(34,197,94,.2); border-color: rgba(134,239,172,.28);}
+  .btnx-ghost{background: rgba(15,23,42,.18);}
+
+  .nav-search{
+    display:flex; align-items:center; gap:.45rem;
+    background: rgba(15,23,42,.42);
+    border:1px solid rgba(226,232,240,.12);
+    border-radius:999px;
+    padding:.35rem .75rem;
+  }
+  .nav-search input{
+    background:transparent;border:0;outline:0;color:#fff;width:240px;font-size:.74rem;
+  }
+  .nav-search input::placeholder{color:rgba(232,238,252,.55);}
+
+  /* ===== Header (welcome) ===== */
+  .dash-header{
     display:flex;
     justify-content:space-between;
     gap:1rem;
     align-items:center;
     background: var(--gradient-header);
-    padding: 1.1rem 1.4rem 1.1rem;
+    padding: 1.05rem 1.2rem;
   }
-  .dash-title {
-    display:flex;
-    flex-direction:column;
-    gap:.25rem;
-  }
-  .dash-title h1 {
-    font-size: 1.28rem;
-    margin:0;
-    color:#fff;
-    font-weight: 700;
-    letter-spacing:.01em;
-  }
-  .dash-title small {
-    color: rgba(226,232,240,.85);
-    font-size:.7rem;
-  }
-
-  .dash-search {
-    display:flex;
-    align-items:center;
-    gap:.4rem;
-    background: rgba(15,23,42,.42);
-    border:1px solid rgba(226,232,240,.12);
-    border-radius:999px;
-    padding:.35rem .75rem;
-    backdrop-filter: blur(10px);
-  }
-  .dash-search span {font-size:.9rem;}
-  .dash-search input {
-    background:transparent;
-    border:0;
-    outline:0;
-    color:#fff;
-    width: 230px;
-    font-size:.75rem;
-  }
-  .dash-search input::placeholder {color:rgba(226,232,240,.6);}
+  .dash-title{display:flex;flex-direction:column;gap:.25rem;}
+  .dash-title h1{font-size:1.18rem;margin:0;color:#fff;font-weight:750;}
+  .dash-title small{color:rgba(232,238,252,.6);font-size:.7rem;}
 
   /* ===== Body ===== */
-  .dash-body {
-    padding: 1.1rem 1.4rem 1.5rem;
-  }
+  .dash-body{padding: 1.1rem 1.2rem 1.5rem;}
 
   /* ===== KPIs ===== */
-  .kpi-row {
+  .kpi-row{
     display:grid;
-    grid-template-columns: repeat(auto-fit, minmax(145px,1fr));
+    grid-template-columns: repeat(auto-fit, minmax(160px,1fr));
     gap:.9rem;
   }
-  .kpi {
-    background: radial-gradient(circle at 10% 10%, rgba(243,198,35,.1), rgba(15,23,42,0) 48%), rgba(15,23,42,.22);
+  .kpi{
+    background:
+      radial-gradient(circle at 12% 18%, rgba(96,165,250,.16), rgba(15,23,42,0) 52%),
+      rgba(15,23,42,.22);
     border:1px solid rgba(148,163,184,.14);
-    border-radius: 14px;
-    padding:.7rem .85rem .75rem;
-    backdrop-filter: blur(10px);
+    border-radius: var(--radius-sm);
+    padding:.8rem .9rem .85rem;
+    text-decoration:none;
+    display:block;
+    position:relative;
+    overflow:hidden;
   }
-  .kpi-badge {
-    background: rgba(243,198,35,1);
-    color:#101010;
-    font-size:.6rem;
-    padding:.1rem .55rem .15rem;
-    border-radius:999px;
-    font-weight:600;
-    display:inline-block;
-    margin-bottom:.3rem;
+  .kpi::after{
+    content:"";
+    position:absolute; inset:-20px -20px auto auto;
+    width: 120px; height: 120px;
+    background: radial-gradient(circle at 30% 30%, rgb(176 185 203 / 35%), rgba(15, 23, 42, 0) 70%);
+    transform: rotate(18deg);
   }
-  .kpi-value {
-    font-size:1.35rem;
-    font-weight:700;
+  .kpi-badge{
+    background: rgba(37,99,235,.95);
     color:#fff;
-    line-height:1.05;
+    font-size:.6rem;
+    padding:.12rem .55rem .14rem;
+    border-radius:999px;
+    font-weight:750;
+    display:inline-block;
+    margin-bottom:.38rem;
   }
-  .kpi-label {
-    font-size:.72rem;
-    color:rgba(226,232,240,.7);
-  }
+  .kpi-value{font-size:1.45rem;font-weight:800;color:#fff;line-height:1.05;}
+  .kpi-label{font-size:.72rem;color:rgba(232,238,252,.6);}
+  .kpi:hover{filter:brightness(1.06);}
 
   /* ===== Section title ===== */
-  .section-title {
+  .section-title{
     font-size:.72rem;
     text-transform:uppercase;
-    letter-spacing:.08em;
-    color:rgba(226,232,240,.4);
+    letter-spacing:.10em;
+    color:rgba(232,238,252,.38);
     margin:1.25rem 0 .6rem;
-    font-weight:600;
+    font-weight:650;
+    display:flex;
+    align-items:center;
+    gap:.5rem;
+  }
+  .section-title:before{
+    content:"";
+    width:10px;height:10px;border-radius:999px;
+    background: rgba(37,99,235,.9);
+    box-shadow: 0 0 0 4px rgba(37,99,235,.14);
   }
 
   /* ===== Actions ===== */
-  .actions-grid {
+  .actions-grid{
     display:grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px,1fr));
-    gap:.75rem;
+    grid-template-columns: repeat(auto-fit, minmax(250px,1fr));
+    gap:.8rem;
   }
-  .action-card {
-    background: radial-gradient(circle at 20% 15%, rgba(255,255,255,.05), rgba(17,24,39,.0) 45%), rgba(17,24,39,.25);
-    border:1px solid rgba(148,163,184,.1);
-    border-radius: 14px;
-    padding:.75rem .75rem .8rem;
+  .action-card{
+    background:
+      radial-gradient(circle at 22% 18%, rgba(255,255,255,.05), rgba(17,24,39,0) 48%),
+      rgba(17,24,39,.26);
+    border:1px solid rgba(148,163,184,.12);
+    border-radius: var(--radius-sm);
+    padding:.85rem .85rem .9rem;
     display:flex;
-    gap:.65rem;
+    gap:.75rem;
     align-items:flex-start;
-    min-height:88px;
-    backdrop-filter: blur(15px);
+    min-height:92px;
+    backdrop-filter: blur(14px);
   }
-  .action-icon {
-    width:40px;
-    height:40px;
-    border-radius: 14px;
-    display:grid;
-    place-items:center;
-    background: radial-gradient(circle at 20% 20%, #f9d36b 0%, #f3c623 45%, #be8e07 100%);
-    color:#111827;
-    font-size:1.05rem;
-    box-shadow: 0 10px 20px rgba(0,0,0,.25);
+  .action-icon{
+    width:42px;height:42px;border-radius: 14px;
+    display:grid;place-items:center;
+    background: radial-gradient(circle at 30% 30%, rgba(96,165,250,.9), rgba(37,99,235,.95) 52%, rgba(30,58,138,1) 100%);
+    color:#fff;font-size:1.05rem;
+    box-shadow: 0 12px 22px rgba(0,0,0,.28);
+    flex:0 0 auto;
   }
-  .action-body h5 {
-    font-size:.83rem;
-    margin:0 0 .25rem;
-    color:var(--ink);
-    color:#fff;
-  }
-  .action-body p {
-    font-size:.7rem;
-    color:rgba(226,232,240,.5);
-    margin:0 0 .45rem;
-  }
-  .action-body .btn {
-    padding:.25rem .6rem;
-    font-size:.67rem;
+  .action-body h5{font-size:.86rem;margin:0 0 .22rem;color:#fff;font-weight:750;}
+  .action-body p{font-size:.71rem;color:rgba(232,238,252,.55);margin:0 0 .5rem;}
+  .action-body .btn{
+    padding:.28rem .68rem;
+    font-size:.68rem;
     border-radius: 999px;
+    border: 0;
+    font-weight: 750;
   }
+  .btn-primary{background: var(--blue); border:0;}
+  .btn-secondary{background: rgba(148,163,184,.14); border: 1px solid rgba(148,163,184,.28); color:#fff;}
+  .btn-success{background: var(--green); border:0;}
+  .btn-warning{background: #f59e0b; border:0;}
+  .btn-info{background: #38bdf8; border:0; color:#0b1226;}
 
-  /* botones oscuros adaptados */
-  .btn-primary {background:#2563eb;border:0;}
-  .btn-success {background:#22c55e;border:0;}
-  .btn-warning {background:#f97316;border:0;}
-  .btn-info {background:#38bdf8;border:0;}
-  .btn-secondary {background:rgba(148,163,184,.14);border:1px solid rgba(148,163,184,.3);color:#fff;}
+  /* Create buttons -> green emphasis */
+  .btn-create{background: var(--green) !important; color:#05250f !important; border:0 !important;}
+  .btn-create:hover{filter:brightness(1.04);}
 
-  /* ===== Recientes ===== */
-  .recent-row {
+  /* ===== Modules strip (SaaS) ===== */
+  .modules-row{
     display:grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px,1fr));
+    grid-template-columns: repeat(auto-fit, minmax(220px,1fr));
     gap:.8rem;
     margin-top:.9rem;
   }
-  .panel {
-    background: radial-gradient(circle at 8% 8%, rgba(243,198,35,.05), rgba(15,23,42,0) 40%), rgba(17,24,39,.35);
+  .module{
+    background:
+      radial-gradient(circle at 15% 18%, rgba(37,99,235,.15), rgba(15,23,42,0) 55%),
+      rgba(17,24,39,.33);
     border:1px solid rgba(148,163,184,.12);
-    border-radius: 14px;
-    padding:.75rem .8rem .1rem;
+    border-radius: var(--radius-sm);
+    padding:.85rem .9rem;
     backdrop-filter: blur(10px);
   }
-  .panel h5 {
-    font-size:.78rem;
-    margin:0 0 .45rem;
-    color:#fff;
+  .module h6{margin:0;color:#fff;font-size:.78rem;font-weight:800;}
+  .module .sub{margin:.2rem 0 .6rem;color:rgba(232,238,252,.55);font-size:.68rem;}
+  .module .meta{display:flex;gap:.5rem;flex-wrap:wrap;margin:.35rem 0 .7rem;}
+  .pill{
+    display:inline-flex;align-items:center;gap:.35rem;
+    padding:.22rem .55rem;
+    border-radius:999px;
+    border:1px solid rgba(148,163,184,.16);
+    background: rgba(15,23,42,.22);
+    color:rgba(232,238,252,.85);
+    font-size:.66rem;
+    font-weight:700;
   }
-  .list-compact {list-style:none;margin:0;padding:0;}
-  .list-compact li {
-    padding:.45rem 0 .5rem;
-    border-bottom:1px dashed rgba(148,163,184,.14);
+  .pill b{color:#fff;}
+  .module a{color:#fff;text-decoration:none;}
+  .module a:hover{text-decoration:underline;}
+
+  /* ===== Recientes ===== */
+  .recent-row{
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px,1fr));
+    gap:.9rem;
+    margin-top:.9rem;
   }
-  .list-compact li:last-child {border-bottom:0;}
-  .item-title {
-    font-size:.74rem;
-    font-weight:500;
-    color:#fff;
-    text-decoration:none;
+  .panel{
+    background:
+      radial-gradient(circle at 10% 12%, rgba(96,165,250,.10), rgba(15,23,42,0) 42%),
+      rgba(17,24,39,.35);
+    border:1px solid rgba(148,163,184,.12);
+    border-radius: var(--radius-sm);
+    padding:.85rem .9rem .2rem;
+    backdrop-filter: blur(10px);
   }
-  .item-title:hover {text-decoration:underline;}
-  .item-meta {
-    font-size:.63rem;
-    color:rgba(226,232,240,.35);
-  }
-  .empty {
-    background: rgba(15,23,42,.24);
+  .panel h5{font-size:.8rem;margin:0 0 .55rem;color:#fff;font-weight:800;}
+  .list-compact{list-style:none;margin:0;padding:0;}
+  .list-compact li{padding:.48rem 0 .55rem;border-bottom:1px dashed rgba(148,163,184,.14);}
+  .list-compact li:last-child{border-bottom:0;}
+  .item-title{font-size:.76rem;font-weight:600;color:#fff;text-decoration:none;}
+  .item-title:hover{text-decoration:underline;}
+  .item-meta{font-size:.64rem;color:rgba(232,238,252,.40);}
+  .empty{
+    background: rgba(15,23,42,.22);
     border:1px dashed rgba(148,163,184,.24);
     border-radius:12px;
-    padding:.65rem .4rem;
+    padding:.75rem .6rem;
     text-align:center;
-    font-size:.68rem;
-    color:rgba(226,232,240,.4);
+    font-size:.70rem;
+    color:rgba(232,238,252,.45);
   }
 
-  @media (max-width: 768px) {
-    .dash-shell { margin: .5rem .3rem 2.5rem; }
-    .dash-header { flex-direction:column; align-items:flex-start; }
-    .dash-search input { width: 160px; }
+  @media (max-width: 900px){
+    .nav-left{min-width:unset}
+    .nav-search input{width: 180px;}
+  }
+  @media (max-width: 768px){
+    .dash-shell{margin:.55rem .35rem 2.5rem;}
+    .dash-nav{flex-direction:column;align-items:flex-start;}
+    .dash-header{flex-direction:column;align-items:flex-start;}
+    .nav-actions{width:100%;justify-content:flex-start}
   }
 </style>
 
 <div class="dash-shell">
-  <!-- header -->
-  <div class="dash-header">
-    <div class="dash-title">
-      <h1>Bienvenido, {{ current_user.nombre }}</h1>
-      {% if now is defined %}
-        <small>Hoy es {{ now().strftime('%d/%m/%Y') }} · {{ PAGE.nombre or 'Tu sitio' }}</small>
-      {% endif %}
+
+  <!-- TOP NAV (super pro) -->
+  <div class="dash-nav">
+    <div class="nav-left">
+      <div class="nav-pill">Dashboard</div>
+      <div class="nav-title">
+        <strong>{{ PAGE.get('business_name','Tu sitio') if PAGE else 'Tu sitio' }}</strong>
+        <small>Slug: {{ PAGE.get('slug','—') if PAGE else '—' }} · Plan: {{ (PAGE.get('plan') if PAGE else '—') }}</small>
+      </div>
     </div>
-    <form class="dash-search" method="get" action="{{ url_for('dashboard_slug', slug=PAGE.slug) if PAGE else url_for('dashboard') }}">
-      <span>🔎</span>
+
+    <form class="nav-search" method="get" action="{{ url_for('dashboard_slug', slug=PAGE.slug) if PAGE else url_for('dashboard') }}">
+      <span style="opacity:.9;">🔎</span>
       <input name="q" type="search" placeholder="Buscar publicaciones, avisos, productos…">
     </form>
+
+    <div class="nav-actions">
+      {% if PAGE and PAGE.get('slug') %}
+        <a class="btnx btnx-blue" target="_blank" href="{{ url_for('negocio_por_slug', slug=PAGE.slug) }}">
+          👀 Ver público
+        </a>
+      {% endif %}
+      <a class="btnx btnx-ghost" href="{{ url_for('billing_portal') }}">
+        💳 Pagos / Plan
+      </a>
+      {% if current_user.role == 'admin' and PAGE and PAGE.get('slug') %}
+        <a class="btnx btnx-ghost" href="{{ url_for('manage_page_slug', slug=PAGE.slug) }}">
+          🛠 Editar sitio
+        </a>
+      {% endif %}
+      <a class="btnx btnx-ghost" href="{{ url_for('sites') }}">
+        🧩 Cambiar sitio
+      </a>
+    </div>
   </div>
 
-  <!-- body -->
+  <!-- HEADER -->
+  <div class="dash-header">
+    <div class="dash-title">
+      <h1>Hola, {{ current_user.nombre }}</h1>
+      {% if now is defined %}
+        <small>Hoy es {{ now().strftime('%d/%m/%Y') }} · Gestionando: {{ PAGE.get('business_name','Tu sitio') if PAGE else 'Tu sitio' }}</small>
+      {% endif %}
+    </div>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap;justify-content:flex-end;">
+      <span class="pill">⚡ Leads 7d: <b>{{ LEADS_7D }}</b></span>
+      <span class="pill">📆 Pendientes: <b>{{ APPT_PEND }}</b></span>
+      <span class="pill">🏷 Promos: <b>{{ PROMOS_ACT }}</b></span>
+    </div>
+  </div>
+
+  <!-- BODY -->
   <div class="dash-body">
+
     <!-- KPIs -->
     <div class="kpi-row">
       {% set kpis = [
         {'label':'Publicaciones','value': S.get('posts', 0),'href':url_for('list_post')},
         {'label':'Avisos','value': S.get('avisos', 0),'href':url_for('list_avisos')},
         {'label':'Productos','value': S.get('productos', 0),'href':url_for('list_productos')},
-        {'label':'Reseñas','value': S.get('resenas', 0),'href':url_for('admin_reseñas')}
+        {'label':'Reseñas','value': S.get('resenas', 0),'href':url_for('admin_reseñas')},
+        {'label':'Leads','value': LEADS_TOTAL,'href':url_for('admin_leads')},
+        {'label':'Reservas','value': APPT_TOTAL,'href':url_for('admin_appointments')},
+        {'label':'Promos','value': PROMOS_ACT,'href':url_for('admin_promos')}
       ] %}
       {% if current_user.role == 'admin' %}
         {% set kpis = kpis + [{'label':'Usuarios','value': S.get('usuarios', 0),'href':url_for('manage_users')}] %}
       {% endif %}
 
       {% for k in kpis %}
-        <a href="{{ k.href }}" class="kpi text-decoration-none d-block">
+        <a href="{{ k.href }}" class="kpi">
           <div class="kpi-badge">KPI</div>
           <div class="kpi-value">{{ k.value }}</div>
           <div class="kpi-label">{{ k.label }}</div>
@@ -276,8 +394,53 @@
       {% endfor %}
     </div>
 
-    <!-- acciones -->
+    <!-- Módulos SaaS -->
+    <div class="section-title">Módulos (SaaS)</div>
+    <div class="modules-row">
+      <div class="module">
+        <h6>⚡ Leads / Cotizaciones</h6>
+        <div class="sub">Cotizaciones guardadas desde tu botón “Cotizar”.</div>
+        <div class="meta">
+          <span class="pill">Total <b>{{ LEADS_TOTAL }}</b></span>
+          <span class="pill">Últimos 7d <b>{{ LEADS_7D }}</b></span>
+        </div>
+        <a href="{{ url_for('admin_leads') }}">Ver leads →</a>
+      </div>
+
+      <div class="module">
+        <h6>📆 Reservas</h6>
+        <div class="sub">Solicitudes de citas y aprobaciones.</div>
+        <div class="meta">
+          <span class="pill">Pendientes <b>{{ APPT_PEND }}</b></span>
+          <span class="pill">Total <b>{{ APPT_TOTAL }}</b></span>
+        </div>
+        <a href="{{ url_for('admin_appointments') }}">Ver reservas →</a>
+      </div>
+
+      <div class="module">
+        <h6>🏷 Promos</h6>
+        <div class="sub">Promociones visibles en tu página pública.</div>
+        <div class="meta">
+          <span class="pill">Activas <b>{{ PROMOS_ACT }}</b></span>
+        </div>
+        <a href="{{ url_for('admin_promos') }}">Gestionar promos →</a>
+      </div>
+
+      <div class="module">
+        <h6>📈 Analytics</h6>
+        <div class="sub">Clicks y vistas (últimos 7 días).</div>
+        <div class="meta">
+          <span class="pill">Vistas <b>{{ ANA.get('view', 0) }}</b></span>
+          <span class="pill">WA <b>{{ ANA.get('click_whatsapp_fab', 0) + ANA.get('click_whatsapp', 0) }}</b></span>
+          <span class="pill">Maps <b>{{ ANA.get('click_maps', 0) }}</b></span>
+        </div>
+        <span class="sub" style="margin:0;">Tip: activa tracking en la plantilla pública.</span>
+      </div>
+    </div>
+
+    <!-- Acciones rápidas -->
     <div class="section-title">Acciones rápidas</div>
+
     {% set acciones = [] %}
     {% if current_user.role == 'admin' %}
       {% set acciones = acciones + [
@@ -285,18 +448,24 @@
         {'icon':'🛠','title':'Gestionar página','text':'Edita la página asignada.','href':(url_for('manage_page_slug', slug=PAGE.slug) if PAGE else '#'),'btn':'primary','label':'Ir'}
       ] %}
     {% endif %}
+
+    {# CREATE en verde #}
     {% if current_user.role in ['admin','moderador'] %}
       {% set acciones = acciones + [
-        {'icon':'📝','title':'Crear blog','text':'Publica una nueva entrada.','href':url_for('crear_post_negocio'),'btn':'success','label':'Crear'},
-        {'icon':'📢','title':'Crear aviso','text':'Publica un aviso para tu comunidad.','href':url_for('create_aviso'),'btn':'warning','label':'Crear'},
-        {'icon':'🛒','title':'Crear producto','text':'Nuevo producto con imagen y precio.','href':url_for('create_producto'),'btn':'info','label':'Crear'}
+        {'icon':'📝','title':'Crear blog','text':'Publica una nueva entrada.','href':url_for('crear_post_negocio'),'btn':'success','label':'Crear', 'create':true},
+        {'icon':'📢','title':'Crear aviso','text':'Publica un aviso para tu comunidad.','href':url_for('create_aviso'),'btn':'success','label':'Crear', 'create':true},
+        {'icon':'🛒','title':'Crear producto','text':'Nuevo producto con imagen y precio.','href':url_for('create_producto'),'btn':'success','label':'Crear', 'create':true},
+        {'icon':'🏷','title':'Crear promo','text':'Lanza una promo visible en tu página pública.','href':url_for('admin_promos'),'btn':'success','label':'Crear', 'create':true}
       ] %}
     {% endif %}
+
     {% set acciones = acciones + [
       {'icon':'📚','title':'Ver publicaciones','text':'Consulta y gestiona tus posts.','href':url_for('list_post'),'btn':'secondary','label':'Ver'},
       {'icon':'📋','title':'Ver avisos','text':'Revisa los avisos publicados.','href':url_for('list_avisos'),'btn':'secondary','label':'Ver'},
-      {'icon':'📦','title':'Ver productos','text':'Administra tus productos.','href':url_for('list_productos'),'btn':'secondary','label':'Ver'},
-      {'icon':'⭐','title':'Ver reseñas','text':'Consulta las reseñas.','href':url_for('admin_reseñas'),'btn':'secondary','label':'Ver'}
+      {'icon':'📦','title':'Ver productos','text':'Administra productos/servicios.','href':url_for('list_productos'),'btn':'secondary','label':'Ver'},
+      {'icon':'⭐','title':'Ver reseñas','text':'Consulta y modera reseñas.','href':url_for('admin_reseñas'),'btn':'secondary','label':'Ver'},
+      {'icon':'⚡','title':'Ver leads','text':'Cotizaciones registradas (SaaS).','href':url_for('admin_leads'),'btn':'secondary','label':'Ver'},
+      {'icon':'📆','title':'Ver reservas','text':'Aprueba o rechaza citas.','href':url_for('admin_appointments'),'btn':'secondary','label':'Ver'}
     ] %}
 
     <div class="actions-grid">
@@ -306,20 +475,24 @@
           <div class="action-body">
             <h5>{{ a.title }}</h5>
             <p>{{ a.text }}</p>
-            <a href="{{ a.href }}" class="btn btn-{{ a.btn }}{% if a.btn=='info' %} text-white{% endif %}">{{ a.label }}</a>
+            <a href="{{ a.href }}"
+               class="btn {% if a.create %}btn-create{% else %}btn-{{ a.btn }}{% endif %}">
+              {{ a.label }}
+            </a>
           </div>
         </div>
       {% endfor %}
     </div>
 
-    <!-- recientes -->
+    <!-- Recientes -->
     <div class="section-title">Recientes</div>
     <div class="recent-row">
+
       <!-- posts -->
       <div class="panel">
         <h5>🆕 Publicaciones</h5>
         {% if R.posts and R.posts|length %}
-          <ul class="list-unstyled list-compact">
+          <ul class="list-compact">
             {% for p in R.posts[:6] %}
               {% set POST_ID =
                 (p.post_id if p.post_id is defined else
@@ -351,7 +524,7 @@
       <div class="panel">
         <h5>📣 Avisos</h5>
         {% if R.avisos and R.avisos|length %}
-          <ul class="list-unstyled list-compact">
+          <ul class="list-compact">
             {% for a in R.avisos[:6] %}
               <li>
                 <span class="item-title">{{ a.titulo or a.title }}</span>
@@ -371,12 +544,12 @@
       <div class="panel">
         <h5>🛍️ Productos</h5>
         {% if R.productos and R.productos|length %}
-          <ul class="list-unstyled list-compact">
+          <ul class="list-compact">
             {% for pr in R.productos[:6] %}
               <li>
-                <a href="{{ url_for('ver_producto', slug=pr.slug) if pr.slug is defined else '#' }}" class="item-title">{{ pr.nombre or pr.name }}</a>
+                <span class="item-title">{{ pr.title or pr.nombre or pr.name }}</span>
                 <div class="item-meta">
-                  {% if pr.precio is defined and pr.precio is not none %}{{ (pr.precio|float)|round(2) }}{% endif %}
+                  {% if pr.price is defined and pr.price is not none %}{{ (pr.price|float)|round(2) }}{% endif %}
                   {{ pr.moneda or 'MXN' }}
                 </div>
               </li>
@@ -386,6 +559,7 @@
           <div class="empty">Todavía no hay productos recientes.</div>
         {% endif %}
       </div>
+
     </div>
   </div>
 </div>

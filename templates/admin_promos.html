@@ -1,0 +1,434 @@
+{% extends "layout.html" %}
+{% block title %}Dashboard · Global PYMES{% endblock %}
+
+{% block content %}
+  <style>
+    /* ===== Same design as Dashboard (Blue + Green create) ===== */
+    :root{
+      --page-bg: #070b18;
+      --shell-bg: rgba(10,16,34,.52);
+      --panel: rgba(10,16,34,.45);
+      --panel-solid: #0b1226;
+
+      --ink: #e8eefc;
+      --muted: rgba(232,238,252,.58);
+
+      --blue: #2563eb;
+      --blue-2: #60a5fa;
+      --blue-soft: rgba(37,99,235,.16);
+
+      --green: #22c55e;
+      --green-2: #86efac;
+      --green-soft: rgba(34,197,94,.16);
+
+      --stroke: rgba(148,163,184,.16);
+      --radius-sm: 14px;
+      --radius-md: 18px;
+      --shadow: 0 18px 44px rgba(0,0,0,.45);
+
+      --gradient-header:
+        radial-gradient(circle at 12% 18%, rgba(96,165,250,.35), rgba(7,11,24,0) 42%),
+        radial-gradient(circle at 85% -10%, rgba(34,197,94,.22), rgba(7,11,24,0) 42%),
+        linear-gradient(135deg, #0b1226 0%, #0e1a3b 52%, #0b1226 100%);
+    }
+
+    html,body{background:var(--page-bg); color:var(--ink);}
+    body{font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;}
+    .brand-font{font-family:"Space Grotesk",Inter,system-ui,sans-serif;}
+    .muted{color:var(--muted);}
+
+    .dash-shell{
+      max-width: 1220px;
+      margin: 1.4rem auto 3rem;
+      background:
+        radial-gradient(circle at 18% -12%, rgba(37,99,235,.22), rgba(7,11,24,0) 40%),
+        rgba(9,12,22,.62);
+      border: 1px solid rgba(148,163,184,.12);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      backdrop-filter: blur(24px);
+    }
+
+    /* ===== Top Nav ===== */
+    .dash-nav{
+      display:flex;
+      justify-content:space-between;
+      gap:1rem;
+      align-items:center;
+      padding: .95rem 1.2rem;
+      border-bottom: 1px solid rgba(148,163,184,.12);
+      background: rgba(7,11,24,.55);
+      backdrop-filter: blur(18px);
+    }
+    .nav-left{display:flex;align-items:center;gap:.75rem;min-width: 280px;}
+    .nav-pill{
+      background: rgba(37,99,235,.16);
+      border: 1px solid rgba(96,165,250,.28);
+      color: #dbeafe;
+      padding: .32rem .65rem;
+      border-radius: 999px;
+      font-size: .68rem;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .nav-title{display:flex;flex-direction:column;line-height:1.15;}
+    .nav-title strong{color:#fff;font-size:.92rem;}
+    .nav-title small{color:rgba(232,238,252,.55);font-size:.7rem;}
+
+    .nav-actions{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;justify-content:flex-end;}
+    .btnx{
+      display:inline-flex;
+      align-items:center;
+      gap:.45rem;
+      padding: .45rem .75rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,.18);
+      background: rgba(15,23,42,.25);
+      color: #fff;
+      text-decoration:none;
+      font-size: .72rem;
+      font-weight: 700;
+      transition: transform .08s linear, filter .08s linear, background .12s ease;
+      user-select:none;
+      cursor:pointer;
+    }
+    .btnx:hover{transform: translateY(-1px); filter:brightness(1.05);}
+    .btnx-blue{background: rgba(37,99,235,.22); border-color: rgba(96,165,250,.28);}
+    .btnx-ghost{background: rgba(15,23,42,.18);}
+
+    /* ===== Header ===== */
+    .dash-header{
+      display:flex;
+      justify-content:space-between;
+      gap:1rem;
+      align-items:center;
+      background: var(--gradient-header);
+      padding: 1.05rem 1.2rem;
+    }
+    .dash-title{display:flex;flex-direction:column;gap:.25rem;}
+    .dash-title h1{font-size:1.18rem;margin:0;color:#fff;font-weight:800;}
+    .dash-title small{color:rgba(232,238,252,.6);font-size:.7rem;}
+
+    /* ===== Body ===== */
+    .dash-body{padding: 1.1rem 1.2rem 1.5rem;}
+
+    /* ===== Pills ===== */
+    .pill{
+      display:inline-flex;align-items:center;gap:.35rem;
+      padding:.22rem .55rem;
+      border-radius:999px;
+      border:1px solid rgba(148,163,184,.16);
+      background: rgba(15,23,42,.22);
+      color:rgba(232,238,252,.85);
+      font-size:.66rem;
+      font-weight:750;
+    }
+    .pill b{color:#fff;}
+
+    /* ===== Panel / Cards ===== */
+    .card-soft{
+      background:
+        radial-gradient(circle at 12% 18%, rgba(96,165,250,.12), rgba(15,23,42,0) 52%),
+        rgba(17,24,39,.28);
+      border:1px solid rgba(148,163,184,.12);
+      border-radius: var(--radius-sm);
+      padding: .9rem .95rem;
+      backdrop-filter: blur(14px);
+    }
+
+    /* Form controls */
+    input,select,textarea{
+      background: rgba(7,11,24,.35) !important;
+      border:1px solid rgba(148,163,184,.18) !important;
+      color:#fff !important;
+    }
+    input::placeholder, textarea::placeholder{color: rgba(232,238,252,.45) !important;}
+    select option{color:#111;}
+    .form-label{color: rgba(232,238,252,.82);}
+    .form-text{color: rgba(232,238,252,.55)!important;}
+
+    /* Buttons */
+    .btn-mini{
+      display:inline-flex;
+      align-items:center;
+      gap:.45rem;
+      padding:.46rem .78rem;
+      border-radius:999px;
+      border:1px solid rgba(148,163,184,.18);
+      background: rgba(15,23,42,.18);
+      color:#fff;
+      text-decoration:none;
+      font-weight:900;
+      font-size:.72rem;
+      transition: transform .08s linear, filter .08s linear;
+      white-space: nowrap;
+      cursor:pointer;
+    }
+    .btn-mini:hover{transform:translateY(-1px);filter:brightness(1.06);}
+    .btn-mini-green{background: rgba(34,197,94,.20); border-color: rgba(134,239,172,.28); color:#05250f;}
+    .btn-mini-blue{background: rgba(37,99,235,.22); border-color: rgba(96,165,250,.28);}
+    .btn-mini-ghost{background: rgba(15,23,42,.14);}
+
+    /* Promo list */
+    .list-item{
+      border: 1px solid rgba(148,163,184,.14);
+      border-radius: 14px;
+      background: rgba(7,11,24,.30);
+      padding: 14px;
+      box-shadow: 0 14px 30px rgba(0,0,0,.25);
+    }
+    .tag-code{
+      border: 1px solid rgba(148,163,184,.18);
+      border-radius:999px;
+      padding:.18rem .6rem;
+      background: rgba(15,23,42,.35);
+      color:#fff;
+      font-weight:900;
+      display:inline-flex;
+      align-items:center;
+      gap:.35rem;
+    }
+    .chip{
+      display:inline-flex;
+      align-items:center;
+      gap:.35rem;
+      padding:.18rem .55rem;
+      border-radius:999px;
+      border:1px solid rgba(148,163,184,.16);
+      background: rgba(15,23,42,.22);
+      color:rgba(232,238,252,.90);
+      font-size:.66rem;
+      font-weight:750;
+    }
+    .chip-on{background: rgba(34,197,94,.16); border-color: rgba(134,239,172,.22); color:#d1fae5;}
+    .chip-off{background: rgba(239,68,68,.14); border-color: rgba(239,68,68,.22); color:#fee2e2;}
+
+    /* helpers */
+    .sep{height:1px;background:rgba(148,163,184,.12);margin:.8rem 0;}
+    .h-title{color:#fff;font-weight:900;}
+    .small-muted{color:rgba(232,238,252,.55);font-size:.72rem;}
+
+    @media (max-width: 900px){
+      .nav-left{min-width:unset}
+    }
+    @media (max-width: 768px){
+      .dash-shell{margin:.55rem .35rem 2.5rem;}
+      .dash-nav{flex-direction:column;align-items:flex-start;}
+      .dash-header{flex-direction:column;align-items:flex-start;}
+      .nav-actions{width:100%;justify-content:flex-start}
+    }
+  </style>
+
+  <div class="dash-shell">
+
+    <!-- TOP NAV -->
+    <div class="dash-nav">
+      <div class="nav-left">
+        <div class="nav-pill">Promos</div>
+        <div class="nav-title">
+          <strong>Promociones / Cupones</strong>
+          <small>Sitio: {{ current_page().get('business_name','') if current_page() else '' }}</small>
+        </div>
+      </div>
+
+      <div class="nav-actions">
+        <a class="btnx btnx-ghost" href="{{ url_for('dashboard') }}">← Dashboard</a>
+        <a class="btnx btnx-ghost" href="{{ url_for('billing_portal') }}">💳 Pagos / Plan</a>
+        {% set CP = current_page() %}
+        {% if CP and CP.get('slug') %}
+          <a class="btnx btnx-blue" target="_blank" href="{{ url_for('negocio_por_slug', slug=CP.slug) }}">👀 Ver público</a>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- HEADER -->
+    <div class="dash-header">
+      <div class="dash-title">
+        <h1 class="brand-font">Promos / Cupones</h1>
+        <small>Estas promos se muestran automáticamente en la página pública del negocio.</small>
+      </div>
+      <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
+        <span class="pill">Total <b>{{ promos|length }}</b></span>
+        {% set act = (promos|selectattr('active')|list|length) if promos else 0 %}
+        <span class="pill">Activas <b>{{ act }}</b></span>
+      </div>
+    </div>
+
+    <!-- BODY -->
+    <div class="dash-body">
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for cat,msg in messages %}
+            <div class="alert alert-{{ cat if cat else 'info' }}"
+                 style="border:1px solid rgba(148,163,184,.18); background: rgba(15,23,42,.22); color:#fff;">
+              {{ msg }}
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <div class="row g-3">
+        <!-- FORM CREAR -->
+        <div class="col-lg-5">
+          <div class="card-soft">
+            <div class="d-flex align-items-start justify-content-between gap-2">
+              <div>
+                <div class="h-title brand-font">Crear promo</div>
+                <div class="small-muted">Aparece en la página pública y ayuda a convertir visitas en clientes.</div>
+              </div>
+              <span class="chip"><i class="bi bi-megaphone"></i> Visible</span>
+            </div>
+
+            <div class="sep"></div>
+
+            <form method="POST">
+              <div class="mb-2">
+                <label class="form-label fw-bold">Título *</label>
+                <input name="title" class="form-control" placeholder="Ej. 2x1 en servicios" required>
+              </div>
+
+              <div class="mb-2">
+                <label class="form-label fw-bold">Descripción</label>
+                <textarea name="description" class="form-control" rows="3" placeholder="Detalles, condiciones, etc."></textarea>
+              </div>
+
+              <div class="row g-2">
+                <div class="col-md-6">
+                  <label class="form-label fw-bold">Código (opcional)</label>
+                  <input name="code" class="form-control" placeholder="EJ: PROMO10">
+                  <div class="form-text">Si lo usas, se verá como “tag” en la promo.</div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-bold">Prioridad</label>
+                  <input name="priority" type="number" class="form-control" value="0" min="0">
+                  <div class="form-text">Más alto = aparece primero.</div>
+                </div>
+              </div>
+
+              <div class="row g-2 mt-1">
+                <div class="col-md-6">
+                  <label class="form-label fw-bold">Tipo</label>
+                  <select name="discount_type" class="form-select">
+                    <option value="percent">Porcentaje (%)</option>
+                    <option value="fixed">Monto fijo ($)</option>
+                    <option value="text">Solo texto (sin descuento)</option>
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-bold">Valor</label>
+                  <input name="value" type="number" step="0.01" class="form-control" value="0">
+                </div>
+              </div>
+
+              <div class="row g-2 mt-1">
+                <div class="col-md-6">
+                  <label class="form-label fw-bold">Inicio</label>
+                  <input name="starts_at" type="date" class="form-control">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-bold">Fin (opcional)</label>
+                  <input name="ends_at" type="date" class="form-control">
+                </div>
+              </div>
+
+              <button class="btn-mini btn-mini-green w-100 mt-3" type="submit">
+                <i class="bi bi-plus-circle"></i> Crear promo
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- LISTA -->
+        <div class="col-lg-7">
+          <div class="card-soft">
+            <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
+              <div>
+                <div class="h-title brand-font">Tus promos</div>
+                <div class="small-muted">Activa/oculta con un clic. Las activas se muestran al público.</div>
+              </div>
+              <span class="pill">Total <b>{{ promos|length }}</b></span>
+            </div>
+
+            <div class="sep"></div>
+
+            {% if promos and promos|length > 0 %}
+              <div class="d-grid gap-2">
+                {% for p in promos %}
+                  {% set dt = p.discount_type or 'percent' %}
+                  <div class="list-item">
+                    <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                      <div style="min-width: 260px; flex: 1 1 auto;">
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                          <div style="font-weight:900;color:#fff;">{{ p.title }}</div>
+
+                          {% if p.code %}
+                            <span class="tag-code"><i class="bi bi-tag"></i> {{ p.code }}</span>
+                          {% endif %}
+
+                          {% if p.active %}
+                            <span class="chip chip-on"><i class="bi bi-eye"></i> Visible</span>
+                          {% else %}
+                            <span class="chip chip-off"><i class="bi bi-eye-slash"></i> Oculta</span>
+                          {% endif %}
+                        </div>
+
+                        {% if p.description %}
+                          <div class="small-muted mt-1">{{ p.description }}</div>
+                        {% endif %}
+
+                        <div class="small mt-2 d-flex flex-wrap gap-2">
+                          {% if dt in ['percent','fixed'] %}
+                            <span class="chip">
+                              <i class="bi bi-lightning-charge"></i>
+                              {% if dt=='percent' %}{{ p.value }}% OFF{% else %}${{ p.value }} OFF{% endif %}
+                            </span>
+                          {% else %}
+                            <span class="chip"><i class="bi bi-chat-left-text"></i> Info</span>
+                          {% endif %}
+
+                          <span class="chip"><i class="bi bi-flag"></i> Prioridad {{ p.priority or 0 }}</span>
+
+                          {% if p.starts_at %}
+                            <span class="chip"><i class="bi bi-calendar3"></i> {{ p.starts_at.strftime('%d/%m/%Y') }}</span>
+                          {% endif %}
+                          {% if p.ends_at %}
+                            <span class="chip"><i class="bi bi-hourglass-split"></i> hasta {{ p.ends_at.strftime('%d/%m/%Y') }}</span>
+                          {% endif %}
+                        </div>
+                      </div>
+
+                      <div class="text-end">
+                        <form method="POST" action="{{ url_for('admin_promos_toggle', promo_id=p._id) }}">
+                          {% if p.active %}
+                            <button class="btn-mini btn-mini-ghost" type="submit">
+                              <i class="bi bi-eye-slash"></i> Ocultar
+                            </button>
+                          {% else %}
+                            <button class="btn-mini btn-mini-blue" type="submit">
+                              <i class="bi bi-eye"></i> Mostrar
+                            </button>
+                          {% endif %}
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            {% else %}
+              <div class="text-center py-5">
+                <div class="brand-font" style="font-size:1.35rem;font-weight:900;color:#fff;">Sin promos</div>
+                <p class="muted mb-0">Crea una promo para que se muestre en tu página pública y te traiga clientes.</p>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+{% endblock %}
