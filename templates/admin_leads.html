@@ -8,363 +8,417 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
   <style>
-    /* ===== Same design as Dashboard (Blue + Green create) ===== */
-    :root{
-      --page-bg: #070b18;
-      --shell-bg: rgba(10,16,34,.52);
-      --panel: rgba(10,16,34,.45);
-      --panel-solid: #0b1226;
+    /* ===== MODERN DARK THEME 2.0 ===== */
+    :root {
+      --bg-deep: #02040a;
+      --bg-surface: #0b1226;
+      --glass-border: rgba(255, 255, 255, 0.08);
+      --glass-highlight: rgba(255, 255, 255, 0.05);
 
-      --ink: #e8eefc;
-      --muted: rgba(232,238,252,.58);
+      --ink: #e2e8f0;
+      --ink-muted: #94a3b8;
+      
+      --primary: #3b82f6;
+      --primary-glow: rgba(59, 130, 246, 0.5);
+      
+      --success: #10b981;
+      --success-glow: rgba(16, 185, 129, 0.5);
 
-      --blue: #2563eb;
-      --blue-2: #60a5fa;
-      --blue-soft: rgba(37,99,235,.16);
-
-      --green: #22c55e;
-      --green-2: #86efac;
-      --green-soft: rgba(34,197,94,.16);
-
-      --stroke: rgba(148,163,184,.16);
-      --radius-sm: 14px;
-      --radius-md: 18px;
-      --shadow: 0 18px 44px rgba(0,0,0,.45);
-
-      --gradient-header:
-        radial-gradient(circle at 12% 18%, rgba(96,165,250,.35), rgba(7,11,24,0) 42%),
-        radial-gradient(circle at 85% -10%, rgba(34,197,94,.22), rgba(7,11,24,0) 42%),
-        linear-gradient(135deg, #0b1226 0%, #0e1a3b 52%, #0b1226 100%);
+      --radius-sm: 12px;
+      --radius-md: 20px;
+      
+      --shadow-elevation: 0 20px 40px -10px rgba(0,0,0,0.6);
+      
+      /* Subtle animated gradient background */
+      --bg-gradient: radial-gradient(circle at 15% 0%, rgba(37,99,235,0.15), transparent 40%),
+                     radial-gradient(circle at 85% 20%, rgba(16,185,129,0.12), transparent 40%);
     }
 
-    html,body{background:var(--page-bg); color:var(--ink);}
-    body{font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;}
-
-    .brand-font{font-family:"Space Grotesk",Inter,system-ui,sans-serif;}
-    .muted{color:var(--muted);}
-
-    .dash-shell{
-      max-width: 1220px;
-      margin: 1.4rem auto 3rem;
-      background:
-        radial-gradient(circle at 18% -12%, rgba(37,99,235,.22), rgba(7,11,24,0) 40%),
-        rgba(9,12,22,.62);
-      border: 1px solid rgba(148,163,184,.12);
-      border-radius: var(--radius-md);
-      box-shadow: var(--shadow);
-      overflow: hidden;
-      backdrop-filter: blur(24px);
-    }
-
-    /* ===== Top Nav (same vibe) ===== */
-    .dash-nav{
-      display:flex;
-      justify-content:space-between;
-      gap:1rem;
-      align-items:center;
-      padding: .95rem 1.2rem;
-      border-bottom: 1px solid rgba(148,163,184,.12);
-      background: rgba(7,11,24,.55);
-      backdrop-filter: blur(18px);
-    }
-    .nav-left{display:flex;align-items:center;gap:.75rem;min-width: 280px;}
-    .nav-pill{
-      background: rgba(37,99,235,.16);
-      border: 1px solid rgba(96,165,250,.28);
-      color: #dbeafe;
-      padding: .32rem .65rem;
-      border-radius: 999px;
-      font-size: .68rem;
-      font-weight: 800;
-      letter-spacing: .08em;
-      text-transform: uppercase;
-    }
-    .nav-title{display:flex;flex-direction:column;line-height:1.15;}
-    .nav-title strong{color:#fff;font-size:.92rem;}
-    .nav-title small{color:rgba(232,238,252,.55);font-size:.7rem;}
-
-    .nav-actions{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;justify-content:flex-end;}
-    .btnx{
-      display:inline-flex;
-      align-items:center;
-      gap:.45rem;
-      padding: .45rem .75rem;
-      border-radius: 999px;
-      border: 1px solid rgba(148,163,184,.18);
-      background: rgba(15,23,42,.25);
-      color: #fff;
-      text-decoration:none;
-      font-size: .72rem;
-      font-weight: 700;
-      transition: transform .08s linear, filter .08s linear, background .12s ease;
-      user-select:none;
-      cursor:pointer;
-    }
-    .btnx:hover{transform: translateY(-1px); filter:brightness(1.05);}
-    .btnx-blue{background: rgba(37,99,235,.22); border-color: rgba(96,165,250,.28);}
-    .btnx-green{background: rgba(34,197,94,.20); border-color: rgba(134,239,172,.28); color:#05250f;}
-    .btnx-ghost{background: rgba(15,23,42,.18);}
-
-    /* ===== Header ===== */
-    .dash-header{
-      display:flex;
-      justify-content:space-between;
-      gap:1rem;
-      align-items:center;
-      background: var(--gradient-header);
-      padding: 1.05rem 1.2rem;
-    }
-    .dash-title{display:flex;flex-direction:column;gap:.25rem;}
-    .dash-title h1{font-size:1.18rem;margin:0;color:#fff;font-weight:800;}
-    .dash-title small{color:rgba(232,238,252,.6);font-size:.7rem;}
-
-    /* ===== Body ===== */
-    .dash-body{padding: 1.1rem 1.2rem 1.5rem;}
-
-    /* ===== Chips / Pills ===== */
-    .pill{
-      display:inline-flex;align-items:center;gap:.35rem;
-      padding:.22rem .55rem;
-      border-radius:999px;
-      border:1px solid rgba(148,163,184,.16);
-      background: rgba(15,23,42,.22);
-      color:rgba(232,238,252,.85);
-      font-size:.66rem;
-      font-weight:750;
-    }
-    .pill b{color:#fff;}
-
-    /* ===== Card panel ===== */
-    .card-soft{
-      background:
-        radial-gradient(circle at 12% 18%, rgba(96,165,250,.12), rgba(15,23,42,0) 52%),
-        rgba(17,24,39,.28);
-      border:1px solid rgba(148,163,184,.12);
-      border-radius: var(--radius-sm);
-      padding: .85rem .9rem;
-      backdrop-filter: blur(14px);
-    }
-
-    /* ===== Table ===== */
-    .table-wrap{
-      background:
-        radial-gradient(circle at 10% 12%, rgba(96,165,250,.10), rgba(15,23,42,0) 42%),
-        rgba(17,24,39,.35);
-      border:1px solid rgba(148,163,184,.12);
-      border-radius: var(--radius-sm);
-      overflow:hidden;
-      backdrop-filter: blur(12px);
-    }
-    .table{
+    body {
+      background-color: var(--bg-deep);
+      background-image: var(--bg-gradient);
+      background-attachment: fixed;
       color: var(--ink);
-      margin:0;
+      font-family: 'Inter', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
     }
-    .table thead th{
-      background: rgba(7,11,24,.55);
-      color: rgba(232,238,252,.75);
-      border-bottom: 1px solid rgba(148,163,184,.16)!important;
-      font-size: .72rem;
+
+    .brand-font { font-family: "Space Grotesk", sans-serif; letter-spacing: -0.02em; }
+    .text-balance { text-wrap: balance; }
+
+    /* ===== SHELL CONTAINER ===== */
+    .dash-shell {
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+      animation: fadeIn 0.6s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ===== GLASS PANELS ===== */
+    .glass-panel {
+      background: rgba(11, 18, 38, 0.65);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      box-shadow: inset 0 1px 0 0 var(--glass-highlight), var(--shadow-elevation);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+
+    /* ===== NAV ===== */
+    .dash-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--glass-border);
+      background: rgba(11, 18, 38, 0.4);
+    }
+    
+    .nav-breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .status-dot {
+      width: 8px; height: 8px;
+      background: var(--success);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--success-glow);
+    }
+
+    /* ===== BUTTONS (Improved) ===== */
+    .btnx {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+    }
+    
+    .btnx-ghost {
+      color: var(--ink-muted);
+      background: rgba(255,255,255,0.03);
+      border-color: rgba(255,255,255,0.05);
+    }
+    .btnx-ghost:hover {
+      background: rgba(255,255,255,0.08);
+      color: white;
+      transform: translateY(-1px);
+    }
+
+    .btnx-primary {
+      background: rgba(59, 130, 246, 0.15);
+      color: #60a5fa;
+      border-color: rgba(59, 130, 246, 0.3);
+    }
+    .btnx-primary:hover {
+      background: rgba(59, 130, 246, 0.25);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+    }
+
+    /* ===== HEADER AREA ===== */
+    .dash-header {
+      padding: 2rem 1.5rem 1.5rem;
+      background: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, transparent 100%);
+    }
+    
+    .kpi-row {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .kpi-chip {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--glass-border);
+      padding: 0.35rem 0.85rem;
+      border-radius: 50px;
+      font-size: 0.75rem;
+      color: var(--ink-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .kpi-chip strong { color: white; }
+
+    /* ===== TABLE STYLES ===== */
+    .table-container {
+      margin: 0 1.5rem 1.5rem;
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-sm);
+      overflow: hidden; /* For rounded corners */
+      background: rgba(2, 4, 10, 0.3);
+    }
+
+    .custom-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+
+    .custom-table th {
+      text-align: left;
+      padding: 1rem 1.25rem;
+      color: var(--ink-muted);
+      font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: .08em;
-      padding-top:.85rem;
-      padding-bottom:.85rem;
+      font-size: 0.7rem;
+      letter-spacing: 0.05em;
+      background: rgba(255,255,255,0.02);
+      border-bottom: 1px solid var(--glass-border);
     }
-    .table td{
-      border-color: rgba(148,163,184,.10);
-      padding-top:.85rem;
-      padding-bottom:.85rem;
-      font-size:.78rem;
+
+    .custom-table td {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--glass-border);
       vertical-align: middle;
-    }
-    .table tbody tr:hover{background: rgba(37,99,235,.08);}
-
-    .badge-status{
-      display:inline-flex;
-      align-items:center;
-      gap:.35rem;
-      padding:.22rem .55rem;
-      border-radius:999px;
-      font-weight:800;
-      font-size:.68rem;
-      border:1px solid rgba(148,163,184,.16);
-      background: rgba(15,23,42,.22);
-      color:#fff;
+      color: var(--ink);
     }
 
-    .btn-mini{
-      display:inline-flex;
-      align-items:center;
-      gap:.45rem;
-      padding:.42rem .7rem;
-      border-radius:999px;
-      border:1px solid rgba(148,163,184,.18);
-      background: rgba(15,23,42,.18);
-      color:#fff;
-      text-decoration:none;
-      font-weight:800;
-      font-size:.72rem;
-      transition: transform .08s linear, filter .08s linear;
-      white-space: nowrap;
+    .custom-table tr:last-child td { border-bottom: none; }
+    
+    .custom-table tbody tr {
+      transition: background 0.15s ease;
     }
-    .btn-mini:hover{transform:translateY(-1px);filter:brightness(1.06);}
-    .btn-mini-green{background: rgba(34,197,94,.20); border-color: rgba(134,239,172,.28); color:#05250f;}
-    .btn-mini-blue{background: rgba(37,99,235,.22); border-color: rgba(96,165,250,.28);}
-    .btn-mini-ghost{background: rgba(15,23,42,.14);}
+    .custom-table tbody tr:hover {
+      background: rgba(255,255,255,0.03);
+    }
 
-    code{
-      background: rgba(15,23,42,.35);
-      border: 1px solid rgba(148,163,184,.16);
-      padding:.1rem .35rem;
+    /* Table Elements */
+    .item-tag {
+      display: inline-block;
+      background: rgba(255,255,255,0.06);
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      margin-bottom: 2px;
+      color: #e2e8f0;
+    }
+    .item-qty { color: var(--ink-muted); font-size: 0.7em; margin-left: 4px; }
+
+    .channel-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 50px;
+      background: rgba(34, 197, 94, 0.1);
+      color: #4ade80;
+      border: 1px solid rgba(34, 197, 94, 0.2);
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .btn-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 0.85rem;
       border-radius: 8px;
-      color: rgba(232,238,252,.9);
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .btn-whatsapp {
+      background: #25D366;
+      color: #052e16;
+      box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
+    }
+    .btn-whatsapp:hover {
+      background: #22c55e;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 15px rgba(37, 211, 102, 0.4);
+      color: black;
     }
 
-    @media (max-width: 900px){
-      .nav-left{min-width:unset}
+    /* ===== EMPTY STATE ===== */
+    .empty-state {
+      padding: 4rem 1rem;
+      text-align: center;
+      color: var(--ink-muted);
     }
-    @media (max-width: 768px){
-      .dash-shell{margin:.55rem .35rem 2.5rem;}
-      .dash-nav{flex-direction:column;align-items:flex-start;}
-      .dash-header{flex-direction:column;align-items:flex-start;}
-      .nav-actions{width:100%;justify-content:flex-start}
+    .empty-icon {
+      font-size: 3rem;
+      color: rgba(255,255,255,0.1);
+      margin-bottom: 1rem;
+      display: block;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .dash-nav { flex-direction: column; align-items: flex-start; gap: 1rem; }
+      .nav-actions { width: 100%; display: flex; overflow-x: auto; gap: 0.5rem; padding-bottom: 5px; }
+      .custom-table th, .custom-table td { padding: 0.85rem; }
     }
   </style>
 
-
   <div class="dash-shell">
+    
+    <div class="glass-panel">
+      <div class="dash-nav">
+        <div class="nav-breadcrumb">
+          <div class="status-dot"></div>
+          <div>
+            <div style="font-size:0.7rem; color:var(--ink-muted); text-transform:uppercase; letter-spacing:0.1em; font-weight:700;">Dashboard</div>
+            <div style="font-weight:600; color:white;">
+              {{ current_page().get('business_name') or 'Mi Negocio' }}
+            </div>
+          </div>
+        </div>
 
-    <!-- TOP NAV -->
-    <div class="dash-nav">
-      <div class="nav-left">
-        <div class="nav-pill">Leads</div>
-        <div class="nav-title">
-          <strong>Cotizaciones recibidas</strong>
-          <small>Sitio: {{ current_page().get('business_name','') if current_page() else '' }}</small>
+        <div class="nav-actions">
+          <a class="btnx btnx-ghost" href="{{ url_for('dashboard') }}">
+            <i class="bi bi-arrow-left"></i> Volver
+          </a>
+          <a class="btnx btnx-ghost" href="{{ url_for('billing_portal') }}">
+            <i class="bi bi-credit-card"></i> Plan
+          </a>
+          {% set CP = current_page() %}
+          {% if CP and CP.get('slug') %}
+            <a class="btnx btnx-primary" target="_blank" href="{{ url_for('negocio_por_slug', slug=CP.slug) }}">
+              Ver Sitio <i class="bi bi-box-arrow-up-right"></i>
+            </a>
+          {% endif %}
         </div>
       </div>
 
-      <div class="nav-actions">
-        <a class="btnx btnx-ghost" href="{{ url_for('dashboard') }}">← Dashboard</a>
-        <a class="btnx btnx-ghost" href="{{ url_for('billing_portal') }}">💳 Pagos / Plan</a>
-
-        {% set CP = current_page() %}
-        {% if CP and CP.get('slug') %}
-          <a class="btnx btnx-blue" target="_blank" href="{{ url_for('negocio_por_slug', slug=CP.slug) }}">👀 Ver público</a>
-        {% endif %}
-      </div>
-    </div>
-
-    <!-- HEADER -->
-    <div class="dash-header">
-      <div class="dash-title">
-        <h1 class="brand-font">Leads / Cotizaciones</h1>
-        <small>Registros desde el botón “Cotizar” + WhatsApp. Úsalos para KPIs y seguimiento.</small>
-      </div>
-      <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
-        <span class="pill">Total <b>{{ leads|length }}</b></span>
-        <span class="pill">Canal <b>WhatsApp</b></span>
-        <span class="pill">Estado <b>New</b></span>
-      </div>
-    </div>
-
-    <!-- BODY -->
-    <div class="dash-body">
-
-      {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-          {% for cat,msg in messages %}
-            <div class="alert alert-{{ cat if cat else 'info' }}"
-                 style="border:1px solid rgba(148,163,184,.18); background: rgba(15,23,42,.22); color:#fff;">
-              {{ msg }}
-            </div>
-          {% endfor %}
-        {% endif %}
-      {% endwith %}
-
-      <div class="card-soft mb-3">
-        <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between">
-          <div class="d-flex flex-wrap gap-2">
-            <span class="pill">⚡ Nuevos primero</span>
-            <span class="pill">🛡 Guardados en BD</span>
-            <span class="pill">📈 Útiles para KPIs</span>
+      <div class="dash-header">
+        <div class="row align-items-end">
+          <div class="col-md-8">
+            <h1 class="brand-font display-6 fw-bold text-white mb-1">Cotizaciones & Leads</h1>
+            <p class="text-muted mb-0" style="font-size: 0.95rem;">
+              Gestiona aquí las solicitudes recibidas vía botón de cotizar y WhatsApp.
+            </p>
           </div>
-          <div class="muted" style="font-size:.72rem">
-            Tip: responde rápido para mayor conversión.
+        </div>
+
+        <div class="kpi-row">
+          <div class="kpi-chip">
+            <i class="bi bi-people-fill text-primary"></i>
+            Total: <strong>{{ leads|length }}</strong>
+          </div>
+          <div class="kpi-chip">
+            <i class="bi bi-whatsapp text-success"></i>
+            Canal: <strong>WhatsApp</strong>
+          </div>
+          <div class="kpi-chip">
+            <i class="bi bi-lightning-charge-fill text-warning"></i>
+            Estado: <strong>Activo</strong>
           </div>
         </div>
       </div>
 
-      <div class="table-wrap">
-        <div class="card-soft" style="border:0;border-bottom:1px solid rgba(148,163,184,.12);border-radius:0;">
-          <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-            <div class="brand-font" style="font-weight:800;">Lista de leads</div>
-            <div class="muted" style="font-size:.72rem">
-              Total cargados: <strong style="color:#fff">{{ leads|length }}</strong>
-            </div>
-          </div>
+      <div class="px-4 pb-3">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for cat, msg in messages %}
+              <div class="alert alert-{{ cat if cat else 'info' }} d-flex align-items-center gap-2 py-2 px-3" 
+                   style="background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.2); color: #dbeafe; border-radius: 10px; font-size: 0.9rem;">
+                <i class="bi bi-info-circle-fill"></i> {{ msg }}
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+      </div>
+
+      <div class="table-container">
+        
+        <div class="d-flex justify-content-between align-items-center p-3 border-bottom border-dark-subtle" style="background: rgba(255,255,255,0.01);">
+          <div class="small fw-bold text-light">Últimos Registros</div>
+          <div class="small text-muted"><i class="bi bi-shield-check"></i> Datos seguros</div>
         </div>
 
         {% if leads and leads|length > 0 %}
           <div class="table-responsive">
-            <table class="table align-middle">
+            <table class="custom-table">
               <thead>
                 <tr>
-                  <th>Fecha</th>
+                  <th style="width: 130px;">Fecha</th>
                   <th>Cliente</th>
-                  <th>Items</th>
-                  <th>Canal</th>
-                  <th>IP</th>
+                  <th>Interés / Items</th>
+                  <th>Origen</th>
                   <th class="text-end">Acción</th>
                 </tr>
               </thead>
               <tbody>
                 {% for l in leads %}
                   <tr>
-                    <td class="small muted">
-                      {% if l.created_at %}{{ l.created_at.strftime('%d/%m/%Y %H:%M') }}{% else %}-{% endif %}
-                    </td>
-
-                    <td>
-                      <div style="font-weight:800;color:#fff;">{{ l.customer_name }}</div>
-                      <div class="small muted">
-                        <span class="badge-status">● {{ l.status or 'new' }}</span>
-                      </div>
-                    </td>
-
-                    <td>
-                      {% if l.items %}
-                        <div class="small">
-                          {% for it in l.items %}
-                            <div style="color:rgba(232,238,252,.92)">• <strong style="color:#fff">{{ it.title }}</strong> × {{ it.qty }}</div>
-                          {% endfor %}
-                        </div>
+                    <td class="text-muted font-monospace" style="font-size:0.75rem;">
+                      {% if l.created_at %}
+                        <div style="color:#cbd5e1">{{ l.created_at.strftime('%d %b') }}</div>
+                        <div style="opacity:0.5">{{ l.created_at.strftime('%H:%M') }}</div>
                       {% else %}
-                        <span class="small muted">—</span>
+                        -
                       {% endif %}
                     </td>
 
                     <td>
-                      <span class="pill">💬 {{ (l.channel or 'whatsapp') }}</span>
+                      <div class="d-flex align-items-center gap-2">
+                        <div class="d-flex align-items-center justify-content-center bg-dark rounded-circle border border-secondary" style="width:32px; height:32px; font-size:0.75rem;">
+                          {{ l.customer_name[0]|upper if l.customer_name else '?' }}
+                        </div>
+                        <div>
+                          <div class="fw-bold text-white">{{ l.customer_name or 'Anónimo' }}</div>
+                          <div class="small text-muted" style="font-size: 0.7rem;">IP: {{ l.ip or 'N/A' }}</div>
+                        </div>
+                      </div>
                     </td>
 
-                    <td class="small muted">{{ l.ip or '-' }}</td>
+                    <td>
+                      {% set items = (l.get('items') or []) %}
+                      {% if items %}
+                        {% for it in items %}
+                          <span class="item-tag">
+                            {{ it.title }} <span class="item-qty">×{{ it.qty }}</span>
+                          </span>
+                        {% endfor %}
+                      {% else %}
+                        <span class="text-muted small fst-italic">Consulta general</span>
+                      {% endif %}
+                    </td>
+
+                    <td>
+                      <span class="channel-badge">
+                        <i class="bi bi-whatsapp"></i> {{ (l.channel or 'whatsapp') }}
+                      </span>
+                    </td>
 
                     <td class="text-end">
                       {% set wa = (current_page().get('whatsapp','') if current_page() else '') %}
                       {% if wa %}
-                        {% set msg = "Hola, soy " ~ (l.customer_name or "") ~ ". Quisiera cotizar: " %}
-                        {% if l.items %}
-                          {% for it in l.items %}
-                            {% set msg = msg ~ it.title ~ " x" ~ it.qty ~ "; " %}
+                        {% set msg = "Hola " ~ (l.customer_name or "") ~ ", vi tu interés en: " %}
+                        {% set items = (l.get('items') or []) %}
+                        {% if items %}
+                          {% for it in items %}
+                            {% set msg = msg ~ (it.title or '') ~ " (" ~ (it.qty or '') ~ "), " %}
                           {% endfor %}
                         {% endif %}
-                        <a class="btn-mini btn-mini-green"
-                           target="_blank"
-                           href="https://wa.me/{{ wa|replace(' ','') }}?text={{ msg|urlencode }}">
-                          <i class="bi bi-whatsapp"></i> Responder
+                        
+                        <a href="https://wa.me/{{ wa|replace(' ','') }}?text={{ msg|urlencode }}" 
+                           target="_blank" 
+                           class="btn-action btn-whatsapp">
+                           Responder <i class="bi bi-send-fill" style="font-size:0.6rem; transform: rotate(45deg);"></i>
                         </a>
                       {% else %}
-                        <span class="small muted">Sin WhatsApp</span>
+                        <span class="text-muted small" title="Configura tu WhatsApp en ajustes">
+                          <i class="bi bi-exclamation-circle"></i> Sin WA
+                        </span>
                       {% endif %}
                     </td>
                   </tr>
@@ -373,23 +427,16 @@
             </table>
           </div>
         {% else %}
-          <div class="text-center py-5">
-            <div class="brand-font" style="font-size:1.35rem;font-weight:900;color:#fff;">Aún no hay leads</div>
-            <p class="muted mb-0">Cuando alguien cotice, aquí verás su solicitud y el detalle.</p>
-            <div class="mt-3">
-              {% set CP = current_page() %}
-              {% if CP and CP.get('slug') %}
-                <a class="btn-mini btn-mini-blue" target="_blank" href="{{ url_for('negocio_por_slug', slug=CP.slug) }}">
-                  👀 Ver página pública
-                </a>
-              {% endif %}
-            </div>
+          <div class="empty-state">
+            <i class="bi bi-inbox empty-icon"></i>
+            <h4 class="brand-font text-white">Aún no hay cotizaciones</h4>
+            <p class="small">Comparte tu página para empezar a recibir leads.</p>
+            {% if CP and CP.get('slug') %}
+              <a class="btnx btnx-primary mt-2" target="_blank" href="{{ url_for('negocio_por_slug', slug=CP.slug) }}">
+                Ir a mi página pública
+              </a>
+            {% endif %}
           </div>
         {% endif %}
-      </div>
-
-    </div>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+      </div> </div> </div> <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 {% endblock %}

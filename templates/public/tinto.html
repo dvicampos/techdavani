@@ -411,12 +411,12 @@
 
             <div class="d-flex justify-content-center gap-3 flex-wrap">
               {% if page.get('website') %}
-                <a class="btn btn-fun btn-primary-fun" href="{{ page['website'] }}" target="_blank">
+                <a class="btn btn-fun btn-primary-fun" href="{{ page['website'] }}" target="_blank" data-track="click_website">
                   <i class="bi bi-globe2 me-1"></i> Visitar Web
                 </a>
               {% endif %}
               {% if page.get('phone') %}
-                <a class="btn btn-fun btn-secondary-fun" href="tel:{{ page['phone'] }}">
+                <a class="btn btn-fun btn-secondary-fun" href="tel:{{ page['phone'] }}" data-track="click_phone">
                   <i class="bi bi-telephone-fill me-1"></i> Llamar
                 </a>
               {% endif %}
@@ -426,6 +426,38 @@
       </div>
     </div>
   </header>
+
+  {% if promos and promos|length > 0 %}
+<section class="container my-4" id="promos">
+  <h2 class="section-title brand-font">Promos activas</h2>
+  <div class="row g-3">
+    {% for p in promos %}
+      <div class="col-md-6">
+        <div class="card card-brutal h-100">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <span>{{ p.title }}</span>
+            {% if p.code %}<span class="badge-pill" style="background:#111;border-color:#fff;">{{ p.code }}</span>{% endif %}
+          </div>
+          <div class="card-body">
+            {% if p.description %}<p class="mb-2">{{ p.description }}</p>{% endif %}
+            {% if p.discount_type in ['percent','fixed'] %}
+              <div class="chip"><i class="bi bi-tag"></i>
+                {% if p.discount_type=='percent' %}{{ p.value }}% OFF{% else %}${{ p.value }} OFF{% endif %}
+              </div>
+            {% else %}
+              <div class="chip"><i class="bi bi-info-circle"></i> Promoción</div>
+            {% endif %}
+            {% if p.ends_at %}
+              <div class="mt-2 text-muted-2 small"><i class="bi bi-clock"></i> Vigente hasta {{ p.ends_at.strftime('%d/%m/%Y') }}</div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
 
   <section class="container my-5" id="info">
     <div class="text-center">
@@ -474,14 +506,14 @@
                 <div id="map" class="mb-3"></div>
                 <div class="text-center">
                   <a class="btn btn-sm btn-fun btn-secondary-fun" target="_blank"
-                     href="https://www.google.com/maps/dir/?api=1&destination={{ lat_val }},{{ lng_val }}">
+                     href="https://www.google.com/maps/dir/?api=1&destination={{ lat_val }},{{ lng_val }}" data-track="click_maps">
                     <i class="bi bi-map"></i> Cómo llegar
                   </a>
                 </div>
               {% elif page.get('address') %}
                 <div class="text-center p-4 bg-light rounded">
                    <a class="btn btn-fun btn-primary-fun" target="_blank"
-                     href="https://www.google.com/maps/search/?api=1&query={{ page.address | urlencode }}">
+                     href="https://www.google.com/maps/search/?api=1&query={{ page.address | urlencode }}" data-track="click_maps">
                     <i class="bi bi-search"></i> Buscar en Maps
                   </a>
                 </div>
@@ -674,7 +706,7 @@
           <div class="d-flex flex-column gap-3">
              {% if page.get('phone') %}<div class="d-flex align-items-center gap-3"><i class="bi bi-telephone-fill text-warning fs-4"></i> <span class="fs-5">{{ page.phone }}</span></div>{% endif %}
              {% if page.get('email') %}<div class="d-flex align-items-center gap-3"><i class="bi bi-envelope-fill text-warning fs-4"></i> <span>{{ page.email }}</span></div>{% endif %}
-             {% if page.get('website') %}<div class="d-flex align-items-center gap-3"><i class="bi bi-globe2 text-warning fs-4"></i> <a href="{{ page.website }}" class="text-white">{{ page.website }}</a></div>{% endif %}
+             {% if page.get('website') %}<div class="d-flex align-items-center gap-3"><i class="bi bi-globe2 text-warning fs-4"></i> <a href="{{ page.website }}" class="text-white" data-track="click_website">{{ page.website }}</a></div>{% endif %}
           </div>
           
           <div class="mt-5">
@@ -810,7 +842,7 @@
   </div>
 
   {% if page.get('whatsapp') %}
-    <a class="fab-wa" href="https://wa.me/{{ page.whatsapp | replace(' ','') }}" target="_blank" aria-label="WhatsApp">
+    <a class="fab-wa" href="https://wa.me/{{ page.whatsapp | replace(' ','') }}" target="_blank" aria-label="WhatsApp" data-track="click_whatsapp_fab">
       <button class="btn">
         <i class="bi bi-whatsapp"></i>
       </button>
@@ -986,6 +1018,251 @@
       });
     }
   </script>
+  <script>
+/**
+ * =========================================================
+ *  PUBLIC MODULE: Analytics + Cotizar (Lead) + UX helpers
+ *  Requiere endpoints:
+ *   - POST /api/track
+ *   - POST /api/leads
+ *  Requiere que backend pase `slug` o que page.slug exista:
+ *   ctx incluye: slug=slug
+ * =========================================================
+ */
+
+const SITE_SLUG = "{{ slug or page.get('slug','') }}";
+const BUSINESS_NAME = "{{ page.get('business_name','')|e }}";
+const BUSINESS_WA = "{{ (page.get('whatsapp','') or '')|replace(' ','') }}";
+
+/* -----------------------------
+   Analytics: track() helper
+------------------------------ */
+function track(type, meta){
+  try{
+    if(!SITE_SLUG) return;
+    fetch("/api/track", {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({ slug: SITE_SLUG, type, meta: meta || {} })
+    }).catch(()=>{});
+  }catch(e){}
+}
+
+// View event (al cargar)
+track("view", { path: location.pathname, ref: document.referrer || "" });
+
+/* Track clicks en cualquier elemento con data-track */
+document.addEventListener("click", (e)=>{
+  const el = e.target.closest("[data-track]");
+  if(!el) return;
+  const type = el.getAttribute("data-track");
+  const href = el.getAttribute("href") || "";
+  track(type, { href });
+});
+
+/* -----------------------------
+   Zoom Modal (imágenes)
+------------------------------ */
+(function zoomModule(){
+  const zoomed = document.getElementById("zoomedImage");
+  if(!zoomed) return;
+
+  document.addEventListener("click", (e)=>{
+    const img = e.target.closest(".img-zoom-trigger");
+    if(!img) return;
+    const src = img.getAttribute("data-img-src") || img.getAttribute("src");
+    if(src) zoomed.src = src;
+    track("open_zoom", { src: src || "" });
+  });
+})();
+
+/* -----------------------------
+   Star rating (reseñas)
+------------------------------ */
+(function starsModule(){
+  const stars = Array.from(document.querySelectorAll(".star-icon"));
+  const input = document.getElementById("estrellas");
+  if(!stars.length || !input) return;
+
+  function paint(v){
+    stars.forEach(s=>{
+      const n = parseInt(s.dataset.value || "0", 10);
+      if(n <= v){
+        s.classList.remove("text-secondary");
+        s.classList.add("text-warning");
+      }else{
+        s.classList.remove("text-warning");
+        s.classList.add("text-secondary");
+      }
+    });
+  }
+
+  stars.forEach(s=>{
+    s.style.cursor = "pointer";
+    s.addEventListener("click", ()=>{
+      const v = parseInt(s.dataset.value || "0", 10);
+      input.value = String(v);
+      paint(v);
+      track("rate_star_select", { value: v });
+    });
+  });
+})();
+
+/* -----------------------------
+   Cotizar -> Modal -> WhatsApp
+   + Save lead server-side
+------------------------------ */
+(async function cotizarModule(){
+  const form = document.getElementById("form-cotizar");
+  const modalEl = document.getElementById("cotizarModal");
+  const resumenEl = document.getElementById("resumenSeleccion");
+  const nombreInput = document.getElementById("nombreClienteInput");
+  const errNombre = document.getElementById("errorModalNombre");
+  const enviarBtn = document.getElementById("enviarCotizacionBtn");
+
+  if(!form || !modalEl || !resumenEl || !nombreInput || !enviarBtn) return;
+
+  // Bootstrap modal instance
+  const bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+
+  let selectedItems = []; // [{title, qty}]
+
+  function getSelectedItems(){
+    const inputs = Array.from(form.querySelectorAll('input[type="number"][data-item-nombre]'));
+    const items = [];
+    for(const inp of inputs){
+      const title = (inp.dataset.itemNombre || "").trim();
+      const qty = parseInt(inp.value || "0", 10);
+      if(title && Number.isFinite(qty) && qty > 0){
+        items.push({ title, qty });
+      }
+    }
+    return items;
+  }
+
+  function renderResumen(items){
+    if(!items.length){
+      resumenEl.innerHTML = `<div class="text-muted">No seleccionaste nada todavía.</div>`;
+      return;
+    }
+    resumenEl.innerHTML = items.map(it => {
+      return `<div>• <strong>${escapeHtml(it.title)}</strong> × ${it.qty}</div>`;
+    }).join("");
+  }
+
+  function escapeHtml(s){
+    return String(s)
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
+  }
+
+  form.addEventListener("submit", (e)=>{
+    e.preventDefault();
+    selectedItems = getSelectedItems();
+
+    if(!selectedItems.length){
+      track("cotizar_empty", {});
+      // feedback simple sin alert fea
+      resumenEl.innerHTML = `<div class="text-danger fw-bold">Selecciona al menos 1 producto/servicio con cantidad > 0.</div>`;
+      bsModal.show();
+      return;
+    }
+
+    track("cotizar_open_modal", { items: selectedItems.length });
+    renderResumen(selectedItems);
+    errNombre.classList.add("d-none");
+    nombreInput.value = "";
+    bsModal.show();
+    setTimeout(()=> nombreInput.focus(), 150);
+  });
+
+  async function createLead(nombre, items){
+    try{
+      const r = await fetch("/api/leads", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({
+          slug: SITE_SLUG,
+          nombre,
+          items,
+          canal: "whatsapp"
+        })
+      });
+      return await r.json();
+    }catch(e){
+      return { ok:false, error:"network" };
+    }
+  }
+
+  function buildWhatsAppMessage(nombre, items){
+    const lines = [];
+    lines.push(`Hola, soy ${nombre}.`);
+    lines.push(`Quisiera cotizar con ${BUSINESS_NAME}:`);
+    for(const it of items){
+      lines.push(`- ${it.title} x${it.qty}`);
+    }
+    lines.push(`Gracias.`);
+    return lines.join("\n");
+  }
+
+  function openWhatsApp(text){
+    if(!BUSINESS_WA){
+      // fallback: no whatsapp definido
+      alert("Este negocio aún no tiene WhatsApp configurado.");
+      return;
+    }
+    const url = `https://wa.me/${BUSINESS_WA}?text=${encodeURIComponent(text)}`;
+    window.open(url, "_blank", "noopener");
+  }
+
+  enviarBtn.addEventListener("click", async ()=>{
+    const nombre = (nombreInput.value || "").trim();
+
+    if(!nombre){
+      errNombre.classList.remove("d-none");
+      track("cotizar_missing_name", {});
+      nombreInput.focus();
+      return;
+    }
+
+    if(!selectedItems.length){
+      track("cotizar_missing_items", {});
+      bsModal.hide();
+      return;
+    }
+
+    enviarBtn.disabled = true;
+    enviarBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Enviando...`;
+
+    track("cotizar_send_click", { items: selectedItems.length });
+
+    // 1) Guardar lead en servidor
+    const resp = await createLead(nombre, selectedItems);
+
+    // 2) Abrir WhatsApp SIEMPRE (no romper UX)
+    const msg = buildWhatsAppMessage(nombre, selectedItems);
+    openWhatsApp(msg);
+
+    // 3) Track resultado lead
+    if(resp && resp.ok){
+      track("lead_saved", { lead_id: resp.lead_id || "" });
+    }else{
+      track("lead_save_failed", { error: (resp && resp.error) || "unknown" });
+    }
+
+    // reset UI
+    setTimeout(()=>{
+      enviarBtn.disabled = false;
+      enviarBtn.innerHTML = `<i class="bi bi-whatsapp me-1"></i> Enviar por WhatsApp`;
+      bsModal.hide();
+    }, 250);
+  });
+
+})();
+</script>
 
 </body>
 </html>
