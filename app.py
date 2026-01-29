@@ -1977,6 +1977,9 @@ DEFAULT_HTML_TEMPLATES = {
     "tienda_regalos": "public/tienda_regalos.html",
     "bisuteria": "public/bisuteria.html",
     "tinto": "public/tinto.html",
+    "artesanias": "public/artesanias.html",
+    "abarrotes": "public/abarrotes.html",
+    "party": "public/party.html",
 }
 
 @app.route('/manage_page')

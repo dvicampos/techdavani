@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+  <title>{{ page.get('business_name','Mi negocio') }}</title>
+  <meta name="description" content="{{ page.get('slogan') or page.get('description','')[:160] }}">
+  <meta name="author" content="{{ page.get('business_name','') }}">
+
+  {# ====== OG / Twitter ====== #}
+  {% set og_img = page.get('cover_image') or page.get('image') %}
+  {% if og_img and not (og_img.startswith('http://') or og_img.startswith('https://')) %}
+    {% set og_img = url_for('uploaded_file', filename=og_img, _external=True) %}
+  {% endif %}
+  <meta property="og:title" content="{{ page.get('business_name','') }}">
+  <meta property="og:description" content="{{ page.get('slogan') or page.get('description','')[:200] }}">
+  <meta property="og:image" content="{{ og_img or url_for('static', filename='images/default.png', _external=True) }}">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="{{ request.url }}">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    crossorigin=""
+  />
+
+  <style>
+    :root{
+      /* Paleta Artesanal / Festiva */
+      --brand: {{ page.get('color') or '#ec4899' }}; /* Rosa vibrante por defecto si no hay color */
+      --brand-light: #fce7f3;
+      --accent: #f59e0b; /* Amarillo/Naranja caléndula */
+      --accent-teal: #14b8a6; /* Turquesa */
+      
+      --bg: #fffbf0; /* Crema suave */
+      --text-main: #4a4a4a;
+      --text-muted: #78716c;
+      
+      --card-bg: #ffffff;
+      --border-radius: 24px;
+      --card-shadow: 0 10px 40px -10px rgba(0,0,0,0.08);
+      --card-shadow-hover: 0 20px 50px -10px rgba(0,0,0,0.12);
+    }
+
+    html, body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* Patrón de Confeti sutil en el fondo CSS */
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background-image: 
+        radial-gradient(circle, var(--brand-light) 10%, transparent 11%), 
+        radial-gradient(circle, #fff 10%, transparent 11%);
+      background-size: 60px 60px;
+      background-position: 0 0, 30px 30px;
+      opacity: 0.6;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    /* Tipografía Divertida */
+    .brand-font, h1, h2, h3, h4, h5, .navbar-brand {
+      font-family: 'Fredoka', sans-serif;
+      letter-spacing: -0.02em;
+    }
+
+    /* NAV FLOTANTE */
+    .nb {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: none;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+      padding: 0.8rem 0;
+      position: sticky;
+      top: 0;
+      z-index: 1020;
+    }
+    .nb .navbar-brand {
+      font-weight: 700;
+      font-size: 1.5rem;
+      color: var(--brand);
+      background: #fff;
+      padding: 0.4rem 1.2rem;
+      border-radius: 50px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      border: 2px solid var(--brand-light);
+    }
+    .nb .nav-link {
+      font-weight: 500;
+      color: var(--text-main);
+      margin: 0 0.2rem;
+      border-radius: 50px;
+      transition: all 0.2s;
+    }
+    .nb .nav-link:hover {
+      color: var(--brand);
+      background: var(--brand-light);
+    }
+
+    /* HERO SECTION */
+    .hero {
+      position: relative;
+      padding: 80px 0 60px;
+      border-radius: 0 0 50px 50px;
+      margin-bottom: 2rem;
+      background: linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.8) 100%);
+    }
+    /* Mantenemos la lógica de imagen de fondo pero la suavizamos */
+    .hero-bg-layer {
+      position: absolute; inset: 0; z-index: -1;
+      {% if page.get('cover_image') %}
+        background: url("{{ url_for('uploaded_file', filename=page.cover_image) }}") center/cover no-repeat;
+        opacity: 0.15;
+      {% else %}
+        background: radial-gradient(circle at top right, var(--brand-light), transparent 70%);
+      {% endif %}
+    }
+    
+    .hero-card {
+      background: rgba(255,255,255,0.7);
+      backdrop-filter: blur(8px);
+      border: 1px solid #fff;
+      border-radius: 40px;
+      padding: 2rem;
+      box-shadow: var(--card-shadow);
+    }
+
+    .hero-avatar {
+      width: 200px; height: 200px; 
+      object-fit: cover;
+      border-radius: 50%; /* Círculo perfecto */
+      border: 8px solid #fff;
+      box-shadow: var(--card-shadow);
+      animation: float 6s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+      100% { transform: translateY(0px); }
+    }
+
+    .badge-pill {
+      background: var(--accent);
+      color: #fff;
+      padding: 0.5rem 1.2rem;
+      border-radius: 50px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      border: none;
+      box-shadow: 0 4px 10px rgba(245, 158, 11, 0.3);
+    }
+
+    /* TARJETAS GENERALES (Reemplaza card-brutal) */
+    .card-brutal {
+      border: none;
+      border-radius: var(--border-radius);
+      background: var(--card-bg);
+      box-shadow: var(--card-shadow);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      overflow: hidden;
+      height: 100%;
+    }
+    .card-brutal:hover {
+      transform: translateY(-5px);
+      box-shadow: var(--card-shadow-hover);
+    }
+    .card-brutal .card-header {
+      background: #fff;
+      border-bottom: 1px dashed #eee;
+      font-weight: 600;
+      padding: 1rem 1.5rem;
+      color: var(--brand);
+    }
+    .card-brutal .card-body {
+      padding: 1.5rem;
+    }
+
+    /* CHIPS & BUTTONS */
+    .chip {
+      background: #f3f4f6;
+      border: 1px solid #e5e7eb;
+      border-radius: 50px;
+      padding: 0.35rem 0.85rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      display: inline-flex; align-items: center; gap: 0.4rem;
+    }
+
+    .btn-brutal {
+      border: none;
+      border-radius: 50px;
+      padding: 0.7rem 1.5rem;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .btn-brand {
+      background: linear-gradient(135deg, var(--brand), #d63384); /* Gradiente vibrante */
+      color: #fff;
+      box-shadow: 0 4px 15px rgba(236, 72, 153, 0.4);
+    }
+    .btn-brand:hover {
+      filter: brightness(1.1);
+      color: #fff;
+      transform: scale(1.02);
+    }
+    .btn-ghost {
+      background: #fff;
+      color: var(--text-main);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .btn-ghost:hover {
+      background: var(--brand-light);
+      color: var(--brand);
+    }
+
+    /* UTILIDADES */
+    .section-title {
+      font-weight: 700;
+      color: var(--brand);
+      position: relative;
+      display: inline-block;
+      margin-bottom: 1.5rem;
+      z-index: 1;
+    }
+    /* Decoración de subrayado estilo "marcador" */
+    .section-title::after {
+      content: "";
+      position: absolute;
+      left: 0; bottom: 2px;
+      width: 100%; height: 8px;
+      background: var(--brand-light); /* Color pastel */
+      z-index: -1;
+      border-radius: 4px;
+      transform: rotate(-1deg);
+    }
+    
+    .text-muted-2 { color: var(--text-muted); }
+
+    /* GALERÍA */
+    .gallery-wrap {
+      background: #fff;
+      border-radius: var(--border-radius);
+      padding: 1.5rem;
+      box-shadow: var(--card-shadow);
+      position: relative;
+    }
+    /* Decoración de "cinta" en la galería */
+    .gallery-wrap::before {
+      content: "";
+      position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+      width: 100px; height: 20px;
+      background: rgba(0,0,0,0.1);
+      border-radius: 10px;
+      filter: blur(2px);
+      z-index: -1;
+    }
+
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 1rem;
+    }
+    .gal-item {
+      position: relative;
+      border-radius: 16px;
+      overflow: hidden;
+      aspect-ratio: 1/1;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      transition: transform 0.2s;
+    }
+    .gal-item:hover { transform: scale(1.03); }
+    .gal-item img, .gal-item video {
+      width: 100%; height: 100%; object-fit: cover;
+    }
+    .badge-type {
+      position: absolute; bottom: 0.5rem; right: 0.5rem; top: auto; left: auto;
+      background: rgba(255,255,255,0.9);
+      color: var(--brand);
+      border-radius: 12px;
+      padding: 0.2rem 0.6rem;
+      font-size: 0.7rem;
+      font-weight: 700;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    /* BANNER INFERIOR (Ticker) */
+    .ticker {
+      position: fixed; left: 20px; right: 20px; bottom: 20px; z-index: 1030;
+      background: var(--text-main); /* Oscuro para contraste */
+      color: #fff;
+      border-radius: 50px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      overflow: hidden;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .pill-invert {
+      background: var(--brand);
+      color: #fff;
+      border-radius: 20px;
+      padding: 0.2rem 0.6rem;
+      font-size: 0.8rem;
+      margin-right: 0.5rem;
+    }
+
+    /* MAPA */
+    #map {
+      height: 320px;
+      border-radius: 20px;
+      border: 4px solid #fff;
+      box-shadow: var(--card-shadow);
+    }
+
+    /* WHATSAPP FAB */
+    .fab-wa {
+      position: fixed; right: 20px; bottom: 100px; /* Movido a la derecha, más estándar */
+      left: auto;
+      z-index: 1050; text-decoration: none;
+      transition: transform 0.3s;
+    }
+    .fab-wa:hover { transform: scale(1.1) rotate(-10deg); }
+    .fab-wa .btn {
+      border-radius: 50%;
+      width: 60px; height: 60px;
+      display: flex; align-items: center; justify-content: center;
+      background: #25D366;
+      border: 4px solid #fff;
+      box-shadow: 0 8px 20px rgba(37, 211, 102, 0.4);
+      font-size: 1.5rem;
+      color: #fff;
+    }
+
+    /* FOOTER */
+    .ft {
+      background: #fff;
+      margin-top: 80px;
+      padding: 40px 0 100px 0; /* Espacio para el ticker */
+      border-top: 1px dashed #eee;
+    }
+    
+    /* Input Fields Style */
+    .form-control {
+      border: 2px solid #f3f4f6;
+      border-radius: 12px;
+      padding: 0.6rem 1rem;
+    }
+    .form-control:focus {
+      border-color: var(--brand);
+      box-shadow: 0 0 0 4px var(--brand-light);
+    }
+
+  </style>
+</head>
+<body>
+
+  <div class="hero-bg-layer"></div>
+
+  <nav class="navbar navbar-expand-lg nb">
+    <div class="container">
+      <a class="navbar-brand brand-font" href="/">
+        <i class="bi bi-shop me-1 text-warning"></i> 
+        {{ page.get('business_name','Negocio') }}
+      </a>
+
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nv" aria-controls="nv" aria-expanded="false" style="border:none;">
+        <span class="bi bi-list fs-1 text-primary"></span>
+      </button>
+
+      <div id="nv" class="collapse navbar-collapse justify-content-end">
+        <ul class="navbar-nav gap-2">
+          <li class="nav-item"><a class="nav-link" href="#info">Información</a></li>
+          <li class="nav-item"><a class="nav-link" href="#galeria">Galería</a></li>
+          <li class="nav-item"><a class="nav-link" href="#contacto">Contacto</a></li>
+          {% if posts %}<li class="nav-item"><a class="nav-link" href="#publicaciones">Blog</a></li>{% endif %}
+          {% if (servicios and servicios|length>0) or (productos_fisicos and productos_fisicos|length>0) %}<li class="nav-item"><a class="nav-link" href="#productos">Tienda</a></li>{% endif %}
+          <li class="nav-item"><a class="nav-link" href="#reseñas">Reseñas</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="container">
+      <div class="hero-card">
+        <div class="row g-5 align-items-center">
+          <div class="col-md-4 text-center">
+            {% if page.get('image') %}
+              <img class="hero-avatar" src="{{ url_for('uploaded_file', filename=page['image']) }}" alt="Logo">
+            {% else %}
+              <img class="hero-avatar" src="{{ url_for('static', filename='images/default_image.png') }}" alt="Logo">
+            {% endif %}
+          </div>
+          <div class="col-md-8 text-center text-md-start">
+            <div class="d-inline-block mb-3 badge-pill brand-font">
+              <i class="bi bi-stars"></i> {{ page.get('category','Artesanías') }}
+            </div>
+            <h1 class="brand-font display-4 mb-2 fw-bold" style="color:var(--brand);">{{ page.get('business_name','Mi negocio') }}</h1>
+            
+            {% if page.get('slogan') %}
+              <p class="fs-5 text-muted mb-4">{{ page['slogan'] }}</p>
+            {% endif %}
+
+            <div class="d-flex gap-2 flex-wrap justify-content-center justify-content-md-start">
+              {% if page.get('website') %}
+              <a class="btn btn-brutal btn-brand"
+                href="{{ page['website'] }}" target="_blank"
+                data-track="click_website">
+                <i class="bi bi-globe me-1"></i> Ver Sitio Web
+              </a>
+              {% endif %}
+
+              {% if page.get('phone') %}
+              <a class="btn btn-brutal btn-ghost"
+                href="tel:{{ page['phone'] }}"
+                data-track="click_phone">
+                <i class="bi bi-telephone-fill me-1 text-success"></i> Llamar
+              </a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  {% if promos and promos|length > 0 %}
+  <section class="container my-5" id="promos">
+    <div class="text-center">
+      <h2 class="section-title brand-font">¡Ofertas Especiales! 🎉</h2>
+    </div>
+    <div class="row g-4">
+      {% for p in promos %}
+        <div class="col-md-6">
+          <div class="card card-brutal h-100" style="background: #fff0f5; border: 2px dashed var(--brand);">
+            <div class="card-header d-flex justify-content-between align-items-center bg-transparent border-0">
+              <span class="fs-5 brand-font">{{ p.title }}</span>
+              {% if p.code %}<span class="badge-pill">{{ p.code }}</span>{% endif %}
+            </div>
+            <div class="card-body">
+              {% if p.description %}<p class="mb-3">{{ p.description }}</p>{% endif %}
+              
+              <div class="d-flex align-items-center gap-2">
+                {% if p.discount_type in ['percent','fixed'] %}
+                  <div class="chip bg-white text-danger fw-bold border-danger">
+                    <i class="bi bi-tag-fill"></i>
+                    {% if p.discount_type=='percent' %}{{ p.value }}% OFF{% else %}${{ p.value }} OFF{% endif %}
+                  </div>
+                {% else %}
+                  <div class="chip"><i class="bi bi-gift"></i> Promoción</div>
+                {% endif %}
+              </div>
+
+              {% if p.ends_at %}
+                <div class="mt-3 text-muted-2 small"><i class="bi bi-hourglass-split"></i> Válido hasta {{ p.ends_at.strftime('%d/%m/%Y') }}</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="container my-5" id="info">
+    <h2 class="section-title brand-font">Sobre Nosotros</h2>
+    <div class="row g-4">
+      <div class="col-md-6">
+        <div class="card card-brutal h-100">
+          <div class="card-header"><i class="bi bi-heart-fill text-danger me-2"></i> Nuestra Historia</div>
+          <div class="card-body">
+            <p class="mb-4 text-muted">{{ page.get('description','') }}</p>
+            <div class="d-flex flex-wrap gap-2">
+              {% if page.get('services') %}<span class="chip"><i class="bi bi-magic"></i> {{ page.services }}</span>{% endif %}
+              {% if page.get('payment_methods') %}<span class="chip"><i class="bi bi-credit-card"></i> {{ page.payment_methods }}</span>{% endif %}
+              {% if page.get('founding_date') %}<span class="chip"><i class="bi bi-balloon"></i> Desde {{ page.founding_date }}</span>{% endif %}
+              {% if page.get('delivery_available') %}<span class="chip"><i class="bi bi-truck"></i> Envíos disponibles</span>{% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card card-brutal h-100">
+          <div class="card-header"><i class="bi bi-geo-alt-fill text-primary me-2"></i> Encuéntranos</div>
+          <div class="card-body">
+            <p class="mb-3"><strong>{{ page.get('address','') }}</strong></p>
+            
+            <div class="row mb-3">
+              <div class="col-6"><small class="text-uppercase text-muted-2" style="font-size:0.7rem;">Código Postal</small><div class="fw-bold">{{ page.get('postal_code','') }}</div></div>
+              <div class="col-6"><small class="text-uppercase text-muted-2" style="font-size:0.7rem;">Ciudad</small><div class="fw-bold">{{ page.get('city','') }}</div></div>
+            </div>
+            
+            <div class="mb-3">
+               <small class="text-uppercase text-muted-2" style="font-size:0.7rem;">Horario</small>
+               <div class="badge bg-light text-dark border">{{ page.get('operating_hours','') }}</div>
+            </div>
+
+            {% set lat_val = page.get('lat') %}
+            {% set lng_val = page.get('lng') %}
+            {% set has_coords = (lat_val is not none) and (lng_val is not none) and (lat_val|string|trim != '') and (lng_val|string|trim != '') %}
+
+            <div class="mt-3">
+              {% if has_coords %}
+                <div id="map" class="mb-3"></div>
+                <a class="btn btn-brutal btn-brand btn-sm" target="_blank"
+                  href="https://www.google.com/maps/dir/?api=1&destination={{ lat_val }},{{ lng_val }}"
+                  data-track="click_maps">
+                  <i class="bi bi-map me-1"></i> Ver ruta
+                </a>
+              {% elif page.get('address') %}
+                <a class="btn btn-brutal btn-ghost" target="_blank"
+                  href="https://www.google.com/maps/search/?api=1&query={{ page.address | urlencode }}" data-track="click_maps">
+                  <i class="bi bi-search me-1"></i> Buscar en Maps
+                </a>
+              {% else %}
+                <div class="alert alert-light border text-center text-muted">Ubicación pendiente 📍</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="container my-5" id="galeria">
+    <div class="d-flex align-items-center mb-3">
+        <h2 class="section-title brand-font mb-0">Nuestro Trabajo</h2>
+        <span class="ms-2 fs-4">📸</span>
+    </div>
+
+    {% set tiene_portada = page.get('cover_image') %}
+    {% set tiene_media = page.get('media_gallery') and page.media_gallery|length > 0 %}
+    {% set tiene_galeria = galeria and galeria|length > 0 %}
+    
+    {% if tiene_portada or tiene_media or tiene_galeria %}
+      <div class="gallery-wrap">
+        <div class="gallery-grid">
+          {% if tiene_portada %}
+            <div class="gal-item" data-type="image" data-src="{{ url_for('uploaded_file', filename=page.cover_image) }}">
+              <img src="{{ url_for('uploaded_file', filename=page.cover_image) }}" alt="Portada">
+              <span class="badge-type">Portada</span>
+            </div>
+          {% endif %}
+
+          {% if tiene_media %}
+            {% for item in page.media_gallery %}
+              {% if item is string %}
+                <div class="gal-item" data-type="image" data-src="{{ url_for('uploaded_file', filename=item) }}">
+                  <img src="{{ url_for('uploaded_file', filename=item) }}" alt="Media">
+                </div>
+              {% else %}
+                {% set fpath = item.path %}
+                {% set ftype = item.type or 'image' %}
+                {% if ftype == 'video' %}
+                  <div class="gal-item" data-type="video" data-src="{{ url_for('uploaded_file', filename=fpath) }}">
+                    <video src="{{ url_for('uploaded_file', filename=fpath) }}" muted playsinline></video>
+                    <span class="badge-type"><i class="bi bi-play-fill"></i> Video</span>
+                  </div>
+                {% else %}
+                  <div class="gal-item" data-type="image" data-src="{{ url_for('uploaded_file', filename=fpath) }}">
+                    <img src="{{ url_for('uploaded_file', filename=fpath) }}" alt="Media">
+                  </div>
+                {% endif %}
+              {% endif %}
+            {% endfor %}
+          {% endif %}
+
+          {% if tiene_galeria %}
+            {% for g in (galeria or [])[:12] %}
+              <div class="gal-item" data-type="image" data-src="{{ url_for('uploaded_file', filename=g) }}">
+                <img src="{{ url_for('uploaded_file', filename=g) }}" alt="Foto">
+              </div>
+            {% endfor %}
+          {% endif %}
+        </div>
+      </div>
+    {% else %}
+      <div class="text-center py-5 text-muted">
+        <i class="bi bi-images fs-1 d-block mb-2"></i>
+        Aún no hay fotos en el álbum.
+      </div>
+    {% endif %}
+  </section>
+
+  <section class="container my-5" id="contacto">
+    <h2 class="section-title brand-font">Contáctanos</h2>
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="card card-brutal h-100 text-center p-4">
+            <div class="mb-3 text-success"><i class="bi bi-whatsapp fs-1"></i></div>
+            <h5 class="brand-font">WhatsApp</h5>
+            <p class="small text-muted">Hablemos directamente</p>
+            {% if page.get('phone') %}
+             <a href="https://wa.me/{{ page.get('phone')|replace(' ','') }}" target="_blank" class="btn btn-brutal btn-brand btn-sm">Enviar Mensaje</a>
+            {% else %}
+             <span class="text-muted">No disponible</span>
+            {% endif %}
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card card-brutal h-100 text-center p-4">
+            <div class="mb-3 text-primary"><i class="bi bi-envelope-paper-heart-fill fs-1"></i></div>
+            <h5 class="brand-font">Email</h5>
+            <p class="small text-muted">Para cotizaciones detalladas</p>
+            {% if page.get('email') %}
+             <a href="mailto:{{ page.email }}" class="btn btn-brutal btn-ghost btn-sm">{{ page.email }}</a>
+            {% else %}
+             <span class="text-muted">-</span>
+            {% endif %}
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card card-brutal h-100 text-center p-4">
+            <div class="mb-3" style="color:#d62976"><i class="bi bi-instagram fs-1"></i></div>
+            <h5 class="brand-font">Social</h5>
+            <div class="d-flex justify-content-center gap-2 mt-2">
+                {% if page.get('facebook') %}<a href="{{ page.facebook }}" target="_blank" class="btn btn-light rounded-circle"><i class="bi bi-facebook"></i></a>{% endif %}
+                {% if page.get('instagram') %}<a href="{{ page.instagram }}" target="_blank" class="btn btn-light rounded-circle"><i class="bi bi-instagram"></i></a>{% endif %}
+                {% if page.get('tiktok') %}<a href="{{ page.tiktok }}" target="_blank" class="btn btn-light rounded-circle"><i class="bi bi-tiktok"></i></a>{% endif %}
+            </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="container my-5" id="publicaciones">
+    <h2 class="section-title brand-font">Blog de Novedades</h2>
+    {% if posts and posts|length>0 %}
+      <div class="row g-4">
+        {% for post in posts %}
+          <div class="col-md-4">
+            <div class="card card-brutal h-100 d-flex flex-column">
+              {% if post.cabecera %}
+                <div style="height: 200px; overflow: hidden;">
+                  <img src="{{ url_for('uploaded_file', filename=post.cabecera) }}" class="w-100 h-100 object-fit-cover" alt="Post">
+                </div>
+              {% endif %}
+              <div class="card-body d-flex flex-column">
+                <h5 class="brand-font fw-bold">{{ post.title }}</h5>
+                <p class="text-muted small flex-grow-1">{{ post.content[:100] }}...</p>
+                <a class="btn btn-link text-decoration-none p-0 fw-bold" style="color:var(--brand);" href="{{ url_for('ver_post', post_id=post._id) }}">
+                  Leer completo <i class="bi bi-arrow-right"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="alert alert-light border-0 shadow-sm">No hay publicaciones recientes.</div>
+    {% endif %}
+  </section>
+
+  <section class="container my-5" id="productos">
+    <div class="text-center mb-4">
+      <h2 class="section-title brand-font display-6">Catálogo y Servicios</h2>
+      <p class="text-muted">Selecciona lo que te gusta y cotiza por WhatsApp al instante ✨</p>
+    </div>
+
+    {% if (servicios and servicios|length>0) or (productos_fisicos and productos_fisicos|length>0) %}
+      
+      <form id="form-cotizar">
+        {% if servicios and servicios|length>0 %}
+          <h4 class="brand-font mt-4 mb-3 text-secondary"><i class="bi bi-stars"></i> Servicios</h4>
+          <div class="row g-4">
+          {% for item in servicios %}
+          <div class="col-12 col-sm-6 col-md-4">
+            <div class="card card-brutal h-100">
+              {% if item.image %}
+                <img src="{{ url_for('uploaded_file', filename=item.image) }}"
+                  class="card-img-top img-zoom-trigger"
+                  data-bs-toggle="modal" data-bs-target="#zoomModal"
+                  data-img-src="{{ url_for('uploaded_file', filename=item.image) }}"
+                  style="height:200px; object-fit:cover; cursor:zoom-in;">
+              {% endif %}
+              <div class="card-body">
+                <h5 class="brand-font">{{ item.title }}</h5>
+                <p class="small text-muted">{{ item.description }}</p>
+                {% if item.show_price %}
+                  <div class="fw-bold fs-5 mb-2" style="color:var(--brand);">${{ "%.2f"|format(item.price) }}</div>
+                {% endif %}
+                
+                <div class="bg-light p-2 rounded-3 mt-3">
+                    <label class="small text-muted mb-1">Personas / Cantidad:</label>
+                    <input type="number" min="0" value="0" class="form-control form-control-sm border-0 bg-white"
+                           name="prod_{{ item.title | replace(' ','_') }}"
+                           data-item-nombre="{{ item.title }}">
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+          </div>
+        {% endif %}
+
+        {% if productos_fisicos and productos_fisicos|length>0 %}
+          <h4 class="brand-font mt-5 mb-3 text-secondary"><i class="bi bi-bag-heart-fill"></i> Productos</h4>
+          <div class="row g-4">
+          {% for item in productos_fisicos %}
+          <div class="col-12 col-sm-6 col-md-4">
+            <div class="card card-brutal h-100">
+              {% if item.image %}
+                <img src="{{ url_for('uploaded_file', filename=item.image) }}"
+                  class="card-img-top img-zoom-trigger"
+                  data-bs-toggle="modal" data-bs-target="#zoomModal"
+                  data-img-src="{{ url_for('uploaded_file', filename=item.image) }}"
+                  style="height:200px; object-fit:cover; cursor:zoom-in;">
+              {% endif %}
+              <div class="card-body">
+                <h5 class="brand-font">{{ item.title }}</h5>
+                <p class="small text-muted">{{ item.description }}</p>
+                {% if item.show_price %}
+                  <div class="fw-bold fs-5 mb-2" style="color:var(--brand);">${{ "%.2f"|format(item.price) }}</div>
+                {% endif %}
+                
+                <div class="bg-light p-2 rounded-3 mt-3">
+                    <label class="small text-muted mb-1">Unidades:</label>
+                    <input type="number" min="0" value="0" class="form-control form-control-sm border-0 bg-white"
+                           name="prod_{{ item.title | replace(' ','_') }}"
+                           data-item-nombre="{{ item.title }}">
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+          </div>
+        {% endif %}
+
+        <div class="text-center mt-5">
+            <button type="submit" class="btn btn-brutal btn-brand px-5 py-3 fs-5 shadow-lg">
+                <i class="bi bi-whatsapp me-2"></i> Cotizar Mi Pedido
+            </button>
+        </div>
+      </form>
+
+      <div class="modal fade" id="zoomModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+          <div class="modal-content bg-transparent border-0">
+            <div class="modal-body text-center p-0">
+                <img id="zoomedImage" src="" class="img-fluid rounded-4 shadow-lg" alt="Zoom">
+                <button class="btn btn-light rounded-circle position-absolute top-0 end-0 m-3" data-bs-dismiss="modal">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal fade" id="cotizarModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-header bg-warning text-dark border-0">
+              <h5 class="modal-title brand-font">¡Casi listo! 📝</h5>
+              <button class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body p-4">
+              <p class="text-muted">Para enviarte la cotización por WhatsApp, dinos tu nombre:</p>
+              <div class="mb-3">
+                <input type="text" class="form-control form-control-lg" id="nombreClienteInput" placeholder="Tu nombre aquí...">
+                <div class="text-danger small mt-1 d-none" id="errorModalNombre">¡No olvides tu nombre!</div>
+              </div>
+              <div class="card bg-light border-0">
+                  <div class="card-body">
+                    <h6 class="brand-font small text-uppercase">Resumen:</h6>
+                    <div id="resumenSeleccion" class="small text-muted"></div>
+                  </div>
+              </div>
+            </div>
+            <div class="modal-footer border-0">
+              <button class="btn btn-ghost" data-bs-dismiss="modal">Volver</button>
+              <button class="btn btn-brand" id="enviarCotizacionBtn">
+                Enviar WhatsApp <i class="bi bi-send-fill ms-1"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    {% else %}
+      <div class="card card-brutal p-4 text-center">No hay productos disponibles por el momento.</div>
+    {% endif %}
+  </section>
+
+  <section class="container my-5" id="reseñas">
+    <h2 class="section-title brand-font">Lo que dicen de nosotros</h2>
+    
+    <div class="card card-brutal p-4 mb-5" style="border: 2px solid var(--accent-teal); background:#f0fdfa;">
+      <h5 class="brand-font mb-3">Déjanos tu opinión</h5>
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          <div class="alert alert-success rounded-3 border-0 shadow-sm mb-3">
+            {% for m in messages %}<div><i class="bi bi-check-circle me-1"></i> {{ m }}</div>{% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <form method="POST" class="row g-3">
+        <div class="col-md-6">
+          <input type="text" name="nombre" class="form-control" placeholder="Tu nombre" required>
+        </div>
+        <div class="col-md-6 d-flex align-items-center">
+          <div id="starRating" class="ms-2">
+            {% for i in range(1,6) %}
+              <i class="bi bi-star-fill fs-4 me-1 text-secondary star-icon" data-value="{{ i }}"></i>
+            {% endfor %}
+          </div>
+          <input type="hidden" name="estrellas" id="estrellas" value="0" required>
+        </div>
+        <div class="col-12">
+          <textarea name="comentario" class="form-control" rows="2" placeholder="¿Qué te pareció nuestro servicio?" required></textarea>
+        </div>
+        <div class="col-12 text-end">
+          <button class="btn btn-brutal btn-brand hover-raise" type="submit">Publicar Reseña</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="row g-4 masonry-grid">
+      {% if reseñas and reseñas|length>0 %}
+        {% for r in reseñas %}
+          <div class="col-md-6 col-lg-4">
+            <div class="card card-brutal h-100 border-0 shadow-sm">
+              <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="fw-bold">{{ r.nombre }}</span>
+                    <span class="text-warning">
+                        {% for i in range(1,6) %}
+                            <i class="bi bi-star{% if i <= r.estrellas %}-fill{% endif %}"></i>
+                        {% endfor %}
+                    </span>
+                </div>
+                <p class="text-muted small fst-italic">"{{ r.comentario }}"</p>
+                <small class="text-muted-2" style="font-size:0.7rem">{{ r.fecha.strftime('%d/%m/%Y') }}</small>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div class="col-12 text-center text-muted">Sé el primero en opinar.</div>
+      {% endif %}
+    </div>
+  </section>
+
+  <div class="ticker">
+    <div id="noticiasCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="4500">
+      <div class="carousel-inner text-center py-2 px-4">
+        {% if avisos and avisos|length>0 %}
+          {% for aviso in avisos %}
+            <div class="carousel-item {% if loop.first %}active{% endif %}">
+              <span class="badge bg-white text-dark rounded-pill me-2">{{ aviso.title }}</span>
+              {{ aviso.content }}
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="carousel-item active">¡Gracias por visitarnos! Síguenos para novedades. ❤️</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {% if page.get('whatsapp') %}
+  <a class="fab-wa"
+   href="https://wa.me/{{ page.whatsapp | replace(' ','') }}"
+   target="_blank" aria-label="WhatsApp"
+   data-track="click_whatsapp_fab">
+    <span class="btn">
+      <i class="bi bi-whatsapp"></i>
+    </span>
+  </a>
+  {% endif %}
+
+  <footer class="ft">
+    <div class="container text-center">
+      <h3 class="brand-font mb-3" style="color:var(--brand);">{{ page.get('business_name','Negocio') }}</h3>
+      <div class="d-flex justify-content-center gap-4 mb-4">
+        {% if page.get('facebook') %}<a href="{{ page.facebook }}" target="_blank" class="text-secondary fs-4"><i class="bi bi-facebook"></i></a>{% endif %}
+        {% if page.get('instagram') %}<a href="{{ page.instagram }}" target="_blank" class="text-secondary fs-4"><i class="bi bi-instagram"></i></a>{% endif %}
+        {% if page.get('tiktok') %}<a href="{{ page.tiktok }}" target="_blank" class="text-secondary fs-4"><i class="bi bi-tiktok"></i></a>{% endif %}
+      </div>
+      <p class="small text-muted mb-0">© 2025 · Hecho con cariño.</p>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+  <script>
+  (function () {
+    const el = document.getElementById('map');
+    if (!el) return;
+
+    const latRaw = "{{ page.get('lat','') }}";
+    const lngRaw = "{{ page.get('lng','') }}";
+
+    const lat = Number.parseFloat(latRaw);
+    const lng = Number.parseFloat(lngRaw);
+
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      el.innerHTML = `<div class="p-3 text-center text-muted bg-light rounded">Sin mapa disponible</div>`;
+      return;
+    }
+
+    const map = L.map('map', { scrollWheelZoom: false, dragging: !L.Browser.mobile, tap: true }).setView([lat, lng], 16);
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    const popupHtml = `<div style="text-align:center;"><strong>{{ page.get('business_name','')|e }}</strong></div>`;
+    const marker = L.marker([lat, lng]).addTo(map);
+    marker.bindPopup(popupHtml);
+
+    const fixSize = () => { try { map.invalidateSize(true); } catch(e){} };
+    setTimeout(fixSize, 500);
+    window.addEventListener('resize', () => setTimeout(fixSize, 100));
+  })();
+  </script>
+
+  <script>
+    const SITE_SLUG = "{{ slug or page.get('slug','') }}";
+    const BUSINESS_NAME = "{{ page.get('business_name','')|e }}";
+    const BUSINESS_WA = "{{ (page.get('whatsapp','') or '')|replace(' ','') }}";
+
+    /* Analytics Helper */
+    function track(type, meta){
+      try{
+        if(!SITE_SLUG) return;
+        fetch("/api/track", {
+          method:"POST",
+          headers:{ "Content-Type":"application/json" },
+          body: JSON.stringify({ slug: SITE_SLUG, type, meta: meta || {} })
+        }).catch(()=>{});
+      }catch(e){}
+    }
+    track("view", { path: location.pathname, ref: document.referrer || "" });
+
+    document.addEventListener("click", (e)=>{
+      const el = e.target.closest("[data-track]");
+      if(el) track(el.getAttribute("data-track"), { href: el.getAttribute("href") || "" });
+    });
+
+    /* Zoom de Imágenes */
+    const zoomed = document.getElementById("zoomedImage");
+    if(zoomed){
+      document.addEventListener("click", (e)=>{
+        const img = e.target.closest(".img-zoom-trigger");
+        if(img) {
+            zoomed.src = img.getAttribute("data-img-src") || img.getAttribute("src");
+            track("open_zoom", { src: zoomed.src });
+        }
+      });
+    }
+
+    /* Calificación con Estrellas */
+    const stars = Array.from(document.querySelectorAll(".star-icon"));
+    const starInput = document.getElementById("estrellas");
+    if(stars.length && starInput){
+      stars.forEach(s=>{
+        s.style.cursor = "pointer";
+        s.addEventListener("click", ()=>{
+          const v = parseInt(s.dataset.value || "0", 10);
+          starInput.value = String(v);
+          stars.forEach(st => {
+            const n = parseInt(st.dataset.value || "0", 10);
+            st.classList.toggle("text-warning", n <= v);
+            st.classList.toggle("text-secondary", n > v);
+          });
+          track("rate_star_select", { value: v });
+        });
+      });
+    }
+
+    /* Lógica de Cotización a WhatsApp */
+    (async function cotizarModule(){
+      const form = document.getElementById("form-cotizar");
+      const modalEl = document.getElementById("cotizarModal");
+      const resumenEl = document.getElementById("resumenSeleccion");
+      const nombreInput = document.getElementById("nombreClienteInput");
+      const errNombre = document.getElementById("errorModalNombre");
+      const enviarBtn = document.getElementById("enviarCotizacionBtn");
+
+      if(!form || !modalEl || !enviarBtn) return;
+
+      const bsModal = new bootstrap.Modal(modalEl);
+      let selectedItems = [];
+
+      form.addEventListener("submit", (e)=>{
+        e.preventDefault();
+        selectedItems = [];
+        const inputs = Array.from(form.querySelectorAll('input[type="number"][data-item-nombre]'));
+        
+        inputs.forEach(inp => {
+            const qty = parseInt(inp.value || "0", 10);
+            if(qty > 0) selectedItems.push({ title: inp.dataset.itemNombre, qty });
+        });
+
+        if(!selectedItems.length){
+            alert("Por favor selecciona al menos un producto o servicio.");
+            return;
+        }
+
+        resumenEl.innerHTML = selectedItems.map(it => `<div>• ${it.title} (x${it.qty})</div>`).join("");
+        errNombre.classList.add("d-none");
+        bsModal.show();
+      });
+
+      enviarBtn.addEventListener("click", async ()=>{
+        const nombre = (nombreInput.value || "").trim();
+        if(!nombre){
+            errNombre.classList.remove("d-none");
+            nombreInput.focus();
+            return;
+        }
+
+        // Construir mensaje WA
+        let msg = `Hola, soy ${nombre}. Me gustaría cotizar en ${BUSINESS_NAME}:\n`;
+        selectedItems.forEach(it => { msg += `- ${it.title} x${it.qty}\n`; });
+        msg += `Gracias.`;
+
+        // Guardar Lead (Silent)
+        try {
+            fetch("/api/leads", {
+                method:"POST",
+                headers:{ "Content-Type":"application/json" },
+                body: JSON.stringify({ slug: SITE_SLUG, nombre, items: selectedItems, canal: "whatsapp" })
+            });
+        } catch(e){}
+
+        // Abrir WA
+        if(BUSINESS_WA) {
+            window.open(`https://wa.me/${BUSINESS_WA}?text=${encodeURIComponent(msg)}`, "_blank");
+        } else {
+            alert("El negocio no tiene número de WhatsApp configurado.");
+        }
+        
+        bsModal.hide();
+        track("cotizar_sent", { items: selectedItems.length });
+      });
+    })();
+  </script>
+</body>
+</html>
