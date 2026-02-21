@@ -1,0 +1,195 @@
+<section id="reservas" class="container my-5">
+  <h2 class="section-title brand-font">Reservar cita</h2>
+
+  <div class="card card-brutal p-3 p-md-4"
+       data-slug="{{ slug or page.get('slug','') }}">
+    <p class="text-muted-2 mb-3">Elige un día y un horario disponible.</p>
+
+    <div class="row g-3">
+      <div class="col-md-4">
+        <label class="form-label small">Fecha</label>
+        <input id="apptDate" type="date" class="form-control" style="border:3px solid var(--border)">
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label small">Hora disponible</label>
+        <select id="apptSlot" class="form-select" style="border:3px solid var(--border)" disabled>
+          <option value="">Selecciona una fecha</option>
+        </select>
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label small">Servicio</label>
+        <input id="apptService" class="form-control" style="border:3px solid var(--border)"
+               placeholder="Ej. Corte / Baño / Consulta">
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label small">Nombre</label>
+        <input id="apptName" class="form-control" style="border:3px solid var(--border)"
+               placeholder="Tu nombre">
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label small">Teléfono</label>
+        <input id="apptPhone" class="form-control" style="border:3px solid var(--border)"
+               placeholder="Ej. 246...">
+      </div>
+
+      <div class="col-12 d-flex flex-wrap align-items-center gap-2">
+        <button id="apptBtn" class="btn btn-brutal btn-brand hover-raise" type="button">
+          <i class="bi bi-calendar-check me-1"></i> Reservar
+        </button>
+
+        <button id="apptReset" class="btn btn-brutal btn-ghost hover-raise" type="button">
+          Limpiar
+        </button>
+
+        <small id="apptMsg" class="text-muted-2 ms-1"></small>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+(() => {
+  const root = document.querySelector('#reservas [data-slug]');
+  if(!root) return;
+
+  // OJO: no uses const SITE_SLUG aquí (ya existe en tu página grande)
+  const reservasSlug = (root.dataset.slug || "").trim();
+
+  const $date = document.getElementById("apptDate");
+  const $slot = document.getElementById("apptSlot");
+  const $name = document.getElementById("apptName");
+  const $phone = document.getElementById("apptPhone");
+  const $service = document.getElementById("apptService");
+  const $btn = document.getElementById("apptBtn");
+  const $reset = document.getElementById("apptReset");
+  const $msg = document.getElementById("apptMsg");
+
+  const setMsg = (t) => { if($msg) $msg.textContent = t || ""; };
+
+  const fmtHM = (iso) => {
+    const dt = new Date(iso);
+    const hh = String(dt.getHours()).padStart(2,'0');
+    const mm = String(dt.getMinutes()).padStart(2,'0');
+    return `${hh}:${mm}`;
+  };
+
+  async function loadSlots() {
+    const d = ($date.value || "").trim();
+
+    if(!reservasSlug){
+      setMsg("Falta slug del sitio (configuración).");
+      $slot.disabled = true;
+      return;
+    }
+
+    if(!d){
+      $slot.innerHTML = `<option value="">Selecciona una fecha</option>`;
+      $slot.disabled = true;
+      setMsg("");
+      return;
+    }
+
+    setMsg("Cargando horarios...");
+    $slot.disabled = true;
+
+    try{
+      const r = await fetch(`/api/availability?slug=${encodeURIComponent(reservasSlug)}&date=${encodeURIComponent(d)}`);
+      const j = await r.json();
+
+      if(!j || !j.ok){
+        setMsg("No se pudo cargar disponibilidad.");
+        $slot.innerHTML = `<option value="">Error al cargar</option>`;
+        return;
+      }
+
+      const slots = j.slots || [];
+      if(slots.length === 0){
+        $slot.innerHTML = `<option value="">Sin horarios disponibles</option>`;
+        setMsg("");
+        return;
+      }
+
+      $slot.innerHTML = `<option value="">Elige un horario</option>` + slots.map(s => {
+        return `<option value="${s}">${fmtHM(s)}</option>`;
+      }).join("");
+
+      $slot.disabled = false;
+      setMsg("");
+    }catch(e){
+      setMsg("No se pudo cargar disponibilidad (red).");
+      $slot.innerHTML = `<option value="">Error de red</option>`;
+    }
+  }
+
+  async function book() {
+    const payload = {
+      slug: reservasSlug,
+      name: ($name.value || "").trim(),
+      phone: ($phone.value || "").trim(),
+      service: ($service.value || "").trim(),
+      start_at: ($slot.value || "").trim()
+    };
+
+    if(!payload.name || !payload.phone || !payload.service || !payload.start_at){
+      setMsg("Completa nombre, teléfono, servicio y horario.");
+      return;
+    }
+
+    setMsg("Enviando reserva...");
+    $btn.disabled = true;
+
+    try{
+      const r = await fetch("/api/appointments", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify(payload)
+      });
+
+      const j = await r.json().catch(()=>({ok:false}));
+
+      if(r.status === 409 && j && j.error === "slot_ocupado"){
+        setMsg("Ese horario se acaba de ocupar. Elige otro.");
+        await loadSlots();
+        return;
+      }
+
+      if(!j || !j.ok){
+        setMsg("No se pudo reservar. Revisa los datos.");
+        return;
+      }
+
+      setMsg("Listo. Tu cita quedó en revisión (pendiente).");
+      $name.value = ""; $phone.value = ""; $service.value = "";
+      $slot.value = "";
+      await loadSlots();
+
+      // Si tienes tu función track() global, la usamos sin romper si no existe
+      if(typeof track === "function"){
+        track("appointment_created", { start_at: payload.start_at, service: payload.service });
+      }
+    }catch(e){
+      setMsg("No se pudo reservar (red).");
+    }finally{
+      $btn.disabled = false;
+    }
+  }
+
+  function resetForm(){
+    $date.value = "";
+    $slot.innerHTML = `<option value="">Selecciona una fecha</option>`;
+    $slot.disabled = true;
+    $name.value = "";
+    $phone.value = "";
+    $service.value = "";
+    setMsg("");
+  }
+
+  $date.addEventListener("change", loadSlots);
+  $btn.addEventListener("click", book);
+  $reset.addEventListener("click", resetForm);
+})();
+</script>
