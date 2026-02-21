@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+  <title>{{ page.get('business_name','Mi negocio') }}</title>
+  <meta name="description" content="{{ page.get('slogan') or page.get('description','')[:160] }}">
+  <meta name="author" content="{{ page.get('business_name','') }}">
+
+  {# ====== OG / Twitter ====== #}
+  {% set og_img = page.get('cover_image') or page.get('image') %}
+  {% if og_img and not (og_img.startswith('http://') or og_img.startswith('https://')) %}
+    {% set og_img = url_for('uploaded_file', filename=og_img, _external=True) %}
+  {% endif %}
+  <meta property="og:title" content="{{ page.get('business_name','') }}">
+  <meta property="og:description" content="{{ page.get('slogan') or page.get('description','')[:200] }}">
+  <meta property="og:image" content="{{ og_img or url_for('static', filename='images/default.png', _external=True) }}">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="{{ request.url }}">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+
+  <style>
+    :root {
+      --brand: {{ page.get('color') or '#008b8b' }};
+      --brand-soft: color-mix(in srgb, var(--brand) 8%, transparent);
+      --bg: #fcfbf9; /* Warm, clean clinical white */
+      --ink: #1e293b;
+      --muted: #64748b;
+      --card: #ffffff;
+      --border: rgba(0,0,0,0.06);
+      --radius: 20px;
+      --shadow-xs: 0 2px 8px rgba(0,0,0,0.03);
+      --shadow-sm: 0 4px 16px rgba(0,0,0,0.05);
+      --shadow: 0 12px 32px rgba(0,0,0,0.08);
+      --transition: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+
+    html, body { 
+      background: var(--bg); 
+      color: var(--ink); 
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      scroll-behavior: smooth;
+    }
+
+    .brand-font { font-family: 'Inter', system-ui, sans-serif; }
+    h1, h2, h3, h4, h5, h6 { font-weight: 700; color: #0f172a; }
+
+    /* ANIMATIONS */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .fade-up { animation: fadeUp 0.7s ease-out forwards; }
+    
+    @media (prefers-reduced-motion: reduce) {
+      .fade-up { animation: none; opacity: 1; transform: none; }
+      .hover-raise:hover { transform: none !important; }
+      html { scroll-behavior: auto; }
+    }
+
+    /* NAV */
+    .nb {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      box-shadow: var(--shadow-xs);
+      position: sticky;
+      top: 0;
+      z-index: 1020;
+      padding: 0.75rem 0;
+    }
+    .nb .navbar-brand {
+      font-weight: 800; 
+      letter-spacing: -0.5px;
+      padding: 0.4rem 1rem;
+      border-radius: 999px;
+      background: var(--brand-soft);
+      color: var(--brand);
+      transition: var(--transition);
+    }
+    .nb .navbar-brand:hover { background: var(--brand); color: #fff; }
+    .nb .nav-link { font-weight: 500; color: var(--muted); padding: 0.5rem 1rem; transition: var(--transition); }
+    .nb .nav-link:hover, .nb .nav-link:focus { color: var(--brand); }
+
+    /* HEADER */
+    .hero {
+      position: relative;
+      padding: 80px 0 60px;
+      overflow: hidden;
+      {% if page.get('cover_image') %}
+      background: linear-gradient(135deg, rgba(252,251,249,0.95) 0%, rgba(252,251,249,0.8) 100%),
+                  url("{{ url_for('uploaded_file', filename=page.cover_image) }}") center/cover no-repeat;
+      {% else %}
+      background: linear-gradient(135deg, var(--bg) 0%, var(--brand-soft) 100%);
+      {% endif %}
+    }
+    .hero-card {
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      padding: 40px;
+    }
+    .hero-avatar {
+      width: 200px; height: 200px; object-fit: cover;
+      border-radius: 50%;
+      border: 4px solid #fff;
+      box-shadow: var(--shadow-sm);
+      background: #fff;
+    }
+    .badge-premium {
+      border: 1px solid color-mix(in srgb, var(--brand) 20%, transparent);
+      padding: 0.4rem 1rem; 
+      border-radius: 999px;
+      background: var(--brand-soft);
+      color: var(--brand); 
+      font-weight: 700;
+      font-size: 0.85rem;
+    }
+
+    /* CARDS */
+    .card-vet {
+      border: 1px solid var(--border);
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      transition: var(--transition);
+      overflow: hidden;
+    }
+    .card-vet:hover {
+      box-shadow: var(--shadow);
+    }
+    .card-vet .card-header {
+      border-bottom: 1px solid var(--border);
+      background: #fff;
+      font-weight: 700;
+      padding: 1.25rem;
+      color: var(--ink);
+    }
+
+    .chip {
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 0.4rem 1rem;
+      background: #fff;
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      box-shadow: var(--shadow-xs);
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--muted);
+    }
+    .chip i { color: var(--brand); }
+
+    /* BUTTONS */
+    .btn-vet {
+      border: 1px solid transparent;
+      border-radius: 999px;
+      padding: 0.6rem 1.5rem;
+      font-weight: 600;
+      transition: var(--transition);
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .btn-brand { background: var(--brand); color: #fff; box-shadow: 0 4px 12px color-mix(in srgb, var(--brand) 40%, transparent); }
+    .btn-brand:hover { filter: brightness(1.1); color: #fff; transform: translateY(-2px); box-shadow: 0 6px 16px color-mix(in srgb, var(--brand) 50%, transparent); }
+    .btn-ghost { background: #fff; border-color: var(--border); color: var(--ink); box-shadow: var(--shadow-xs); }
+    .btn-ghost:hover { background: var(--bg); color: var(--brand); border-color: color-mix(in srgb, var(--brand) 30%, transparent); transform: translateY(-2px); }
+    
+    .hover-raise { transition: var(--transition); }
+    .hover-raise:hover { transform: translateY(-4px); }
+
+    /* UTIL */
+    .section-title {
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 2rem;
+      display: flex; align-items: center; gap: 0.75rem;
+    }
+    .section-title::before {
+      content: "";
+      display: inline-block;
+      width: 12px; height: 32px;
+      border-radius: 6px;
+      background: var(--brand);
+    }
+    .text-muted-2 { color: var(--muted); }
+
+    /* GALERÍA */
+    .gallery-wrap {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: var(--shadow-sm);
+      padding: 1.5rem;
+    }
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.25rem;
+    }
+    .gal-item {
+      position: relative;
+      border-radius: 16px;
+      overflow: hidden;
+      background: var(--bg);
+      aspect-ratio: 4/3;
+      cursor: pointer;
+      box-shadow: var(--shadow-xs);
+      border: 1px solid var(--border);
+    }
+    .gal-item img, .gal-item video {
+      width: 100%; height: 100%; object-fit: cover; display: block;
+      transition: transform 0.5s ease;
+    }
+    .gal-item::after {
+      content: ""; position: absolute; inset: 0;
+      background: linear-gradient(180deg, transparent 50%, rgba(15, 23, 42, 0.7) 100%);
+      opacity: 0; transition: var(--transition);
+    }
+    .gal-item:hover img, .gal-item:hover video { transform: scale(1.05); }
+    .gal-item:hover::after { opacity: 1; }
+    
+    .badge-type {
+      position: absolute; bottom: 1rem; left: 1rem; z-index: 2;
+      background: rgba(255,255,255,0.95);
+      color: var(--ink);
+      border-radius: 999px;
+      padding: 0.35rem 0.75rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      box-shadow: var(--shadow-sm);
+      display: flex; align-items: center; gap: 0.35rem;
+      opacity: 0; transform: translateY(10px); transition: var(--transition);
+    }
+    .gal-item:hover .badge-type { opacity: 1; transform: translateY(0); }
+
+    @media (max-width: 768px){
+      .gallery-grid {
+        display: flex; gap: 1rem; overflow-x: auto;
+        scroll-snap-type: x mandatory; padding-bottom: 0.5rem;
+      }
+      .gal-item { flex: 0 0 80vw; scroll-snap-align: center; }
+      .badge-type { opacity: 1; transform: none; }
+    }
+
+    /* BANNER inferior */
+    .ticker {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 1030;
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.04);
+      color: var(--ink);
+    }
+    .ticker .carousel-item { padding: 0.75rem 0; font-weight: 500; font-size: 0.9rem; }
+    .pill-invert {
+      background: var(--brand-soft); color: var(--brand);
+      border-radius: 999px; padding: 0.25rem 0.75rem; display: inline-block;
+      font-weight: 700; font-size: 0.8rem; margin-right: 0.5rem;
+    }
+
+    /* MAP */
+    #map { height: 350px; border: 1px solid var(--border); border-radius: 16px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); z-index: 1; }
+
+    /* WHATSAPP FAB */
+    .fab-wa {
+      position: fixed; right: 24px; bottom: calc(15% + 20px);
+      z-index: 1050; text-decoration: none;
+    }
+    .fab-wa .btn {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: #25D366; color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem;
+      box-shadow: 0 8px 24px rgba(37, 211, 102, 0.4);
+      border: none;
+      transition: var(--transition);
+    }
+    .fab-wa .btn:hover { transform: scale(1.1) translateY(-4px); background: #20b858; }
+
+    /* FOOTER */
+    .ft {
+      background: #fff; border-top: 1px solid var(--border);
+      margin-top: 80px; padding: 40px 0 calc(40px + 60px); /* extra padding for ticker */
+    }
+
+    /* FORMS & MODALS */
+    .form-control { border-radius: 12px; border: 1px solid var(--border); padding: 0.75rem 1rem; transition: var(--transition); }
+    .form-control:focus { border-color: var(--brand); box-shadow: 0 0 0 4px var(--brand-soft); }
+    .modal-content { border-radius: 24px; border: none; box-shadow: var(--shadow); }
+    .modal-header { border-bottom: 1px solid var(--border); }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar navbar-expand-lg nb">
+    <div class="container">
+      <a class="navbar-brand brand-font" href="/">
+        <i class="bi bi-heart-pulse-fill me-1"></i> {{ page.get('business_name','Negocio') }}
+      </a>
+      <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#nv" aria-controls="nv" aria-expanded="false">
+        <i class="bi bi-list fs-1 text-dark"></i>
+      </button>
+
+      <div id="nv" class="collapse navbar-collapse justify-content-end">
+        <ul class="navbar-nav gap-2 mt-3 mt-lg-0 text-center">
+          <li class="nav-item"><a class="nav-link" href="#info">Clínica</a></li>
+          <li class="nav-item"><a class="nav-link" href="#galeria">Instalaciones</a></li>
+          <li class="nav-item"><a class="nav-link" href="#contacto">Contacto</a></li>
+          {% if posts %}<li class="nav-item"><a class="nav-link" href="#publicaciones">Noticias</a></li>{% endif %}
+          {% if (servicios and servicios|length>0) or (productos_fisicos and productos_fisicos|length>0) %}<li class="nav-item"><a class="nav-link" href="#productos">Servicios & Tienda</a></li>{% endif %}
+          <li class="nav-item"><a class="nav-link" href="#reseñas">Reseñas</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <header class="hero fade-up">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-lg-10">
+          <div class="hero-card">
+            <div class="row g-5 align-items-center">
+              <div class="col-md-5 text-center text-md-start">
+                {% if page.get('image') %}
+                  <img class="hero-avatar" src="{{ url_for('uploaded_file', filename=page['image']) }}" alt="Logo">
+                {% else %}
+                  <img class="hero-avatar" src="{{ url_for('static', filename='images/default_image.png') }}" alt="Logo">
+                {% endif %}
+              </div>
+              <div class="col-md-7 text-center text-md-start">
+                <div class="d-inline-block mb-3 badge-premium brand-font">
+                  <i class="bi bi-shield-check me-1"></i> {{ page.get('category','Centro Veterinario') }}
+                </div>
+                <h1 class="brand-font display-5 mb-2">{{ page.get('business_name','Mi negocio') }}</h1>
+                <h2 class="fs-5 fw-medium mb-3" style="color: var(--brand);">Cuidado profesional, empatía y calidez para tu mascota.</h2>
+                {% if page.get('slogan') %}
+                  <p class="fs-6 text-muted-2 mb-4">{{ page['slogan'] }}</p>
+                {% endif %}
+                <div class="d-flex flex-wrap justify-content-center justify-content-md-start gap-3">
+                  {% if page.get('website') %}
+                  <a class="btn btn-vet btn-brand hover-raise" href="{{ page['website'] }}" target="_blank" data-track="click_website">
+                    <i class="bi bi-calendar2-check me-2"></i> Agendar Cita
+                  </a>
+                  {% endif %}
+                  {% if page.get('phone') %}
+                  <a class="btn btn-vet btn-ghost hover-raise" href="tel:{{ page['phone'] }}" data-track="click_phone">
+                    <i class="bi bi-telephone me-2"></i> Llamar ahora
+                  </a>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  {% if promos and promos|length > 0 %}
+  <section class="container my-5 fade-up" id="promos">
+    <h2 class="section-title brand-font">Promociones Especiales</h2>
+    <div class="row g-4">
+      {% for p in promos %}
+        <div class="col-md-6">
+          <div class="card card-vet h-100">
+            <div class="card-header d-flex justify-content-between align-items-center bg-white border-0 pt-4 px-4 pb-0">
+              <h5 class="mb-0 text-brand"><i class="bi bi-stars me-2 text-warning"></i>{{ p.title }}</h5>
+              {% if p.code %}<span class="badge-premium bg-light text-dark border">{{ p.code }}</span>{% endif %}
+            </div>
+            <div class="card-body px-4 pb-4">
+              {% if p.description %}<p class="mb-3 text-muted-2">{{ p.description }}</p>{% endif %}
+              <div class="d-flex align-items-center gap-2 flex-wrap">
+                {% if p.discount_type in ['percent','fixed'] %}
+                  <div class="chip text-success border-success-subtle bg-success-subtle">
+                    <i class="bi bi-tag-fill text-success"></i>
+                    {% if p.discount_type=='percent' %}{{ p.value }}% de descuento{% else %}${{ p.value }} de descuento{% endif %}
+                  </div>
+                {% else %}
+                  <div class="chip"><i class="bi bi-info-circle text-primary"></i> Promoción Activa</div>
+                {% endif %}
+                {% if p.ends_at %}
+                  <div class="chip text-muted-2"><i class="bi bi-clock-history"></i> Válido hasta {{ p.ends_at.strftime('%d/%m/%Y') }}</div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="container my-5 fade-up" id="info">
+    <h2 class="section-title brand-font">Nuestra Clínica</h2>
+    <div class="row g-4">
+      <div class="col-md-6">
+        <div class="card card-vet h-100 p-2">
+          <div class="card-body">
+            <h5 class="card-title fw-bold mb-3"><i class="bi bi-heart-pulse text-danger me-2"></i> Sobre nosotros</h5>
+            <p class="mb-4 text-muted-2 lh-lg">{{ page.get('description','Somos un equipo de profesionales comprometidos con la salud y bienestar de tu mascota.') }}</p>
+            <div class="d-flex flex-wrap gap-2">
+              {% if page.get('services') %}<span class="chip"><i class="bi bi-clipboard2-pulse"></i> {{ page.services }}</span>{% endif %}
+              <span class="chip"><i class="bi bi-hospital"></i> Urgencias Veterinarias</span>
+              <span class="chip"><i class="bi bi-scissors"></i> Estética Canina</span>
+              {% if page.get('payment_methods') %}<span class="chip"><i class="bi bi-credit-card-2-front"></i> {{ page.payment_methods }}</span>{% endif %}
+              {% if page.get('founding_date') %}<span class="chip"><i class="bi bi-award"></i> Desde {{ page.founding_date }}</span>{% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card card-vet h-100 p-2">
+          <div class="card-body">
+            <h5 class="card-title fw-bold mb-3"><i class="bi bi-geo-alt-fill text-primary me-2"></i> Ubicación y Horario</h5>
+            <div class="d-flex align-items-start gap-2 mb-3">
+              <i class="bi bi-map text-muted mt-1"></i>
+              <div>
+                <strong>Dirección:</strong> <span class="text-muted-2">{{ page.get('address','') }}</span>
+                <div class="small text-muted-2 mt-1">{{ page.get('city','') }}, {{ page.get('state','') }} C.P. {{ page.get('postal_code','') }}</div>
+              </div>
+            </div>
+            <div class="d-flex align-items-start gap-2 mb-4">
+              <i class="bi bi-clock text-muted mt-1"></i>
+              <div>
+                <strong>Horarios de atención:</strong>
+                <div class="text-muted-2 mt-1">{{ page.get('operating_hours','Lunes a Sábado: 9:00 AM - 7:00 PM') }}</div>
+              </div>
+            </div>
+
+            {% set lat_val = page.get('lat') %}
+            {% set lng_val = page.get('lng') %}
+            {% set has_coords = (lat_val is not none) and (lng_val is not none) and (lat_val|string|trim != '') and (lng_val|string|trim != '') %}
+
+            <div class="mt-3">
+              {% if has_coords %}
+                <div id="map" class="mb-3"></div>
+                <a class="btn btn-vet btn-ghost w-100 hover-raise" target="_blank"
+                  href="https://www.google.com/maps/dir/?api=1&destination={{ lat_val }},{{ lng_val }}"
+                  data-track="click_maps">
+                  <i class="bi bi-cursor-fill me-2 text-primary"></i> Trazar ruta
+                </a>
+              {% elif page.get('address') %}
+                <a class="btn btn-vet btn-ghost w-100 hover-raise" target="_blank"
+                  href="https://www.google.com/maps/search/?api=1&query={{ page.address | urlencode }}" data-track="click_maps">
+                  <i class="bi bi-search me-2"></i> Ver en Maps
+                </a>
+              {% else %}
+                <div class="alert bg-light border text-muted-2 rounded-4"><i class="bi bi-info-circle me-2"></i>Consulta ubicación al contactarnos.</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="container my-5 fade-up" id="galeria">
+    <h2 class="section-title brand-font">Conoce nuestras instalaciones</h2>
+    {% set tiene_portada = page.get('cover_image') %}
+    {% set tiene_media = page.get('media_gallery') and page.media_gallery|length > 0 %}
+    {% set tiene_galeria = galeria and galeria|length > 0 %}
+    
+    {% if tiene_portada or tiene_media or tiene_galeria %}
+      <div class="gallery-wrap">
+        <div class="gallery-grid">
+          {% if tiene_portada %}
+            <div class="gal-item img-zoom-trigger" data-bs-toggle="modal" data-bs-target="#zoomModal" data-type="image" data-img-src="{{ url_for('uploaded_file', filename=page.cover_image) }}">
+              <img src="{{ url_for('uploaded_file', filename=page.cover_image) }}" alt="Fachada Clínica">
+              <span class="badge-type"><i class="bi bi-building"></i> Fachada</span>
+            </div>
+          {% endif %}
+
+          {% if tiene_media %}
+            {% for item in page.media_gallery %}
+              {% if item is string %}
+                <div class="gal-item img-zoom-trigger" data-bs-toggle="modal" data-bs-target="#zoomModal" data-type="image" data-img-src="{{ url_for('uploaded_file', filename=item) }}">
+                  <img src="{{ url_for('uploaded_file', filename=item) }}" alt="Instalaciones">
+                  <span class="badge-type"><i class="bi bi-camera"></i> Clínica</span>
+                </div>
+              {% else %}
+                {% set fpath = item.path %}
+                {% set ftype = item.type or 'image' %}
+                {% if ftype == 'video' %}
+                  <div class="gal-item" data-type="video">
+                    <video src="{{ url_for('uploaded_file', filename=fpath) }}" muted playsinline autoplay loop></video>
+                    <span class="badge-type"><i class="bi bi-play-circle-fill text-danger"></i> Video</span>
+                  </div>
+                {% else %}
+                  <div class="gal-item img-zoom-trigger" data-bs-toggle="modal" data-bs-target="#zoomModal" data-type="image" data-img-src="{{ url_for('uploaded_file', filename=fpath) }}">
+                    <img src="{{ url_for('uploaded_file', filename=fpath) }}" alt="Instalaciones">
+                    <span class="badge-type"><i class="bi bi-image"></i> Detalle</span>
+                  </div>
+                {% endif %}
+              {% endif %}
+            {% endfor %}
+          {% endif %}
+
+          {% if tiene_galeria %}
+            {% for g in (galeria or [])[:12] %}
+              <div class="gal-item img-zoom-trigger" data-bs-toggle="modal" data-bs-target="#zoomModal" data-type="image" data-img-src="{{ url_for('uploaded_file', filename=g) }}">
+                <img src="{{ url_for('uploaded_file', filename=g) }}" alt="Paciente {{ loop.index }}">
+                <span class="badge-type"><i class="bi bi-bandaid"></i> Pacientes felices</span>
+              </div>
+            {% endfor %}
+          {% endif %}
+        </div>
+      </div>
+    {% else %}
+      <div class="card card-vet p-4 text-center text-muted-2 bg-light">
+        <i class="bi bi-images fs-1 mb-2"></i>
+        <p class="mb-0">Próximamente más fotos de nuestros peluditos.</p>
+      </div>
+    {% endif %}
+  </section>
+
+  <section class="container my-5 fade-up" id="contacto">
+    <h2 class="section-title brand-font">Contacto Rápido</h2>
+    <div class="row g-4">
+      <div class="col-md-6">
+        <div class="card card-vet h-100 p-2 border-primary border-opacity-25">
+          <div class="card-body">
+            <h5 class="fw-bold mb-4">¿Emergencia o consulta?</h5>
+            <div class="d-flex flex-column gap-3">
+              {% if page.get('phone') %}
+              <a href="tel:{{ page.phone }}" class="text-decoration-none text-dark d-flex align-items-center p-3 rounded-4 bg-light hover-raise">
+                <div class="bg-white rounded-circle p-2 shadow-sm me-3"><i class="bi bi-telephone-fill text-primary fs-5"></i></div>
+                <div><small class="d-block text-muted">Llámanos</small><span class="fw-bold fs-5">{{ page.phone }}</span></div>
+              </a>
+              {% endif %}
+              {% if page.get('email') %}
+              <a href="mailto:{{ page.email }}" class="text-decoration-none text-dark d-flex align-items-center p-3 rounded-4 bg-light hover-raise">
+                <div class="bg-white rounded-circle p-2 shadow-sm me-3"><i class="bi bi-envelope-fill text-danger fs-5"></i></div>
+                <div><small class="d-block text-muted">Envíanos un correo</small><span class="fw-bold">{{ page.email }}</span></div>
+              </a>
+              {% endif %}
+              {% if page.get('website') %}
+              <a href="{{ page.website }}" target="_blank" data-track="click_website" class="text-decoration-none text-dark d-flex align-items-center p-3 rounded-4 bg-light hover-raise">
+                <div class="bg-white rounded-circle p-2 shadow-sm me-3"><i class="bi bi-globe2 text-success fs-5"></i></div>
+                <div><small class="d-block text-muted">Visita nuestra web</small><span class="fw-bold">Agendar cita online</span></div>
+              </a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card card-vet h-100 p-2">
+          <div class="card-body">
+            <h5 class="fw-bold mb-4">Comunidad Peluda (Redes)</h5>
+            <div class="d-flex flex-column gap-3">
+              {% if page.get('facebook') %}
+              <a href="{{ page.facebook }}" target="_blank" class="btn btn-ghost hover-raise text-start d-flex align-items-center p-3">
+                <i class="bi bi-facebook text-primary fs-4 me-3"></i> <strong>Síguenos en Facebook</strong>
+              </a>
+              {% endif %}
+              {% if page.get('instagram') %}
+              <a href="{{ page.instagram }}" target="_blank" class="btn btn-ghost hover-raise text-start d-flex align-items-center p-3">
+                <i class="bi bi-instagram text-danger fs-4 me-3"></i> <strong>Síguenos en Instagram</strong>
+              </a>
+              {% endif %}
+              {% if page.get('tiktok') %}
+              <a href="{{ page.tiktok }}" target="_blank" class="btn btn-ghost hover-raise text-start d-flex align-items-center p-3">
+                <i class="bi bi-tiktok text-dark fs-4 me-3"></i> <strong>Aprende con TikTok</strong>
+              </a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="container my-5 fade-up" id="publicaciones">
+    {% if posts and posts|length>0 %}
+      <h2 class="section-title brand-font">Tips y Noticias Vet</h2>
+      <div class="row g-4">
+        {% for post in posts %}
+          <div class="col-md-4">
+            <div class="card card-vet h-100 border-0 shadow-sm hover-raise">
+              {% if post.cabecera %}
+                <img src="{{ url_for('uploaded_file', filename=post.cabecera) }}" class="card-img-top" alt="Noticia" style="height:200px; object-fit:cover;">
+              {% endif %}
+              <div class="card-body d-flex flex-column p-4">
+                <h5 class="brand-font fw-bold">{{ post.title }}</h5>
+                <p class="text-muted-2 flex-grow-1">{{ post.content[:110] }}...</p>
+                <a class="mt-3 text-brand text-decoration-none fw-bold" href="{{ url_for('ver_post', post_id=post._id) }}">
+                  Leer artículo completo <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </section>
+
+  <section class="container my-5 fade-up" id="productos">
+    <h2 class="section-title brand-font">Servicios Veterinarios & Farmacia</h2>
+
+    {% if (servicios and servicios|length>0) or (productos_fisicos and productos_fisicos|length>0) %}
+
+      <div class="alert bg-brand-soft border-0 rounded-4 p-4 mb-4 d-flex align-items-center gap-3 shadow-sm" style="background: var(--brand-soft);">
+        <div class="bg-white rounded-circle p-2 shadow-sm text-brand"><i class="bi bi-clipboard2-check fs-4"></i></div>
+        <div>
+          <strong class="text-dark">Selecciona lo que necesita tu mascota:</strong>
+          <div class="text-muted-2 small">Indica las cantidades, haz clic en "Cotizar" y coordinaremos todo rápido por WhatsApp.</div>
+        </div>
+      </div>
+
+      <form id="form-cotizar" class="row g-4">
+
+        {% if servicios and servicios|length>0 %}
+          <div class="col-12 mt-4">
+            <h3 class="h5 brand-font fw-bold d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
+              <i class="bi bi-heart-pulse-fill text-danger"></i> Consultas y Procedimientos
+            </h3>
+          </div>
+
+          {% for item in servicios %}
+          <div class="col-12 col-sm-6 col-lg-4">
+            <div class="card card-vet h-100 p-2 border-0 shadow-sm bg-white">
+              {% if item.image %}
+                <div class="overflow-hidden rounded-3 mb-3" style="height: 200px;">
+                  <img src="{{ url_for('uploaded_file', filename=item.image) }}" alt="{{ item.title }}"
+                       class="w-100 h-100 img-zoom-trigger hover-raise"
+                       data-bs-toggle="modal" data-bs-target="#zoomModal"
+                       data-img-src="{{ url_for('uploaded_file', filename=item.image) }}"
+                       style="object-fit:cover; cursor: zoom-in;">
+                </div>
+              {% endif %}
+              <div class="card-body d-flex flex-column p-2">
+                <div class="mb-2">
+                  <span class="badge-premium bg-light text-primary border-0 px-2 py-1 small"><i class="bi bi-activity"></i> Servicio Médico</span>
+                </div>
+                <h6 class="brand-font fw-bold mb-2">{{ item.title }}</h6>
+                {% if item.description %}<p class="text-muted-2 small flex-grow-1">{{ item.description }}</p>{% endif %}
+                
+                <div class="d-flex justify-content-between align-items-end mt-3">
+                  {% if item.show_price %}
+                    <div class="fw-bold fs-5 text-dark">${{ "%.2f"|format(item.price) }}</div>
+                  {% else %}
+                    <div></div>
+                  {% endif %}
+                  <div style="width: 100px;">
+                    <label class="form-label text-muted small mb-1">Sesiones</label>
+                    <input type="number" min="0" value="0" class="form-control form-control-sm text-center bg-light"
+                           name="prod_{{ item.title | replace(' ','_') }}" data-item-nombre="{{ item.title }}">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        {% endif %}
+
+        {% if productos_fisicos and productos_fisicos|length>0 %}
+          <div class="col-12 mt-5">
+            <h3 class="h5 brand-font fw-bold d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
+              <i class="bi bi-bag-heart-fill text-success"></i> Farmacia y Accesorios
+            </h3>
+          </div>
+
+          {% for item in productos_fisicos %}
+          <div class="col-12 col-sm-6 col-lg-4">
+            <div class="card card-vet h-100 p-2 border-0 shadow-sm bg-white">
+              {% if item.image %}
+                <div class="overflow-hidden rounded-3 mb-3" style="height: 200px;">
+                  <img src="{{ url_for('uploaded_file', filename=item.image) }}" alt="{{ item.title }}"
+                       class="w-100 h-100 img-zoom-trigger hover-raise"
+                       data-bs-toggle="modal" data-bs-target="#zoomModal"
+                       data-img-src="{{ url_for('uploaded_file', filename=item.image) }}"
+                       style="object-fit:cover; cursor: zoom-in;">
+                </div>
+              {% endif %}
+              <div class="card-body d-flex flex-column p-2">
+                <div class="mb-2">
+                  <span class="badge-premium bg-light text-success border-0 px-2 py-1 small"><i class="bi bi-box2-heart"></i> Tienda</span>
+                </div>
+                <h6 class="brand-font fw-bold mb-2">{{ item.title }}</h6>
+                {% if item.description %}<p class="text-muted-2 small flex-grow-1">{{ item.description }}</p>{% endif %}
+                
+                <div class="d-flex justify-content-between align-items-end mt-3">
+                  {% if item.show_price %}
+                    <div class="fw-bold fs-5 text-dark">${{ "%.2f"|format(item.price) }}</div>
+                  {% else %}
+                    <div></div>
+                  {% endif %}
+                  <div style="width: 100px;">
+                    <label class="form-label text-muted small mb-1">Cantidad</label>
+                    <input type="number" min="0" value="0" class="form-control form-control-sm text-center bg-light"
+                           name="prod_{{ item.title | replace(' ','_') }}" data-item-nombre="{{ item.title }}">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        {% endif %}
+
+        <div class="col-12 text-center mt-5">
+          <button type="submit" class="btn btn-vet btn-brand btn-lg px-5 py-3 hover-raise rounded-pill">
+            <i class="bi bi-whatsapp me-2 fs-5"></i> Cotizar selección ahora
+          </button>
+        </div>
+      </form>
+
+      <div class="modal fade" id="zoomModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+          <div class="modal-content overflow-hidden bg-transparent border-0 shadow-none">
+            <div class="position-relative text-center">
+              <img id="zoomedImage" src="" class="img-fluid rounded-4 shadow" alt="Zoom">
+              <button class="btn btn-light rounded-circle position-absolute top-0 end-0 m-3 shadow" data-bs-dismiss="modal" style="width:40px; height:40px;"><i class="bi bi-x-lg"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal fade" id="cotizarModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header border-0 pb-0 mt-2 mx-2">
+              <h5 class="modal-title fw-bold text-dark"><i class="bi bi-clipboard2-check text-brand me-2"></i> Confirmar Consulta</h5>
+              <button type="button" class="btn-close bg-light rounded-circle p-2" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body px-4">
+              <p class="text-muted mb-4 small">
+                Para brindarte un trato personalizado a ti y a tu mascota, compártenos tu nombre.
+              </p>
+
+              <div class="mb-4">
+                <label class="form-label fw-bold">Tu nombre o el de tu mascota</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-light border-end-0"><i class="bi bi-person text-muted"></i></span>
+                  <input type="text" class="form-control border-start-0 ps-0 bg-light" id="nombreClienteInput" placeholder="Ej. Familia Martínez / Firulais">
+                </div>
+                <div class="text-danger small mt-2 d-none fw-medium" id="errorModalNombre"><i class="bi bi-exclamation-circle me-1"></i> Por favor indícanos tu nombre.</div>
+              </div>
+
+              <div>
+                <div class="form-label fw-bold mb-2">Resumen de tu selección:</div>
+                <div id="resumenSeleccion" class="bg-light rounded-3 p-3 small text-secondary" style="max-height: 200px; overflow-y:auto;"></div>
+              </div>
+            </div>
+            <div class="modal-footer border-0 px-4 pb-4 pt-2">
+              <button class="btn btn-ghost rounded-pill flex-grow-1" data-bs-dismiss="modal">Modificar</button>
+              <button class="btn btn-brand rounded-pill flex-grow-1" id="enviarCotizacionBtn">
+                <i class="bi bi-whatsapp me-2"></i> Enviar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    {% else %}
+      <div class="card card-vet p-5 text-center bg-light border-0 shadow-sm text-muted-2">
+        <i class="bi bi-box-seam fs-1 mb-3"></i>
+        <p class="mb-0 fs-5">Actualmente no hay productos o servicios listados.</p>
+      </div>
+    {% endif %}
+  </section>
+
+  <section class="container my-5 fade-up" id="reseñas">
+    <h2 class="section-title brand-font">Lo que dicen nuestras familias</h2>
+    <div class="card card-vet p-4 mb-5 border-0 shadow-sm bg-white">
+      <h5 class="fw-bold mb-4"><i class="bi bi-chat-quote-fill text-brand me-2"></i> Déjanos tu experiencia</h5>
+      
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          <div class="alert alert-success border-0 bg-success-subtle text-success rounded-4 d-flex align-items-center mb-4">
+            <i class="bi bi-check-circle-fill fs-4 me-3"></i>
+            <div>{% for m in messages %}<div>{{ m }}</div>{% endfor %}</div>
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <form method="POST" class="row g-4">
+        <div class="col-md-6">
+          <label class="form-label fw-medium text-muted">Tu nombre</label>
+          <input type="text" name="nombre" class="form-control bg-light" placeholder="Ej. Carlos y Max" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-medium text-muted">Califica nuestra atención</label>
+          <div id="starRating" class="d-flex gap-1 fs-4">
+            {% for i in range(1,6) %}
+              <i class="bi bi-star-fill text-black-50 star-icon hover-raise" data-value="{{ i }}"></i>
+            {% endfor %}
+          </div>
+          <input type="hidden" name="estrellas" id="estrellas" value="0" required>
+        </div>
+        <div class="col-12">
+          <label class="form-label fw-medium text-muted">Tu opinión es importante</label>
+          <textarea name="comentario" class="form-control bg-light" rows="3" placeholder="¿Cómo fue la consulta de tu mascota?" required></textarea>
+        </div>
+        <div class="col-12 text-end">
+          <button class="btn btn-vet btn-brand hover-raise px-4" type="submit"><i class="bi bi-send-fill me-2"></i> Publicar reseña</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="row g-4">
+      {% if reseñas and reseñas|length>0 %}
+        {% for r in reseñas %}
+          <div class="col-md-6 col-lg-4">
+            <div class="card card-vet h-100 border-0 shadow-sm bg-white p-2">
+              <div class="card-body">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                  <div class="bg-light rounded-circle d-flex align-items-center justify-content-center text-brand fs-4 fw-bold" style="width: 48px; height: 48px;">
+                    {{ r.nombre[:1] | upper }}
+                  </div>
+                  <div>
+                    <h6 class="brand-font fw-bold mb-0">{{ r.nombre }}</h6>
+                    <div class="small">
+                      {% for i in range(1,6) %}
+                        {% if i <= r.estrellas %}<i class="bi bi-star-fill text-warning"></i>{% else %}<i class="bi bi-star text-black-50"></i>{% endif %}
+                      {% endfor %}
+                    </div>
+                  </div>
+                </div>
+                <p class="text-muted-2 small fst-italic mb-0 lh-lg">"{{ r.comentario }}"</p>
+              </div>
+              <div class="card-footer bg-transparent border-0 pt-0">
+                <small class="text-muted opacity-75"><i class="bi bi-calendar-check me-1"></i> {{ r.fecha.strftime('%d/%m/%Y') }}</small>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div class="col-12">
+          <div class="text-center text-muted-2 py-4">Aún no hay reseñas registradas. ¡Sé el primero en calificar nuestra atención!</div>
+        </div>
+      {% endif %}
+    </div>
+  </section>
+
+  <div class="ticker">
+    <div class="container">
+      <div id="noticiasCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="4000">
+        <div class="carousel-inner text-center">
+          {% if avisos and avisos|length>0 %}
+            {% for aviso in avisos %}
+              <div class="carousel-item {% if loop.first %}active{% endif %}">
+                <span class="pill-invert"><i class="bi bi-bell-fill me-1"></i> {{ aviso.title }}</span>
+                <span class="ms-2 opacity-75">{{ aviso.content }}</span>
+              </div>
+            {% endfor %}
+          {% else %}
+            <div class="carousel-item active opacity-75">
+              <i class="bi bi-heart-fill text-danger me-2"></i> ¡Gracias por confiar la salud de tu mascota en nuestras manos!
+            </div>
+          {% endif %}
+        </div>
+        <button class="carousel-control-prev" type="button" data-bs-target="#noticiasCarousel" data-bs-slide="prev">
+          <span class="carousel-control-prev-icon opacity-50"></span>
+          <span class="visually-hidden">Anterior</span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#noticiasCarousel" data-bs-slide="next">
+          <span class="carousel-control-next-icon opacity-50"></span>
+          <span class="visually-hidden">Siguiente</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  {% if page.get('whatsapp') %}
+  <a class="fab-wa"
+     href="https://wa.me/{{ page.whatsapp | replace(' ','') }}"
+     target="_blank" aria-label="WhatsApp"
+     data-track="click_whatsapp_fab">
+    <button class="btn hover-raise" aria-label="Chat WhatsApp">
+      <i class="bi bi-whatsapp"></i>
+    </button>
+  </a>
+  {% endif %}
+
+  <footer class="ft">
+    <div class="container d-flex flex-column flex-md-row align-items-center justify-content-between gap-3 text-center text-md-start">
+      <div>
+        <h5 class="brand-font fw-bold text-dark mb-1"><i class="bi bi-heart-pulse-fill text-danger me-2"></i>{{ page.get('business_name','Negocio') }}</h5>
+        <span class="text-muted small">© 2025 Todos los derechos reservados. Cuidando patitas.</span>
+      </div>
+      <div class="d-flex align-items-center gap-3">
+        {% if page.get('facebook') %}<a href="{{ page.facebook }}" target="_blank" class="text-muted hover-raise" aria-label="Facebook"><i class="bi bi-facebook fs-4"></i></a>{% endif %}
+        {% if page.get('instagram') %}<a href="{{ page.instagram }}" target="_blank" class="text-muted hover-raise" aria-label="Instagram"><i class="bi bi-instagram fs-4"></i></a>{% endif %}
+        {% if page.get('tiktok') %}<a href="{{ page.tiktok }}" target="_blank" class="text-muted hover-raise" aria-label="TikTok"><i class="bi bi-tiktok fs-4"></i></a>{% endif %}
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+  <script>
+  // ===== MAPA (Leaflet) — robusto =====
+  (function () {
+    const el = document.getElementById('map');
+    if (!el) return;
+
+    const latRaw = "{{ page.get('lat','') }}";
+    const lngRaw = "{{ page.get('lng','') }}";
+
+    const lat = Number.parseFloat(latRaw);
+    const lng = Number.parseFloat(lngRaw);
+
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      el.innerHTML = `
+        <div class="alert bg-light border text-muted-2 rounded-4"><i class="bi bi-geo-alt me-2"></i>Ubicación pendiente de actualizar.</div>`;
+      return;
+    }
+
+    const map = L.map('map', {
+      scrollWheelZoom: false,
+      dragging: !L.Browser.mobile,
+      tap: true
+    }).setView([lat, lng], 16);
+
+    const tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap'
+    });
+
+    tiles.on('tileerror', function (err) {
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap © CARTO'
+      }).addTo(map);
+    });
+
+    tiles.addTo(map);
+
+    const name = "{{ page.get('business_name','')|e }}";
+    const addr = "{{ page.get('address','')|e }}";
+    
+    // Premium Map Marker style
+    const customIcon = L.divIcon({
+      className: 'custom-div-icon',
+      html: `<div style="background-color: var(--brand); width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 10px rgba(0,0,0,0.3);"></div>`,
+      iconSize: [16, 16],
+      iconAnchor: [8, 8]
+    });
+
+    const popupHtml = `
+      <div style="min-width:180px; font-family: Inter, sans-serif;">
+        <strong style="color:var(--brand);">${name || 'Clínica Veterinaria'}</strong><br>
+        <span style="opacity:.8; font-size: 0.9em;">${addr || ''}</span>
+      </div>
+    `;
+
+    const marker = L.marker([lat, lng], {icon: customIcon}).addTo(map);
+    marker.bindPopup(popupHtml);
+
+    const fixSize = () => {
+      try { map.invalidateSize(true); } catch(e){}
+    };
+
+    setTimeout(fixSize, 120);
+    setTimeout(fixSize, 500);
+    window.addEventListener('resize', () => setTimeout(fixSize, 80));
+
+    if (!L.Browser.mobile) {
+      setTimeout(() => marker.openPopup(), 250);
+    }
+  })();
+  </script>
+
+  <script>
+  /**
+   * =========================================================
+   * PUBLIC MODULE: Analytics + Cotizar (Lead) + UX helpers
+   * Requiere endpoints:
+   * - POST /api/track
+   * - POST /api/leads
+   * Requiere que backend pase `slug` o que page.slug exista:
+   * ctx incluye: slug=slug
+   * =========================================================
+   */
+
+  const SITE_SLUG = "{{ slug or page.get('slug','') }}";
+  const BUSINESS_NAME = "{{ page.get('business_name','')|e }}";
+  const BUSINESS_WA = "{{ (page.get('whatsapp','') or '')|replace(' ','') }}";
+
+  /* -----------------------------
+     Analytics: track() helper
+  ------------------------------ */
+  function track(type, meta){
+    try{
+      if(!SITE_SLUG) return;
+      fetch("/api/track", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ slug: SITE_SLUG, type, meta: meta || {} })
+      }).catch(()=>{});
+    }catch(e){}
+  }
+
+  track("view", { path: location.pathname, ref: document.referrer || "" });
+
+  document.addEventListener("click", (e)=>{
+    const el = e.target.closest("[data-track]");
+    if(!el) return;
+    const type = el.getAttribute("data-track");
+    const href = el.getAttribute("href") || "";
+    track(type, { href });
+  });
+
+  /* -----------------------------
+     Zoom Modal (imágenes)
+  ------------------------------ */
+  (function zoomModule(){
+    const zoomed = document.getElementById("zoomedImage");
+    if(!zoomed) return;
+
+    document.addEventListener("click", (e)=>{
+      const img = e.target.closest(".img-zoom-trigger");
+      if(!img) return;
+      const src = img.getAttribute("data-img-src") || img.getAttribute("src");
+      if(src) zoomed.src = src;
+      track("open_zoom", { src: src || "" });
+    });
+  })();
+
+  /* -----------------------------
+     Star rating (reseñas)
+  ------------------------------ */
+  (function starsModule(){
+    const stars = Array.from(document.querySelectorAll(".star-icon"));
+    const input = document.getElementById("estrellas");
+    if(!stars.length || !input) return;
+
+    function paint(v){
+      stars.forEach(s=>{
+        const n = parseInt(s.dataset.value || "0", 10);
+        if(n <= v){
+          s.classList.remove("text-black-50");
+          s.classList.add("text-warning");
+        }else{
+          s.classList.remove("text-warning");
+          s.classList.add("text-black-50");
+        }
+      });
+    }
+
+    stars.forEach(s=>{
+      s.style.cursor = "pointer";
+      s.addEventListener("click", ()=>{
+        const v = parseInt(s.dataset.value || "0", 10);
+        input.value = String(v);
+        paint(v);
+        track("rate_star_select", { value: v });
+      });
+    });
+  })();
+
+  /* -----------------------------
+     Cotizar -> Modal -> WhatsApp
+     + Save lead server-side
+  ------------------------------ */
+  (async function cotizarModule(){
+    const form = document.getElementById("form-cotizar");
+    const modalEl = document.getElementById("cotizarModal");
+    const resumenEl = document.getElementById("resumenSeleccion");
+    const nombreInput = document.getElementById("nombreClienteInput");
+    const errNombre = document.getElementById("errorModalNombre");
+    const enviarBtn = document.getElementById("enviarCotizacionBtn");
+
+    if(!form || !modalEl || !resumenEl || !nombreInput || !enviarBtn) return;
+
+    const bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    let selectedItems = []; 
+
+    function getSelectedItems(){
+      const inputs = Array.from(form.querySelectorAll('input[type="number"][data-item-nombre]'));
+      const items = [];
+      for(const inp of inputs){
+        const title = (inp.dataset.itemNombre || "").trim();
+        const qty = parseInt(inp.value || "0", 10);
+        if(title && Number.isFinite(qty) && qty > 0){
+          items.push({ title, qty });
+        }
+      }
+      return items;
+    }
+
+    function renderResumen(items){
+      if(!items.length){
+        resumenEl.innerHTML = `<div class="text-muted">No seleccionaste nada todavía.</div>`;
+        return;
+      }
+      resumenEl.innerHTML = items.map(it => {
+        return `<div class="mb-1"><i class="bi bi-check2 text-success me-1"></i> <strong>${escapeHtml(it.title)}</strong> (x${it.qty})</div>`;
+      }).join("");
+    }
+
+    function escapeHtml(s){
+      return String(s)
+        .replaceAll("&","&")
+        .replaceAll("<","<")
+        .replaceAll(">",">")
+        .replaceAll('"',""")
+        .replaceAll("'","'");
+    }
+
+    form.addEventListener("submit", (e)=>{
+      e.preventDefault();
+      selectedItems = getSelectedItems();
+
+      if(!selectedItems.length){
+        track("cotizar_empty", {});
+        resumenEl.innerHTML = `<div class="text-danger fw-bold"><i class="bi bi-exclamation-triangle me-1"></i> Selecciona al menos 1 producto o servicio para cotizar.</div>`;
+        bsModal.show();
+        return;
+      }
+
+      track("cotizar_open_modal", { items: selectedItems.length });
+      renderResumen(selectedItems);
+      errNombre.classList.add("d-none");
+      nombreInput.value = "";
+      bsModal.show();
+      setTimeout(()=> nombreInput.focus(), 150);
+    });
+
+    async function createLead(nombre, items){
+      try{
+        const r = await fetch("/api/leads", {
+          method:"POST",
+          headers:{ "Content-Type":"application/json" },
+          body: JSON.stringify({
+            slug: SITE_SLUG,
+            nombre,
+            items,
+            canal: "whatsapp"
+          })
+        });
+        return await r.json();
+      }catch(e){
+        return { ok:false, error:"network" };
+      }
+    }
+
+    function buildWhatsAppMessage(nombre, items){
+      const lines = [];
+      lines.push(`¡Hola! Soy ${nombre}. 🐾`);
+      lines.push(`Me gustaría recibir información o cotizar lo siguiente en ${BUSINESS_NAME}:`);
+      for(const it of items){
+        lines.push(`✔️ ${it.title} (Cantidad: ${it.qty})`);
+      }
+      lines.push(`¡Muchas gracias!`);
+      return lines.join("\n");
+    }
+
+    function openWhatsApp(text){
+      if(!BUSINESS_WA){
+        alert("Nuestra línea de WhatsApp se encuentra en mantenimiento, por favor contáctanos por teléfono. 📞");
+        return;
+      }
+      const url = `https://wa.me/${BUSINESS_WA}?text=${encodeURIComponent(text)}`;
+      window.open(url, "_blank", "noopener");
+    }
+
+    enviarBtn.addEventListener("click", async ()=>{
+      const nombre = (nombreInput.value || "").trim();
+
+      if(!nombre){
+        errNombre.classList.remove("d-none");
+        track("cotizar_missing_name", {});
+        nombreInput.focus();
+        return;
+      }
+
+      if(!selectedItems.length){
+        track("cotizar_missing_items", {});
+        bsModal.hide();
+        return;
+      }
+
+      enviarBtn.disabled = true;
+      enviarBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Redirigiendo...`;
+
+      track("cotizar_send_click", { items: selectedItems.length });
+
+      const resp = await createLead(nombre, selectedItems);
+
+      const msg = buildWhatsAppMessage(nombre, selectedItems);
+      openWhatsApp(msg);
+
+      if(resp && resp.ok){
+        track("lead_saved", { lead_id: resp.lead_id || "" });
+      }else{
+        track("lead_save_failed", { error: (resp && resp.error) || "unknown" });
+      }
+
+      setTimeout(()=>{
+        enviarBtn.disabled = false;
+        enviarBtn.innerHTML = `<i class="bi bi-whatsapp me-2"></i> Enviar`;
+        bsModal.hide();
+      }, 500);
+    });
+
+  })();
+  </script>
+
+</body>
+</html>
