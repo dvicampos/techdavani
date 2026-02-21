@@ -215,6 +215,15 @@ def require_active_subscription(fn):
         if not current_user.is_authenticated:
             return redirect(url_for('login'))
 
+        # ✅ BYPASS ADMIN DEMO (no depende de MP ni trial)
+        # 1) Por ENV (súper seguro)
+        if is_demo_admin(current_user.id):
+            return fn(*args, **kwargs)
+
+        # 2) Opcional: override guardado en Mongo (también útil)
+        if user_has_subscription_override(current_user.id):
+            return fn(*args, **kwargs)
+
         page_id = get_current_page_id()
         if not page_id:
             flash('Crea o selecciona un sitio para continuar.')
@@ -456,6 +465,48 @@ def site_helpers():
         current_page=lambda: getattr(g, 'page', None),
         url_for_site=url_for_site
     )
+
+from datetime import datetime, timezone
+
+def is_demo_admin(user_id: str) -> bool:
+    """
+    Admin bypass seguro por ENV:
+    - DEMO_ADMIN_USER_IDS: lista de ObjectId separados por coma
+      ejemplo: 65a...c1,66b...d2
+    """
+    raw = (os.getenv("DEMO_ADMIN_USER_IDS") or "").strip()
+    if not raw:
+        return False
+
+    allowed = {x.strip() for x in raw.split(",") if x.strip()}
+    return str(user_id) in allowed
+
+
+def user_has_subscription_override(user_id: str) -> bool:
+    """
+    Override por campo en users:
+      subscription_override: { active: true, until: ISO|None }
+    """
+    u = mongo.db.users.find_one(
+        {"_id": ObjectId(str(user_id))},
+        {"subscription_override": 1}
+    ) or {}
+
+    ov = u.get("subscription_override") or {}
+    if not ov.get("active"):
+        return False
+
+    until = ov.get("until")
+    if not until:
+        return True
+
+    # until como ISO string: "2099-01-01T00:00:00Z"
+    try:
+        dt = datetime.fromisoformat(str(until).replace("Z", "+00:00"))
+        return dt > datetime.now(timezone.utc)
+    except Exception:
+        # si viene raro, mejor no bloquear
+        return True
 
 @app.route('/switch/slug/<slug>')
 @login_required
@@ -2073,6 +2124,38 @@ def borrar_media(nombre):
     else:
         return redirect(url_for('detalle_negocio', nombre=nombre))
 
+
+def get_page_booking_settings(page_id: ObjectId):
+    page = mongo.db.page_data.find_one(
+        {"_id": ObjectId(page_id)},
+        {"booking_enabled": 1, "booking_slot_minutes": 1, "booking_open": 1, "booking_close": 1, "booking_days": 1}
+    ) or {}
+
+    enabled = bool(page.get("booking_enabled", True))
+    slot = int(page.get("booking_slot_minutes", 30) or 30)
+    open_h = (page.get("booking_open") or "10:00").strip()
+    close_h = (page.get("booking_close") or "19:00").strip()
+    days = page.get("booking_days")
+    if not isinstance(days, list) or not days:
+        days = [0,1,2,3,4,5]  # Lun-Sáb
+
+    return {"enabled": enabled, "slot": slot, "open": open_h, "close": close_h, "days": days}
+
+def parse_hhmm(hhmm: str):
+    # "10:30" -> (10,30)
+    try:
+        h, m = hhmm.split(":")
+        return int(h), int(m)
+    except:
+        return 10, 0
+
+def dt_at(date_obj: date, hhmm: str):
+    h, m = parse_hhmm(hhmm)
+    return datetime(date_obj.year, date_obj.month, date_obj.day, h, m)
+
+def overlaps(a_start, a_end, b_start, b_end):
+    return a_start < b_end and b_start < a_end
+
 @app.route('/manage_page/<slug>', methods=['GET', 'POST'])
 @login_required
 @require_active_subscription
@@ -2394,11 +2477,51 @@ def api_create_appointment():
     if not page:
         return {"ok": False, "error": "negocio_no_encontrado"}, 404
 
-    # parse ISO
+    settings = get_page_booking_settings(page["_id"])
+    if not settings["enabled"]:
+        return {"ok": False, "error": "reservas_deshabilitadas"}, 400
+
     try:
         start_at = datetime.fromisoformat(start_iso.replace("Z",""))
     except Exception:
         return {"ok": False, "error": "fecha_invalida"}, 400
+
+    # valida día permitido
+    if start_at.date().weekday() not in settings["days"]:
+        return {"ok": False, "error": "dia_no_disponible"}, 400
+
+    # valida dentro de horario
+    open_dt = dt_at(start_at.date(), settings["open"])
+    close_dt = dt_at(start_at.date(), settings["close"])
+    slot_minutes = settings["slot"]
+    end_at = start_at + timedelta(minutes=slot_minutes)
+
+    if not (open_dt <= start_at and end_at <= close_dt):
+        return {"ok": False, "error": "fuera_de_horario"}, 400
+
+    # evita choques (pending+approved bloquean)
+    conflict = mongo.db.appointments.find_one({
+        "page_id": page["_id"],
+        "status": {"$in": ["pending", "approved"]},
+        "start_at": {"$lt": end_at},
+        # end_at puede no existir en legacy; usamos $or
+        "$or": [
+            {"end_at": {"$gt": start_at}},
+            {"end_at": {"$exists": False}}  # legacy: luego filtramos en python
+        ]
+    }, {"start_at": 1, "end_at": 1, "duration_min": 1})
+
+    if conflict:
+        # si es legacy sin end_at, asumimos slot_minutes
+        c_start = conflict.get("start_at")
+        if conflict.get("end_at"):
+            c_end = conflict["end_at"]
+        else:
+            dur = int(conflict.get("duration_min") or slot_minutes)
+            c_end = c_start + timedelta(minutes=dur)
+
+        if c_start and overlaps(start_at, end_at, c_start, c_end):
+            return {"ok": False, "error": "slot_ocupado"}, 409
 
     appt = {
         "page_id": page["_id"],
@@ -2407,6 +2530,8 @@ def api_create_appointment():
         "phone": phone,
         "service_title": service,
         "start_at": start_at,
+        "end_at": end_at,
+        "duration_min": slot_minutes,
         "status": "pending",
         "created_at": datetime.utcnow()
     }
@@ -2421,6 +2546,65 @@ def api_create_appointment():
     })
 
     return {"ok": True, "appointment_id": str(ins.inserted_id)}
+
+import calendar as pycal
+
+@app.route("/admin/calendar")
+@require_active_subscription
+@current_site(required=True)
+@login_required
+@roles_required("admin")
+def admin_calendar():
+    page_id = get_current_page_id()
+
+    # mes actual o ?ym=2026-02
+    ym = (request.args.get("ym") or "").strip()
+    today = datetime.utcnow().date()
+    if ym:
+        try:
+            y, m = [int(x) for x in ym.split("-")]
+            year, month = y, m
+        except:
+            year, month = today.year, today.month
+    else:
+        year, month = today.year, today.month
+
+    first = date(year, month, 1)
+    last_day = pycal.monthrange(year, month)[1]
+    last = date(year, month, last_day)
+
+    start_dt = datetime(first.year, first.month, first.day, 0, 0, 0)
+    end_dt = datetime(last.year, last.month, last.day, 23, 59, 59)
+
+    appts = list(mongo.db.appointments.find({
+        "page_id": page_id,
+        "start_at": {"$gte": start_dt, "$lte": end_dt}
+    }).sort("start_at", 1))
+
+    # agrupar por YYYY-MM-DD
+    by_day = {}
+    for a in appts:
+        dkey = a["start_at"].strftime("%Y-%m-%d")
+        by_day.setdefault(dkey, []).append(a)
+
+    # weeks grid: lista de semanas, cada semana lista de ints (0=empty)
+    cal = pycal.Calendar(firstweekday=0)  # 0=Lunes
+    weeks = cal.monthdayscalendar(year, month)
+
+    # navegación
+    prev_month = (first - timedelta(days=1)).strftime("%Y-%m")
+    next_month = (last + timedelta(days=1)).strftime("%Y-%m")
+
+    return render_template(
+        "admin_calendar.html",
+        year=year,
+        month=month,
+        ym=f"{year:04d}-{month:02d}",
+        weeks=weeks,
+        by_day=by_day,
+        prev_month=prev_month,
+        next_month=next_month
+    )
 
 @app.route('/admin/appointments')
 @require_active_subscription
@@ -2833,6 +3017,75 @@ def delete_review(review_id):
 @app.context_processor
 def inject_recaptcha_key():
     return dict(RECAPTCHA_SITE_KEY=os.getenv("RECAPTCHA_SITE_KEY"))
+
+@app.route("/api/availability", methods=["GET"])
+def api_availability():
+    slug = (request.args.get("slug") or "").strip()
+    dstr = (request.args.get("date") or "").strip()  # YYYY-MM-DD
+
+    if not slug or not dstr:
+        return {"ok": False, "error": "faltan_parametros"}, 400
+
+    page = mongo.db.page_data.find_one({"slug": slug}, {"_id": 1})
+    if not page:
+        return {"ok": False, "error": "negocio_no_encontrado"}, 404
+
+    try:
+        y, m, d = [int(x) for x in dstr.split("-")]
+        day = date(y, m, d)
+    except:
+        return {"ok": False, "error": "fecha_invalida"}, 400
+
+    settings = get_page_booking_settings(page["_id"])
+    if not settings["enabled"]:
+        return {"ok": True, "date": dstr, "slots": []}
+
+    # valida día permitido
+    # Python weekday(): 0=Lunes ... 6=Domingo
+    if day.weekday() not in settings["days"]:
+        return {"ok": True, "date": dstr, "slots": []}
+
+    slot_minutes = settings["slot"]
+    start_day = dt_at(day, settings["open"])
+    end_day = dt_at(day, settings["close"])
+
+    # Trae citas del día (pending+approved bloquean; rejected no)
+    day_start = datetime(day.year, day.month, day.day, 0, 0, 0)
+    day_end = day_start + timedelta(days=1)
+
+    appts = list(mongo.db.appointments.find({
+        "page_id": page["_id"],
+        "start_at": {"$gte": day_start, "$lt": day_end},
+        "status": {"$in": ["pending", "approved"]}
+    }, {"start_at": 1, "end_at": 1, "duration_min": 1}))
+
+    # arma slots
+    slots = []
+    cur = start_day
+    while cur + timedelta(minutes=slot_minutes) <= end_day:
+        slot_end = cur + timedelta(minutes=slot_minutes)
+
+        # checar choque con cualquier cita
+        busy = False
+        for a in appts:
+            a_start = a.get("start_at")
+            # soporta legacy: si no hay end_at, usa duration_min o slot_minutes
+            if a.get("end_at"):
+                a_end = a["end_at"]
+            else:
+                dur = int(a.get("duration_min") or slot_minutes)
+                a_end = a_start + timedelta(minutes=dur)
+
+            if a_start and overlaps(cur, slot_end, a_start, a_end):
+                busy = True
+                break
+
+        if not busy:
+            slots.append(cur.isoformat())  # ISO local (sin Z)
+
+        cur += timedelta(minutes=slot_minutes)
+
+    return {"ok": True, "date": dstr, "slot_minutes": slot_minutes, "slots": slots}
 
 @app.route('/enviar', methods=['POST'])
 def enviar():

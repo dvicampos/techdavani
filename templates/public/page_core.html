@@ -825,6 +825,138 @@
     </div>
   </div>
 
+  <section id="reservas" class="container my-5">
+  <div class="p-4 bg-white rounded-4 border">
+    <h3 class="mb-1">Reservar cita</h3>
+    <p class="text-muted mb-3">Elige un día y un horario disponible.</p>
+
+    <div class="row g-3">
+      <div class="col-md-4">
+        <label class="form-label">Fecha</label>
+        <input id="apptDate" type="date" class="form-control">
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">Hora disponible</label>
+        <select id="apptSlot" class="form-select" disabled>
+          <option value="">Selecciona una fecha</option>
+        </select>
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">Servicio</label>
+        <input id="apptService" class="form-control" placeholder="Ej. Corte / Baño / Consulta">
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Nombre</label>
+        <input id="apptName" class="form-control" placeholder="Tu nombre">
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Teléfono</label>
+        <input id="apptPhone" class="form-control" placeholder="Ej. 246...">
+      </div>
+
+      <div class="col-12 d-flex gap-2">
+        <button id="apptBtn" class="btn btn-primary" type="button">Reservar</button>
+        <small id="apptMsg" class="text-muted align-self-center"></small>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+(() => {
+  const slug = {{ slug|tojson }};
+  const $date = document.getElementById("apptDate");
+  const $slot = document.getElementById("apptSlot");
+  const $name = document.getElementById("apptName");
+  const $phone = document.getElementById("apptPhone");
+  const $service = document.getElementById("apptService");
+  const $btn = document.getElementById("apptBtn");
+  const $msg = document.getElementById("apptMsg");
+
+  function setMsg(t){ $msg.textContent = t || ""; }
+
+  async function loadSlots() {
+    const d = ($date.value || "").trim();
+    if(!d){ $slot.innerHTML = `<option value="">Selecciona una fecha</option>`; $slot.disabled = true; return; }
+
+    setMsg("Cargando horarios...");
+    $slot.disabled = true;
+
+    const r = await fetch(`/api/availability?slug=${encodeURIComponent(slug)}&date=${encodeURIComponent(d)}`);
+    const j = await r.json();
+
+    if(!j.ok){ setMsg("No se pudo cargar disponibilidad."); return; }
+
+    const slots = j.slots || [];
+    if(slots.length === 0){
+      $slot.innerHTML = `<option value="">Sin horarios disponibles</option>`;
+      setMsg("");
+      return;
+    }
+
+    $slot.innerHTML = `<option value="">Elige un horario</option>` + slots.map(s => {
+      const dt = new Date(s);
+      const hh = String(dt.getHours()).padStart(2,'0');
+      const mm = String(dt.getMinutes()).padStart(2,'0');
+      return `<option value="${s}">${hh}:${mm}</option>`;
+    }).join("");
+
+    $slot.disabled = false;
+    setMsg("");
+  }
+
+  async function book() {
+    const payload = {
+      slug,
+      name: ($name.value || "").trim(),
+      phone: ($phone.value || "").trim(),
+      service: ($service.value || "").trim(),
+      start_at: ($slot.value || "").trim()
+    };
+
+    if(!payload.name || !payload.phone || !payload.service || !payload.start_at){
+      setMsg("Completa nombre, teléfono, servicio y horario.");
+      return;
+    }
+
+    setMsg("Enviando reserva...");
+    $btn.disabled = true;
+
+    const r = await fetch("/api/appointments", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify(payload)
+    });
+
+    const j = await r.json().catch(()=>({ok:false}));
+
+    $btn.disabled = false;
+
+    if(r.status === 409 && j.error === "slot_ocupado"){
+      setMsg("Ese horario se acaba de ocupar. Elige otro.");
+      await loadSlots();
+      return;
+    }
+
+    if(!j.ok){
+      setMsg("No se pudo reservar. Revisa los datos.");
+      return;
+    }
+
+    setMsg("Listo ✅ Tu cita quedó en revisión (pendiente).");
+    $name.value = ""; $phone.value = ""; $service.value = "";
+    await loadSlots();
+  }
+
+  $date.addEventListener("change", loadSlots);
+  $btn.addEventListener("click", book);
+})();
+</script>
+
   <!-- FAB WhatsApp -->
   {% if page.get('whatsapp') %}
   <a class="fab-wa"

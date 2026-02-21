@@ -424,6 +424,17 @@
             <li class="nav-item"><a class="nav-link" href="{{ url_for('admin_reseñas') }}">
                 <i class="bi bi-star-half me-1"></i>Reseñas</a></li>
 
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for_site('admin_appointments') }}">
+                <i class="bi bi-calendar2-check me-1"></i>Reservas
+              </a>
+            </li>
+
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for_site('admin_calendar') }}">
+                <i class="bi bi-calendar3 me-1"></i>Calendario
+              </a>
+            </li>
             {% else %}
             <li class="nav-item">
               <a class="btn btn-brand btn-sm ms-lg-2" href="{{ url_for('login') }}">

@@ -1,0 +1,72 @@
+{% extends "layout.html" %}
+{% block title %}Calendario de Reservas{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <h2 class="mb-0">Calendario — {{ ym }}</h2>
+  <div class="d-flex gap-2">
+    <a class="btn btn-outline-secondary" href="{{ url_for('admin_calendar', ym=prev_month) }}">←</a>
+    <a class="btn btn-outline-secondary" href="{{ url_for('admin_calendar') }}">Hoy</a>
+    <a class="btn btn-outline-secondary" href="{{ url_for('admin_calendar', ym=next_month) }}">→</a>
+    <a class="btn btn-primary" href="{{ url_for('admin_appointments') }}">Lista</a>
+  </div>
+</div>
+
+<style>
+  .cal-grid{ display:grid; grid-template-columns: repeat(7, 1fr); gap:10px; }
+  .cal-head{ font-weight:700; color:#64748b; }
+  .cal-cell{ border:1px solid #e5e7eb; border-radius:12px; padding:10px; min-height:120px; background:#fff; }
+  .cal-day{ font-weight:800; }
+  .appt{ font-size:12px; padding:6px 8px; border-radius:10px; margin-top:6px; border:1px solid #e5e7eb; }
+  .st-pending{ background:#fff7ed; }
+  .st-approved{ background:#ecfdf5; }
+  .st-rejected{ background:#fef2f2; opacity:.7; }
+</style>
+
+<div class="cal-grid mb-2">
+  {% for h in ["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"] %}
+    <div class="cal-head">{{ h }}</div>
+  {% endfor %}
+</div>
+
+<div class="cal-grid">
+  {% for week in weeks %}
+    {% for day in week %}
+      {% if day == 0 %}
+        <div class="cal-cell" style="background:#fafafa;border-style:dashed;"></div>
+      {% else %}
+        {% set dkey = "%04d-%02d-%02d"|format(year, month, day) %}
+        <div class="cal-cell">
+          <div class="d-flex align-items-center justify-content-between">
+            <div class="cal-day">{{ day }}</div>
+            <small class="text-muted">{{ dkey }}</small>
+          </div>
+
+          {% for a in (by_day.get(dkey) or []) %}
+            {% set st = a.get("status","pending") %}
+            <div class="appt st-{{ st }}">
+              <div><b>{{ a.get("customer_name","") }}</b> — {{ a.get("service_title","") }}</div>
+              <div class="text-muted">
+                {{ a.get("start_at").strftime("%H:%M") }}
+                {% if a.get("phone") %} · {{ a.get("phone") }}{% endif %}
+                · {{ st }}
+              </div>
+
+              {% if st == "pending" %}
+              <div class="d-flex gap-2 mt-2">
+                <form method="POST" action="{{ url_for('admin_appointments_action', appt_id=a['_id'], action='approve') }}">
+                  <button class="btn btn-sm btn-success" type="submit">Aprobar</button>
+                </form>
+                <form method="POST" action="{{ url_for('admin_appointments_action', appt_id=a['_id'], action='reject') }}">
+                  <button class="btn btn-sm btn-danger" type="submit">Rechazar</button>
+                </form>
+              </div>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endfor %}
+  {% endfor %}
+</div>
+{% endblock %}
