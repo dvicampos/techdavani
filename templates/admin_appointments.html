@@ -2,10 +2,6 @@
 {% block title %}Dashboard · Global PYMES{% endblock %}
 
 {% block content %}
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400..700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-
   <style>
     /* ===== Same design as Dashboard (Blue + Green create) ===== */
     :root{
@@ -65,7 +61,7 @@
       background: rgba(7,11,24,.55);
       backdrop-filter: blur(18px);
     }
-    .nav-left{display:flex;align-items:center;gap:.75rem;min-width: 280px;}
+    .nav-left{display:flex;align-items:center;gap:.75rem;}
     .nav-pill{
       background: rgba(37,99,235,.16);
       border: 1px solid rgba(96,165,250,.28);
@@ -86,19 +82,19 @@
       display:inline-flex;
       align-items:center;
       gap:.45rem;
-      padding: .45rem .75rem;
+      padding: .45rem .85rem;
       border-radius: 999px;
       border: 1px solid rgba(148,163,184,.18);
       background: rgba(15,23,42,.25);
       color: #fff;
       text-decoration:none;
-      font-size: .72rem;
+      font-size: .75rem;
       font-weight: 700;
-      transition: transform .08s linear, filter .08s linear, background .12s ease;
+      transition: all .15s ease;
       user-select:none;
       cursor:pointer;
     }
-    .btnx:hover{transform: translateY(-1px); filter:brightness(1.05);}
+    .btnx:hover{transform: translateY(-2px); filter:brightness(1.1); box-shadow: 0 4px 12px rgba(0,0,0,0.15);}
     .btnx-blue{background: rgba(37,99,235,.22); border-color: rgba(96,165,250,.28);}
     .btnx-ghost{background: rgba(15,23,42,.18);}
 
@@ -109,128 +105,157 @@
       gap:1rem;
       align-items:center;
       background: var(--gradient-header);
-      padding: 1.05rem 1.2rem;
+      padding: 1.2rem 1.2rem;
     }
     .dash-title{display:flex;flex-direction:column;gap:.25rem;}
-    .dash-title h1{font-size:1.18rem;margin:0;color:#fff;font-weight:800;}
-    .dash-title small{color:rgba(232,238,252,.6);font-size:.7rem;}
+    .dash-title h1{font-size:1.4rem;margin:0;color:#fff;font-weight:800;}
+    .dash-title small{color:rgba(232,238,252,.7);font-size:.75rem;}
 
     /* ===== Body ===== */
-    .dash-body{padding: 1.1rem 1.2rem 1.5rem;}
+    .dash-body{padding: 1.2rem 1.2rem 1.5rem;}
 
-    /* ===== Pills ===== */
+    /* ===== Pills (Dark Theme) ===== */
     .pill{
       display:inline-flex;align-items:center;gap:.35rem;
-      padding:.22rem .55rem;
+      padding:.25rem .65rem;
       border-radius:999px;
       border:1px solid rgba(148,163,184,.16);
       background: rgba(15,23,42,.22);
       color:rgba(232,238,252,.85);
-      font-size:.66rem;
-      font-weight:750;
+      font-size:.7rem;
+      font-weight:700;
     }
     .pill b{color:#fff;}
 
-    /* ===== Card panel ===== */
+    /* ===== Card panel (Dark Theme) ===== */
     .card-soft{
       background:
-        radial-gradient(circle at 12% 18%, rgba(96,165,250,.12), rgba(15,23,42,0) 52%),
+        radial-gradient(circle at 12% 18%, rgba(96,165,250,.08), rgba(15,23,42,0) 52%),
         rgba(17,24,39,.28);
       border:1px solid rgba(148,163,184,.12);
       border-radius: var(--radius-sm);
-      padding: .85rem .9rem;
+      padding: 1rem;
       backdrop-filter: blur(14px);
     }
 
-    /* ===== Table container ===== */
+    /* =========================================
+       NUEVO ESTILO DE LA TABLA (FONDO BLANCO)
+       ========================================= */
     .table-wrap{
-      background:
-        radial-gradient(circle at 10% 12%, rgba(96,165,250,.10), rgba(15,23,42,0) 42%),
-        rgba(17,24,39,.35);
-      border:1px solid rgba(148,163,184,.12);
+      background: #ffffff; 
+      border: 1px solid #e2e8f0;
       border-radius: var(--radius-sm);
-      overflow:hidden;
-      backdrop-filter: blur(12px);
+      overflow: hidden;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2); 
     }
+    
+    .table-header-light {
+      background: #f8fafc;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 1rem;
+    }
+    .table-header-light .brand-font { color: #0f172a; }
+
     .table{
-      color: var(--ink);
-      margin:0;
+      color: #334155;
+      margin: 0;
+      background: #ffffff;
     }
     .table thead th{
-      background: rgba(7,11,24,.55);
-      color: rgba(232,238,252,.75);
-      border-bottom: 1px solid rgba(148,163,184,.16)!important;
-      font-size: .72rem;
+      background: #f1f5f9;
+      color: #475569;
+      border-bottom: 2px solid #cbd5e1 !important;
+      font-size: .75rem;
       text-transform: uppercase;
-      letter-spacing: .08em;
-      padding-top:.85rem;
-      padding-bottom:.85rem;
+      letter-spacing: .05em;
+      padding: 1rem;
+      white-space: nowrap;
+      font-weight: 700;
     }
     .table td{
-      border-color: rgba(148,163,184,.10);
-      padding-top:.85rem;
-      padding-bottom:.85rem;
-      font-size:.78rem;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 1rem;
+      font-size: .85rem;
       vertical-align: middle;
+      color: #1e293b;
     }
-    .table tbody tr:hover{background: rgba(37,99,235,.08);}
+    .table tbody tr{ transition: background 0.2s; }
+    .table tbody tr:hover{background: #f8fafc;}
 
-    /* ===== Status pill (blue scheme) ===== */
+    .text-muted-light { color: #64748b !important; }
+    .text-dark-light { color: #0f172a !important; font-weight: 700; }
+
+    .cal-badge-light {
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 0.5rem;
+      text-align: center;
+      min-width: 55px;
+    }
+    .cal-badge-light .month { font-size: 0.65rem; color: #64748b; text-transform: uppercase; font-weight: 700; }
+    .cal-badge-light .day { font-weight: 800; font-size: 1.1rem; color: #0f172a; line-height: 1.2; }
+
+    /* ===== Status pill (Ajustados para fondo blanco) ===== */
     .status-pill{
       display:inline-flex;
       align-items:center;
       gap:.35rem;
-      padding:.22rem .55rem;
+      padding:.3rem .65rem;
       border-radius:999px;
-      font-weight:900;
-      font-size:.68rem;
-      border:1px solid rgba(148,163,184,.16);
-      background: rgba(15,23,42,.22);
-      color:#fff;
+      font-weight:700;
+      font-size:.7rem;
       white-space: nowrap;
     }
-    .st-pending{background: rgba(245,158,11,.14); border-color: rgba(245,158,11,.22);}
-    .st-approved{background: rgba(34,197,94,.16); border-color: rgba(134,239,172,.22); color:#d1fae5;}
-    .st-rejected{background: rgba(239,68,68,.14); border-color: rgba(239,68,68,.22); color:#fee2e2;}
+    .st-pending{background: #fffbeb; border: 1px solid #fcd34d; color: #b45309;}
+    .st-approved{background: #ecfdf5; border: 1px solid #6ee7b7; color: #047857;}
+    .st-rejected{background: #fef2f2; border: 1px solid #fca5a5; color: #b91c1c;}
 
-    /* ===== Buttons ===== */
+    /* ===== Buttons (Ajustados para fondo blanco) ===== */
     .btn-mini{
       display:inline-flex;
       align-items:center;
-      gap:.45rem;
-      padding:.42rem .7rem;
-      border-radius:999px;
-      border:1px solid rgba(148,163,184,.18);
-      background: rgba(15,23,42,.18);
-      color:#fff;
+      gap:.4rem;
+      padding:.4rem .75rem;
+      border-radius:8px;
       text-decoration:none;
-      font-weight:900;
-      font-size:.72rem;
-      transition: transform .08s linear, filter .08s linear;
+      font-weight:600;
+      font-size:.75rem;
+      transition: all .15s ease;
       white-space: nowrap;
+      border: 1px solid transparent;
     }
-    .btn-mini:hover{transform:translateY(-1px);filter:brightness(1.06);}
-    .btn-mini-green{background: rgba(34,197,94,.20); border-color: rgba(134,239,172,.28); color:#05250f;}
-    .btn-mini-red{background: rgba(239,68,68,.18); border-color: rgba(239,68,68,.28); color:#ffe4e6;}
-    .btn-mini-ghost{background: rgba(15,23,42,.14);}
+    .btn-mini:hover{transform:translateY(-1px); box-shadow: 0 2px 5px rgba(0,0,0,0.1);}
+    
+    .btn-mini-green{background: #10b981; color:#fff;}
+    .btn-mini-green:hover{background: #059669; color:#fff;}
+    
+    .btn-mini-red{background: #ef4444; color:#fff;}
+    .btn-mini-red:hover{background: #dc2626; color:#fff;}
 
-    @media (max-width: 900px){
-      .nav-left{min-width:unset}
+    .service-badge {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      color: #1d4ed8;
+      padding: 0.35rem 0.65rem;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 0.75rem;
     }
+
     @media (max-width: 768px){
-      .dash-shell{margin:.55rem .35rem 2.5rem;}
-      .dash-nav{flex-direction:column;align-items:flex-start;}
-      .dash-header{flex-direction:column;align-items:flex-start;}
-      .nav-actions{width:100%;justify-content:flex-start}
+      .dash-shell{margin:.5rem .5rem 2.5rem; border-radius: 12px;}
+      .dash-nav, .dash-header { flex-direction:column; align-items:flex-start; }
+      .nav-actions{width:100%; justify-content:flex-start; margin-top: 10px;}
+      .action-buttons { flex-direction: column; gap: 5px; }
     }
   </style>
 
   <div class="dash-shell">
 
-    <!-- TOP NAV -->
     <div class="dash-nav">
       <div class="nav-left">
-        <div class="nav-pill">Citas</div>
+        <div class="nav-pill"><i class="bi bi-journal-bookmark-fill me-1"></i> Citas</div>
         <div class="nav-title">
           <strong>Reservas / Agenda</strong>
           <small>Sitio: {{ current_page().get('business_name','') if current_page() else '' }}</small>
@@ -238,61 +263,62 @@
       </div>
 
       <div class="nav-actions">
-        <a class="btnx btnx-ghost" href="{{ url_for('dashboard') }}">← Dashboard</a>
-        <a class="btnx btnx-ghost" href="{{ url_for('billing_portal') }}">💳 Pagos / Plan</a>
+        <a class="btnx btnx-ghost" href="{{ url_for('dashboard') }}"><i class="bi bi-arrow-left"></i> Dashboard</a>
+        <a class="btnx btnx-blue" href="{{ url_for('admin_calendar') }}"><i class="bi bi-calendar3"></i> Ver Calendario</a>
+        <a class="btnx btnx-ghost" href="{{ url_for('billing_portal') }}"><i class="bi bi-credit-card"></i> Pagos / Plan</a>
+        
         {% set CP = current_page() %}
         {% if CP and CP.get('slug') %}
-          <a class="btnx btnx-blue" target="_blank" href="{{ url_for('negocio_por_slug', slug=CP.slug) }}">👀 Ver público</a>
+          <a class="btnx btnx-ghost" target="_blank" href="{{ url_for('negocio_por_slug', slug=CP.slug) }}"><i class="bi bi-box-arrow-up-right"></i> Ver sitio</a>
         {% endif %}
       </div>
     </div>
 
-    <!-- HEADER -->
     <div class="dash-header">
       <div class="dash-title">
-        <h1 class="brand-font">Reservas / Citas</h1>
-        <small>Aprueba o rechaza solicitudes. Pendientes = acción inmediata.</small>
+        <h1 class="brand-font">Gestión de Reservas</h1>
+        <small>Administra las solicitudes de tus clientes. Las pendientes requieren tu atención.</small>
       </div>
-      <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
-        <span class="pill">Total <b>{{ appts|length }}</b></span>
+      <div class="d-flex gap-2 flex-wrap mt-3 mt-md-0">
+        <span class="pill"><i class="bi bi-collection"></i> Total <b>{{ appts|length }}</b></span>
         {% set pending_count = (appts|selectattr('status','equalto','pending')|list|length) if appts else 0 %}
-        <span class="pill">Pendientes <b>{{ pending_count }}</b></span>
+        <span class="pill" style="border-color: rgba(245,158,11,.4);"><i class="bi bi-bell-fill text-warning"></i> Pendientes <b class="text-warning">{{ pending_count }}</b></span>
       </div>
     </div>
 
-    <!-- BODY -->
     <div class="dash-body">
 
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
           {% for cat,msg in messages %}
-            <div class="alert alert-{{ cat if cat else 'info' }}"
-                 style="border:1px solid rgba(148,163,184,.18); background: rgba(15,23,42,.22); color:#fff;">
-              {{ msg }}
+            <div class="alert alert-{{ cat if cat else 'info' }} d-flex align-items-center gap-2 mb-4"
+                 style="border:1px solid rgba(148,163,184,.3); background: rgba(15,23,42,.6); color:#fff; backdrop-filter: blur(8px);">
+              <i class="bi bi-info-circle-fill text-{{ cat if cat else 'info' }}"></i> {{ msg }}
             </div>
           {% endfor %}
         {% endif %}
       {% endwith %}
 
-      <div class="card-soft mb-3">
-        <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between">
+      <div class="card-soft mb-4">
+        <div class="d-flex flex-wrap gap-3 align-items-center justify-content-between">
           <div class="d-flex flex-wrap gap-2">
-            <span class="pill">⏳ Pendientes = acción</span>
-            <span class="pill">✅ Aprobadas = confirmadas</span>
-            <span class="pill">❌ Rechazadas = no disponibles</span>
+            <span class="pill"><span class="text-warning">●</span> Pendientes = Acción requerida</span>
+            <span class="pill"><span class="text-success">●</span> Aprobadas = Confirmadas</span>
+            <span class="pill"><span class="text-danger">●</span> Rechazadas = Canceladas</span>
           </div>
-          <div class="muted" style="font-size:.72rem">
-            Tip: contesta rápido para mejorar conversión.
+          <div class="muted d-none d-md-block" style="font-size:.75rem">
+            <i class="bi bi-lightbulb text-warning"></i> Tip: Contesta rápido para mejorar tu conversión.
           </div>
         </div>
       </div>
 
       <div class="table-wrap">
-        <div class="card-soft" style="border:0;border-bottom:1px solid rgba(148,163,184,.12);border-radius:0;">
+        
+        <div class="table-header-light">
           <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-            <div class="brand-font" style="font-weight:800;">Lista de reservas</div>
-            <div class="muted" style="font-size:.72rem">
-              Total cargadas: <strong style="color:#fff">{{ appts|length }}</strong>
+            <div class="brand-font fs-6 fw-bold"><i class="bi bi-list-ul me-2"></i>Lista de reservas</div>
+            <div class="text-muted-light" style="font-size:.75rem; font-weight: 600;">
+              Total cargadas: <strong class="text-dark-light">{{ appts|length }}</strong>
             </div>
           </div>
         </div>
@@ -302,10 +328,10 @@
             <table class="table align-middle">
               <thead>
                 <tr>
-                  <th>Fecha/Hora</th>
+                  <th>Fecha y Hora</th>
                   <th>Cliente</th>
                   <th>Servicio</th>
-                  <th>Status</th>
+                  <th>Estado</th>
                   <th class="text-end">Acciones</th>
                 </tr>
               </thead>
@@ -313,42 +339,55 @@
                 {% for a in appts %}
                   {% set st = a.status or 'pending' %}
                   <tr>
-                    <td class="small muted">
-                      {% if a.start_at %}{{ a.start_at.strftime('%d/%m/%Y %H:%M') }}{% else %}-{% endif %}
+                    <td>
+                      <div class="d-flex align-items-center gap-2">
+                        <div class="cal-badge-light">
+                           <div class="month">{% if a.start_at %}{{ a.start_at.strftime('%b') }}{% else %}-{% endif %}</div>
+                           <div class="day">{% if a.start_at %}{{ a.start_at.strftime('%d') }}{% else %}-{% endif %}</div>
+                        </div>
+                        <div>
+                          <div class="text-dark-light">{% if a.start_at %}{{ a.start_at.strftime('%H:%M') }}{% else %}-{% endif %}</div>
+                          <div class="small text-muted-light"><i class="bi bi-clock"></i> Hr Local</div>
+                        </div>
+                      </div>
                     </td>
 
                     <td>
-                      <div style="font-weight:800;color:#fff;">{{ a.customer_name or '-' }}</div>
-                      <div class="small muted"><i class="bi bi-telephone"></i> {{ a.phone or '-' }}</div>
+                      <div class="text-dark-light" style="font-size: 0.95rem;">{{ a.customer_name or 'Sin nombre' }}</div>
+                      <div class="small mt-1 text-muted-light"><i class="bi bi-telephone-fill"></i> {{ a.phone or 'Sin teléfono' }}</div>
                     </td>
 
-                    <td style="color:rgba(232,238,252,.92)">{{ a.service_title or '-' }}</td>
+                    <td>
+                      <span class="service-badge">
+                        {{ a.service_title or 'Servicio General' }}
+                      </span>
+                    </td>
 
                     <td>
                       <span class="status-pill st-{{ st }}">
                         {% if st=='pending' %}<i class="bi bi-hourglass-split"></i> Pendiente{% endif %}
-                        {% if st=='approved' %}<i class="bi bi-check2-circle"></i> Aprobada{% endif %}
-                        {% if st=='rejected' %}<i class="bi bi-x-circle"></i> Rechazada{% endif %}
+                        {% if st=='approved' %}<i class="bi bi-check-circle-fill"></i> Aprobada{% endif %}
+                        {% if st=='rejected' %}<i class="bi bi-x-circle-fill"></i> Rechazada{% endif %}
                         {% if st not in ['pending','approved','rejected'] %}<i class="bi bi-dot"></i> {{ st }}{% endif %}
                       </span>
                     </td>
 
                     <td class="text-end">
                       {% if st == 'pending' %}
-                        <form class="d-inline" method="POST"
-                              action="{{ url_for('admin_appointments_action', appt_id=a._id, action='approve') }}">
-                          <button class="btn-mini btn-mini-green" type="submit">
-                            <i class="bi bi-check2"></i> Aprobar
-                          </button>
-                        </form>
-                        <form class="d-inline" method="POST"
-                              action="{{ url_for('admin_appointments_action', appt_id=a._id, action='reject') }}">
-                          <button class="btn-mini btn-mini-red" type="submit">
-                            <i class="bi bi-x"></i> Rechazar
-                          </button>
-                        </form>
+                        <div class="d-flex justify-content-end gap-2 action-buttons">
+                          <form method="POST" action="{{ url_for('admin_appointments_action', appt_id=a._id, action='approve') }}" class="m-0">
+                            <button class="btn-mini btn-mini-green w-100" type="submit" title="Aprobar cita">
+                              <i class="bi bi-check2"></i> Aprobar
+                            </button>
+                          </form>
+                          <form method="POST" action="{{ url_for('admin_appointments_action', appt_id=a._id, action='reject') }}" class="m-0">
+                            <button class="btn-mini btn-mini-red w-100" type="submit" title="Rechazar cita">
+                              <i class="bi bi-x"></i> Rechazar
+                            </button>
+                          </form>
+                        </div>
                       {% else %}
-                        <span class="small muted">Sin acciones</span>
+                        <span class="small text-muted-light fst-italic">Cita procesada</span>
                       {% endif %}
                     </td>
                   </tr>
@@ -358,13 +397,16 @@
           </div>
         {% else %}
           <div class="text-center py-5">
-            <div class="brand-font" style="font-size:1.35rem;font-weight:900;color:#fff;">Aún no hay reservas</div>
-            <p class="muted mb-0">Cuando actives el módulo de reservas, aquí se administran.</p>
-            <div class="mt-3">
+            <div class="mb-3" style="font-size: 3rem; color: #94a3b8;">
+              <i class="bi bi-calendar-x"></i>
+            </div>
+            <div class="brand-font" style="font-size:1.35rem;font-weight:900;color:#0f172a;">Tu agenda está en blanco</div>
+            <p class="mb-0 mt-2 mx-auto text-muted-light" style="max-width: 400px;">Aún no tienes reservas. Comparte el enlace de tu sitio web para que tus clientes comiencen a agendar citas contigo.</p>
+            <div class="mt-4">
               {% set CP = current_page() %}
               {% if CP and CP.get('slug') %}
-                <a class="btn-mini btn-mini-ghost" target="_blank" href="{{ url_for('negocio_por_slug', slug=CP.slug) }}">
-                  👀 Ver página pública
+                <a class="btnx btnx-blue" target="_blank" href="{{ url_for('negocio_por_slug', slug=CP.slug) }}" style="box-shadow: none;">
+                  <i class="bi bi-share-fill"></i> Compartir mi sitio web
                 </a>
               {% endif %}
             </div>
@@ -374,6 +416,4 @@
 
     </div>
   </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-{% endblock %}
+  {% endblock %}
