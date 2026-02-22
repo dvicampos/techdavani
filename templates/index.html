@@ -57,6 +57,54 @@
     .footer{background:#0f1220;color:#cbd5e1}
     .footer a{color:#94a3b8}
     .price-note{font-size:.95rem;color:#6b7280}
+    .price-wrap{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+    align-items:baseline;
+  }
+  .price-now{
+    font-size:2.9rem;
+    font-weight:900;
+    letter-spacing:-0.02em;
+    color:var(--brand);
+    line-height:1;
+  }
+  .price-was{
+    font-size:1.15rem;
+    color:#6b7280;
+    text-decoration:line-through;
+    text-decoration-thickness:2px;
+    text-decoration-color:rgba(107,114,128,.75);
+  }
+  .price-save{
+    font-size:.9rem;
+    font-weight:800;
+    padding:.35rem .6rem;
+    border-radius:999px;
+    background:#16a34a;
+    color:#fff;
+    border:1px solid rgba(0,0,0,.06);
+  }
+  .price-micro{
+    display:block;
+    font-size:.92rem;
+    color:#6b7280;
+    margin-top:.25rem;
+  }
+  .price-pill{
+    display:inline-flex;
+    align-items:center;
+    gap:.4rem;
+    padding:.45rem .7rem;
+    border-radius:999px;
+    background:rgba(31,26,79,.06);
+    border:1px solid rgba(31,26,79,.12);
+    color:var(--brand);
+    font-weight:700;
+    font-size:.92rem;
+  }
+
   </style>
 </head>
 <body>
@@ -193,11 +241,23 @@
             Se renueva automáticamente cada mes y puedes <strong>pausar o cancelar cuando quieras</strong>.
           </p>
 
+          {% set display_price = ('%.0f'|format(SUB_PLAN.price)).rstrip('0').rstrip('.') %}
+          {% set was_price = 499 %}
+          {% set save_pct = ((1 - (SUB_PLAN.price / was_price)) * 100) | round(0) %}
+
           <div class="mb-3">
-            <div class="price">
-              ${{ ('%.0f'|format(SUB_PLAN.price)).rstrip('0').rstrip('.') }} {{ SUB_PLAN.currency }}/mes
+            <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
+              <span class="price-pill"><i class="bi bi-lightning-charge-fill"></i> Precio de lanzamiento</span>
+              <span class="badge rounded-pill text-bg-warning">Cupo limitado</span>
             </div>
-            <div class="price-note">Cobro automático vía Mercado Pago.</div>
+
+            <div class="price-wrap">
+              <div class="price-was">${{ was_price }} {{ SUB_PLAN.currency }}/mes</div>
+              <div class="price-now">${{ display_price }} {{ SUB_PLAN.currency }}<span style="font-size:1.05rem;font-weight:800">/mes</span></div>
+              <div class="price-save">Ahorra {{ save_pct }}%</div>
+            </div>
+
+            <span class="price-micro">Cobro automático vía Mercado Pago. Pausa o cancela cuando quieras.</span>
           </div>
 
           <ul class="list-unstyled mt-3">
@@ -319,7 +379,10 @@
       </h2>
       <div id="faq-cost" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
         <div class="accordion-body">
-          El plan es de <strong>${{ ('%.0f'|format(SUB_PLAN.price)).rstrip('0').rstrip('.') }} {{ SUB_PLAN.currency }}/mes</strong>.
+          {% set display_price = ('%.0f'|format(SUB_PLAN.price)).rstrip('0').rstrip('.') %}
+          {% set was_price = 499 %}
+          El plan está en <strong>${{ display_price }} {{ SUB_PLAN.currency }}/mes</strong> 
+          <span class="text-muted text-decoration-line-through ms-1">${{ was_price }} {{ SUB_PLAN.currency }}/mes</span>.
           Se renueva automáticamente y puedes pausar o cancelar en cualquier momento desde <a href="{{ url_for('billing_portal') }}">Facturación</a>.
         </div>
       </div>
@@ -349,7 +412,7 @@
 <footer class="footer pt-4 pb-3">
   <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center">
     <div class="mb-3 mb-md-0">
-      <p class="mb-0">&copy; 2025 <strong>DavaniTechnology</strong>. Todos los derechos reservados.</p>
+      <p class="mb-0">&copy; 2026 <strong>DavaniTechnology</strong>. Todos los derechos reservados.</p>
       <small>
         <a href="#" class="fw-semibold text-decoration-underline js-open-terms-link">Términos y Condiciones</a> ·
         <a href="#" class="fw-semibold text-decoration-underline js-open-privacy-link">Aviso de Privacidad</a>
