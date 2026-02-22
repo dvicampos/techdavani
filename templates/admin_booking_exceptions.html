@@ -1,0 +1,161 @@
+{% extends "layout.html" %}
+{% block title %}Reservas - Excepciones{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <div>
+      <h2 class="mb-0">Excepciones / Festivos</h2>
+      <small class="text-muted">Cierra días específicos o define horario especial por fecha.</small>
+    </div>
+    <div class="d-flex gap-2">
+      <a class="btn btn-outline-secondary" href="{{ url_for('admin_booking_settings') }}">Configuración semanal</a>
+      <a class="btn btn-outline-secondary" href="{{ url_for('dashboard') }}">Volver</a>
+    </div>
+  </div>
+
+  {% with msgs = get_flashed_messages(with_categories=true) %}
+    {% if msgs %}
+      {% for cat, msg in msgs %}
+        <div class="alert alert-{{ 'warning' if cat=='message' else cat }} mb-3" role="alert">{{ msg }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <div class="row g-3">
+    <div class="col-lg-5">
+      <div class="card shadow-sm">
+        <div class="card-header">
+          <strong>Agregar / sobrescribir excepción</strong>
+        </div>
+        <div class="card-body">
+          <form method="POST">
+            <div class="mb-3">
+              <label class="form-label">Fecha (YYYY-MM-DD)</label>
+              <input type="date" class="form-control" name="date" required>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Tipo</label>
+              <select class="form-select" name="type" id="ex_type" required>
+                <option value="closed">Cerrado (festivo)</option>
+                <option value="custom_hours">Horario especial</option>
+              </select>
+              <div class="form-text">Si existe una excepción para esa fecha, se actualiza (upsert).</div>
+            </div>
+
+            <div id="custom_hours_block" class="border rounded p-3 mb-3" style="display:none;">
+              <div class="row g-2">
+                <div class="col-6">
+                  <label class="form-label">Abre</label>
+                  <input type="time" class="form-control" name="open">
+                </div>
+                <div class="col-6">
+                  <label class="form-label">Cierra</label>
+                  <input type="time" class="form-control" name="close">
+                </div>
+              </div>
+
+              <hr>
+
+              <div class="row g-2">
+                <div class="col-6">
+                  <label class="form-label">Break inicio (opcional)</label>
+                  <input type="time" class="form-control" name="break_start">
+                </div>
+                <div class="col-6">
+                  <label class="form-label">Break fin (opcional)</label>
+                  <input type="time" class="form-control" name="break_end">
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Motivo (opcional)</label>
+              <input type="text" class="form-control" name="reason" placeholder="Ej. Día festivo, mantenimiento, evento...">
+            </div>
+
+            <button class="btn btn-primary w-100" type="submit">Guardar excepción</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-7">
+      <div class="card shadow-sm">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <strong>Listado</strong>
+          <small class="text-muted">{{ exceptions|length }} registros</small>
+        </div>
+        <div class="card-body p-0">
+          {% if not exceptions %}
+            <div class="p-3">
+              <div class="alert alert-light border mb-0">Aún no tienes excepciones registradas.</div>
+            </div>
+          {% else %}
+            <div class="table-responsive">
+              <table class="table mb-0 align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Tipo</th>
+                    <th>Detalle</th>
+                    <th>Motivo</th>
+                    <th class="text-end">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for ex in exceptions %}
+                    <tr>
+                      <td><strong>{{ ex.date }}</strong></td>
+                      <td>
+                        {% if ex.type == 'closed' %}
+                          <span class="badge bg-danger">Cerrado</span>
+                        {% else %}
+                          <span class="badge bg-info text-dark">Horario especial</span>
+                        {% endif %}
+                      </td>
+                      <td>
+                        {% if ex.type == 'custom_hours' %}
+                          {{ ex.open or '' }} - {{ ex.close or '' }}
+                          {% if ex.breaks and ex.breaks|length > 0 %}
+                            <div class="text-muted small">Break: {{ ex.breaks[0].start }} - {{ ex.breaks[0].end }}</div>
+                          {% endif %}
+                        {% else %}
+                          <span class="text-muted">—</span>
+                        {% endif %}
+                      </td>
+                      <td class="text-muted">{{ ex.reason or '' }}</td>
+                      <td class="text-end">
+                        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('admin_booking_exception_edit', ex_id=ex._id) }}">Editar</a>
+                        <form method="POST" action="{{ url_for('admin_booking_exception_delete', ex_id=ex._id) }}" class="d-inline"
+                              onsubmit="return confirm('¿Eliminar excepción del ' + '{{ ex.date }}' + '?');">
+                          <button class="btn btn-sm btn-outline-danger" type="submit">Eliminar</button>
+                        </form>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function(){
+    const sel = document.getElementById('ex_type');
+    const block = document.getElementById('custom_hours_block');
+    function sync(){
+      block.style.display = (sel.value === 'custom_hours') ? 'block' : 'none';
+    }
+    if(sel && block){
+      sel.addEventListener('change', sync);
+      sync();
+    }
+  })();
+</script>
+{% endblock %}

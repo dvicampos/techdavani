@@ -295,9 +295,13 @@
                    <i class="bi bi-calendar-event me-1"></i>Agenda
                  </a>
                  <ul class="dropdown-menu">
-                   <li><a class="dropdown-item" href="{{ url_for_site('admin_appointments') }}"><i class="bi bi-list-ul me-2"></i>Lista de Reservas</a></li>
-                   <li><a class="dropdown-item" href="{{ url_for_site('admin_calendar') }}"><i class="bi bi-calendar-grid-3x3 me-2"></i>Ver Calendario</a></li>
-                 </ul>
+                    <li><a class="dropdown-item" href="{{ url_for_site('admin_appointments') }}"><i class="bi bi-list-ul me-2"></i>Lista de Reservas</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for_site('admin_calendar') }}"><i class="bi bi-calendar-grid-3x3 me-2"></i>Ver Calendario</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="{{ url_for_site('admin_appointments_new') }}"><i class="bi bi-plus-circle me-2"></i>Nueva Reserva</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for_site('admin_booking_settings') }}"><i class="bi bi-sliders me-2"></i>Configuración</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for_site('admin_booking_exceptions') }}"><i class="bi bi-calendar-x me-2"></i>Festivos / Excepciones</a></li>
+                  </ul>
               </li>
 
               <li class="nav-item d-lg-none"><hr class="dropdown-divider my-2 border-secondary border-opacity-25"></li>

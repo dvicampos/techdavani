@@ -1,0 +1,83 @@
+{% extends "layout.html" %}
+{% block title %}Editar Cita{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <div>
+      <h2 class="mb-0">Editar Cita</h2>
+      <small class="text-muted">Actualiza datos, cambia fecha/hora o cancela.</small>
+    </div>
+    <a class="btn btn-outline-secondary" href="{{ url_for('admin_appointments') }}">Volver</a>
+  </div>
+
+  {% with msgs = get_flashed_messages(with_categories=true) %}
+    {% if msgs %}
+      {% for cat, msg in msgs %}
+        <div class="alert alert-{{ 'warning' if cat=='message' else cat }} mb-3" role="alert">{{ msg }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <form method="POST">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Nombre del cliente</label>
+            <input type="text" class="form-control" name="customer_name" value="{{ appt.customer_name }}" required>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Teléfono</label>
+            <input type="text" class="form-control" name="phone" value="{{ appt.phone }}" required>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Servicio</label>
+            <input type="text" class="form-control" name="service_title" value="{{ appt.service_title }}" required>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Inicio</label>
+            <input type="datetime-local" class="form-control" name="start_at" value="{{ start_local }}" required>
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label">Status</label>
+            <select class="form-select" name="status">
+              {% set st = appt.status or 'pending' %}
+              <option value="pending" {% if st=='pending' %}selected{% endif %}>Pendiente</option>
+              <option value="approved" {% if st=='approved' %}selected{% endif %}>Aprobada</option>
+              <option value="rejected" {% if st=='rejected' %}selected{% endif %}>Rechazada</option>
+              <option value="cancelled" {% if st=='cancelled' %}selected{% endif %}>Cancelada</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2 mt-4">
+          <button class="btn btn-primary" type="submit">Guardar cambios</button>
+
+          <form method="POST" action="{{ url_for('admin_appointments_cancel', appt_id=appt._id) }}"
+                onsubmit="return confirm('¿Cancelar esta cita?');">
+            <button class="btn btn-outline-warning" type="submit">Cancelar</button>
+          </form>
+
+          <form method="POST" action="{{ url_for('admin_appointments_delete', appt_id=appt._id) }}"
+                onsubmit="return confirm('¿Eliminar esta cita? Esto NO se puede deshacer.');">
+            <button class="btn btn-outline-danger" type="submit">Eliminar</button>
+          </form>
+        </div>
+
+        <hr class="my-4">
+
+        <div class="alert alert-light border mb-0">
+          <div><strong>ID:</strong> {{ appt._id }}</div>
+          <div><strong>Duración:</strong> {{ appt.duration_min or '' }} min</div>
+          <div><strong>Creada:</strong> {{ appt.created_at or '' }}</div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

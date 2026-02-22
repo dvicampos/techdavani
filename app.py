@@ -64,6 +64,13 @@ app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_USERNAME')
 app.config['WTF_CSRF_SECRET_KEY'] = os.getenv('SECRET_KEY') 
 
 mongo = PyMongo(app)
+try:
+    mongo.db.appointments.create_index([("page_id", 1), ("start_at", 1)], name="appt_page_start_idx")
+    mongo.db.appointments.create_index([("page_id", 1), ("status", 1)], name="appt_page_status_idx")
+    mongo.db.booking_exceptions.create_index([("page_id", 1), ("date", 1)], unique=True, name="ex_page_date_unique")
+except Exception as e:
+    app.logger.warning(f"Index booking error: {e}")
+
 mail = Mail(app)
 bcrypt = Bcrypt(app)
 login_manager = LoginManager(app)
@@ -793,6 +800,482 @@ def resolve_lifetime_price_for_checkout(coupon_param: str | None):
 
     # Sin cupón válido → precio base
     return round(base_price, 2), None
+
+def normalize_weekly_booking(data):
+    """
+    weekly: dict con keys "0".."6"
+    cada día:
+      - closed: bool
+      - open: "HH:MM"
+      - close: "HH:MM"
+      - slot_minutes: int (opcional; si no, hereda global)
+      - breaks: [{start:"HH:MM", end:"HH:MM"}]
+    """
+    weekly = data if isinstance(data, dict) else {}
+    out = {}
+    for k in ["0","1","2","3","4","5","6"]:
+        d = weekly.get(k) or {}
+        if not isinstance(d, dict):
+            d = {}
+        closed = bool(d.get("closed", False))
+        open_h = (d.get("open") or "").strip()
+        close_h = (d.get("close") or "").strip()
+        breaks = d.get("breaks") if isinstance(d.get("breaks"), list) else []
+
+        clean_breaks = []
+        for b in breaks:
+            if not isinstance(b, dict): 
+                continue
+            s = (b.get("start") or "").strip()
+            e = (b.get("end") or "").strip()
+            if s and e:
+                clean_breaks.append({"start": s, "end": e})
+
+        out[k] = {
+            "closed": closed,
+            "open": open_h if open_h else None,
+            "close": close_h if close_h else None,
+            "breaks": clean_breaks
+        }
+    return out
+
+
+def get_booking_rules(page_id: ObjectId):
+    """
+    Fuente: page_data.booking_*
+    - booking_enabled: bool
+    - booking_slot_minutes: int (default global)
+    - booking_weekly: dict (0..6) con open/close/closed/breaks
+    """
+    page = mongo.db.page_data.find_one(
+        {"_id": ObjectId(page_id)},
+        {
+            "booking_enabled": 1,
+            "booking_slot_minutes": 1,
+            "booking_weekly": 1,
+            "timezone": 1
+        }
+    ) or {}
+
+    enabled = bool(page.get("booking_enabled", True))
+    slot = int(page.get("booking_slot_minutes", 30) or 30)
+
+    weekly = normalize_weekly_booking(page.get("booking_weekly") or {})
+    # fallback simple si todavía no tienen weekly configurado:
+    # Lun-Sáb 10-19, Dom cerrado
+    if not any((weekly.get(str(i)) or {}).get("open") for i in range(7)):
+        weekly = {
+            "0": {"closed": False, "open": "10:00", "close": "19:00", "breaks": []},
+            "1": {"closed": False, "open": "10:00", "close": "19:00", "breaks": []},
+            "2": {"closed": False, "open": "10:00", "close": "19:00", "breaks": []},
+            "3": {"closed": False, "open": "10:00", "close": "19:00", "breaks": []},
+            "4": {"closed": False, "open": "10:00", "close": "19:00", "breaks": []},
+            "5": {"closed": False, "open": "10:00", "close": "19:00", "breaks": []},
+            "6": {"closed": True,  "open": None,   "close": None,   "breaks": []},
+        }
+
+    return {
+        "enabled": enabled,
+        "slot": slot,
+        "weekly": weekly,
+        "tz": (page.get("timezone") or "America/Mexico_City")
+    }
+
+
+def parse_date_ymd(dstr: str):
+    y, m, d = [int(x) for x in dstr.split("-")]
+    return date(y, m, d)
+
+
+def dt_range_from_breaks(day: date, breaks: list[dict]):
+    ranges = []
+    for b in breaks or []:
+        s = dt_at(day, b["start"])
+        e = dt_at(day, b["end"])
+        if s < e:
+            ranges.append((s, e))
+    return ranges
+
+
+def is_in_breaks(dt_start: datetime, dt_end: datetime, break_ranges):
+    for bs, be in break_ranges:
+        if overlaps(dt_start, dt_end, bs, be):
+            return True
+    return False
+
+
+def get_exception_for_day(page_id: ObjectId, day: date):
+    """
+    booking_exceptions:
+      {page_id, date:"YYYY-MM-DD", type:"closed"|"custom_hours", open, close, breaks, reason}
+    """
+    dkey = day.strftime("%Y-%m-%d")
+    ex = mongo.db.booking_exceptions.find_one(
+        {"page_id": ObjectId(page_id), "date": dkey},
+        {"type": 1, "open": 1, "close": 1, "breaks": 1, "reason": 1}
+    )
+    return ex
+
+@app.route("/admin/booking/settings", methods=["GET", "POST"])
+@require_active_subscription
+@current_site(required=True)
+@login_required
+@roles_required("admin")
+def admin_booking_settings():
+    page_id = get_current_page_id()
+    rules = get_booking_rules(page_id)
+
+    if request.method == "POST":
+        enabled = request.form.get("booking_enabled") == "on"
+        slot = int(request.form.get("booking_slot_minutes") or 30)
+
+        # Espera inputs tipo:
+        # open_0 close_0 closed_0, open_1 close_1 closed_1 ... open_6 close_6 closed_6
+        weekly = {}
+        for i in range(7):
+            k = str(i)
+            closed = request.form.get(f"closed_{k}") == "on"
+            open_h = (request.form.get(f"open_{k}") or "").strip()
+            close_h = (request.form.get(f"close_{k}") or "").strip()
+
+            # breaks simple (1 break): break_start_0 / break_end_0 ...
+            bstart = (request.form.get(f"break_start_{k}") or "").strip()
+            bend   = (request.form.get(f"break_end_{k}") or "").strip()
+            breaks = []
+            if bstart and bend:
+                breaks.append({"start": bstart, "end": bend})
+
+            weekly[k] = {
+                "closed": closed,
+                "open": open_h if (open_h and not closed) else None,
+                "close": close_h if (close_h and not closed) else None,
+                "breaks": breaks
+            }
+
+        mongo.db.page_data.update_one(
+            {"_id": ObjectId(page_id)},
+            {"$set": {
+                "booking_enabled": enabled,
+                "booking_slot_minutes": slot,
+                "booking_weekly": normalize_weekly_booking(weekly)
+            }}
+        )
+
+        flash("Configuración de reservas actualizada ✅", "success")
+        return redirect(url_for("admin_booking_settings"))
+
+    return render_template("admin_booking_settings.html", rules=rules)
+
+@app.route("/admin/booking/exceptions", methods=["GET", "POST"])
+@require_active_subscription
+@current_site(required=True)
+@login_required
+@roles_required("admin")
+def admin_booking_exceptions():
+    page_id = get_current_page_id()
+
+    if request.method == "POST":
+        dstr = (request.form.get("date") or "").strip()  # YYYY-MM-DD
+        typ  = (request.form.get("type") or "closed").strip()  # closed|custom_hours
+        reason = (request.form.get("reason") or "").strip()
+
+        if not dstr:
+            flash("Fecha requerida.", "warning")
+            return redirect(url_for("admin_booking_exceptions"))
+
+        try:
+            _ = parse_date_ymd(dstr)
+        except Exception:
+            flash("Fecha inválida (usa YYYY-MM-DD).", "danger")
+            return redirect(url_for("admin_booking_exceptions"))
+
+        doc = {
+            "page_id": ObjectId(page_id),
+            "date": dstr,
+            "type": typ,
+            "reason": reason,
+            "updated_at": datetime.utcnow(),
+            "created_at": datetime.utcnow()
+        }
+
+        if typ == "custom_hours":
+            open_h = (request.form.get("open") or "").strip()
+            close_h = (request.form.get("close") or "").strip()
+            bstart = (request.form.get("break_start") or "").strip()
+            bend   = (request.form.get("break_end") or "").strip()
+
+            if not open_h or not close_h:
+                flash("Open y Close requeridos para horario especial.", "warning")
+                return redirect(url_for("admin_booking_exceptions"))
+
+            doc["open"] = open_h
+            doc["close"] = close_h
+            doc["breaks"] = [{"start": bstart, "end": bend}] if (bstart and bend) else []
+        else:
+            doc["open"] = None
+            doc["close"] = None
+            doc["breaks"] = []
+
+        # upsert por (page_id, date) para que editar sea sobrescribir
+        mongo.db.booking_exceptions.update_one(
+            {"page_id": ObjectId(page_id), "date": dstr},
+            {"$set": doc, "$setOnInsert": {"created_at": datetime.utcnow()}},
+            upsert=True
+        )
+
+        flash("Excepción guardada ✅", "success")
+        return redirect(url_for("admin_booking_exceptions"))
+
+    exceptions = list(mongo.db.booking_exceptions.find(
+        {"page_id": ObjectId(page_id)}
+    ).sort("date", 1))
+
+    return render_template("admin_booking_exceptions.html", exceptions=exceptions)
+
+@app.route("/admin/booking/exceptions/<ex_id>", methods=["GET", "POST"])
+@require_active_subscription
+@current_site(required=True)
+@login_required
+@roles_required("admin")
+def admin_booking_exception_edit(ex_id):
+    page_id = get_current_page_id()
+    ex = mongo.db.booking_exceptions.find_one({"_id": ObjectId(ex_id), "page_id": ObjectId(page_id)})
+    if not ex:
+        flash("Excepción no encontrada.", "warning")
+        return redirect(url_for("admin_booking_exceptions"))
+
+    if request.method == "POST":
+        dstr = (request.form.get("date") or "").strip()
+        typ  = (request.form.get("type") or "closed").strip()
+        reason = (request.form.get("reason") or "").strip()
+
+        if not dstr:
+            flash("Fecha requerida.", "warning")
+            return redirect(url_for("admin_booking_exception_edit", ex_id=ex_id))
+
+        try:
+            _ = parse_date_ymd(dstr)
+        except Exception:
+            flash("Fecha inválida (YYYY-MM-DD).", "danger")
+            return redirect(url_for("admin_booking_exception_edit", ex_id=ex_id))
+
+        update = {
+            "date": dstr,
+            "type": typ,
+            "reason": reason,
+            "updated_at": datetime.utcnow()
+        }
+
+        if typ == "custom_hours":
+            open_h = (request.form.get("open") or "").strip()
+            close_h = (request.form.get("close") or "").strip()
+            bstart = (request.form.get("break_start") or "").strip()
+            bend   = (request.form.get("break_end") or "").strip()
+
+            if not open_h or not close_h:
+                flash("Open y Close requeridos.", "warning")
+                return redirect(url_for("admin_booking_exception_edit", ex_id=ex_id))
+
+            update["open"] = open_h
+            update["close"] = close_h
+            update["breaks"] = [{"start": bstart, "end": bend}] if (bstart and bend) else []
+        else:
+            update["open"] = None
+            update["close"] = None
+            update["breaks"] = []
+
+        # Si cambió la fecha, puede chocar con unique index (page_id,date)
+        # Solución: borrar el doc actual y upsert al nuevo key
+        if dstr != ex.get("date"):
+            mongo.db.booking_exceptions.delete_one({"_id": ex["_id"], "page_id": ObjectId(page_id)})
+            mongo.db.booking_exceptions.update_one(
+                {"page_id": ObjectId(page_id), "date": dstr},
+                {"$set": {**update, "page_id": ObjectId(page_id)}, "$setOnInsert": {"created_at": ex.get("created_at") or datetime.utcnow()}},
+                upsert=True
+            )
+        else:
+            mongo.db.booking_exceptions.update_one(
+                {"_id": ex["_id"], "page_id": ObjectId(page_id)},
+                {"$set": update}
+            )
+
+        flash("Excepción actualizada ✅", "success")
+        return redirect(url_for("admin_booking_exceptions"))
+
+    return render_template("admin_booking_exception_edit.html", ex=ex)
+
+@app.route("/admin/booking/exceptions/<ex_id>/delete", methods=["POST"])
+@require_active_subscription
+@current_site(required=True)
+@login_required
+@roles_required("admin")
+def admin_booking_exception_delete(ex_id):
+    page_id = get_current_page_id()
+    mongo.db.booking_exceptions.delete_one({"_id": ObjectId(ex_id), "page_id": ObjectId(page_id)})
+    flash("Excepción eliminada ✅", "success")
+    return redirect(url_for("admin_booking_exceptions"))
+
+@app.route("/admin/appointments/new", methods=["GET", "POST"])
+@require_active_subscription
+@current_site(required=True)
+@login_required
+@roles_required("admin")
+def admin_appointments_new():
+    page_id = get_current_page_id()
+
+    if request.method == "POST":
+        customer_name = (request.form.get("customer_name") or "").strip()
+        phone = (request.form.get("phone") or "").strip()
+        service_title = (request.form.get("service_title") or "").strip()
+        start_iso = (request.form.get("start_at") or "").strip()  # "YYYY-MM-DDTHH:MM"
+        status = (request.form.get("status") or "approved").strip()  # pending|approved
+
+        if not customer_name or not phone or not service_title or not start_iso:
+            flash("Completa todos los campos.", "warning")
+            return redirect(url_for("admin_appointments_new"))
+
+        try:
+            # viene sin zona, pero en tu app ya usas naive UTC en muchos lados
+            start_at = datetime.fromisoformat(start_iso)
+        except Exception:
+            flash("Fecha/hora inválida.", "danger")
+            return redirect(url_for("admin_appointments_new"))
+
+        rules = get_booking_rules(page_id)
+        if not rules["enabled"]:
+            flash("Reservas deshabilitadas.", "warning")
+            return redirect(url_for("admin_appointments_new"))
+
+        slot_minutes = int(rules["slot"])
+        end_at = start_at + timedelta(minutes=slot_minutes)
+
+        # choque
+        conflict = mongo.db.appointments.find_one({
+            "page_id": ObjectId(page_id),
+            "status": {"$in": ["pending", "approved"]},
+            "start_at": {"$lt": end_at},
+            "end_at": {"$gt": start_at}
+        })
+        if conflict:
+            flash("Ese horario ya está ocupado.", "danger")
+            return redirect(url_for("admin_appointments_new"))
+
+        appt = {
+            "page_id": ObjectId(page_id),
+            "slug": (g.page_slug or ""),
+            "customer_name": customer_name,
+            "phone": phone,
+            "service_title": service_title,
+            "start_at": start_at,
+            "end_at": end_at,
+            "duration_min": slot_minutes,
+            "status": status,
+            "source": "dashboard",
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        }
+        mongo.db.appointments.insert_one(appt)
+
+        flash("Cita creada ✅", "success")
+        return redirect(url_for("admin_appointments"))
+
+    return render_template("admin_appointments_new.html")
+
+@app.route("/admin/appointments/<appt_id>/edit", methods=["GET", "POST"])
+@require_active_subscription
+@current_site(required=True)
+@login_required
+@roles_required("admin")
+def admin_appointments_edit(appt_id):
+    page_id = get_current_page_id()
+    appt = mongo.db.appointments.find_one({"_id": ObjectId(appt_id), "page_id": ObjectId(page_id)})
+    if not appt:
+        flash("Cita no encontrada.", "warning")
+        return redirect(url_for("admin_appointments"))
+
+    if request.method == "POST":
+        customer_name = (request.form.get("customer_name") or "").strip()
+        phone = (request.form.get("phone") or "").strip()
+        service_title = (request.form.get("service_title") or "").strip()
+        start_iso = (request.form.get("start_at") or "").strip()
+        status = (request.form.get("status") or appt.get("status") or "pending").strip()
+
+        if not customer_name or not phone or not service_title or not start_iso:
+            flash("Completa todos los campos.", "warning")
+            return redirect(url_for("admin_appointments_edit", appt_id=appt_id))
+
+        try:
+            start_at = datetime.fromisoformat(start_iso)
+        except Exception:
+            flash("Fecha/hora inválida.", "danger")
+            return redirect(url_for("admin_appointments_edit", appt_id=appt_id))
+
+        rules = get_booking_rules(page_id)
+        slot_minutes = int(appt.get("duration_min") or rules["slot"] or 30)
+        end_at = start_at + timedelta(minutes=slot_minutes)
+
+        # choque (excluye esta misma cita)
+        conflict = mongo.db.appointments.find_one({
+            "_id": {"$ne": ObjectId(appt_id)},
+            "page_id": ObjectId(page_id),
+            "status": {"$in": ["pending", "approved"]},
+            "start_at": {"$lt": end_at},
+            "end_at": {"$gt": start_at}
+        })
+        if conflict:
+            flash("Ese horario ya está ocupado.", "danger")
+            return redirect(url_for("admin_appointments_edit", appt_id=appt_id))
+
+        mongo.db.appointments.update_one(
+            {"_id": ObjectId(appt_id), "page_id": ObjectId(page_id)},
+            {"$set": {
+                "customer_name": customer_name,
+                "phone": phone,
+                "service_title": service_title,
+                "start_at": start_at,
+                "end_at": end_at,
+                "status": status,
+                "updated_at": datetime.utcnow()
+            }}
+        )
+
+        flash("Cita actualizada ✅", "success")
+        return redirect(url_for("admin_appointments"))
+
+    # Para el input datetime-local: "YYYY-MM-DDTHH:MM"
+    start_local = ""
+    try:
+        start_local = appt["start_at"].strftime("%Y-%m-%dT%H:%M")
+    except Exception:
+        pass
+
+    return render_template("admin_appointments_edit.html", appt=appt, start_local=start_local)
+
+@app.route("/admin/appointments/<appt_id>/cancel", methods=["POST"])
+@require_active_subscription
+@current_site(required=True)
+@login_required
+@roles_required("admin")
+def admin_appointments_cancel(appt_id):
+    page_id = get_current_page_id()
+    mongo.db.appointments.update_one(
+        {"_id": ObjectId(appt_id), "page_id": ObjectId(page_id)},
+        {"$set": {"status": "cancelled", "updated_at": datetime.utcnow()}}
+    )
+    flash("Cita cancelada ✅", "success")
+    return redirect(url_for("admin_appointments"))
+
+
+@app.route("/admin/appointments/<appt_id>/delete", methods=["POST"])
+@require_active_subscription
+@current_site(required=True)
+@login_required
+@roles_required("admin")
+def admin_appointments_delete(appt_id):
+    page_id = get_current_page_id()
+    mongo.db.appointments.delete_one({"_id": ObjectId(appt_id), "page_id": ObjectId(page_id)})
+    flash("Cita eliminada ✅", "success")
+    return redirect(url_for("admin_appointments"))
 
 @app.route('/', methods=['GET'])
 def index():
@@ -3026,30 +3509,53 @@ def api_availability():
     if not slug or not dstr:
         return {"ok": False, "error": "faltan_parametros"}, 400
 
-    page = mongo.db.page_data.find_one({"slug": slug}, {"_id": 1})
+    page = mongo.db.page_data.find_one({"slug": slug}, {"_id": 1, "timezone": 1})
     if not page:
         return {"ok": False, "error": "negocio_no_encontrado"}, 404
 
     try:
-        y, m, d = [int(x) for x in dstr.split("-")]
-        day = date(y, m, d)
-    except:
+        day = parse_date_ymd(dstr)
+    except Exception:
         return {"ok": False, "error": "fecha_invalida"}, 400
 
-    settings = get_page_booking_settings(page["_id"])
-    if not settings["enabled"]:
+    rules = get_booking_rules(page["_id"])
+    if not rules["enabled"]:
         return {"ok": True, "date": dstr, "slots": []}
 
-    # valida día permitido
-    # Python weekday(): 0=Lunes ... 6=Domingo
-    if day.weekday() not in settings["days"]:
+    # 1) Excepción del día (festivo/cerrado/horario especial)
+    ex = get_exception_for_day(page["_id"], day)
+    if ex and ex.get("type") == "closed":
+        return {"ok": True, "date": dstr, "slots": [], "closed": True, "reason": ex.get("reason")}
+
+    # 2) Regla semanal del día
+    # weekday(): 0=Lun ... 6=Dom
+    wkey = str(day.weekday())
+    dcfg = (rules["weekly"].get(wkey) or {})
+
+    # si no hay excepción y el día está cerrado en weekly => no slots
+    if (not ex) and bool(dcfg.get("closed")):
+        return {"ok": True, "date": dstr, "slots": [], "closed": True}
+
+    # resolver open/close/breaks finales
+    if ex and ex.get("type") == "custom_hours":
+        open_h = (ex.get("open") or "").strip()
+        close_h = (ex.get("close") or "").strip()
+        breaks = ex.get("breaks") if isinstance(ex.get("breaks"), list) else []
+    else:
+        open_h = (dcfg.get("open") or "").strip()
+        close_h = (dcfg.get("close") or "").strip()
+        breaks = dcfg.get("breaks") if isinstance(dcfg.get("breaks"), list) else []
+
+    if not open_h or not close_h:
         return {"ok": True, "date": dstr, "slots": []}
 
-    slot_minutes = settings["slot"]
-    start_day = dt_at(day, settings["open"])
-    end_day = dt_at(day, settings["close"])
+    slot_minutes = int(rules["slot"])
+    start_day = dt_at(day, open_h)
+    end_day = dt_at(day, close_h)
 
-    # Trae citas del día (pending+approved bloquean; rejected no)
+    break_ranges = dt_range_from_breaks(day, breaks)
+
+    # citas del día (ocupan si pending/approved)
     day_start = datetime(day.year, day.month, day.day, 0, 0, 0)
     day_end = day_start + timedelta(days=1)
 
@@ -3059,20 +3565,22 @@ def api_availability():
         "status": {"$in": ["pending", "approved"]}
     }, {"start_at": 1, "end_at": 1, "duration_min": 1}))
 
-    # arma slots
     slots = []
     cur = start_day
     while cur + timedelta(minutes=slot_minutes) <= end_day:
         slot_end = cur + timedelta(minutes=slot_minutes)
 
-        # checar choque con cualquier cita
+        # breaks
+        if is_in_breaks(cur, slot_end, break_ranges):
+            cur += timedelta(minutes=slot_minutes)
+            continue
+
+        # ocupado por cita
         busy = False
         for a in appts:
             a_start = a.get("start_at")
-            # soporta legacy: si no hay end_at, usa duration_min o slot_minutes
-            if a.get("end_at"):
-                a_end = a["end_at"]
-            else:
+            a_end = a.get("end_at")
+            if not a_end:
                 dur = int(a.get("duration_min") or slot_minutes)
                 a_end = a_start + timedelta(minutes=dur)
 
@@ -3081,11 +3589,17 @@ def api_availability():
                 break
 
         if not busy:
-            slots.append(cur.isoformat())  # ISO local (sin Z)
+            slots.append(cur.isoformat())
 
         cur += timedelta(minutes=slot_minutes)
 
-    return {"ok": True, "date": dstr, "slot_minutes": slot_minutes, "slots": slots}
+    return {
+        "ok": True,
+        "date": dstr,
+        "slot_minutes": slot_minutes,
+        "slots": slots,
+        "exception": bool(ex)
+    }
 
 @app.route('/enviar', methods=['POST'])
 def enviar():

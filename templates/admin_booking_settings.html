@@ -1,0 +1,108 @@
+{% extends "layout.html" %}
+{% block title %}Reservas - Configuración{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <div>
+      <h2 class="mb-0">Configuración de Reservas</h2>
+      <small class="text-muted">Define horario semanal, días cerrados y duración por slot.</small>
+    </div>
+    <a class="btn btn-outline-secondary" href="{{ url_for('dashboard') }}">Volver</a>
+  </div>
+
+  {% with msgs = get_flashed_messages(with_categories=true) %}
+    {% if msgs %}
+      {% for cat, msg in msgs %}
+        <div class="alert alert-{{ 'warning' if cat=='message' else cat }} mb-3" role="alert">{{ msg }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <form method="POST" class="card shadow-sm">
+    <div class="card-body">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="booking_enabled" name="booking_enabled" {% if rules.enabled %}checked{% endif %}>
+            <label class="form-check-label" for="booking_enabled">Reservas habilitadas</label>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Minutos por slot</label>
+          <input type="number" class="form-control" name="booking_slot_minutes" min="5" step="5" value="{{ rules.slot }}">
+          <div class="form-text">Ej. 30 / 45 / 60</div>
+        </div>
+        <div class="col-md-6">
+          <div class="alert alert-light border mb-0">
+            <strong>Tip:</strong> para cerrar Sábado y Domingo, marca “Cerrado” en esos días. Para festivos por fecha exacta usa <a href="{{ url_for('admin_booking_exceptions') }}">Excepciones</a>.
+          </div>
+        </div>
+      </div>
+
+      <hr class="my-4">
+
+      {% set day_names = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'] %}
+      {% set weekly = rules.weekly or {} %}
+
+      <div class="table-responsive">
+        <table class="table align-middle">
+          <thead>
+            <tr class="table-light">
+              <th style="width: 18%">Día</th>
+              <th style="width: 16%">Cerrado</th>
+              <th style="width: 18%">Abre</th>
+              <th style="width: 18%">Cierra</th>
+              <th style="width: 30%">Break (opcional)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for i in range(7) %}
+              {% set k = i|string %}
+              {% set d = weekly.get(k, {}) %}
+              <tr>
+                <td><strong>{{ day_names[i] }}</strong></td>
+
+                <td>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="closed_{{k}}" name="closed_{{k}}"
+                      {% if d.get('closed') %}checked{% endif %}>
+                    <label class="form-check-label" for="closed_{{k}}">Cerrado</label>
+                  </div>
+                </td>
+
+                <td>
+                  <input type="time" class="form-control" name="open_{{k}}" value="{{ d.get('open') or '' }}">
+                </td>
+                <td>
+                  <input type="time" class="form-control" name="close_{{k}}" value="{{ d.get('close') or '' }}">
+                </td>
+
+                {% set br = (d.get('breaks') or []) %}
+                {% set b0 = br[0] if br|length > 0 else {} %}
+                <td>
+                  <div class="row g-2">
+                    <div class="col-6">
+                      <input type="time" class="form-control" name="break_start_{{k}}" value="{{ b0.get('start','') }}" placeholder="Inicio">
+                      <small class="text-muted">Inicio</small>
+                    </div>
+                    <div class="col-6">
+                      <input type="time" class="form-control" name="break_end_{{k}}" value="{{ b0.get('end','') }}" placeholder="Fin">
+                      <small class="text-muted">Fin</small>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Guardar cambios</button>
+        <a class="btn btn-outline-primary" href="{{ url_for('admin_booking_exceptions') }}">Gestionar festivos/excepciones</a>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}
