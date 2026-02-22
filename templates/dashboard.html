@@ -40,8 +40,8 @@
     --shadow: 0 18px 44px rgba(0,0,0,.45);
 
     --gradient-header:
-      radial-gradient(circle at 12% 18%, rgba(96,165,250,.35), rgba(7,11,24,0) 42%),
-      radial-gradient(circle at 85% -10%, rgba(34,197,94,.22), rgba(7,11,24,0) 42%),
+      radial-gradient(circle at 12% 18%, rgba(96,165,250,.25), rgba(7,11,24,0) 42%),
+      radial-gradient(circle at 85% -10%, rgba(34,197,94,.15), rgba(7,11,24,0) 42%),
       linear-gradient(135deg, #0b1226 0%, #0e1a3b 52%, #0b1226 100%);
   }
 
@@ -49,9 +49,9 @@
     max-width: 1220px;
     margin: 1.4rem auto 3rem;
     background:
-      radial-gradient(circle at 18% -12%, rgba(37,99,235,.22), rgba(7,11,24,0) 40%),
-      rgba(9,12,22,.62);
-    border: 1px solid rgba(148,163,184,.12);
+      radial-gradient(circle at 18% -12%, rgba(37,99,235,.15), rgba(7,11,24,0) 40%),
+      rgba(9,12,22,.7);
+    border: 1px solid rgba(148,163,184,.15);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow);
     overflow: hidden;
@@ -64,58 +64,60 @@
     justify-content:space-between;
     gap:1rem;
     align-items:center;
-    padding: .95rem 1.2rem;
+    padding: 1rem 1.2rem;
     border-bottom: 1px solid rgba(148,163,184,.12);
-    background: rgba(7,11,24,.55);
-    backdrop-filter: blur(18px);
+    background: rgba(7,11,24,.65);
   }
-  .nav-left{display:flex;align-items:center;gap:.75rem;min-width: 280px;}
+  .nav-left{display:flex;align-items:center;gap:.75rem;min-width: 250px;}
   .nav-pill{
-    background: rgba(37,99,235,.16);
-    border: 1px solid rgba(96,165,250,.28);
+    background: rgba(37,99,235,.15);
+    border: 1px solid rgba(96,165,250,.25);
     color: #dbeafe;
-    padding: .32rem .65rem;
-    border-radius: 999px;
-    font-size: .68rem;
+    padding: .35rem .7rem;
+    border-radius: 8px;
+    font-size: .7rem;
     font-weight: 700;
-    letter-spacing: .06em;
+    letter-spacing: .05em;
     text-transform: uppercase;
   }
-  .nav-title{display:flex;flex-direction:column;line-height:1.15;}
-  .nav-title strong{color:#fff;font-size:.92rem;}
-  .nav-title small{color:rgba(232,238,252,.55);font-size:.7rem;}
+  .nav-title{display:flex;flex-direction:column;line-height:1.2;}
+  .nav-title strong{color:#fff;font-size:.95rem;}
+  .nav-title small{color:rgba(232,238,252,.6);font-size:.7rem;}
 
   .nav-actions{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;justify-content:flex-end;}
   .btnx{
     display:inline-flex;
     align-items:center;
     gap:.45rem;
-    padding: .45rem .75rem;
+    padding: .45rem .85rem;
     border-radius: 999px;
     border: 1px solid rgba(148,163,184,.18);
-    background: rgba(15,23,42,.25);
+    background: rgba(15,23,42,.4);
     color: #fff;
     text-decoration:none;
-    font-size: .72rem;
-    font-weight: 650;
-    transition: transform .08s linear, filter .08s linear, background .12s ease;
+    font-size: .75rem;
+    font-weight: 600;
+    transition: all .15s ease;
   }
-  .btnx:hover{transform: translateY(-1px); filter:brightness(1.05);}
-  .btnx-blue{background: rgba(37,99,235,.22); border-color: rgba(96,165,250,.28);}
-  .btnx-green{background: rgba(34,197,94,.2); border-color: rgba(134,239,172,.28);}
-  .btnx-ghost{background: rgba(15,23,42,.18);}
+  .btnx:hover{transform: translateY(-2px); filter:brightness(1.1); box-shadow: 0 4px 10px rgba(0,0,0,0.2);}
+  .btnx-blue{background: rgba(37,99,235,.2); border-color: rgba(96,165,250,.3); color: #bfdbfe;}
+  .btnx-ghost{background: rgba(15,23,42,.3);}
 
   .nav-search{
-    display:flex; align-items:center; gap:.45rem;
-    background: rgba(15,23,42,.42);
-    border:1px solid rgba(226,232,240,.12);
-    border-radius:999px;
-    padding:.35rem .75rem;
+    display:flex; align-items:center; gap:.5rem;
+    background: rgba(15,23,42,.6);
+    border:1px solid rgba(148,163,184,.2);
+    border-radius: 8px;
+    padding:.45rem .85rem;
+    flex-grow: 1;
+    max-width: 400px;
+    transition: border-color 0.2s;
   }
+  .nav-search:focus-within { border-color: var(--blue-2); }
   .nav-search input{
-    background:transparent;border:0;outline:0;color:#fff;width:240px;font-size:.74rem;
+    background:transparent;border:0;outline:0;color:#fff;width:100%;font-size:.8rem;
   }
-  .nav-search input::placeholder{color:rgba(232,238,252,.55);}
+  .nav-search input::placeholder{color:rgba(232,238,252,.4);}
 
   /* ===== Header (welcome) ===== */
   .dash-header{
@@ -124,192 +126,201 @@
     gap:1rem;
     align-items:center;
     background: var(--gradient-header);
-    padding: 1.05rem 1.2rem;
+    padding: 1.2rem;
+    border-bottom: 1px solid rgba(148,163,184,.08);
   }
   .dash-title{display:flex;flex-direction:column;gap:.25rem;}
-  .dash-title h1{font-size:1.18rem;margin:0;color:#fff;font-weight:750;}
-  .dash-title small{color:rgba(232,238,252,.6);font-size:.7rem;}
+  .dash-title h1{font-size:1.3rem;margin:0;color:#fff;font-weight:800; font-family: 'Space Grotesk', sans-serif;}
+  .dash-title small{color:rgba(232,238,252,.7);font-size:.75rem;}
 
   /* ===== Body ===== */
-  .dash-body{padding: 1.1rem 1.2rem 1.5rem;}
+  .dash-body{padding: 1.2rem;}
 
   /* ===== KPIs ===== */
   .kpi-row{
     display:grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px,1fr));
-    gap:.9rem;
+    grid-template-columns: repeat(auto-fit, minmax(140px,1fr));
+    gap:1rem;
   }
   .kpi{
-    background:
-      radial-gradient(circle at 12% 18%, rgba(96,165,250,.16), rgba(15,23,42,0) 52%),
-      rgba(15,23,42,.22);
-    border:1px solid rgba(148,163,184,.14);
+    background: radial-gradient(circle at 12% 18%, rgba(96,165,250,.08), rgba(15,23,42,0) 52%), rgba(17,24,39,.4);
+    border:1px solid rgba(148,163,184,.15);
     border-radius: var(--radius-sm);
-    padding:.8rem .9rem .85rem;
+    padding: 1rem;
     text-decoration:none;
     display:block;
     position:relative;
     overflow:hidden;
+    transition: all 0.2s ease;
   }
   .kpi::after{
     content:"";
     position:absolute; inset:-20px -20px auto auto;
-    width: 120px; height: 120px;
-    background: radial-gradient(circle at 30% 30%, rgb(176 185 203 / 35%), rgba(15, 23, 42, 0) 70%);
+    width: 100px; height: 100px;
+    background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.05), rgba(15, 23, 42, 0) 70%);
     transform: rotate(18deg);
   }
   .kpi-badge{
-    background: rgba(37,99,235,.95);
-    color:#fff;
-    font-size:.6rem;
-    padding:.12rem .55rem .14rem;
-    border-radius:999px;
-    font-weight:750;
+    background: rgba(37,99,235,.2);
+    border: 1px solid rgba(37,99,235,.4);
+    color:#93c5fd;
+    font-size:.65rem;
+    padding:.15rem .5rem;
+    border-radius: 6px;
+    font-weight:700;
     display:inline-block;
-    margin-bottom:.38rem;
+    margin-bottom:.5rem;
   }
-  .kpi-value{font-size:1.45rem;font-weight:800;color:#fff;line-height:1.05;}
-  .kpi-label{font-size:.72rem;color:rgba(232,238,252,.6);}
-  .kpi:hover{filter:brightness(1.06);}
+  .kpi-value{font-size:1.6rem;font-weight:800;color:#fff;line-height:1.1; font-family: 'Space Grotesk', sans-serif;}
+  .kpi-label{font-size:.75rem;color:rgba(232,238,252,.6); margin-top: 2px;}
+  .kpi:hover{transform: translateY(-3px); border-color: rgba(96,165,250,.4); box-shadow: 0 8px 20px rgba(0,0,0,0.2);}
 
   /* ===== Section title ===== */
   .section-title{
-    font-size:.72rem;
+    font-size:.8rem;
     text-transform:uppercase;
-    letter-spacing:.10em;
-    color:rgba(232,238,252,.38);
-    margin:1.25rem 0 .6rem;
-    font-weight:650;
+    letter-spacing:.08em;
+    color:rgba(232,238,252,.5);
+    margin:1.8rem 0 1rem;
+    font-weight:700;
     display:flex;
     align-items:center;
-    gap:.5rem;
+    gap:.6rem;
   }
   .section-title:before{
     content:"";
-    width:10px;height:10px;border-radius:999px;
-    background: rgba(37,99,235,.9);
-    box-shadow: 0 0 0 4px rgba(37,99,235,.14);
+    width:8px;height:8px;border-radius:50%;
+    background: var(--blue-2);
+    box-shadow: 0 0 8px var(--blue-2);
   }
 
   /* ===== Actions ===== */
   .actions-grid{
     display:grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px,1fr));
-    gap:.8rem;
+    grid-template-columns: repeat(auto-fit, minmax(260px,1fr));
+    gap:1rem;
   }
   .action-card{
-    background:
-      radial-gradient(circle at 22% 18%, rgba(255,255,255,.05), rgba(17,24,39,0) 48%),
-      rgba(17,24,39,.26);
-    border:1px solid rgba(148,163,184,.12);
+    background: rgba(17,24,39,.4);
+    border:1px solid rgba(148,163,184,.15);
     border-radius: var(--radius-sm);
-    padding:.85rem .85rem .9rem;
+    padding: 1rem;
     display:flex;
-    gap:.75rem;
+    gap:1rem;
     align-items:flex-start;
-    min-height:92px;
-    backdrop-filter: blur(14px);
+    transition: all 0.2s ease;
   }
+  .action-card:hover { background: rgba(30,41,59,.4); border-color: rgba(148,163,184,.3); }
   .action-icon{
-    width:42px;height:42px;border-radius: 14px;
+    width:45px;height:45px;border-radius: 12px;
     display:grid;place-items:center;
-    background: radial-gradient(circle at 30% 30%, rgba(96,165,250,.9), rgba(37,99,235,.95) 52%, rgba(30,58,138,1) 100%);
-    color:#fff;font-size:1.05rem;
-    box-shadow: 0 12px 22px rgba(0,0,0,.28);
-    flex:0 0 auto;
+    background: linear-gradient(135deg, rgba(37,99,235,.2), rgba(30,58,138,.4));
+    border: 1px solid rgba(96,165,250,.2);
+    color: var(--blue-2);
+    font-size:1.2rem;
+    flex-shrink: 0;
   }
-  .action-body h5{font-size:.86rem;margin:0 0 .22rem;color:#fff;font-weight:750;}
-  .action-body p{font-size:.71rem;color:rgba(232,238,252,.55);margin:0 0 .5rem;}
+  .action-icon.create-icon {
+    background: linear-gradient(135deg, rgba(34,197,94,.15), rgba(20,83,45,.4));
+    border-color: rgba(74,222,128,.2);
+    color: var(--green-2);
+  }
+  .action-body { flex-grow: 1; }
+  .action-body h5{font-size:.9rem;margin:0 0 .25rem;color:#fff;font-weight:700;}
+  .action-body p{font-size:.75rem;color:rgba(232,238,252,.6);margin:0 0 .7rem; line-height: 1.3;}
   .action-body .btn{
-    padding:.28rem .68rem;
-    font-size:.68rem;
-    border-radius: 999px;
-    border: 0;
-    font-weight: 750;
+    padding:.35rem .8rem;
+    font-size:.7rem;
+    border-radius: 6px;
+    font-weight: 600;
+    transition: all 0.2s ease;
   }
-  .btn-primary{background: var(--blue); border:0;}
-  .btn-secondary{background: rgba(148,163,184,.14); border: 1px solid rgba(148,163,184,.28); color:#fff;}
-  .btn-success{background: var(--green); border:0;}
-  .btn-warning{background: #f59e0b; border:0;}
-  .btn-info{background: #38bdf8; border:0; color:#0b1226;}
+  .btn-primary{background: var(--blue); border:0; color: #fff;}
+  .btn-primary:hover{background: #1d4ed8; color: #fff;}
+  
+  .btn-secondary{background: rgba(148,163,184,.15); border: 1px solid rgba(148,163,184,.2); color:#e2e8f0;}
+  .btn-secondary:hover{background: rgba(148,163,184,.25); color: #fff;}
 
   /* Create buttons -> green emphasis */
-  .btn-create{background: var(--green) !important; color:#05250f !important; border:0 !important;}
-  .btn-create:hover{filter:brightness(1.04);}
+  .btn-create{background: rgba(34,197,94,.15) !important; color:#86efac !important; border:1px solid rgba(34,197,94,.3) !important;}
+  .btn-create:hover{background: rgba(34,197,94,.3) !important; color:#fff !important;}
 
   /* ===== Modules strip (SaaS) ===== */
   .modules-row{
     display:grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px,1fr));
-    gap:.8rem;
-    margin-top:.9rem;
+    grid-template-columns: repeat(auto-fit, minmax(240px,1fr));
+    gap:1rem;
   }
   .module{
-    background:
-      radial-gradient(circle at 15% 18%, rgba(37,99,235,.15), rgba(15,23,42,0) 55%),
-      rgba(17,24,39,.33);
-    border:1px solid rgba(148,163,184,.12);
+    background: rgba(17,24,39,.3);
+    border:1px solid rgba(148,163,184,.15);
     border-radius: var(--radius-sm);
-    padding:.85rem .9rem;
-    backdrop-filter: blur(10px);
+    padding: 1rem;
+    transition: all 0.2s ease;
   }
-  .module h6{margin:0;color:#fff;font-size:.78rem;font-weight:800;}
-  .module .sub{margin:.2rem 0 .6rem;color:rgba(232,238,252,.55);font-size:.68rem;}
-  .module .meta{display:flex;gap:.5rem;flex-wrap:wrap;margin:.35rem 0 .7rem;}
+  .module:hover { border-color: rgba(96,165,250,.3); background: rgba(30,41,59,.4); }
+  .module h6{margin:0;color:#fff;font-size:.85rem;font-weight:700; display: flex; align-items: center; gap: 0.5rem;}
+  .module .sub{margin:.4rem 0 .8rem;color:rgba(232,238,252,.6);font-size:.75rem; line-height: 1.3;}
+  .module .meta{display:flex;gap:.5rem;flex-wrap:wrap;margin:.5rem 0 1rem;}
+  
   .pill{
     display:inline-flex;align-items:center;gap:.35rem;
-    padding:.22rem .55rem;
-    border-radius:999px;
-    border:1px solid rgba(148,163,184,.16);
-    background: rgba(15,23,42,.22);
-    color:rgba(232,238,252,.85);
-    font-size:.66rem;
-    font-weight:700;
+    padding:.25rem .6rem;
+    border-radius: 6px;
+    border:1px solid rgba(148,163,184,.2);
+    background: rgba(15,23,42,.4);
+    color:rgba(232,238,252,.8);
+    font-size:.7rem;
+    font-weight:600;
   }
   .pill b{color:#fff;}
-  .module a{color:#fff;text-decoration:none;}
-  .module a:hover{text-decoration:underline;}
+  .module a{color:var(--blue-2);text-decoration:none; font-size: 0.8rem; font-weight: 600;}
+  .module a:hover{text-decoration:underline; color: #fff;}
 
   /* ===== Recientes ===== */
   .recent-row{
     display:grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px,1fr));
-    gap:.9rem;
-    margin-top:.9rem;
+    grid-template-columns: repeat(auto-fit, minmax(280px,1fr));
+    gap:1rem;
   }
   .panel{
-    background:
-      radial-gradient(circle at 10% 12%, rgba(96,165,250,.10), rgba(15,23,42,0) 42%),
-      rgba(17,24,39,.35);
-    border:1px solid rgba(148,163,184,.12);
+    background: rgba(17,24,39,.3);
+    border:1px solid rgba(148,163,184,.15);
     border-radius: var(--radius-sm);
-    padding:.85rem .9rem .2rem;
-    backdrop-filter: blur(10px);
+    padding: 1rem;
   }
-  .panel h5{font-size:.8rem;margin:0 0 .55rem;color:#fff;font-weight:800;}
+  .panel h5{font-size:.85rem;margin:0 0 .8rem;color:#fff;font-weight:700; display: flex; align-items: center; gap: 0.5rem;}
   .list-compact{list-style:none;margin:0;padding:0;}
-  .list-compact li{padding:.48rem 0 .55rem;border-bottom:1px dashed rgba(148,163,184,.14);}
-  .list-compact li:last-child{border-bottom:0;}
-  .item-title{font-size:.76rem;font-weight:600;color:#fff;text-decoration:none;}
-  .item-title:hover{text-decoration:underline;}
-  .item-meta{font-size:.64rem;color:rgba(232,238,252,.40);}
+  .list-compact li{
+    padding:.6rem 0;
+    border-bottom:1px solid rgba(148,163,184,.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+  }
+  .list-compact li:last-child{border-bottom:0; padding-bottom: 0;}
+  .list-compact li:first-child{padding-top: 0;}
+  .item-title{font-size:.8rem;font-weight:600;color:#e2e8f0;text-decoration:none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+  .item-title:hover{color: var(--blue-2);}
+  .item-meta{font-size:.7rem;color:rgba(232,238,252,.5); flex-shrink: 0;}
+  
   .empty{
-    background: rgba(15,23,42,.22);
-    border:1px dashed rgba(148,163,184,.24);
-    border-radius:12px;
-    padding:.75rem .6rem;
+    background: rgba(15,23,42,.4);
+    border:1px dashed rgba(148,163,184,.2);
+    border-radius: 8px;
+    padding: 1.5rem 1rem;
     text-align:center;
-    font-size:.70rem;
-    color:rgba(232,238,252,.45);
+    font-size:.75rem;
+    color:rgba(232,238,252,.5);
   }
 
   @media (max-width: 900px){
-    .nav-left{min-width:unset}
-    .nav-search input{width: 180px;}
+    .dash-nav { flex-wrap: wrap; }
+    .nav-search { order: 3; max-width: 100%; margin-top: 0.5rem; }
   }
   @media (max-width: 768px){
-    .dash-shell{margin:.55rem .35rem 2.5rem;}
-    .dash-nav{flex-direction:column;align-items:flex-start;}
+    .dash-shell{margin:.5rem .5rem 2.5rem; border-radius: 12px;}
     .dash-header{flex-direction:column;align-items:flex-start;}
     .nav-actions{width:100%;justify-content:flex-start}
   }
@@ -317,10 +328,9 @@
 
 <div class="dash-shell">
 
-  <!-- TOP NAV (super pro) -->
   <div class="dash-nav">
     <div class="nav-left">
-      <div class="nav-pill">Dashboard</div>
+      <div class="nav-pill"><i class="bi bi-speedometer2 me-1"></i> Dashboard</div>
       <div class="nav-title">
         <strong>{{ PAGE.get('business_name','Tu sitio') if PAGE else 'Tu sitio' }}</strong>
         <small>Slug: {{ PAGE.get('slug','—') if PAGE else '—' }} · Plan: {{ (PAGE.get('plan') if PAGE else '—') }}</small>
@@ -328,49 +338,46 @@
     </div>
 
     <form class="nav-search" method="get" action="{{ url_for('dashboard_slug', slug=PAGE.slug) if PAGE else url_for('dashboard') }}">
-      <span style="opacity:.9;">🔎</span>
+      <i class="bi bi-search text-muted"></i>
       <input name="q" type="search" placeholder="Buscar publicaciones, avisos, productos…">
     </form>
 
     <div class="nav-actions">
       {% if PAGE and PAGE.get('slug') %}
         <a class="btnx btnx-blue" target="_blank" href="{{ url_for('negocio_por_slug', slug=PAGE.slug) }}">
-          👀 Ver público
+          <i class="bi bi-box-arrow-up-right me-1"></i> Ver público
         </a>
       {% endif %}
       <a class="btnx btnx-ghost" href="{{ url_for('billing_portal') }}">
-        💳 Pagos / Plan
+        <i class="bi bi-credit-card me-1"></i> Pagos / Plan
       </a>
       {% if current_user.role == 'admin' and PAGE and PAGE.get('slug') %}
         <a class="btnx btnx-ghost" href="{{ url_for('manage_page_slug', slug=PAGE.slug) }}">
-          🛠 Editar sitio
+          <i class="bi bi-sliders me-1"></i> Editar sitio
         </a>
       {% endif %}
       <a class="btnx btnx-ghost" href="{{ url_for('sites') }}">
-        🧩 Cambiar sitio
+        <i class="bi bi-arrow-left-right me-1"></i> Cambiar sitio
       </a>
     </div>
   </div>
 
-  <!-- HEADER -->
   <div class="dash-header">
     <div class="dash-title">
       <h1>Hola, {{ current_user.nombre }}</h1>
       {% if now is defined %}
-        <small>Hoy es {{ now().strftime('%d/%m/%Y') }} · Gestionando: {{ PAGE.get('business_name','Tu sitio') if PAGE else 'Tu sitio' }}</small>
+        <small><i class="bi bi-calendar-event"></i> Hoy es {{ now().strftime('%d/%m/%Y') }} · Gestionando: {{ PAGE.get('business_name','Tu sitio') if PAGE else 'Tu sitio' }}</small>
       {% endif %}
     </div>
     <div style="display:flex;gap:.5rem;flex-wrap:wrap;justify-content:flex-end;">
-      <span class="pill">⚡ Leads 7d: <b>{{ LEADS_7D }}</b></span>
-      <span class="pill">📆 Pendientes: <b>{{ APPT_PEND }}</b></span>
-      <span class="pill">🏷 Promos: <b>{{ PROMOS_ACT }}</b></span>
+      <span class="pill"><i class="bi bi-lightning-charge text-warning"></i> Leads 7d: <b>{{ LEADS_7D }}</b></span>
+      <span class="pill"><i class="bi bi-calendar-check text-info"></i> Pendientes: <b>{{ APPT_PEND }}</b></span>
+      <span class="pill"><i class="bi bi-tags text-success"></i> Promos: <b>{{ PROMOS_ACT }}</b></span>
     </div>
   </div>
 
-  <!-- BODY -->
   <div class="dash-body">
 
-    <!-- KPIs -->
     <div class="kpi-row">
       {% set kpis = [
         {'label':'Publicaciones','value': S.get('posts', 0),'href':url_for('list_post')},
@@ -387,96 +394,94 @@
 
       {% for k in kpis %}
         <a href="{{ k.href }}" class="kpi">
-          <div class="kpi-badge">KPI</div>
+          <div class="kpi-badge"><i class="bi bi-bar-chart-fill me-1"></i>KPI</div>
           <div class="kpi-value">{{ k.value }}</div>
           <div class="kpi-label">{{ k.label }}</div>
         </a>
       {% endfor %}
     </div>
 
-    <!-- Módulos SaaS -->
-    <div class="section-title">Módulos (SaaS)</div>
+    <div class="section-title">Módulos Inteligentes</div>
     <div class="modules-row">
       <div class="module">
-        <h6>⚡ Leads / Cotizaciones</h6>
+        <h6><i class="bi bi-lightning-charge-fill text-warning"></i> Leads / Cotizaciones</h6>
         <div class="sub">Cotizaciones guardadas desde tu botón “Cotizar”.</div>
         <div class="meta">
           <span class="pill">Total <b>{{ LEADS_TOTAL }}</b></span>
-          <span class="pill">Últimos 7d <b>{{ LEADS_7D }}</b></span>
+          <span class="pill">Últimos 7d <b class="text-warning">{{ LEADS_7D }}</b></span>
         </div>
-        <a href="{{ url_for('admin_leads') }}">Ver leads →</a>
+        <a href="{{ url_for('admin_leads') }}">Ver bandeja de leads <i class="bi bi-arrow-right ms-1"></i></a>
       </div>
 
       <div class="module">
-        <h6>📆 Reservas</h6>
+        <h6><i class="bi bi-calendar2-check-fill text-info"></i> Reservas y Agenda</h6>
         <div class="sub">Solicitudes de citas y aprobaciones.</div>
         <div class="meta">
-          <span class="pill">Pendientes <b>{{ APPT_PEND }}</b></span>
+          <span class="pill border-info">Pendientes <b class="text-info">{{ APPT_PEND }}</b></span>
           <span class="pill">Total <b>{{ APPT_TOTAL }}</b></span>
         </div>
-        <a href="{{ url_for('admin_appointments') }}">Ver reservas →</a>
+        <a href="{{ url_for('admin_appointments') }}">Ir al calendario <i class="bi bi-arrow-right ms-1"></i></a>
       </div>
 
       <div class="module">
-        <h6>🏷 Promos</h6>
+        <h6><i class="bi bi-tags-fill text-success"></i> Ofertas y Promos</h6>
         <div class="sub">Promociones visibles en tu página pública.</div>
         <div class="meta">
-          <span class="pill">Activas <b>{{ PROMOS_ACT }}</b></span>
+          <span class="pill border-success">Activas <b class="text-success">{{ PROMOS_ACT }}</b></span>
         </div>
-        <a href="{{ url_for('admin_promos') }}">Gestionar promos →</a>
+        <a href="{{ url_for('admin_promos') }}">Gestionar promos <i class="bi bi-arrow-right ms-1"></i></a>
       </div>
 
       <div class="module">
-        <h6>📈 Analytics</h6>
-        <div class="sub">Clicks y vistas (últimos 7 días).</div>
+        <h6><i class="bi bi-graph-up-arrow text-primary"></i> Analytics (7 días)</h6>
+        <div class="sub">Rendimiento e interacción en tu sitio web.</div>
         <div class="meta">
-          <span class="pill">Vistas <b>{{ ANA.get('view', 0) }}</b></span>
-          <span class="pill">WA <b>{{ ANA.get('click_whatsapp_fab', 0) + ANA.get('click_whatsapp', 0) }}</b></span>
-          <span class="pill">Maps <b>{{ ANA.get('click_maps', 0) }}</b></span>
+          <span class="pill"><i class="bi bi-eye"></i> <b>{{ ANA.get('view', 0) }}</b></span>
+          <span class="pill"><i class="bi bi-whatsapp text-success"></i> <b>{{ ANA.get('click_whatsapp_fab', 0) + ANA.get('click_whatsapp', 0) }}</b></span>
+          <span class="pill"><i class="bi bi-geo-alt text-danger"></i> <b>{{ ANA.get('click_maps', 0) }}</b></span>
         </div>
-        <span class="sub" style="margin:0;">Tip: activa tracking en la plantilla pública.</span>
+        <span class="sub" style="margin:0;"><i class="bi bi-info-circle"></i> Activa el tracking en tu web.</span>
       </div>
     </div>
 
-    <!-- Acciones rápidas -->
-    <div class="section-title">Acciones rápidas</div>
+    <div class="section-title">Gestión y Creación</div>
 
+    {# Armamos la lista de acciones usando íconos de Bootstrap #}
     {% set acciones = [] %}
+    
     {% if current_user.role == 'admin' %}
       {% set acciones = acciones + [
-        {'icon':'👥','title':'Gestionar usuarios','text':'Agrega, edita o elimina usuarios.','href':url_for('manage_users'),'btn':'primary','label':'Ir'},
-        {'icon':'🛠','title':'Gestionar página','text':'Edita la página asignada.','href':(url_for('manage_page_slug', slug=PAGE.slug) if PAGE else '#'),'btn':'primary','label':'Ir'}
+        {'icon':'<i class="bi bi-people-fill"></i>','title':'Gestionar usuarios','text':'Agrega, edita o elimina usuarios.','href':url_for('manage_users'),'btn':'primary','label':'Gestionar'},
+        {'icon':'<i class="bi bi-sliders"></i>','title':'Configurar página','text':'Edita la información de tu sitio.','href':(url_for('manage_page_slug', slug=PAGE.slug) if PAGE else '#'),'btn':'primary','label':'Ajustes'}
       ] %}
     {% endif %}
 
-    {# CREATE en verde #}
     {% if current_user.role in ['admin','moderador'] %}
       {% set acciones = acciones + [
-        {'icon':'📝','title':'Crear blog','text':'Publica una nueva entrada.','href':url_for('crear_post_negocio'),'btn':'success','label':'Crear', 'create':true},
-        {'icon':'📢','title':'Crear aviso','text':'Publica un aviso para tu comunidad.','href':url_for('create_aviso'),'btn':'success','label':'Crear', 'create':true},
-        {'icon':'🛒','title':'Crear producto','text':'Nuevo producto con imagen y precio.','href':url_for('create_producto'),'btn':'success','label':'Crear', 'create':true},
-        {'icon':'🏷','title':'Crear promo','text':'Lanza una promo visible en tu página pública.','href':url_for('admin_promos'),'btn':'success','label':'Crear', 'create':true}
+        {'icon':'<i class="bi bi-pencil-square"></i>','title':'Escribir post','text':'Publica un artículo en tu blog.','href':url_for('crear_post_negocio'),'btn':'success','label':'Crear Post', 'create':true},
+        {'icon':'<i class="bi bi-megaphone-fill"></i>','title':'Lanzar aviso','text':'Notifica a tu comunidad.','href':url_for('create_aviso'),'btn':'success','label':'Crear Aviso', 'create':true},
+        {'icon':'<i class="bi bi-bag-plus-fill"></i>','title':'Nuevo producto','text':'Añade artículos a tu catálogo.','href':url_for('create_producto'),'btn':'success','label':'Añadir', 'create':true},
+        {'icon':'<i class="bi bi-ticket-detailed-fill"></i>','title':'Nueva promo','text':'Crea cupones y descuentos.','href':url_for('admin_promos'),'btn':'success','label':'Lanzar', 'create':true}
       ] %}
     {% endif %}
 
     {% set acciones = acciones + [
-      {'icon':'📚','title':'Ver publicaciones','text':'Consulta y gestiona tus posts.','href':url_for('list_post'),'btn':'secondary','label':'Ver'},
-      {'icon':'📋','title':'Ver avisos','text':'Revisa los avisos publicados.','href':url_for('list_avisos'),'btn':'secondary','label':'Ver'},
-      {'icon':'📦','title':'Ver productos','text':'Administra productos/servicios.','href':url_for('list_productos'),'btn':'secondary','label':'Ver'},
-      {'icon':'⭐','title':'Ver reseñas','text':'Consulta y modera reseñas.','href':url_for('admin_reseñas'),'btn':'secondary','label':'Ver'},
-      {'icon':'⚡','title':'Ver leads','text':'Cotizaciones registradas (SaaS).','href':url_for('admin_leads'),'btn':'secondary','label':'Ver'},
-      {'icon':'📆','title':'Ver reservas','text':'Aprueba o rechaza citas.','href':url_for('admin_appointments'),'btn':'secondary','label':'Ver'}
+      {'icon':'<i class="bi bi-journal-text"></i>','title':'Ver publicaciones','text':'Consulta y gestiona tus posts.','href':url_for('list_post'),'btn':'secondary','label':'Ver Todo'},
+      {'icon':'<i class="bi bi-card-checklist"></i>','title':'Ver avisos','text':'Revisa los avisos publicados.','href':url_for('list_avisos'),'btn':'secondary','label':'Ver Todo'},
+      {'icon':'<i class="bi bi-box-seam"></i>','title':'Ver catálogo','text':'Administra productos/servicios.','href':url_for('list_productos'),'btn':'secondary','label':'Ver Todo'},
+      {'icon':'<i class="bi bi-star-fill"></i>','title':'Ver reseñas','text':'Consulta y modera valoraciones.','href':url_for('admin_reseñas'),'btn':'secondary','label':'Moderar'},
+      {'icon':'<i class="bi bi-lightning-fill"></i>','title':'Ver leads','text':'Revisa potenciales clientes.','href':url_for('admin_leads'),'btn':'secondary','label':'Revisar'},
+      {'icon':'<i class="bi bi-calendar-range"></i>','title':'Ver agenda','text':'Aprueba o rechaza citas.','href':url_for('admin_appointments'),'btn':'secondary','label':'Revisar'}
     ] %}
 
     <div class="actions-grid">
       {% for a in acciones %}
         <div class="action-card">
-          <div class="action-icon">{{ a.icon }}</div>
+          <div class="action-icon {% if a.create %}create-icon{% endif %}">{{ a.icon|safe }}</div>
           <div class="action-body">
             <h5>{{ a.title }}</h5>
             <p>{{ a.text }}</p>
-            <a href="{{ a.href }}"
-               class="btn {% if a.create %}btn-create{% else %}btn-{{ a.btn }}{% endif %}">
+            <a href="{{ a.href }}" class="btn {% if a.create %}btn-create{% else %}btn-{{ a.btn }}{% endif %}">
               {{ a.label }}
             </a>
           </div>
@@ -484,21 +489,15 @@
       {% endfor %}
     </div>
 
-    <!-- Recientes -->
-    <div class="section-title">Recientes</div>
+    <div class="section-title">Actividad Reciente</div>
     <div class="recent-row">
 
-      <!-- posts -->
       <div class="panel">
-        <h5>🆕 Publicaciones</h5>
+        <h5><i class="bi bi-file-earmark-richtext text-primary"></i> Últimos Posts</h5>
         {% if R.posts and R.posts|length %}
           <ul class="list-compact">
             {% for p in R.posts[:6] %}
-              {% set POST_ID =
-                (p.post_id if p.post_id is defined else
-                 (p.id if p.id is defined else
-                  ('' ~ p._id) if p._id is defined else None))
-              %}
+              {% set POST_ID = (p.post_id if p.post_id is defined else (p.id if p.id is defined else ('' ~ p._id) if p._id is defined else None)) %}
               {% if POST_ID %}
                 {% set POST_URL = url_for('ver_post', post_id=POST_ID) %}
               {% elif p.slug is defined %}
@@ -510,19 +509,18 @@
                 <a href="{{ POST_URL }}" class="item-title">{{ p.titulo or p.title }}</a>
                 <div class="item-meta">
                   {% set f = (p.fecha if p.fecha is defined else (p.created_at if p.created_at is defined else None)) %}
-                  {% if f %}{{ f.strftime('%d/%m/%Y') if f.strftime is defined else f }}{% endif %}
+                  {% if f %}<i class="bi bi-clock"></i> {{ f.strftime('%d/%m/%Y') if f.strftime is defined else f }}{% endif %}
                 </div>
               </li>
             {% endfor %}
           </ul>
         {% else %}
-          <div class="empty">Aún no hay publicaciones.</div>
+          <div class="empty"><i class="bi bi-journal-x fs-4 d-block mb-2"></i>Aún no hay publicaciones.</div>
         {% endif %}
       </div>
 
-      <!-- avisos -->
       <div class="panel">
-        <h5>📣 Avisos</h5>
+        <h5><i class="bi bi-megaphone text-warning"></i> Avisos Activos</h5>
         {% if R.avisos and R.avisos|length %}
           <ul class="list-compact">
             {% for a in R.avisos[:6] %}
@@ -530,33 +528,32 @@
                 <span class="item-title">{{ a.titulo or a.title }}</span>
                 <div class="item-meta">
                   {% set f = (a.fecha if a.fecha is defined else (a.created_at if a.created_at is defined else None)) %}
-                  {% if f %}{{ f.strftime('%d/%m/%Y') if f.strftime is defined else f }}{% endif %}
+                  {% if f %}<i class="bi bi-clock"></i> {{ f.strftime('%d/%m/%Y') if f.strftime is defined else f }}{% endif %}
                 </div>
               </li>
             {% endfor %}
           </ul>
         {% else %}
-          <div class="empty">Sin avisos por ahora.</div>
+          <div class="empty"><i class="bi bi-bell-slash fs-4 d-block mb-2"></i>Sin avisos por ahora.</div>
         {% endif %}
       </div>
 
-      <!-- productos -->
       <div class="panel">
-        <h5>🛍️ Productos</h5>
+        <h5><i class="bi bi-bag-check text-success"></i> Catálogo</h5>
         {% if R.productos and R.productos|length %}
           <ul class="list-compact">
             {% for pr in R.productos[:6] %}
               <li>
                 <span class="item-title">{{ pr.title or pr.nombre or pr.name }}</span>
-                <div class="item-meta">
-                  {% if pr.price is defined and pr.price is not none %}{{ (pr.price|float)|round(2) }}{% endif %}
-                  {{ pr.moneda or 'MXN' }}
+                <div class="item-meta fw-bold text-success">
+                  {% if pr.price is defined and pr.price is not none %}${{ (pr.price|float)|round(2) }}{% endif %}
+                  <span class="small">{{ pr.moneda or 'MXN' }}</span>
                 </div>
               </li>
             {% endfor %}
           </ul>
         {% else %}
-          <div class="empty">Todavía no hay productos recientes.</div>
+          <div class="empty"><i class="bi bi-basket-x fs-4 d-block mb-2"></i>Todavía no hay productos.</div>
         {% endif %}
       </div>
 
