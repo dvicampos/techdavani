@@ -2513,7 +2513,6 @@ DEFAULT_HTML_TEMPLATES = {
     "tinto": "public/tinto.html",
     "artesanias": "public/artesanias.html",
     "abarrotes": "public/abarrotes.html",
-    "party": "public/party.html",
     "belleza_mujer": "public/belleza_mujer.html",
     "pet": "public/pet.html",
 }
