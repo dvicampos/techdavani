@@ -237,8 +237,11 @@
           <span class="badge rounded-pill text-bg-primary w-fit mb-3">Plan mensual</span>
           <h3 class="mb-3">{{ SUB_PLAN.name }}</h3>
           <p class="mb-4">
-            Un solo plan. Todo incluido. Sin límites de páginas internas ni reseñas.
-            Se renueva automáticamente cada mes y puedes <strong>pausar o cancelar cuando quieras</strong>.
+            Un solo plan. Todo incluido. Sin límites de secciones internas ni reseñas.
+            <br><br>
+            <i class="bi bi-diagram-3-fill text-primary me-1"></i><strong>¿Manejas varios negocios?</strong> Crea todos los sitios web que necesites desde una misma cuenta. Cada sitio adicional tiene su propia suscripción de $99 MXN/mes.
+            <br><br>
+            Se renueva automáticamente cada mes y puedes <strong>pausar o cancelar cada sitio de forma independiente cuando quieras</strong>.
           </p>
 
           {% set display_price = ('%.0f'|format(SUB_PLAN.price)).rstrip('0').rstrip('.') %}
@@ -449,8 +452,8 @@
         </section>
 
         <section class="mb-4">
-          <h6 class="fw-bold">3. Suscripción y Pagos (Mercado Pago)</h6>
-          <p class="small">El costo del servicio es de <strong>$99.00 MXN mensuales</strong> (IVA incluido, si aplica). El pago se gestiona exclusivamente a través de Mercado Pago mediante el modelo de suscripción recurrente. El usuario acepta que el cobro se realice de forma automática cada mes hasta que decida cancelar o pausar el servicio desde su panel de facturación.</p>
+          <h6 class="fw-bold">3. Suscripción, Pagos y Multi-sitio (Mercado Pago)</h6>
+          <p class="small">El costo del servicio es de <strong>$99.00 MXN mensuales</strong> (IVA incluido, si aplica) <strong>por cada página web (sitio) creada</strong>. Los usuarios pueden crear y administrar múltiples sitios desde una sola cuenta. Cada sitio requerirá su propia suscripción mensual independiente. El pago se gestiona exclusivamente a través de Mercado Pago mediante el modelo de suscripción recurrente. El usuario acepta que los cobros se realicen de forma automática cada mes hasta que decida cancelar o pausar el servicio de cada sitio específico desde su panel de facturación.</p>
         </section>
 
         <section class="mb-4">
