@@ -850,6 +850,9 @@
     </div>
   </div>
 
+  <!-- Reservas  -->
+  {% include "public/reservas.html" %}
+
   {% if page.get('whatsapp') %}
   <a class="fab-wa" href="https://wa.me/{{ page.whatsapp | replace(' ','') }}" target="_blank" aria-label="WhatsApp" data-track="click_whatsapp_fab">
     <span class="btn">
