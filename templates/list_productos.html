@@ -1,31 +1,589 @@
 {% extends "layout.html" %}
+{% block title %}Catálogo{% endblock %}
+
 {% block content %}
-<div class="container my-5">
-    <h2 class="mb-4">🛍️ Productos</h2>
-    <div class="row">
-        {% for producto in productos %}
-        <div class="col-md-4 mb-4">
-            <div class="card h-100 shadow-sm">
-                {% if producto.image %}
-                    <img src="{{ url_for('uploaded_file', filename=producto.image) }}" class="card-img-top" alt="Producto">
-                {% endif %}
-                <div class="card-body">
-                    <h5 class="card-title">{{ producto.title }}</h5>
-                    <p class="card-text">{{ producto.description }}</p>
-                    <p class="fw-bold text-success">$ {{ producto.price }}</p>
-                    <a href="{{ url_for('edit_producto', producto_id=producto._id) }}" class="btn btn-sm btn-warning">Editar</a>
-                    <form action="{{ url_for('delete_producto', producto_id=producto._id) }}" method="POST" style="display:inline;">
-                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('¿Estás seguro de eliminar este producto?')">Eliminar</button>
-                    </form>
-                </div>
-            </div>
+{% set items = productos|list %}
+{% set productos_fisicos = items | rejectattr('tipo', 'equalto', 'servicio') | list %}
+{% set servicios = items | selectattr('tipo', 'equalto', 'servicio') | list %}
+
+<style>
+  .catalogo-page {
+    max-width: 1160px;
+    margin: 0 auto;
+    padding: 28px 0 36px;
+  }
+
+  .catalogo-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 18px;
+    flex-wrap: wrap;
+    margin-bottom: 22px;
+  }
+
+  .catalogo-heading {
+    flex: 1 1 430px;
+  }
+
+  .catalogo-heading h2 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 2.05rem;
+    font-weight: 800;
+    color: #f8fbff;
+    letter-spacing: -0.02em;
+  }
+
+  .catalogo-heading h2 i {
+    color: #5ea0ff;
+  }
+
+  .catalogo-heading p {
+    margin: 10px 0 0;
+    color: rgba(221, 232, 255, 0.78);
+    font-size: 0.98rem;
+    line-height: 1.65;
+    max-width: 700px;
+  }
+
+  .catalogo-actions-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .btn-back-catalogo {
+    border-radius: 14px;
+    padding: 11px 18px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    text-decoration: none;
+    transition: all 0.25s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #dbe9ff;
+    border: 1px solid rgba(135, 164, 255, 0.24);
+    background: rgba(255, 255, 255, 0.04);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+  }
+
+  .btn-back-catalogo:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(135, 164, 255, 0.4);
+    transform: translateY(-1px);
+  }
+
+  .catalogo-summary {
+    margin-bottom: 26px;
+    padding: 16px 18px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, rgba(13, 110, 253, 0.10), rgba(111, 66, 193, 0.10));
+    border: 1px solid rgba(122, 152, 255, 0.18);
+    box-shadow: 0 16px 30px rgba(0, 0, 0, 0.14);
+    color: rgba(224, 234, 255, 0.86);
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .summary-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 14px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 0.94rem;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+  }
+
+  .catalogo-section {
+    margin-bottom: 34px;
+  }
+
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    font-size: 1.45rem;
+    font-weight: 800;
+    color: #f8fbff;
+  }
+
+  .section-title i {
+    color: #8ec5ff;
+  }
+
+  .section-count {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(147, 197, 253, 0.18);
+    color: rgba(231, 239, 255, 0.92);
+    font-weight: 700;
+    font-size: 0.9rem;
+  }
+
+  .catalogo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+    gap: 22px;
+  }
+
+  .catalogo-card {
+    background: #ffffff;
+    border: 1px solid rgba(223, 228, 237, 0.95);
+    border-radius: 22px;
+    box-shadow: 0 14px 34px rgba(15, 23, 42, 0.12);
+    transition: all 0.25s ease;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+    position: relative;
+  }
+
+  .catalogo-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 4px;
+    background: linear-gradient(90deg, #0d6efd, #6f42c1, #8b5cf6);
+    z-index: 2;
+  }
+
+  .catalogo-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.16);
+  }
+
+  .catalogo-image-wrap {
+    position: relative;
+    height: 220px;
+    background: linear-gradient(135deg, #eef4ff, #f8fbff);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .catalogo-image-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .catalogo-no-image {
+    color: #94a3b8;
+    font-weight: 700;
+    font-size: 0.95rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .catalogo-no-image i {
+    font-size: 2rem;
+    color: #60a5fa;
+  }
+
+  .catalogo-body {
+    padding: 20px 20px 18px;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+  }
+
+  .catalogo-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 6px 10px;
+    border-radius: 999px;
+    margin-bottom: 14px;
+    width: fit-content;
+  }
+
+  .badge-producto {
+    color: #2563eb;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+  }
+
+  .badge-servicio {
+    color: #7c3aed;
+    background: #f5f3ff;
+    border: 1px solid #ddd6fe;
+  }
+
+  .catalogo-title {
+    font-size: 1.18rem;
+    font-weight: 800;
+    color: #101828;
+    line-height: 1.35;
+    margin-bottom: 10px;
+    word-break: break-word;
+  }
+
+  .catalogo-description {
+    color: #475467;
+    line-height: 1.68;
+    font-size: 0.95rem;
+    margin-bottom: 18px;
+    flex-grow: 1;
+  }
+
+  .catalogo-price {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    width: fit-content;
+    margin-bottom: 16px;
+    padding: 9px 14px;
+    border-radius: 999px;
+    background: #ecfdf3;
+    color: #15803d;
+    border: 1px solid #bbf7d0;
+    font-weight: 800;
+    font-size: 1rem;
+  }
+
+  .catalogo-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: auto;
+  }
+
+  .catalogo-actions a,
+  .catalogo-actions button {
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.9rem;
+    padding: 9px 14px;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    border: none;
+  }
+
+  .btn-edit-item {
+    background: #fff7ed;
+    color: #c2410c;
+    border: 1px solid #fdba74 !important;
+  }
+
+  .btn-edit-item:hover {
+    background: #ffedd5;
+    color: #9a3412;
+    transform: translateY(-1px);
+  }
+
+  .btn-delete-item {
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fca5a5 !important;
+  }
+
+  .btn-delete-item:hover {
+    background: #fee2e2;
+    color: #b91c1c;
+    transform: translateY(-1px);
+  }
+
+  .delete-form {
+    margin: 0;
+  }
+
+  .empty-section,
+  .empty-catalogo {
+    padding: 34px 22px;
+    text-align: center;
+    border-radius: 22px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.97), rgba(244,247,255,0.96));
+    border: 1px solid rgba(223, 228, 237, 0.95);
+    box-shadow: 0 18px 38px rgba(15, 23, 42, 0.10);
+  }
+
+  .empty-catalogo {
+    padding: 56px 24px;
+  }
+
+  .empty-icon {
+    width: 82px;
+    height: 82px;
+    margin: 0 auto 16px;
+    border-radius: 22px;
+    display: grid;
+    place-items: center;
+    font-size: 2.3rem;
+    background: linear-gradient(135deg, #eff6ff, #eef2ff);
+    color: #2563eb;
+    box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.08);
+  }
+
+  .empty-section h4,
+  .empty-catalogo h3 {
+    margin: 0 0 10px;
+    font-weight: 800;
+    color: #101828;
+  }
+
+  .empty-section p,
+  .empty-catalogo p {
+    margin: 0;
+    color: #667085;
+    line-height: 1.7;
+  }
+
+  @media (max-width: 768px) {
+    .catalogo-page {
+      padding: 18px 0 24px;
+    }
+
+    .catalogo-heading h2 {
+      font-size: 1.7rem;
+    }
+
+    .catalogo-actions-top {
+      width: 100%;
+    }
+
+    .btn-back-catalogo {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .catalogo-image-wrap {
+      height: 200px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .catalogo-heading h2 {
+      font-size: 1.5rem;
+    }
+
+    .catalogo-heading p {
+      font-size: 0.93rem;
+    }
+
+    .catalogo-actions a,
+    .catalogo-actions button {
+      width: 100%;
+    }
+  }
+</style>
+
+<div class="catalogo-page">
+  <div class="catalogo-topbar">
+    <div class="catalogo-heading">
+      <h2><i class="bi bi-grid-1x2-fill"></i> Catálogo</h2>
+      <p>Administra tu catálogo separado por productos y servicios para tener una vista más clara, ordenada y profesional.</p>
+    </div>
+
+    <div class="catalogo-actions-top">
+      <a href="{{ url_for('dashboard') }}" class="btn-back-catalogo">
+        <i class="bi bi-arrow-left-circle"></i>
+        Regresar
+      </a>
+    </div>
+  </div>
+
+  <div class="catalogo-summary">
+    <div class="summary-pill">
+      <i class="bi bi-box-seam"></i>
+      {{ productos_fisicos|length }} producto{% if productos_fisicos|length != 1 %}s{% endif %}
+    </div>
+    <div class="summary-pill">
+      <i class="bi bi-scissors"></i>
+      {{ servicios|length }} servicio{% if servicios|length != 1 %}s{% endif %}
+    </div>
+    <div class="summary-pill">
+      <i class="bi bi-collection"></i>
+      {{ items|length }} total
+    </div>
+  </div>
+
+  {% if items %}
+    <section class="catalogo-section">
+      <div class="section-header">
+        <h3 class="section-title">
+          <i class="bi bi-bag-fill"></i>
+          Productos
+        </h3>
+        <div class="section-count">
+          <i class="bi bi-box-seam"></i>
+          {{ productos_fisicos|length }}
         </div>
-        {% endfor %}
+      </div>
+
+      {% if productos_fisicos %}
+        <div class="catalogo-grid">
+          {% for producto in productos_fisicos %}
+            <article class="catalogo-card">
+              <div class="catalogo-image-wrap">
+                {% if producto.image %}
+                  <img src="{{ url_for('uploaded_file', filename=producto.image) }}" alt="{{ producto.title }}">
+                {% else %}
+                  <div class="catalogo-no-image">
+                    <i class="bi bi-image"></i>
+                    <span>Sin imagen</span>
+                  </div>
+                {% endif %}
+              </div>
+
+              <div class="catalogo-body">
+                <div class="catalogo-badge badge-producto">
+                  <i class="bi bi-box-seam"></i>
+                  Producto
+                </div>
+
+                <h5 class="catalogo-title">{{ producto.title }}</h5>
+
+                <p class="catalogo-description">
+                  {{ producto.description | truncate(150) }}
+                </p>
+
+                {% if producto.get('show_price', True) %}
+                  <div class="catalogo-price">
+                    <i class="bi bi-cash-coin"></i>
+                    $ {{ producto.price }}
+                  </div>
+                {% endif %}
+
+                <div class="catalogo-actions">
+                  <a href="{{ url_for('edit_producto', producto_id=producto._id) }}" class="btn-edit-item">
+                    <i class="bi bi-pencil-square"></i>
+                    Editar
+                  </a>
+
+                  <form action="{{ url_for('delete_producto', producto_id=producto._id) }}" method="POST" class="delete-form">
+                    <button type="submit" class="btn-delete-item" onclick="return confirm('¿Estás seguro de eliminar este producto?')">
+                      <i class="bi bi-trash3"></i>
+                      Eliminar
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </article>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-section">
+          <h4>No hay productos registrados</h4>
+          <p>Cuando agregues productos físicos aparecerán aquí separados de los servicios.</p>
+        </div>
+      {% endif %}
+    </section>
+
+    <section class="catalogo-section">
+      <div class="section-header">
+        <h3 class="section-title">
+          <i class="bi bi-stars"></i>
+          Servicios
+        </h3>
+        <div class="section-count">
+          <i class="bi bi-scissors"></i>
+          {{ servicios|length }}
+        </div>
+      </div>
+
+      {% if servicios %}
+        <div class="catalogo-grid">
+          {% for producto in servicios %}
+            <article class="catalogo-card">
+              <div class="catalogo-image-wrap">
+                {% if producto.image %}
+                  <img src="{{ url_for('uploaded_file', filename=producto.image) }}" alt="{{ producto.title }}">
+                {% else %}
+                  <div class="catalogo-no-image">
+                    <i class="bi bi-image"></i>
+                    <span>Sin imagen</span>
+                  </div>
+                {% endif %}
+              </div>
+
+              <div class="catalogo-body">
+                <div class="catalogo-badge badge-servicio">
+                  <i class="bi bi-stars"></i>
+                  Servicio
+                </div>
+
+                <h5 class="catalogo-title">{{ producto.title }}</h5>
+
+                <p class="catalogo-description">
+                  {{ producto.description | truncate(150) }}
+                </p>
+
+                {% if producto.get('show_price', True) %}
+                  <div class="catalogo-price">
+                    <i class="bi bi-cash-coin"></i>
+                    $ {{ producto.price }}
+                  </div>
+                {% endif %}
+
+                <div class="catalogo-actions">
+                  <a href="{{ url_for('edit_producto', producto_id=producto._id) }}" class="btn-edit-item">
+                    <i class="bi bi-pencil-square"></i>
+                    Editar
+                  </a>
+
+                  <form action="{{ url_for('delete_producto', producto_id=producto._id) }}" method="POST" class="delete-form">
+                    <button type="submit" class="btn-delete-item" onclick="return confirm('¿Estás seguro de eliminar este servicio?')">
+                      <i class="bi bi-trash3"></i>
+                      Eliminar
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </article>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-section">
+          <h4>No hay servicios registrados</h4>
+          <p>Cuando agregues servicios aparecerán aquí separados de los productos físicos.</p>
+        </div>
+      {% endif %}
+    </section>
+  {% else %}
+    <div class="empty-catalogo">
+      <div class="empty-icon">
+        <i class="bi bi-bag-x"></i>
+      </div>
+      <h3>No hay elementos en el catálogo</h3>
+      <p>Cuando agregues productos o servicios aparecerán aquí organizados por categoría.</p>
     </div>
-    <div class="mt-4 text-center">
-        <a href="{{ url_for('dashboard')}}" class="btn btn-outline-dark">
-          <i class="bi bi-arrow-left-circle"></i> Regresar
-        </a>
-    </div>
+  {% endif %}
 </div>
 {% endblock %}

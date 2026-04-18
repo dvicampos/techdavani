@@ -1580,17 +1580,24 @@ def list_post():
     try:
         user = mongo.db.users.find_one({'_id': ObjectId(current_user.id)})
     except Exception as e:
-        flash("Error al obtener usuario.")
+        flash("Error al obtener usuario.", "danger")
         return redirect(url_for('login'))
 
     if not user:
-        flash("Usuario no encontrado.")
+        flash("Usuario no encontrado.", "warning")
         return redirect(url_for('login'))
 
     page_id = user.get('page_id')
-    posts = mongo.db.posts.find({'page_id': page_id})
-    
-    return render_template('list_post.html', posts=posts)
+
+    if not page_id:
+        flash("No se encontró un sitio o página asociada al usuario.", "warning")
+        return redirect(url_for('dashboard'))
+
+    posts = list(
+        mongo.db.posts.find({'page_id': page_id}).sort('date', -1)
+    )
+
+    return render_template('list_post.html', posts=posts, total_posts=len(posts))
 
 @app.route('/edit_post/<post_id>', methods=['GET', 'POST'])
 @require_active_subscription

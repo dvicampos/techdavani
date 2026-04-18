@@ -1,62 +1,418 @@
 {% extends "layout.html" %}
+{% block title %}Crear Producto{% endblock %}
+
 {% block content %}
-<div class="container my-5">
-    <h2 class="mb-4">➕ Crear Producto</h2>
-    <form method="POST" enctype="multipart/form-data">
+<style>
+  .create-product-page {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 28px 0 34px;
+  }
 
-        <div class="mb-3">
-            <label for="title" class="form-label">Título</label>
-            <input type="text" name="title" class="form-control" required>
-        </div>
+  .create-product-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 22px;
+  }
 
-        <div class="mb-3">
-            <label for="description" class="form-label">Descripción</label>
-            <textarea name="description" class="form-control" required></textarea>
-        </div>
+  .create-product-heading {
+    flex: 1 1 430px;
+  }
 
-        <div class="mb-3">
-            <label for="price" class="form-label">Precio</label>
-            <input type="number" name="price" step="0.01" class="form-control" required>
-        </div>
+  .create-product-heading h2 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 2.05rem;
+    font-weight: 800;
+    color: #f8fbff;
+    letter-spacing: -0.02em;
+  }
 
-        <!-- 🔥 Nuevo: Tipo -->
-        <div class="mb-3">
-            <label for="tipo" class="form-label">Tipo</label>
-            <select name="tipo" id="tipo" class="form-control">
-                {% for t in tipos_posibles %}
-                    <option value="{{ t }}"
-                        {% if t == 'producto' %}selected{% endif %}>
-                        {{ t|capitalize }}
-                    </option>
-                {% endfor %}
-            </select>
-            <div class="form-text">
-                Selecciona "Servicio" si es algo que haces (corte de cabello, consulta, etc.).
-                Selecciona "Producto" si es algo físico que vendes.
-            </div>
-        </div>
+  .create-product-heading h2 i {
+    color: #5ea0ff;
+  }
 
-        <div class="form-check mb-3">
-            <input class="form-check-input" type="checkbox" name="show_price"
-                id="show_price"
-                {% if producto and producto.get('show_price') %}checked{% endif %}>
-            <label class="form-check-label" for="show_price">
-                Mostrar precio
-            </label>
-        </div>
+  .create-product-heading p {
+    margin: 10px 0 0;
+    color: rgba(221, 232, 255, 0.78);
+    font-size: 0.98rem;
+    line-height: 1.65;
+    max-width: 700px;
+  }
 
-        <div class="mb-3">
-            <label for="image" class="form-label">Imagen</label>
-            <input type="file" name="image" class="form-control">
-        </div>
+  .btn-back-product {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    padding: 11px 16px;
+    border-radius: 14px;
+    font-weight: 700;
+    color: #dbe9ff;
+    border: 1px solid rgba(135, 164, 255, 0.24);
+    background: rgba(255, 255, 255, 0.04);
+    transition: all 0.25s ease;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+  }
 
-        <button type="submit" class="btn btn-success">Guardar</button>
-    </form>
+  .btn-back-product:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(135, 164, 255, 0.4);
+    transform: translateY(-1px);
+  }
 
-    <div class="mt-4 text-center">
-        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-dark">
-            <i class="bi bi-arrow-left-circle"></i> Regresar
-        </a>
+  .create-product-card {
+    background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(247,249,255,0.97));
+    border: 1px solid rgba(223, 228, 237, 0.95);
+    border-radius: 24px;
+    padding: 26px;
+    box-shadow: 0 18px 42px rgba(15, 23, 42, 0.16);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .create-product-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 4px;
+    background: linear-gradient(90deg, #0d6efd, #6f42c1, #8b5cf6);
+  }
+
+  .info-strip {
+    margin-bottom: 22px;
+    padding: 15px 16px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, rgba(13, 110, 253, 0.08), rgba(111, 66, 193, 0.08));
+    border: 1px solid rgba(122, 152, 255, 0.16);
+    color: #475467;
+    font-size: 0.94rem;
+    line-height: 1.65;
+  }
+
+  .info-strip strong {
+    color: #1d4ed8;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+
+  .full-width {
+    grid-column: 1 / -1;
+  }
+
+  .form-label {
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 8px;
+  }
+
+  .form-control,
+  .form-select,
+  textarea {
+    border-radius: 14px !important;
+    border: 1px solid #d8e0ea !important;
+    box-shadow: none !important;
+    min-height: 48px;
+  }
+
+  textarea.form-control {
+    min-height: 160px;
+    resize: vertical;
+  }
+
+  .form-control:focus,
+  .form-select:focus,
+  textarea:focus {
+    border-color: #86b7fe !important;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.12) !important;
+  }
+
+  .helper-text {
+    margin-top: 6px;
+    color: #667085;
+    font-size: 0.88rem;
+    line-height: 1.55;
+  }
+
+  .price-box,
+  .type-box,
+  .image-box,
+  .switch-box {
+    padding: 16px;
+    border-radius: 18px;
+    background: #fbfcff;
+    border: 1px solid #e4eaf3;
+  }
+
+  .switch-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    min-height: 100%;
+  }
+
+  .switch-box .text {
+    flex: 1;
+  }
+
+  .switch-box .text h6 {
+    margin: 0 0 4px;
+    font-size: 1rem;
+    font-weight: 800;
+    color: #111827;
+  }
+
+  .switch-box .text p {
+    margin: 0;
+    color: #667085;
+    font-size: 0.9rem;
+    line-height: 1.55;
+  }
+
+  .form-check.form-switch {
+    margin: 0;
+    padding-left: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  .form-check-input {
+    width: 3rem !important;
+    height: 1.6rem;
+    margin-left: 0 !important;
+    cursor: pointer;
+  }
+
+  .form-check-label {
+    display: none;
+  }
+
+  .actions-bar {
+    margin-top: 26px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .btn-cancel-product,
+  .btn-save-product {
+    border-radius: 14px;
+    padding: 11px 18px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    transition: all 0.25s ease;
+  }
+
+  .btn-cancel-product {
+    border: 1px solid #d5dbe5;
+    background: #fff;
+    color: #344054;
+  }
+
+  .btn-cancel-product:hover {
+    color: #111827;
+    background: #f9fafb;
+  }
+
+  .btn-save-product {
+    border: 1px solid rgba(22, 163, 74, 0.55);
+    background: linear-gradient(135deg, #16a34a, #22c55e);
+    color: #fff;
+    box-shadow: 0 12px 24px rgba(34, 197, 94, 0.22);
+  }
+
+  .btn-save-product:hover {
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 16px 28px rgba(34, 197, 94, 0.3);
+  }
+
+  @media (max-width: 768px) {
+    .create-product-page {
+      padding: 18px 0 24px;
+    }
+
+    .create-product-heading h2 {
+      font-size: 1.7rem;
+    }
+
+    .create-product-card {
+      padding: 18px;
+      border-radius: 18px;
+    }
+
+    .form-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .actions-bar {
+      justify-content: stretch;
+    }
+
+    .btn-cancel-product,
+    .btn-save-product,
+    .btn-back-product {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .switch-box {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .create-product-heading h2 {
+      font-size: 1.5rem;
+    }
+
+    .create-product-heading p {
+      font-size: 0.93rem;
+    }
+  }
+</style>
+
+<div class="create-product-page">
+  <div class="create-product-topbar">
+    <div class="create-product-heading">
+      <h2><i class="bi bi-bag-plus-fill"></i> Crear Producto</h2>
+      <p>Agrega un nuevo producto o servicio a tu catálogo con información clara, imagen atractiva y precio bien definido.</p>
     </div>
+
+    <a href="{{ url_for('dashboard') }}" class="btn-back-product">
+      <i class="bi bi-arrow-left-circle"></i>
+      Regresar
+    </a>
+  </div>
+
+  <div class="create-product-card">
+    <div class="info-strip">
+      <strong>Sugerencia:</strong> usa títulos breves, descripciones claras y una buena imagen para que tu catálogo se vea más profesional y atractivo.
+    </div>
+
+    <form method="POST" enctype="multipart/form-data">
+      <div class="form-grid">
+        <div class="full-width">
+          <label for="title" class="form-label">Título</label>
+          <input
+            type="text"
+            id="title"
+            name="title"
+            class="form-control"
+            placeholder="Ej. Corte premium, playera edición especial..."
+            required
+          >
+          <div class="helper-text">El nombre debe ser corto, claro y fácil de identificar.</div>
+        </div>
+
+        <div class="full-width">
+          <label for="description" class="form-label">Descripción</label>
+          <textarea
+            id="description"
+            name="description"
+            class="form-control"
+            placeholder="Describe qué incluye, beneficios o detalles importantes..."
+            required
+          ></textarea>
+          <div class="helper-text">Procura que la descripción sea útil y fácil de leer.</div>
+        </div>
+
+        <div>
+          <div class="price-box">
+            <label for="price" class="form-label">Precio</label>
+            <input
+              type="number"
+              id="price"
+              name="price"
+              step="0.01"
+              min="0"
+              class="form-control"
+              placeholder="0.00"
+              required
+            >
+            <div class="helper-text">Ingresa el precio con decimales si aplica.</div>
+          </div>
+        </div>
+
+        <div>
+          <div class="type-box">
+            <label for="tipo" class="form-label">Tipo</label>
+            <select name="tipo" id="tipo" class="form-select">
+              {% for t in tipos_posibles %}
+                <option value="{{ t }}" {% if t == 'producto' %}selected{% endif %}>
+                  {{ t|capitalize }}
+                </option>
+              {% endfor %}
+            </select>
+            <div class="helper-text">
+              Selecciona <strong>Servicio</strong> si es algo que haces, o <strong>Producto</strong> si es algo físico que vendes.
+            </div>
+          </div>
+        </div>
+
+        <div class="full-width">
+          <div class="switch-box">
+            <div class="text">
+              <h6>Mostrar precio</h6>
+              <p>Activa esta opción si deseas que el precio aparezca visible dentro del catálogo.</p>
+            </div>
+
+            <div class="form-check form-switch">
+              <input
+                class="form-check-input"
+                type="checkbox"
+                name="show_price"
+                id="show_price"
+                {% if producto is defined and producto and producto.get('show_price') %}checked{% endif %}
+              >
+              <label class="form-check-label" for="show_price">Mostrar precio</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="full-width">
+          <div class="image-box">
+            <label for="image" class="form-label">Imagen</label>
+            <input
+              type="file"
+              id="image"
+              name="image"
+              class="form-control"
+              accept="image/*"
+            >
+            <div class="helper-text">Sube una imagen de buena calidad para mejorar la presentación del producto.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions-bar">
+        <a href="{{ url_for('dashboard') }}" class="btn-cancel-product">
+          <i class="bi bi-x-circle"></i>
+          Cancelar
+        </a>
+
+        <button type="submit" class="btn-save-product">
+          <i class="bi bi-check2-circle"></i>
+          Guardar
+        </button>
+      </div>
+    </form>
+  </div>
 </div>
 {% endblock %}

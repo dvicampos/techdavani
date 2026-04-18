@@ -1,50 +1,398 @@
 {% extends "layout.html" %}
 
+{% block title %}Editar Post{% endblock %}
+
 {% block content %}
-<div class="container mt-5">
-    <h2 class="text-center mb-4">Editar Post</h2>
+<style>
+  .edit-post-page {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 28px 0 36px;
+  }
 
+  .edit-post-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 22px;
+  }
+
+  .edit-post-heading h2 {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 800;
+    color: #f8fbff;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    letter-spacing: -0.02em;
+  }
+
+  .edit-post-heading h2 i {
+    color: #5ea0ff;
+  }
+
+  .edit-post-heading p {
+    margin: 10px 0 0;
+    color: rgba(221, 232, 255, 0.78);
+    font-size: 0.98rem;
+    line-height: 1.65;
+    max-width: 680px;
+  }
+
+  .btn-back-edit {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    padding: 11px 16px;
+    border-radius: 14px;
+    font-weight: 700;
+    color: #dbe9ff;
+    border: 1px solid rgba(135, 164, 255, 0.22);
+    background: rgba(255, 255, 255, 0.04);
+    transition: all 0.25s ease;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.16);
+  }
+
+  .btn-back-edit:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(135, 164, 255, 0.4);
+    transform: translateY(-1px);
+  }
+
+  .edit-post-card {
+    background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(247,249,255,0.97));
+    border: 1px solid rgba(223, 228, 237, 0.95);
+    border-radius: 24px;
+    padding: 26px;
+    box-shadow: 0 18px 42px rgba(15, 23, 42, 0.16);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .edit-post-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 4px;
+    background: linear-gradient(90deg, #0d6efd, #6f42c1, #8b5cf6);
+  }
+
+  .section-title {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #111827;
+    margin-bottom: 14px;
+  }
+
+  .form-label {
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 8px;
+  }
+
+  .form-control,
+  textarea,
+  input[type="file"] {
+    border-radius: 14px !important;
+    border: 1px solid #d8e0ea !important;
+    box-shadow: none !important;
+  }
+
+  .form-control:focus,
+  textarea:focus,
+  input[type="file"]:focus {
+    border-color: #86b7fe !important;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.12) !important;
+  }
+
+  .helper-text {
+    margin-top: 6px;
+    color: #667085;
+    font-size: 0.88rem;
+  }
+
+  .current-cover-box,
+  .current-file-box {
+    background: #f8fbff;
+    border: 1px solid #dbe6f2;
+    border-radius: 18px;
+    padding: 18px;
+    margin-bottom: 20px;
+  }
+
+  .current-cover-header,
+  .current-file-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 800;
+    color: #1f2937;
+    margin-bottom: 12px;
+  }
+
+  .current-cover-header i,
+  .current-file-header i {
+    color: #0d6efd;
+  }
+
+  .cover-preview-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 18px;
+  }
+
+  .cover-preview {
+    width: 100%;
+    max-width: 360px;
+    border-radius: 18px;
+    overflow: hidden;
+    border: 1px solid #dbe6f2;
+    background: #eef4ff;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+  }
+
+  .cover-preview img {
+    width: 100%;
+    height: auto;
+    display: block;
+    object-fit: cover;
+  }
+
+  .empty-cover {
+    padding: 24px 18px;
+    border-radius: 16px;
+    background: #f9fafb;
+    border: 1px dashed #cfd8e3;
+    color: #667085;
+    font-style: italic;
+    text-align: center;
+  }
+
+  .file-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    color: #0d6efd;
+    font-weight: 700;
+    word-break: break-word;
+  }
+
+  .file-link:hover {
+    text-decoration: underline;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+
+  .form-grid .full-width {
+    grid-column: 1 / -1;
+  }
+
+  .textarea-lg {
+    min-height: 180px;
+    resize: vertical;
+  }
+
+  .actions-bar {
+    margin-top: 26px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .btn-save-post,
+  .btn-cancel-post {
+    border-radius: 14px;
+    padding: 11px 18px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    transition: all 0.25s ease;
+  }
+
+  .btn-save-post {
+    border: 1px solid rgba(13, 110, 253, 0.5);
+    background: linear-gradient(135deg, #0d6efd, #3b82f6);
+    color: #fff;
+    box-shadow: 0 12px 24px rgba(13, 110, 253, 0.22);
+  }
+
+  .btn-save-post:hover {
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 16px 28px rgba(13, 110, 253, 0.3);
+  }
+
+  .btn-cancel-post {
+    border: 1px solid #d5dbe5;
+    background: #fff;
+    color: #344054;
+  }
+
+  .btn-cancel-post:hover {
+    color: #111827;
+    background: #f9fafb;
+  }
+
+  @media (max-width: 768px) {
+    .edit-post-page {
+      padding: 18px 0 26px;
+    }
+
+    .edit-post-heading h2 {
+      font-size: 1.7rem;
+    }
+
+    .edit-post-card {
+      padding: 18px;
+      border-radius: 18px;
+    }
+
+    .form-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .actions-bar {
+      justify-content: stretch;
+    }
+
+    .btn-save-post,
+    .btn-cancel-post,
+    .btn-back-edit {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+</style>
+
+<div class="edit-post-page">
+  <div class="edit-post-topbar">
+    <div class="edit-post-heading">
+      <h2><i class="bi bi-pencil-square"></i> Editar Post</h2>
+      <p>Actualiza el título, contenido, imagen de cabecera y archivos adjuntos de tu publicación.</p>
+    </div>
+
+    <a href="{{ url_for('list_post') }}" class="btn-back-edit">
+      <i class="bi bi-arrow-left-circle"></i>
+      Volver a mis posts
+    </a>
+  </div>
+
+  <div class="edit-post-card">
     <form action="{{ url_for('edit_post', post_id=post._id) }}" method="POST" enctype="multipart/form-data">
-        <div class="mb-3">
-            <label for="title" class="form-label">Título:</label>
-            <input type="text" name="title" value="{{ post.title }}" class="form-control" required>
+      
+      <div class="form-grid">
+        <div class="full-width">
+          <label for="title" class="form-label">Título del post</label>
+          <input
+            type="text"
+            id="title"
+            name="title"
+            value="{{ post.title }}"
+            class="form-control"
+            placeholder="Escribe un título atractivo"
+            required
+          >
         </div>
 
-        <p>Imagen de cabecera actual:</p>
-        {% if post.cabecera %}
-            <img src="{{ url_for('uploaded_file', filename=post.cabecera) }}" style="max-width: 300px;"><br>
-        {% else %}
-            <em>No hay imagen de cabecera.</em><br>
-        {% endif %}
+        <div class="full-width">
+          <div class="current-cover-box">
+            <div class="current-cover-header">
+              <i class="bi bi-image"></i>
+              Imagen de cabecera actual
+            </div>
 
-        <label for="cabecera">Cambiar imagen de cabecera:</label><br>
-        <input type="file" name="cabecera" accept="image/*"><br><br>
-
-
-        <div class="mb-3">
-            <label for="content" class="form-label">Contenido:</label>
-            <textarea name="content" rows="6" class="form-control" required>{{ post.content }}</textarea>
+            {% if post.cabecera %}
+              <div class="cover-preview-wrap">
+                <div class="cover-preview">
+                  <img src="{{ url_for('uploaded_file', filename=post.cabecera) }}" alt="Imagen de cabecera actual">
+                </div>
+              </div>
+            {% else %}
+              <div class="empty-cover">
+                No hay imagen de cabecera cargada actualmente.
+              </div>
+            {% endif %}
+          </div>
         </div>
 
-        <div class="mb-3">
-            <label for="file" class="form-label">Archivo nuevo:</label>
-            <input type="file" name="file" class="form-control" multiple>
+        <div class="full-width">
+          <label for="cabecera" class="form-label">Cambiar imagen de cabecera</label>
+          <input
+            type="file"
+            id="cabecera"
+            name="cabecera"
+            class="form-control"
+            accept="image/*"
+          >
+          <div class="helper-text">Sube una nueva imagen solo si deseas reemplazar la actual.</div>
+        </div>
+
+        <div class="full-width">
+          <label for="content" class="form-label">Contenido</label>
+          <textarea
+            id="content"
+            name="content"
+            rows="7"
+            class="form-control textarea-lg"
+            placeholder="Escribe aquí el contenido del post"
+            required
+          >{{ post.content }}</textarea>
+        </div>
+
+        <div class="full-width">
+          <label for="file" class="form-label">Archivo nuevo</label>
+          <input
+            type="file"
+            id="file"
+            name="file"
+            class="form-control"
+            multiple
+          >
+          <div class="helper-text">Puedes adjuntar uno o varios archivos nuevos.</div>
         </div>
 
         {% if post.file_url %}
-            <div class="mb-3">
-                <p><strong>Archivo actual:</strong> <a href="{{ post.file_url }}" target="_blank">📎 Ver archivo</a></p>
+        <div class="full-width">
+          <div class="current-file-box">
+            <div class="current-file-header">
+              <i class="bi bi-paperclip"></i>
+              Archivo actual
             </div>
-        {% endif %}
-
-        <div class="text-center">
-            <button type="submit" class="btn btn-primary">Actualizar</button>
+            <a href="{{ post.file_url }}" target="_blank" class="file-link">
+              <i class="bi bi-file-earmark-arrow-down"></i>
+              Ver archivo adjunto actual
+            </a>
+          </div>
         </div>
-    </form>
-    <div class="mt-4 text-center">
-        <a href="{{ url_for('dashboard')}}" class="btn btn-outline-dark">
-            <i class="bi bi-arrow-left-circle"></i> Regresar
+        {% endif %}
+      </div>
+
+      <div class="actions-bar">
+        <a href="{{ url_for('list_post') }}" class="btn-cancel-post">
+          <i class="bi bi-x-circle"></i>
+          Cancelar
         </a>
-    </div>
+
+        <button type="submit" class="btn-save-post">
+          <i class="bi bi-check2-circle"></i>
+          Actualizar post
+        </button>
+      </div>
+    </form>
+  </div>
 </div>
 {% endblock %}

@@ -1,45 +1,406 @@
 {% extends "layout.html" %}
+{% block title %}Avisos Recientes{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="text-center flex-grow-1">📢 Avisos Recientes</h2>
-        {% if current_user.role != 'usuario' %}
-            <a href="{{ url_for('create_aviso') }}" class="btn btn-success">+ Crear Aviso</a>
-        {% endif %}
+<style>
+  .avisos-page {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 28px 0 32px;
+  }
+
+  .avisos-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 18px;
+    flex-wrap: wrap;
+    margin-bottom: 22px;
+  }
+
+  .avisos-heading {
+    flex: 1 1 430px;
+  }
+
+  .avisos-heading h2 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 2.05rem;
+    font-weight: 800;
+    color: #f8fbff;
+    letter-spacing: -0.02em;
+  }
+
+  .avisos-heading h2 i {
+    color: #5ea0ff;
+  }
+
+  .avisos-heading p {
+    margin: 10px 0 0;
+    color: rgba(221, 232, 255, 0.78);
+    font-size: 0.98rem;
+    line-height: 1.65;
+    max-width: 700px;
+  }
+
+  .avisos-actions-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .btn-back-avisos,
+  .btn-create-aviso {
+    border-radius: 14px;
+    padding: 11px 18px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    text-decoration: none;
+    transition: all 0.25s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-back-avisos {
+    color: #dbe9ff;
+    border: 1px solid rgba(135, 164, 255, 0.24);
+    background: rgba(255, 255, 255, 0.04);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+  }
+
+  .btn-back-avisos:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(135, 164, 255, 0.4);
+    transform: translateY(-1px);
+  }
+
+  .btn-create-aviso {
+    color: #ffffff;
+    border: 1px solid rgba(22, 163, 74, 0.55);
+    background: linear-gradient(135deg, #16a34a, #22c55e);
+    box-shadow: 0 12px 24px rgba(34, 197, 94, 0.22);
+  }
+
+  .btn-create-aviso:hover {
+    color: #ffffff;
+    transform: translateY(-2px);
+    box-shadow: 0 16px 30px rgba(34, 197, 94, 0.3);
+  }
+
+  .avisos-info-bar {
+    margin-bottom: 22px;
+    padding: 16px 18px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, rgba(13, 110, 253, 0.10), rgba(111, 66, 193, 0.10));
+    border: 1px solid rgba(122, 152, 255, 0.18);
+    box-shadow: 0 16px 30px rgba(0, 0, 0, 0.14);
+    backdrop-filter: blur(10px);
+    color: rgba(224, 234, 255, 0.82);
+    font-size: 0.95rem;
+  }
+
+  .avisos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 22px;
+  }
+
+  .aviso-card {
+    background: #ffffff;
+    border: 1px solid rgba(223, 228, 237, 0.95);
+    border-radius: 22px;
+    box-shadow: 0 14px 34px rgba(15, 23, 42, 0.12);
+    transition: all 0.25s ease;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+    position: relative;
+  }
+
+  .aviso-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 4px;
+    background: linear-gradient(90deg, #0d6efd, #6f42c1, #8b5cf6);
+  }
+
+  .aviso-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.16);
+  }
+
+  .aviso-card-body {
+    padding: 22px 22px 14px;
+    flex-grow: 1;
+  }
+
+  .aviso-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #2563eb;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    padding: 6px 10px;
+    border-radius: 999px;
+    margin-bottom: 14px;
+  }
+
+  .aviso-title {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: #101828;
+    line-height: 1.35;
+    margin-bottom: 12px;
+    word-break: break-word;
+  }
+
+  .aviso-text {
+    color: #475467;
+    line-height: 1.72;
+    font-size: 0.97rem;
+    margin: 0;
+  }
+
+  .aviso-footer {
+    border-top: 1px solid #eef2f7;
+    padding: 14px 22px 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    background: #fcfdff;
+  }
+
+  .aviso-date {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #667085;
+    font-size: 0.88rem;
+    font-weight: 600;
+  }
+
+  .aviso-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .aviso-actions a {
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.9rem;
+    padding: 9px 14px;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .btn-edit-aviso {
+    background: #fff7ed;
+    color: #c2410c;
+    border: 1px solid #fdba74;
+  }
+
+  .btn-edit-aviso:hover {
+    background: #ffedd5;
+    color: #9a3412;
+    transform: translateY(-1px);
+  }
+
+  .btn-delete-aviso {
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fca5a5;
+  }
+
+  .btn-delete-aviso:hover {
+    background: #fee2e2;
+    color: #b91c1c;
+    transform: translateY(-1px);
+  }
+
+  .empty-avisos {
+    padding: 56px 24px;
+    text-align: center;
+    border-radius: 24px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.97), rgba(244,247,255,0.96));
+    border: 1px solid rgba(223, 228, 237, 0.95);
+    box-shadow: 0 18px 38px rgba(15, 23, 42, 0.12);
+  }
+
+  .empty-avisos .icon {
+    width: 82px;
+    height: 82px;
+    margin: 0 auto 16px;
+    border-radius: 22px;
+    display: grid;
+    place-items: center;
+    font-size: 2.3rem;
+    background: linear-gradient(135deg, #eff6ff, #eef2ff);
+    color: #2563eb;
+    box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.08);
+  }
+
+  .empty-avisos h3 {
+    margin: 0 0 10px;
+    font-size: 1.45rem;
+    font-weight: 800;
+    color: #101828;
+  }
+
+  .empty-avisos p {
+    margin: 0 auto 22px;
+    max-width: 560px;
+    color: #667085;
+    line-height: 1.7;
+  }
+
+  .empty-avisos .btn {
+    border-radius: 14px;
+    font-weight: 700;
+    padding: 11px 18px;
+  }
+
+  @media (max-width: 768px) {
+    .avisos-page {
+      padding: 18px 0 24px;
+    }
+
+    .avisos-heading h2 {
+      font-size: 1.7rem;
+    }
+
+    .avisos-actions-top {
+      width: 100%;
+    }
+
+    .btn-back-avisos,
+    .btn-create-aviso {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .aviso-card-body,
+    .aviso-footer {
+      padding-left: 18px;
+      padding-right: 18px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .avisos-heading h2 {
+      font-size: 1.5rem;
+    }
+
+    .avisos-heading p {
+      font-size: 0.93rem;
+    }
+
+    .aviso-title {
+      font-size: 1.08rem;
+    }
+
+    .aviso-actions a {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+</style>
+
+<div class="avisos-page">
+  <div class="avisos-topbar">
+    <div class="avisos-heading">
+      <h2><i class="bi bi-megaphone-fill"></i> Avisos Recientes</h2>
+      <p>Consulta los avisos más recientes publicados en tu plataforma y administra su contenido de forma rápida y ordenada.</p>
     </div>
 
-    {% if avisos %}
-        <div class="row row-cols-1 row-cols-md-2 g-4">
-            {% for aviso in avisos %}
-            <div class="col">
-                <div class="card shadow-sm h-100">
-                    <div class="card-body">
-                        <h5 class="card-title">{{ aviso.title }}</h5>
-                        <p class="card-text">{{ aviso.content | truncate(150) }}</p>
-                    </div>
-                    <div class="card-footer text-muted d-flex justify-content-between align-items-center">
-                        <small>🕒 {{ aviso.date.strftime('%d/%m/%Y %H:%M') }}</small>
-                        {% if current_user.role == 'admin' %}
-                        <div>
-                            <a href="{{ url_for('edit_aviso', aviso_id=aviso._id) }}" class="btn btn-sm btn-outline-warning me-1">Editar</a>
-                            <a href="{{ url_for('delete_aviso', aviso_id=aviso._id) }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Seguro que deseas eliminar este aviso?')">Eliminar</a>
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-    {% else %}
-        <div class="alert alert-info text-center mt-5" role="alert">
-            No hay avisos disponibles por el momento.
-        </div>
-    {% endif %}
-</div>
-<div class="mt-4 text-center">
-        <a href="{{ url_for('dashboard')}}" class="btn btn-outline-dark">
-          <i class="bi bi-arrow-left-circle"></i> Regresar
+    <div class="avisos-actions-top">
+      <a href="{{ url_for('dashboard') }}" class="btn-back-avisos">
+        <i class="bi bi-arrow-left-circle"></i>
+        Regresar
+      </a>
+
+      {% if current_user.role != 'usuario' %}
+        <a href="{{ url_for('create_aviso') }}" class="btn-create-aviso">
+          <i class="bi bi-plus-circle"></i>
+          Crear Aviso
         </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="avisos-info-bar">
+    Mantén informados a tus usuarios con avisos claros, visibles y actualizados dentro del sistema.
+  </div>
+
+  {% if avisos %}
+    <div class="avisos-grid">
+      {% for aviso in avisos %}
+        <article class="aviso-card">
+          <div class="aviso-card-body">
+            <div class="aviso-badge">
+              <i class="bi bi-bell-fill"></i>
+              Aviso
+            </div>
+
+            <h5 class="aviso-title">{{ aviso.title }}</h5>
+            <p class="aviso-text">{{ aviso.content | truncate(150) }}</p>
+          </div>
+
+          <div class="aviso-footer">
+            <div class="aviso-date">
+              <i class="bi bi-clock-history"></i>
+              {{ aviso.date.strftime('%d/%m/%Y %H:%M') }}
+            </div>
+
+            {% if current_user.role == 'admin' %}
+              <div class="aviso-actions">
+                <a href="{{ url_for('edit_aviso', aviso_id=aviso._id) }}" class="btn-edit-aviso">
+                  <i class="bi bi-pencil-square"></i>
+                  Editar
+                </a>
+
+                <a href="{{ url_for('delete_aviso', aviso_id=aviso._id) }}"
+                   class="btn-delete-aviso"
+                   onclick="return confirm('¿Seguro que deseas eliminar este aviso?')">
+                  <i class="bi bi-trash3"></i>
+                  Eliminar
+                </a>
+              </div>
+            {% endif %}
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-avisos">
+      <div class="icon">
+        <i class="bi bi-megaphone"></i>
+      </div>
+      <h3>No hay avisos disponibles</h3>
+      <p>Cuando se publiquen nuevos avisos aparecerán aquí para que puedas consultarlos fácilmente.</p>
+
+      {% if current_user.role != 'usuario' %}
+        <a href="{{ url_for('create_aviso') }}" class="btn btn-success">
+          <i class="bi bi-plus-circle me-1"></i>
+          Crear primer aviso
+        </a>
+      {% endif %}
+    </div>
+  {% endif %}
 </div>
 {% endblock %}
