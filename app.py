@@ -21,6 +21,8 @@ from io import BytesIO
 from pymongo import ReturnDocument
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
+import qrcode
+from flask import send_file, render_template_string
 
 load_dotenv()
 RECAPTCHA_SECRET_KEY = os.getenv("RECAPTCHA_SECRET_KEY")
@@ -2101,6 +2103,39 @@ def registrar_venta(page_id, items, payment_method,
     venta['_id'] = ins.inserted_id
     return venta
 
+def normalize_product_code(value: str) -> str:
+    v = (value or '').strip().upper()
+    v = re.sub(r'[^A-Z0-9\-_\.]', '', v)
+    return v
+
+def generate_product_code(page_id, title=''):
+    base = slugify(title or 'producto').upper().replace('-', '')
+    base = base[:8] if base else 'PRODUCTO'
+
+    while True:
+        rand = os.urandom(3).hex().upper()
+        code = f"{base}-{rand}"
+        exists = mongo.db.productos.find_one({
+            'page_id': ObjectId(str(page_id)),
+            'barcode': code
+        })
+        if not exists:
+            return code
+
+def barcode_exists(page_id, barcode, exclude_id=None):
+    if not barcode:
+        return False
+
+    q = {
+        'page_id': ObjectId(str(page_id)),
+        'barcode': barcode
+    }
+
+    if exclude_id:
+        q['_id'] = {'$ne': ObjectId(str(exclude_id))}
+
+    return mongo.db.productos.find_one(q) is not None
+
 # productos
 @app.route('/productos')
 @require_active_subscription
@@ -2145,8 +2180,8 @@ def create_producto():
         show_price = 'show_price' in request.form
         tipo = (request.form.get('tipo') or 'producto').strip().lower()
 
-        sku = (request.form.get('sku') or '').strip().upper()
-        barcode = (request.form.get('barcode') or '').strip()
+        sku = normalize_product_code(request.form.get('sku'))
+        barcode = normalize_product_code(request.form.get('barcode'))
         stock = parse_int(request.form.get('stock'), 0)
         min_stock = parse_int(request.form.get('min_stock'), 0)
         track_inventory = request.form.get('track_inventory') == 'on'
@@ -2154,6 +2189,15 @@ def create_producto():
 
         if not title:
             flash('El título es obligatorio.', 'warning')
+            return redirect(url_for('create_producto'))
+
+        # Si no mandaron barcode, se genera automáticamente
+        if not barcode:
+            barcode = generate_product_code(page_id, title)
+
+        # Evitar duplicados por sitio
+        if barcode_exists(page_id, barcode):
+            flash('Ese código de barras / QR ya existe en este sitio.', 'danger')
             return redirect(url_for('create_producto'))
 
         image_file = request.files.get('image')
@@ -2176,13 +2220,14 @@ def create_producto():
         mongo.db.productos.insert_one({
             'title': title,
             'description': description,
-            'price': money2(price),  # price se queda como único precio
+            'price': money2(price),
             'image': image_path,
             'page_id': page_id,
             'show_price': show_price,
             'tipo': tipo,
             'sku': sku,
             'barcode': barcode,
+            'qr_value': barcode,   # QR reutiliza el mismo valor para POS
             'stock': stock,
             'min_stock': min_stock,
             'track_inventory': track_inventory,
@@ -2222,8 +2267,8 @@ def edit_producto(producto_id):
         show_price = 'show_price' in request.form
         tipo = (request.form.get('tipo') or 'producto').strip().lower()
 
-        sku = (request.form.get('sku') or '').strip().upper()
-        barcode = (request.form.get('barcode') or '').strip()
+        sku = normalize_product_code(request.form.get('sku'))
+        barcode = normalize_product_code(request.form.get('barcode'))
         stock = parse_int(request.form.get('stock'), 0)
         min_stock = parse_int(request.form.get('min_stock'), 0)
         track_inventory = request.form.get('track_inventory') == 'on'
@@ -2246,6 +2291,13 @@ def edit_producto(producto_id):
 
             image_path = f"{slug}/{today}/{final_filename}"
 
+        if not barcode:
+            barcode = generate_product_code(page_id, title or producto.get('title'))
+
+        if barcode_exists(page_id, barcode, exclude_id=producto_id):
+            flash('Ese código de barras / QR ya existe en este sitio.', 'danger')
+            return redirect(url_for('edit_producto', producto_id=producto_id))
+
         mongo.db.productos.update_one(
             {'_id': ObjectId(producto_id), 'page_id': page_id},
             {'$set': {
@@ -2257,6 +2309,7 @@ def edit_producto(producto_id):
                 'tipo': tipo,
                 'sku': sku,
                 'barcode': barcode,
+                'qr_value': barcode,
                 'stock': stock,
                 'min_stock': min_stock,
                 'track_inventory': track_inventory,
@@ -2270,6 +2323,258 @@ def edit_producto(producto_id):
 
     tipos_posibles = ['producto', 'servicio']
     return render_template('edit_producto.html', producto=producto, tipos_posibles=tipos_posibles)
+
+@app.route('/api/productos/generate-code')
+@require_active_subscription
+@login_required
+def api_generate_producto_code():
+    page_id = get_current_page_id()
+    if not page_id:
+        return {'ok': False, 'message': 'Sitio no seleccionado'}, 400
+
+    title = (request.args.get('title') or '').strip()
+    code = generate_product_code(page_id, title)
+    return {'ok': True, 'code': code}
+
+@app.route('/api/productos/find-by-code')
+@require_active_subscription
+@login_required
+def api_find_producto_by_code():
+    page_id = get_current_page_id()
+    if not page_id:
+        return {'ok': False, 'message': 'Sitio no seleccionado'}, 400
+
+    code = normalize_product_code(request.args.get('code'))
+    if not code:
+        return {'ok': False, 'message': 'Código vacío'}, 400
+
+    producto = mongo.db.productos.find_one({
+        'page_id': page_id,
+        'barcode': code,
+        'active': {'$ne': False}
+    })
+
+    if not producto:
+        return {'ok': False, 'message': 'Producto no encontrado'}, 404
+
+    return {
+        'ok': True,
+        'producto': {
+            'id': str(producto['_id']),
+            'title': producto.get('title'),
+            'price': float(producto.get('price', 0)),
+            'barcode': producto.get('barcode', ''),
+            'sku': producto.get('sku', ''),
+            'stock': int(producto.get('stock', 0)),
+            'min_stock': int(producto.get('min_stock', 0)),
+            'track_inventory': bool(producto.get('track_inventory', False)),
+            'active': bool(producto.get('active', True)),
+        }
+    }
+
+@app.route('/productos/<producto_id>/qr.png')
+@require_active_subscription
+@login_required
+def producto_qr(producto_id):
+    page_id = get_current_page_id()
+    if not page_id:
+        flash('Selecciona un sitio.')
+        return redirect(url_for('sites'))
+
+    producto = mongo.db.productos.find_one({
+        '_id': ObjectId(producto_id),
+        'page_id': page_id
+    })
+
+    if not producto:
+        flash('Producto no encontrado.', 'warning')
+        return redirect(url_for('list_productos'))
+
+    qr_value = producto.get('qr_value') or producto.get('barcode')
+    if not qr_value:
+        qr_value = generate_product_code(page_id, producto.get('title'))
+        mongo.db.productos.update_one(
+            {'_id': producto['_id'], 'page_id': page_id},
+            {'$set': {
+                'barcode': qr_value,
+                'qr_value': qr_value,
+                'updated_at': datetime.utcnow()
+            }}
+        )
+
+    qr = qrcode.QRCode(
+        version=1,
+        box_size=10,
+        border=4
+    )
+    qr.add_data(qr_value)
+    qr.make(fit=True)
+
+    img = qr.make_image(fill_color="black", back_color="white")
+    buffer = BytesIO()
+    img.save(buffer, format='PNG')
+    buffer.seek(0)
+
+    return send_file(
+        buffer,
+        mimetype='image/png',
+        as_attachment=False,
+        download_name=f"{producto.get('title', 'producto')}_qr.png"
+    )
+
+@app.route('/productos/<producto_id>/qr-label')
+@require_active_subscription
+@login_required
+def producto_qr_label(producto_id):
+    page_id = get_current_page_id()
+    if not page_id:
+        flash('Selecciona un sitio.')
+        return redirect(url_for('sites'))
+
+    producto = mongo.db.productos.find_one({
+        '_id': ObjectId(producto_id),
+        'page_id': page_id
+    })
+
+    if not producto:
+        flash('Producto no encontrado.', 'warning')
+        return redirect(url_for('list_productos'))
+
+    qr_url = url_for('producto_qr', producto_id=producto_id)
+
+    return render_template_string("""
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+      <meta charset="UTF-8">
+      <title>Etiqueta QR</title>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          background: #f5f7fb;
+          padding: 24px;
+        }
+        .label {
+          width: 360px;
+          background: white;
+          border: 1px solid #dbe3ef;
+          border-radius: 18px;
+          padding: 20px;
+          box-shadow: 0 12px 28px rgba(0,0,0,.08);
+        }
+        .title {
+          font-size: 20px;
+          font-weight: 800;
+          margin-bottom: 8px;
+          color: #111827;
+        }
+        .sub {
+          color: #475467;
+          margin-bottom: 14px;
+          font-size: 14px;
+        }
+        .price {
+          display: inline-block;
+          padding: 8px 14px;
+          border-radius: 999px;
+          background: #ecfdf3;
+          color: #15803d;
+          font-weight: 800;
+          border: 1px solid #bbf7d0;
+          margin-bottom: 16px;
+        }
+        .code {
+          margin-top: 12px;
+          font-size: 13px;
+          color: #475467;
+          word-break: break-all;
+        }
+        .qr {
+          text-align: center;
+          margin-top: 10px;
+        }
+        .qr img {
+          max-width: 220px;
+          width: 100%;
+        }
+        .print-btn {
+          margin-top: 18px;
+          display: inline-block;
+          padding: 10px 14px;
+          background: #2563eb;
+          color: white;
+          border-radius: 12px;
+          text-decoration: none;
+          font-weight: 700;
+        }
+        @media print {
+          .print-btn { display: none; }
+          body { background: white; padding: 0; }
+          .label { box-shadow: none; border: 1px solid #ccc; }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="label">
+        <div class="title">{{ producto.get('title', 'Producto') }}</div>
+        <div class="sub">
+          SKU: {{ producto.get('sku') or '—' }}
+        </div>
+
+        <div class="price">
+          $ {{ '%.2f'|format(producto.get('price', 0)|float) }}
+        </div>
+
+        <div class="qr">
+          <img src="{{ qr_url }}" alt="QR del producto">
+        </div>
+
+        <div class="code">
+          Código: {{ producto.get('barcode') or producto.get('qr_value') or '—' }}
+        </div>
+
+        <a href="#" onclick="window.print(); return false;" class="print-btn">
+          Imprimir etiqueta
+        </a>
+      </div>
+    </body>
+    </html>
+    """, producto=producto, qr_url=qr_url)
+
+@app.route('/productos/<producto_id>/ensure-code', methods=['POST'])
+@require_active_subscription
+@login_required
+def producto_ensure_code(producto_id):
+    page_id = get_current_page_id()
+    if not page_id:
+        flash('Selecciona un sitio.')
+        return redirect(url_for('sites'))
+
+    producto = mongo.db.productos.find_one({
+        '_id': ObjectId(producto_id),
+        'page_id': page_id
+    })
+
+    if not producto:
+        flash('Producto no encontrado.', 'warning')
+        return redirect(url_for('list_productos'))
+
+    barcode = normalize_product_code(producto.get('barcode'))
+    if not barcode:
+        barcode = generate_product_code(page_id, producto.get('title'))
+        mongo.db.productos.update_one(
+            {'_id': producto['_id'], 'page_id': page_id},
+            {'$set': {
+                'barcode': barcode,
+                'qr_value': barcode,
+                'updated_at': datetime.utcnow()
+            }}
+        )
+        flash('Código generado correctamente.', 'success')
+    else:
+        flash('Ese producto ya tiene código.', 'info')
+
+    return redirect(url_for('list_productos'))
 
 @app.route('/delete_producto/<producto_id>', methods=['POST'])
 @require_active_subscription

@@ -443,6 +443,42 @@
     transform: translateY(-1px);
   }
 
+  .btn-qr-item {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe !important;
+  }
+
+  .btn-qr-item:hover {
+    background: #dbeafe;
+    color: #1e40af;
+    transform: translateY(-1px);
+  }
+
+  .btn-print-item {
+    background: #f5f3ff;
+    color: #6d28d9;
+    border: 1px solid #ddd6fe !important;
+  }
+
+  .btn-print-item:hover {
+    background: #ede9fe;
+    color: #5b21b6;
+    transform: translateY(-1px);
+  }
+
+  .btn-generate-code {
+    background: #ecfdf3;
+    color: #15803d;
+    border: 1px solid #bbf7d0 !important;
+  }
+
+  .btn-generate-code:hover {
+    background: #dcfce7;
+    color: #166534;
+    transform: translateY(-1px);
+  }
+
   .btn-delete-item {
     background: #fef2f2;
     color: #dc2626;
@@ -550,7 +586,7 @@
       <h2><i class="bi bi-grid-1x2-fill"></i> Catálogo</h2>
       <p>
         Administra tu catálogo separado por productos y servicios con una vista más clara,
-        elegante y lista para inventario y punto de venta.
+        elegante y lista para inventario, códigos, QR y punto de venta.
       </p>
     </div>
 
@@ -600,6 +636,7 @@
     {% set track_inventory = producto.get('track_inventory', False) %}
     {% set active = producto.get('active', True) %}
     {% set low_stock = (not es_servicio) and track_inventory and (stock <= min_stock) %}
+
     <article class="catalogo-card">
       <div class="catalogo-image-wrap">
         <div class="catalogo-top-badges">
@@ -696,6 +733,25 @@
             Editar
           </a>
 
+          {% if producto.get('barcode') %}
+            <a href="{{ url_for('producto_qr', producto_id=producto._id) }}" target="_blank" class="btn-qr-item">
+              <i class="bi bi-qr-code"></i>
+              Ver QR
+            </a>
+
+            <a href="{{ url_for('producto_qr_label', producto_id=producto._id) }}" target="_blank" class="btn-print-item">
+              <i class="bi bi-printer"></i>
+              Imprimir etiqueta
+            </a>
+          {% else %}
+            <form action="{{ url_for('producto_ensure_code', producto_id=producto._id) }}" method="POST" class="delete-form">
+              <button type="submit" class="btn-generate-code">
+                <i class="bi bi-upc-scan"></i>
+                Generar código
+              </button>
+            </form>
+          {% endif %}
+
           <form action="{{ url_for('delete_producto', producto_id=producto._id) }}" method="POST" class="delete-form">
             <button
               type="submit"
@@ -733,7 +789,7 @@
       {% else %}
         <div class="empty-section">
           <h4>No hay productos registrados</h4>
-          <p>Cuando agregues productos físicos aparecerán aquí con su control de stock e información interna.</p>
+          <p>Cuando agregues productos físicos aparecerán aquí con su control de stock, código y opciones de QR.</p>
         </div>
       {% endif %}
     </section>

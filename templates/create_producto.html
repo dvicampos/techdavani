@@ -235,6 +235,83 @@
     line-height: 1.6;
   }
 
+  .barcode-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .barcode-row .form-control {
+    flex: 1 1 280px;
+  }
+
+  .btn-barcode-scan,
+  .btn-barcode-generate {
+    border-radius: 14px;
+    padding: 11px 16px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.25s ease;
+    white-space: nowrap;
+  }
+
+  .btn-barcode-scan {
+    border: 1px solid rgba(37, 99, 235, 0.28);
+    background: #eff6ff;
+    color: #1d4ed8;
+  }
+
+  .btn-barcode-scan:hover {
+    background: #dbeafe;
+    color: #1e40af;
+    transform: translateY(-1px);
+  }
+
+  .btn-barcode-generate {
+    border: 1px solid rgba(22, 163, 74, 0.28);
+    background: #ecfdf3;
+    color: #15803d;
+  }
+
+  .btn-barcode-generate:hover {
+    background: #dcfce7;
+    color: #166534;
+    transform: translateY(-1px);
+  }
+
+  .scan-status {
+    margin-top: 12px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    font-size: 0.9rem;
+    line-height: 1.55;
+    display: none;
+  }
+
+  .scan-status.show {
+    display: block;
+  }
+
+  .scan-status.is-info {
+    background: rgba(59, 130, 246, 0.08);
+    border: 1px dashed rgba(59, 130, 246, 0.24);
+    color: #1d4ed8;
+  }
+
+  .scan-status.is-success {
+    background: rgba(34, 197, 94, 0.10);
+    border: 1px dashed rgba(34, 197, 94, 0.24);
+    color: #166534;
+  }
+
+  .scan-status.is-error {
+    background: rgba(239, 68, 68, 0.10);
+    border: 1px dashed rgba(239, 68, 68, 0.24);
+    color: #991b1b;
+  }
+
   .actions-bar {
     margin-top: 26px;
     display: flex;
@@ -280,7 +357,7 @@
   }
 
   .hidden-soft {
-    display: none;
+    display: none !important;
   }
 
   @media (max-width: 768px) {
@@ -308,7 +385,9 @@
 
     .btn-cancel-product,
     .btn-save-product,
-    .btn-back-product {
+    .btn-back-product,
+    .btn-barcode-scan,
+    .btn-barcode-generate {
       width: 100%;
       justify-content: center;
     }
@@ -336,7 +415,7 @@
       <h2><i class="bi bi-bag-plus-fill"></i> Crear Producto</h2>
       <p>
         Agrega un nuevo producto o servicio a tu catálogo con una presentación más profesional,
-        mejor control interno y datos listos para inventario y punto de venta.
+        mejor control interno y datos listos para inventario, código y punto de venta.
       </p>
     </div>
 
@@ -349,7 +428,7 @@
   <div class="create-product-card">
     <div class="info-strip">
       <strong>Sugerencia:</strong> usa nombres claros, un precio correcto y, si es un producto físico,
-      agrega SKU, código y stock para que después puedas venderlo desde mostrador sin complicaciones.
+      agrega SKU, código y stock para que después puedas venderlo desde mostrador o por escaneo.
     </div>
 
     <form method="POST" enctype="multipart/form-data">
@@ -438,16 +517,34 @@
 
         <div>
           <div class="field-box">
-            <label for="barcode" class="form-label">Código de barras</label>
-            <input
-              type="text"
-              id="barcode"
-              name="barcode"
-              class="form-control"
-              placeholder="Ej. 7501234567890"
-              maxlength="120"
-            >
-            <div class="helper-text">Puedes usar EAN, UPC o cualquier código interno.</div>
+            <label for="barcode" class="form-label">Código de barras / QR</label>
+
+            <div class="barcode-row">
+              <input
+                type="text"
+                id="barcode"
+                name="barcode"
+                class="form-control"
+                placeholder="Escribe el código o escanéalo"
+                maxlength="120"
+              >
+
+              <button type="button" class="btn-barcode-scan" onclick="openScannerModal()">
+                <i class="bi bi-camera"></i>
+                Escanear
+              </button>
+
+              <button type="button" class="btn-barcode-generate" onclick="generateProductCode()">
+                <i class="bi bi-upc-scan"></i>
+                Generar código
+              </button>
+            </div>
+
+            <div class="helper-text">
+              Puedes usar EAN, UPC, QR interno o cualquier código compatible con tu operación.
+            </div>
+
+            <div id="barcodeStatus" class="scan-status"></div>
           </div>
         </div>
 
@@ -584,6 +681,38 @@
   </div>
 </div>
 
+<div class="modal fade" id="scannerModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content" style="border-radius:20px; overflow:hidden;">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="bi bi-camera me-2"></i>Escanear código
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="alert alert-info mb-3">
+          Coloca el código de barras o QR frente a la cámara para capturarlo automáticamente.
+        </div>
+
+        <div id="scanner-reader" style="width:100%; min-height:320px;"></div>
+
+        <div id="modalScanStatus" class="scan-status is-info show" style="margin-top:14px;">
+          Listo para escanear.
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/html5-qrcode"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function () {
     const tipoSelect = document.getElementById('tipo');
@@ -591,6 +720,33 @@
     const trackInventory = document.getElementById('track_inventory');
     const stockInput = document.getElementById('stock');
     const minStockInput = document.getElementById('min_stock');
+    const barcodeInput = document.getElementById('barcode');
+    const titleInput = document.getElementById('title');
+    const barcodeStatus = document.getElementById('barcodeStatus');
+    const scannerModalEl = document.getElementById('scannerModal');
+    const modalScanStatus = document.getElementById('modalScanStatus');
+
+    let scannerModal = null;
+    let currentScanner = null;
+
+    function setStatus(message, type = 'info', target = 'page') {
+      const el = target === 'modal' ? modalScanStatus : barcodeStatus;
+      if (!el) return;
+
+      el.className = 'scan-status show';
+      if (type === 'success') {
+        el.classList.add('is-success');
+      } else if (type === 'error') {
+        el.classList.add('is-error');
+      } else {
+        el.classList.add('is-info');
+      }
+      el.innerHTML = message;
+    }
+
+    function normalizeCodeValue(value) {
+      return (value || '').trim().toUpperCase().replace(/[^A-Z0-9\\-_\\.]/g, '');
+    }
 
     function syncInventorySection() {
       const isService = tipoSelect.value === 'servicio';
@@ -605,7 +761,90 @@
       }
     }
 
+    async function generateProductCode() {
+      const title = titleInput ? titleInput.value : '';
+
+      setStatus('Generando código...', 'info', 'page');
+
+      try {
+        const res = await fetch(`/api/productos/generate-code?title=${encodeURIComponent(title)}`);
+        const data = await res.json();
+
+        if (data.ok) {
+          barcodeInput.value = data.code;
+          setStatus(`Código generado correctamente: <strong>${data.code}</strong>`, 'success', 'page');
+        } else {
+          setStatus(data.message || 'No se pudo generar el código.', 'error', 'page');
+        }
+      } catch (e) {
+        setStatus('No se pudo generar el código.', 'error', 'page');
+      }
+    }
+
+    function stopScanner() {
+      if (currentScanner) {
+        currentScanner.stop()
+          .then(() => currentScanner.clear())
+          .catch(() => {})
+          .finally(() => {
+            currentScanner = null;
+          });
+      }
+    }
+
+    function startScanner() {
+      stopScanner();
+
+      currentScanner = new Html5Qrcode("scanner-reader");
+
+      currentScanner.start(
+        { facingMode: "environment" },
+        {
+          fps: 10,
+          qrbox: { width: 260, height: 180 }
+        },
+        (decodedText) => {
+          const cleanValue = normalizeCodeValue(decodedText);
+          barcodeInput.value = cleanValue;
+
+          setStatus(`Código escaneado: <strong>${cleanValue}</strong>`, 'success', 'page');
+          setStatus(`Código detectado correctamente: <strong>${cleanValue}</strong>`, 'success', 'modal');
+
+          stopScanner();
+          if (scannerModal) scannerModal.hide();
+        },
+        (errorMessage) => {
+          // silencioso
+        }
+      ).catch(() => {
+        setStatus('No se pudo acceder a la cámara.', 'error', 'modal');
+      });
+    }
+
+    window.openScannerModal = function () {
+      if (!window.bootstrap) {
+        alert('Bootstrap Modal no está disponible.');
+        return;
+      }
+
+      scannerModal = bootstrap.Modal.getOrCreateInstance(scannerModalEl);
+      scannerModal.show();
+      setStatus('Listo para escanear.', 'info', 'modal');
+
+      setTimeout(() => {
+        startScanner();
+      }, 350);
+    };
+
+    window.generateProductCode = generateProductCode;
+
     tipoSelect.addEventListener('change', syncInventorySection);
+
+    scannerModalEl?.addEventListener('hidden.bs.modal', function () {
+      stopScanner();
+      setStatus('Listo para escanear.', 'info', 'modal');
+    });
+
     syncInventorySection();
   });
 </script>

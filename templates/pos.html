@@ -52,7 +52,8 @@
   }
 
   .btn-pos-back,
-  .btn-pos-clear {
+  .btn-pos-clear,
+  .btn-pos-scan {
     border-radius: 14px;
     padding: 11px 18px;
     font-weight: 700;
@@ -90,6 +91,20 @@
     background: #ffedd5;
     color: #9a3412;
     transform: translateY(-1px);
+  }
+
+  .btn-pos-scan {
+    color: #166534;
+    border: 1px solid #86efac;
+    background: linear-gradient(135deg, #ecfdf3, #dcfce7);
+    box-shadow: 0 10px 22px rgba(34, 197, 94, 0.16);
+    cursor: pointer;
+  }
+
+  .btn-pos-scan:hover {
+    color: #14532d;
+    transform: translateY(-1px);
+    box-shadow: 0 14px 26px rgba(34, 197, 94, 0.22);
   }
 
   .pos-summary-strip {
@@ -219,11 +234,17 @@
     flex-direction: column;
     min-height: 100%;
     transition: all 0.25s ease;
+    position: relative;
   }
 
   .product-card:hover {
     transform: translateY(-3px);
     box-shadow: 0 18px 34px rgba(15, 23, 42, 0.12);
+  }
+
+  .product-card.product-highlight {
+    outline: 2px solid rgba(37, 99, 235, 0.35);
+    box-shadow: 0 0 0 0.3rem rgba(37, 99, 235, 0.10), 0 18px 34px rgba(15, 23, 42, 0.16);
   }
 
   .product-image {
@@ -593,6 +614,48 @@
     display: none !important;
   }
 
+  .scan-status {
+    margin-top: 10px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    font-size: 0.9rem;
+    line-height: 1.55;
+    display: none;
+  }
+
+  .scan-status.show {
+    display: block;
+  }
+
+  .scan-status.is-info {
+    background: rgba(59, 130, 246, 0.08);
+    border: 1px dashed rgba(59, 130, 246, 0.24);
+    color: #1d4ed8;
+  }
+
+  .scan-status.is-success {
+    background: rgba(34, 197, 94, 0.10);
+    border: 1px dashed rgba(34, 197, 94, 0.24);
+    color: #166534;
+  }
+
+  .scan-status.is-error {
+    background: rgba(239, 68, 68, 0.10);
+    border: 1px dashed rgba(239, 68, 68, 0.24);
+    color: #991b1b;
+  }
+
+  .scan-manual-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+  }
+
+  .scan-manual-row .form-control {
+    flex: 1 1 280px;
+  }
+
   @media (max-width: 1080px) {
     .pos-layout {
       grid-template-columns: 1fr;
@@ -618,13 +681,15 @@
     }
 
     .btn-pos-back,
-    .btn-pos-clear {
+    .btn-pos-clear,
+    .btn-pos-scan {
       width: 100%;
       justify-content: center;
     }
 
     .mix-row,
-    .product-meta {
+    .product-meta,
+    .scan-manual-row {
       grid-template-columns: 1fr;
     }
   }
@@ -655,6 +720,11 @@
     </div>
 
     <div class="pos-actions-top">
+      <button type="button" class="btn-pos-scan" id="openScannerBtn">
+        <i class="bi bi-camera"></i>
+        Escanear producto
+      </button>
+
       <button type="button" class="btn-pos-clear" id="clearAllBtn">
         <i class="bi bi-eraser"></i>
         Limpiar cantidades
@@ -683,6 +753,8 @@
   </div>
 
   <form method="POST" id="posForm">
+    <input type="hidden" id="scannedCodeBuffer">
+
     <div class="pos-layout">
       <div class="pos-main-card">
         <div class="section-title">
@@ -705,6 +777,8 @@
           </div>
         </div>
 
+        <div id="scanStatus" class="scan-status"></div>
+
         {% if productos %}
           <div class="products-grid" id="productsGrid">
             {% for p in productos %}
@@ -720,6 +794,7 @@
                 data-title="{{ p.get('title','Producto') }}"
                 data-price="{{ p.get('price', 0)|float }}"
                 data-product-id="{{ p._id }}"
+                data-barcode="{{ p.get('barcode','') }}"
               >
                 <div class="product-image">
                   <div class="product-top-badges">
@@ -981,6 +1056,50 @@
   </form>
 </div>
 
+<div class="modal fade" id="posScannerModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content" style="border-radius:20px; overflow:hidden;">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="bi bi-upc-scan me-2"></i>Escanear producto
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="alert alert-info mb-3">
+          Escanea el QR del producto o su código de barras para localizarlo y sumarlo automáticamente.
+        </div>
+
+        <div id="pos-scanner-reader" style="width:100%; min-height:320px;"></div>
+
+        <div class="scan-manual-row">
+          <input
+            type="text"
+            id="manualCodeInput"
+            class="form-control"
+            placeholder="O escribe el código manualmente"
+          >
+          <button type="button" class="btn btn-outline-primary" id="manualSearchBtn">
+            <i class="bi bi-search"></i> Buscar
+          </button>
+        </div>
+
+        <div id="modalScanStatus" class="scan-status is-info show" style="margin-top:14px;">
+          Listo para escanear o buscar manualmente.
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/html5-qrcode"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function () {
     const searchInput = document.getElementById('productSearch');
@@ -993,6 +1112,7 @@
     const paymentNote = document.getElementById('paymentNote');
     const clearAllBtn = document.getElementById('clearAllBtn');
     const submitBtn = document.getElementById('submitBtn');
+    const openScannerBtn = document.getElementById('openScannerBtn');
 
     const selectedItemsCount = document.getElementById('selectedItemsCount');
     const selectedCount = document.getElementById('selectedCount');
@@ -1000,9 +1120,46 @@
     const subtotalValue = document.getElementById('subtotalValue');
     const totalValue = document.getElementById('totalValue');
     const summaryStripTotal = document.getElementById('summaryStripTotal');
+    const scanStatus = document.getElementById('scanStatus');
+
+    const posScannerModalEl = document.getElementById('posScannerModal');
+    const manualCodeInput = document.getElementById('manualCodeInput');
+    const manualSearchBtn = document.getElementById('manualSearchBtn');
+    const modalScanStatus = document.getElementById('modalScanStatus');
+    const scannedCodeBuffer = document.getElementById('scannedCodeBuffer');
+
+    let posScanner = null;
+    let posScannerModal = null;
 
     function money(n) {
       return '$' + (Number(n || 0)).toFixed(2);
+    }
+
+    function normalizeCodeValue(value) {
+      return (value || '').trim().toUpperCase().replace(/[^A-Z0-9\\-_\\.]/g, '');
+    }
+
+    function setScanStatus(message, type = 'info', target = 'page') {
+      const el = target === 'modal' ? modalScanStatus : scanStatus;
+      if (!el) return;
+
+      el.className = 'scan-status show';
+      if (type === 'success') {
+        el.classList.add('is-success');
+      } else if (type === 'error') {
+        el.classList.add('is-error');
+      } else {
+        el.classList.add('is-info');
+      }
+
+      el.innerHTML = message;
+    }
+
+    function clearScanStatus() {
+      if (scanStatus) {
+        scanStatus.className = 'scan-status';
+        scanStatus.innerHTML = '';
+      }
     }
 
     function getTotal() {
@@ -1086,6 +1243,143 @@
       });
     }
 
+    function clearHighlights() {
+      productCards.forEach(card => card.classList.remove('product-highlight'));
+    }
+
+    function revealAllProducts() {
+      searchInput.value = '';
+      syncSearch();
+    }
+
+    function highlightCard(card) {
+      clearHighlights();
+      card.classList.add('product-highlight');
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+      setTimeout(() => {
+        card.classList.remove('product-highlight');
+      }, 2200);
+    }
+
+    function increaseProductQty(card, productTitle) {
+      const qtyInput = card.querySelector('.js-qty-input');
+      if (!qtyInput || qtyInput.disabled) {
+        setScanStatus(`El producto <strong>${productTitle}</strong> no está disponible para venta en este momento.`, 'error', 'page');
+        return false;
+      }
+
+      let currentQty = Number(qtyInput.value || 0);
+      const max = qtyInput.getAttribute('max');
+
+      if (max !== null && max !== '' && currentQty >= Number(max)) {
+        setScanStatus(`No hay más stock disponible para <strong>${productTitle}</strong>.`, 'error', 'page');
+        return false;
+      }
+
+      qtyInput.value = currentQty + 1;
+      qtyInput.dispatchEvent(new Event('input'));
+      highlightCard(card);
+
+      setScanStatus(`Se agregó <strong>${productTitle}</strong> a la venta.`, 'success', 'page');
+      return true;
+    }
+
+    async function searchProductByCode(code) {
+      const cleanCode = normalizeCodeValue(code);
+      if (!cleanCode) {
+        setScanStatus('Debes capturar un código válido.', 'error', 'modal');
+        return;
+      }
+
+      scannedCodeBuffer.value = cleanCode;
+      setScanStatus(`Buscando <strong>${cleanCode}</strong>...`, 'info', 'modal');
+
+      try {
+        const res = await fetch(`/api/productos/find-by-code?code=${encodeURIComponent(cleanCode)}`);
+        const data = await res.json();
+
+        if (!data.ok) {
+          setScanStatus(data.message || 'Producto no encontrado.', 'error', 'modal');
+          setScanStatus(data.message || 'Producto no encontrado.', 'error', 'page');
+          return;
+        }
+
+        const producto = data.producto;
+        revealAllProducts();
+
+        let found = false;
+
+        productCards.forEach(card => {
+          if (card.dataset.productId === producto.id) {
+            found = increaseProductQty(card, producto.title);
+          }
+        });
+
+        if (found) {
+          setScanStatus(`Producto encontrado: <strong>${producto.title}</strong>.`, 'success', 'modal');
+          if (posScannerModal) posScannerModal.hide();
+          manualCodeInput.value = '';
+        } else {
+          setScanStatus('El producto fue encontrado, pero no está disponible para venta.', 'error', 'modal');
+        }
+      } catch (e) {
+        setScanStatus('No se pudo buscar el producto.', 'error', 'modal');
+        setScanStatus('No se pudo buscar el producto.', 'error', 'page');
+      }
+    }
+
+    function stopPosScanner() {
+      if (posScanner) {
+        posScanner.stop()
+          .then(() => posScanner.clear())
+          .catch(() => {})
+          .finally(() => {
+            posScanner = null;
+          });
+      }
+    }
+
+    function startPosScanner() {
+      stopPosScanner();
+
+      posScanner = new Html5Qrcode("pos-scanner-reader");
+
+      posScanner.start(
+        { facingMode: "environment" },
+        {
+          fps: 10,
+          qrbox: { width: 260, height: 180 }
+        },
+        async (decodedText) => {
+          const cleanValue = normalizeCodeValue(decodedText);
+          stopPosScanner();
+          await searchProductByCode(cleanValue);
+        },
+        (errorMessage) => {
+          // silencioso
+        }
+      ).catch(() => {
+        setScanStatus('No se pudo acceder a la cámara.', 'error', 'modal');
+      });
+    }
+
+    function openScannerModal() {
+      if (!window.bootstrap) {
+        alert('Bootstrap Modal no está disponible.');
+        return;
+      }
+
+      posScannerModal = bootstrap.Modal.getOrCreateInstance(posScannerModalEl);
+      posScannerModal.show();
+
+      setScanStatus('Listo para escanear o buscar manualmente.', 'info', 'modal');
+
+      setTimeout(() => {
+        startPosScanner();
+      }, 350);
+    }
+
     searchInput?.addEventListener('input', syncSearch);
 
     qtyInputs.forEach(input => {
@@ -1121,7 +1415,30 @@
       });
       cashAmount.value = '0';
       digitalAmount.value = '0';
+      clearHighlights();
+      clearScanStatus();
       getTotal();
+    });
+
+    openScannerBtn?.addEventListener('click', function () {
+      openScannerModal();
+    });
+
+    manualSearchBtn?.addEventListener('click', async function () {
+      await searchProductByCode(manualCodeInput.value);
+    });
+
+    manualCodeInput?.addEventListener('keydown', async function (e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        await searchProductByCode(manualCodeInput.value);
+      }
+    });
+
+    posScannerModalEl?.addEventListener('hidden.bs.modal', function () {
+      stopPosScanner();
+      manualCodeInput.value = '';
+      setScanStatus('Listo para escanear o buscar manualmente.', 'info', 'modal');
     });
 
     document.getElementById('posForm')?.addEventListener('submit', function (e) {
@@ -1147,6 +1464,7 @@
 
     getTotal();
     syncSearch();
+    clearScanStatus();
   });
 </script>
 {% endblock %}
