@@ -2336,41 +2336,59 @@ def api_generate_producto_code():
     code = generate_product_code(page_id, title)
     return {'ok': True, 'code': code}
 
+from flask import jsonify
+
 @app.route('/api/productos/find-by-code')
 @require_active_subscription
+@current_site(required=True)
 @login_required
 def api_find_producto_by_code():
     page_id = get_current_page_id()
     if not page_id:
-        return {'ok': False, 'message': 'Sitio no seleccionado'}, 400
+        return jsonify({
+            "ok": False,
+            "message": "No hay sitio seleccionado."
+        }), 400
 
-    code = normalize_product_code(request.args.get('code'))
+    raw_code = (request.args.get('code') or '').strip()
+    code = raw_code.upper()
+
     if not code:
-        return {'ok': False, 'message': 'Código vacío'}, 400
+        return jsonify({
+            "ok": False,
+            "message": "Debes enviar un código."
+        }), 400
 
     producto = mongo.db.productos.find_one({
-        'page_id': page_id,
-        'barcode': code,
-        'active': {'$ne': False}
+        "page_id": page_id,
+        "active": True,
+        "$or": [
+            {"barcode": code},
+            {"barcode": raw_code},
+            {"sku": code},
+            {"sku": raw_code}
+        ]
     })
 
     if not producto:
-        return {'ok': False, 'message': 'Producto no encontrado'}, 404
+        return jsonify({
+            "ok": False,
+            "message": f"No se encontró producto con el código: {raw_code}"
+        }), 404
 
-    return {
-        'ok': True,
-        'producto': {
-            'id': str(producto['_id']),
-            'title': producto.get('title'),
-            'price': float(producto.get('price', 0)),
-            'barcode': producto.get('barcode', ''),
-            'sku': producto.get('sku', ''),
-            'stock': int(producto.get('stock', 0)),
-            'min_stock': int(producto.get('min_stock', 0)),
-            'track_inventory': bool(producto.get('track_inventory', False)),
-            'active': bool(producto.get('active', True)),
+    return jsonify({
+        "ok": True,
+        "producto": {
+            "id": str(producto["_id"]),
+            "title": producto.get("title", "Producto"),
+            "barcode": producto.get("barcode", ""),
+            "sku": producto.get("sku", ""),
+            "price": float(producto.get("price", 0) or 0),
+            "track_inventory": bool(producto.get("track_inventory", False)),
+            "stock": int(producto.get("stock", 0) or 0),
+            "active": bool(producto.get("active", True))
         }
-    }
+    }), 200
 
 @app.route('/productos/<producto_id>/qr.png')
 @require_active_subscription

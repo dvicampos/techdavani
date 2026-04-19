@@ -1365,7 +1365,7 @@
   </div>
 </div>
 
-<script src="https://unpkg.com/html5-qrcode"></script>
+<script src="https://unpkg.com/@zxing/library@latest"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function () {
     const searchInput = document.getElementById('productSearch');
@@ -1404,15 +1404,114 @@
     const modalScanStatus = document.getElementById('modalScanStatus');
     const scannedCodeBuffer = document.getElementById('scannedCodeBuffer');
 
-    let posScanner = null;
     let posScannerModal = null;
+    let zxingReader = null;
+    let zxingControls = null;
+    let scannerStarting = false;
+    let scannerBusy = false;
+    let lastDecodedValue = '';
+    let lastDecodedAt = 0;
+    let restartScannerTimer = null;
 
     function money(n) {
       return '$' + (Number(n || 0)).toFixed(2);
     }
 
+    function safeText(v) {
+      return String(v == null ? '' : v)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    function normalizeCompare(value) {
+      return String(value || '')
+        .replace(/[\u200B-\u200D\uFEFF]/g, '')
+        .replace(/\r?\n|\r/g, '')
+        .replace(/\s+/g, '')
+        .trim()
+        .toLowerCase();
+    }
+
+    function extractCodeFromScannedValue(value) {
+      let raw = String(value || '');
+
+      raw = raw
+        .replace(/[\u200B-\u200D\uFEFF]/g, '')
+        .replace(/\r?\n|\r/g, '')
+        .trim();
+
+      if (!raw) return '';
+
+      try {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') {
+          const candidate =
+            parsed.code ||
+            parsed.barcode ||
+            parsed.sku ||
+            parsed.id ||
+            parsed.product_id ||
+            parsed.productId ||
+            parsed.product_code ||
+            parsed.productCode ||
+            '';
+          if (candidate) return String(candidate).trim();
+        }
+      } catch (_) {}
+
+      try {
+        if (/^https?:\/\//i.test(raw)) {
+          const url = new URL(raw);
+
+          const candidate =
+            url.searchParams.get('code') ||
+            url.searchParams.get('barcode') ||
+            url.searchParams.get('sku') ||
+            url.searchParams.get('id') ||
+            url.searchParams.get('product_id') ||
+            '';
+
+          if (candidate) return String(candidate).trim();
+
+          const parts = url.pathname.split('/').filter(Boolean);
+          if (parts.length) {
+            return String(parts[parts.length - 1]).trim();
+          }
+        }
+      } catch (_) {}
+
+      return raw;
+    }
+
     function normalizeCodeValue(value) {
-      return (value || '').trim().toUpperCase().replace(/[^A-Z0-9\\-_\\.]/g, '');
+      return extractCodeFromScannedValue(value).trim();
+    }
+
+    function buildCodeCandidates(value) {
+      const raw = String(value || '').trim();
+      const normalized = normalizeCodeValue(raw);
+
+      const candidates = new Set();
+
+      if (raw) candidates.add(raw);
+      if (normalized) candidates.add(normalized);
+
+      const rawCompact = raw.replace(/\s+/g, '');
+      const normalizedCompact = normalized.replace(/\s+/g, '');
+
+      if (rawCompact) candidates.add(rawCompact);
+      if (normalizedCompact) candidates.add(normalizedCompact);
+
+      const rawLower = raw.toLowerCase();
+      const normLower = normalized.toLowerCase();
+
+      if (rawLower) candidates.add(rawLower);
+      if (normLower) candidates.add(normLower);
+
+      return [...candidates].filter(Boolean);
     }
 
     function setScanStatus(message, type = 'info', target = 'page') {
@@ -1420,6 +1519,7 @@
       if (!el) return;
 
       el.className = 'scan-status show';
+
       if (type === 'success') {
         el.classList.add('is-success');
       } else if (type === 'error') {
@@ -1436,6 +1536,39 @@
         scanStatus.className = 'scan-status';
         scanStatus.innerHTML = '';
       }
+    }
+
+    function cancelScannerRestart() {
+      if (restartScannerTimer) {
+        clearTimeout(restartScannerTimer);
+        restartScannerTimer = null;
+      }
+    }
+
+    function isScannerModalOpen() {
+      return !!(posScannerModalEl && posScannerModalEl.classList.contains('show'));
+    }
+
+    function scheduleScannerRestart(delay = 1600, message = 'Listo para volver a escanear.') {
+      cancelScannerRestart();
+
+      if (!isScannerModalOpen()) return;
+
+      restartScannerTimer = setTimeout(async () => {
+        if (!isScannerModalOpen()) return;
+
+        scannerBusy = false;
+        lastDecodedValue = '';
+        lastDecodedAt = 0;
+
+        if (manualCodeInput) {
+          manualCodeInput.value = '';
+          manualCodeInput.focus();
+        }
+
+        setScanStatus(message, 'info', 'modal');
+        await startPosScanner();
+      }, delay);
     }
 
     function renderSelectedItems() {
@@ -1456,16 +1589,16 @@
         html += `
           <div class="selected-item">
             <div>
-              <div class="selected-item-name">${title}</div>
-              <div class="selected-item-meta">Cant.: ${qty} · Código: ${code || '—'}</div>
+              <div class="selected-item-name">${safeText(title)}</div>
+              <div class="selected-item-meta">Cant.: ${qty} · Código: ${safeText(code || '—')}</div>
             </div>
             <div class="selected-item-total">${money(subtotal)}</div>
           </div>
         `;
       });
 
-      selectedItemsList.innerHTML = html;
-      selectedEmptyState.classList.toggle('hidden-soft', hasItems);
+      if (selectedItemsList) selectedItemsList.innerHTML = html;
+      if (selectedEmptyState) selectedEmptyState.classList.toggle('hidden-soft', hasItems);
     }
 
     function getTotal() {
@@ -1484,13 +1617,13 @@
         }
       });
 
-      selectedItemsCount.textContent = selected;
-      selectedCount.textContent = selected;
-      piecesCount.textContent = pieces;
-      subtotalValue.textContent = money(total);
-      totalValue.textContent = money(total);
-      summaryStripTotal.textContent = money(total);
-      mobileTotalValue.textContent = money(total);
+      if (selectedItemsCount) selectedItemsCount.textContent = selected;
+      if (selectedCount) selectedCount.textContent = selected;
+      if (piecesCount) piecesCount.textContent = pieces;
+      if (subtotalValue) subtotalValue.textContent = money(total);
+      if (totalValue) totalValue.textContent = money(total);
+      if (summaryStripTotal) summaryStripTotal.textContent = money(total);
+      if (mobileTotalValue) mobileTotalValue.textContent = money(total);
 
       renderSelectedItems();
       validatePayment(total);
@@ -1498,118 +1631,128 @@
     }
 
     function validatePayment(total) {
-      const method = paymentMethod.value;
+      const method = paymentMethod?.value || 'efectivo';
 
-      paymentNote.classList.remove('is-error');
-      mixFields.classList.add('hidden-soft');
-      cashFields.classList.add('hidden-soft');
+      if (paymentNote) paymentNote.classList.remove('is-error');
+      if (mixFields) mixFields.classList.add('hidden-soft');
+      if (cashFields) cashFields.classList.add('hidden-soft');
 
       if (method === 'mixto') {
-        mixFields.classList.remove('hidden-soft');
+        if (mixFields) mixFields.classList.remove('hidden-soft');
 
-        const cash = Number(cashAmount.value || 0);
-        const digital = Number(digitalAmount.value || 0);
+        const cash = Number(cashAmount?.value || 0);
+        const digital = Number(digitalAmount?.value || 0);
         const sum = cash + digital;
 
-        receivedAmount.value = '0';
-        changeAmount.value = '0.00';
+        if (receivedAmount) receivedAmount.value = '0';
+        if (changeAmount) changeAmount.value = '0.00';
 
         if (Math.abs(sum - total) > 0.009) {
-          paymentNote.classList.add('is-error');
-          paymentNote.innerHTML = `
-            En pago mixto, <strong>efectivo + digital</strong> debe ser igual al total de la venta.
-            <br>Total actual: <strong>${money(total)}</strong> · Capturado: <strong>${money(sum)}</strong>
-          `;
-          submitBtn.disabled = total <= 0 || total === 0;
+          if (paymentNote) {
+            paymentNote.classList.add('is-error');
+            paymentNote.innerHTML = `
+              En pago mixto, <strong>efectivo + digital</strong> debe ser igual al total de la venta.
+              <br>Total actual: <strong>${money(total)}</strong> · Capturado: <strong>${money(sum)}</strong>
+            `;
+          }
+          if (submitBtn) submitBtn.disabled = total <= 0;
         } else {
-          paymentNote.innerHTML = `
-            Pago mixto correcto.
-            <br>Total: <strong>${money(total)}</strong> · Capturado: <strong>${money(sum)}</strong>
-          `;
-          submitBtn.disabled = total <= 0;
+          if (paymentNote) {
+            paymentNote.innerHTML = `
+              Pago mixto correcto.
+              <br>Total: <strong>${money(total)}</strong> · Capturado: <strong>${money(sum)}</strong>
+            `;
+          }
+          if (submitBtn) submitBtn.disabled = total <= 0;
         }
-
         return;
       }
 
       if (method === 'efectivo') {
-        cashFields.classList.remove('hidden-soft');
+        if (cashFields) cashFields.classList.remove('hidden-soft');
 
-        const recibido = Number(receivedAmount.value || 0);
+        const recibido = Number(receivedAmount?.value || 0);
         const cambio = recibido - total;
 
-        changeAmount.value = cambio > 0 ? cambio.toFixed(2) : '0.00';
+        if (changeAmount) changeAmount.value = cambio > 0 ? cambio.toFixed(2) : '0.00';
 
-        cashAmount.value = '0';
-        digitalAmount.value = '0';
+        if (cashAmount) cashAmount.value = '0';
+        if (digitalAmount) digitalAmount.value = '0';
 
         if (total <= 0) {
-          paymentNote.innerHTML = `Selecciona productos para calcular el total.`;
-          submitBtn.disabled = true;
+          if (paymentNote) paymentNote.innerHTML = `Selecciona productos para calcular el total.`;
+          if (submitBtn) submitBtn.disabled = true;
           return;
         }
 
         if (recibido <= 0) {
-          paymentNote.classList.add('is-error');
-          paymentNote.innerHTML = `
-            Captura el <strong>monto recibido</strong> para calcular el cambio.
-            <br>Total actual: <strong>${money(total)}</strong>
-          `;
-          submitBtn.disabled = true;
+          if (paymentNote) {
+            paymentNote.classList.add('is-error');
+            paymentNote.innerHTML = `
+              Captura el <strong>monto recibido</strong> para calcular el cambio.
+              <br>Total actual: <strong>${money(total)}</strong>
+            `;
+          }
+          if (submitBtn) submitBtn.disabled = true;
           return;
         }
 
         if (recibido < total) {
-          paymentNote.classList.add('is-error');
-          paymentNote.innerHTML = `
-            El monto recibido es menor al total.
-            <br>Total: <strong>${money(total)}</strong> · Recibido: <strong>${money(recibido)}</strong>
-            <br>Faltan: <strong>${money(total - recibido)}</strong>
-          `;
-          submitBtn.disabled = true;
+          if (paymentNote) {
+            paymentNote.classList.add('is-error');
+            paymentNote.innerHTML = `
+              El monto recibido es menor al total.
+              <br>Total: <strong>${money(total)}</strong> · Recibido: <strong>${money(recibido)}</strong>
+              <br>Faltan: <strong>${money(total - recibido)}</strong>
+            `;
+          }
+          if (submitBtn) submitBtn.disabled = true;
           return;
         }
 
-        paymentNote.innerHTML = `
-          Cobro en <strong>efectivo</strong> correcto.
-          <br>Total: <strong>${money(total)}</strong> · Recibido: <strong>${money(recibido)}</strong>
-          <br>Cambio a devolver: <strong>${money(cambio)}</strong>
-        `;
-        submitBtn.disabled = false;
+        if (paymentNote) {
+          paymentNote.innerHTML = `
+            Cobro en <strong>efectivo</strong> correcto.
+            <br>Total: <strong>${money(total)}</strong> · Recibido: <strong>${money(recibido)}</strong>
+            <br>Cambio a devolver: <strong>${money(cambio)}</strong>
+          `;
+        }
+        if (submitBtn) submitBtn.disabled = false;
         return;
       }
 
-      cashAmount.value = '0';
-      digitalAmount.value = '0';
-      receivedAmount.value = '0';
-      changeAmount.value = '0.00';
+      if (cashAmount) cashAmount.value = '0';
+      if (digitalAmount) digitalAmount.value = '0';
+      if (receivedAmount) receivedAmount.value = '0';
+      if (changeAmount) changeAmount.value = '0.00';
 
-      if (method === 'transferencia') {
-        paymentNote.innerHTML = `Se registrará el total completo en <strong>transferencia</strong>.`;
-      } else if (method === 'tarjeta') {
-        paymentNote.innerHTML = `Se registrará el total completo en <strong>tarjeta</strong>.`;
-      } else {
-        paymentNote.innerHTML = `Se registrará el total completo en <strong>digital</strong>.`;
+      if (paymentNote) {
+        if (method === 'transferencia') {
+          paymentNote.innerHTML = `Se registrará el total completo en <strong>transferencia</strong>.`;
+        } else if (method === 'tarjeta') {
+          paymentNote.innerHTML = `Se registrará el total completo en <strong>tarjeta</strong>.`;
+        } else {
+          paymentNote.innerHTML = `Se registrará el total completo en <strong>digital</strong>.`;
+        }
       }
 
-      submitBtn.disabled = total <= 0;
+      if (submitBtn) submitBtn.disabled = total <= 0;
     }
 
     function syncSearch() {
-      const q = (searchInput.value || '').trim().toLowerCase();
+      const q = (searchInput?.value || '').trim().toLowerCase();
       let visible = 0;
 
       productCards.forEach(card => {
-        const hay = card.dataset.search || '';
+        const hay = String(card.dataset.search || '').toLowerCase();
         const shouldHide = q && !hay.includes(q);
+
         card.classList.toggle('hidden-soft', shouldHide);
         if (!shouldHide) visible += 1;
       });
 
-      visibleResultsCount.textContent = visible;
-      if (productsEmptyState) {
-        productsEmptyState.classList.toggle('hidden-soft', visible > 0);
-      }
+      if (visibleResultsCount) visibleResultsCount.textContent = visible;
+      if (productsEmptyState) productsEmptyState.classList.toggle('hidden-soft', visible > 0);
     }
 
     function clearHighlights() {
@@ -1617,7 +1760,7 @@
     }
 
     function revealAllProducts() {
-      searchInput.value = '';
+      if (searchInput) searchInput.value = '';
       syncSearch();
     }
 
@@ -1633,8 +1776,9 @@
 
     function increaseProductQty(card, productTitle) {
       const qtyInput = card.querySelector('.js-qty-input');
+
       if (!qtyInput || qtyInput.disabled) {
-        setScanStatus(`El producto <strong>${productTitle}</strong> no está disponible para venta en este momento.`, 'error', 'page');
+        setScanStatus(`El producto <strong>${safeText(productTitle)}</strong> no está disponible para venta en este momento.`, 'error', 'page');
         return false;
       }
 
@@ -1642,7 +1786,7 @@
       const max = qtyInput.getAttribute('max');
 
       if (max !== null && max !== '' && currentQty >= Number(max)) {
-        setScanStatus(`No hay más stock disponible para <strong>${productTitle}</strong>.`, 'error', 'page');
+        setScanStatus(`No hay más stock disponible para <strong>${safeText(productTitle)}</strong>.`, 'error', 'page');
         return false;
       }
 
@@ -1650,85 +1794,251 @@
       qtyInput.dispatchEvent(new Event('input'));
       highlightCard(card);
 
-      setScanStatus(`Se agregó <strong>${productTitle}</strong> a la venta.`, 'success', 'page');
+      setScanStatus(`Se agregó <strong>${safeText(productTitle)}</strong> a la venta.`, 'success', 'page');
       return true;
     }
 
+    function findCardByDirectCode(code) {
+      const wanted = normalizeCompare(code);
+      if (!wanted) return null;
+
+      for (const card of productCards) {
+        const cardId = normalizeCompare(card.dataset.productId || '');
+        const cardBarcode = normalizeCompare(card.dataset.barcode || '');
+        const cardSearch = String(card.dataset.search || '').toLowerCase();
+        const tokens = cardSearch.split(/\s+/).map(normalizeCompare).filter(Boolean);
+
+        if (cardId && cardId === wanted) return card;
+        if (cardBarcode && cardBarcode === wanted) return card;
+        if (tokens.includes(wanted)) return card;
+      }
+
+      return null;
+    }
+
+    function findMatchingCard(producto, scannedCode = '') {
+      const candidates = [
+        producto?.id,
+        producto?._id,
+        producto?.barcode,
+        producto?.sku,
+        scannedCode
+      ].filter(Boolean);
+
+      for (const candidate of candidates) {
+        const card = findCardByDirectCode(candidate);
+        if (card) return card;
+      }
+
+      return null;
+    }
+
     async function searchProductByCode(code) {
-      const cleanCode = normalizeCodeValue(code);
-      if (!cleanCode) {
+      const candidates = buildCodeCandidates(code);
+
+      if (!candidates.length) {
         setScanStatus('Debes capturar un código válido.', 'error', 'modal');
+        scheduleScannerRestart(1400, 'Listo para volver a escanear.');
         return;
       }
 
-      scannedCodeBuffer.value = cleanCode;
-      setScanStatus(`Buscando <strong>${cleanCode}</strong>...`, 'info', 'modal');
+      if (scannedCodeBuffer) scannedCodeBuffer.value = candidates[0];
+
+      setScanStatus(
+        `Buscando:<br><strong>${safeText(candidates.join(' / '))}</strong>`,
+        'info',
+        'modal'
+      );
+
+      revealAllProducts();
+
+      for (const candidate of candidates) {
+        const localCard = findCardByDirectCode(candidate);
+
+        if (localCard) {
+          const localTitle = localCard.dataset.title || 'Producto';
+          const ok = increaseProductQty(localCard, localTitle);
+
+          if (ok) {
+            cancelScannerRestart();
+            setScanStatus(`Producto encontrado localmente: <strong>${safeText(localTitle)}</strong>.`, 'success', 'modal');
+            if (manualCodeInput) manualCodeInput.value = '';
+            if (posScannerModal) posScannerModal.hide();
+            return;
+          } else {
+            setScanStatus(`Se encontró <strong>${safeText(localTitle)}</strong>, pero no está disponible para venta.`, 'error', 'modal');
+            scheduleScannerRestart(1700, 'Producto no disponible. Listo para volver a escanear.');
+            return;
+          }
+        }
+      }
+
+      for (const candidate of candidates) {
+        try {
+          const res = await fetch(`/api/productos/find-by-code?code=${encodeURIComponent(candidate)}`, {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' }
+          });
+
+          let data = {};
+          try {
+            data = await res.json();
+          } catch (_) {
+            data = {};
+          }
+
+          if (!res.ok || !data.ok) continue;
+
+          const producto = data.producto || {};
+          const card = findMatchingCard(producto, candidate);
+
+          if (!card) continue;
+
+          const ok = increaseProductQty(card, producto.title || card.dataset.title || 'Producto');
+
+          if (ok) {
+            cancelScannerRestart();
+            setScanStatus(`Producto encontrado: <strong>${safeText(producto.title || 'Producto')}</strong>.`, 'success', 'modal');
+            if (manualCodeInput) manualCodeInput.value = '';
+            if (posScannerModal) posScannerModal.hide();
+            return;
+          } else {
+            setScanStatus('El producto fue encontrado, pero no está disponible para venta.', 'error', 'modal');
+            scheduleScannerRestart(1700, 'Producto no disponible. Listo para volver a escanear.');
+            return;
+          }
+        } catch (err) {
+          console.error('Error buscando producto por código:', err);
+        }
+      }
+
+      setScanStatus(
+        `No existe un producto con ese código.<br><strong>${safeText(candidates[0])}</strong>`,
+        'error',
+        'modal'
+      );
+      setScanStatus('No existe un producto con ese código.', 'error', 'page');
+
+      scheduleScannerRestart(1700, 'No existe ese código. Listo para volver a escanear.');
+    }
+
+    function ensureScannerVideo() {
+      const reader = document.getElementById('pos-scanner-reader');
+      if (!reader) return null;
+
+      reader.innerHTML = `
+        <video
+          id="pos-scanner-video"
+          autoplay
+          muted
+          playsinline
+          style="width:100%; min-height:320px; border-radius:14px; background:#000; object-fit:cover;"
+        ></video>
+      `;
+
+      return document.getElementById('pos-scanner-video');
+    }
+
+    async function stopPosScanner() {
+      scannerStarting = false;
+
+      if (zxingControls && typeof zxingControls.stop === 'function') {
+        try { zxingControls.stop(); } catch (_) {}
+      }
+      zxingControls = null;
+
+      if (zxingReader && typeof zxingReader.reset === 'function') {
+        try { zxingReader.reset(); } catch (_) {}
+      }
+      zxingReader = null;
+
+      const reader = document.getElementById('pos-scanner-reader');
+      if (reader) {
+        reader.innerHTML = `
+          <div style="min-height:320px; display:grid; place-items:center; color:#64748b; background:#f8fafc; border-radius:14px;">
+            Cámara detenida
+          </div>
+        `;
+      }
+    }
+
+    async function getPreferredCameraId() {
+      try {
+        const tempStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: 'environment' } },
+          audio: false
+        });
+        tempStream.getTracks().forEach(t => t.stop());
+      } catch (_) {}
+
+      const tempReader = new ZXing.BrowserMultiFormatReader();
+      const devices = await tempReader.listVideoInputDevices();
+
+      if (!devices || !devices.length) {
+        throw new Error('No se encontraron cámaras disponibles.');
+      }
+
+      const preferred =
+        devices.find(d => /back|rear|environment|trasera|trase/i.test(d.label || '')) ||
+        devices[0];
+
+      return preferred.deviceId;
+    }
+
+    async function startPosScanner() {
+      if (scannerStarting) return;
+      if (!isScannerModalOpen()) return;
+
+      scannerStarting = true;
+      scannerBusy = false;
 
       try {
-        const res = await fetch(`/api/productos/find-by-code?code=${encodeURIComponent(cleanCode)}`);
-        const data = await res.json();
+        await stopPosScanner();
+        ensureScannerVideo();
 
-        if (!data.ok) {
-          setScanStatus(data.message || 'Producto no encontrado.', 'error', 'modal');
-          setScanStatus(data.message || 'Producto no encontrado.', 'error', 'page');
-          return;
-        }
+        const deviceId = await getPreferredCameraId();
+        zxingReader = new ZXing.BrowserMultiFormatReader();
 
-        const producto = data.producto;
-        revealAllProducts();
+        zxingControls = await zxingReader.decodeFromVideoDevice(
+          deviceId,
+          'pos-scanner-video',
+          async (result, err) => {
+            if (result) {
+              const raw = result.getText ? result.getText() : String(result.text || result);
+              const now = Date.now();
+              const normalized = normalizeCompare(raw);
 
-        let found = false;
+              if (!normalized) return;
+              if (scannerBusy) return;
+              if (normalized === lastDecodedValue && (now - lastDecodedAt) < 2500) return;
 
-        productCards.forEach(card => {
-          if (card.dataset.productId === producto.id) {
-            found = increaseProductQty(card, producto.title);
+              lastDecodedValue = normalized;
+              lastDecodedAt = now;
+              scannerBusy = true;
+
+              setScanStatus(
+                `Código detectado:<br><strong>${safeText(raw)}</strong>`,
+                'info',
+                'modal'
+              );
+
+              await stopPosScanner();
+              await searchProductByCode(raw);
+            }
+
+            if (err && !(err instanceof ZXing.NotFoundException)) {
+              console.log('ZXING scan warning:', err);
+            }
           }
-        });
+        );
 
-        if (found) {
-          setScanStatus(`Producto encontrado: <strong>${producto.title}</strong>.`, 'success', 'modal');
-          if (posScannerModal) posScannerModal.hide();
-          manualCodeInput.value = '';
-        } else {
-          setScanStatus('El producto fue encontrado, pero no está disponible para venta.', 'error', 'modal');
-        }
-      } catch (e) {
-        setScanStatus('No se pudo buscar el producto.', 'error', 'modal');
-        setScanStatus('No se pudo buscar el producto.', 'error', 'page');
+        setScanStatus('Escáner activo. Apunta directamente al QR o código de barras.', 'info', 'modal');
+      } catch (err) {
+        console.error('ZXing scanner error:', err);
+        setScanStatus('No se pudo iniciar el lector. Revisa permisos de cámara o prueba de nuevo.', 'error', 'modal');
+      } finally {
+        scannerStarting = false;
       }
-    }
-
-    function stopPosScanner() {
-      if (posScanner) {
-        posScanner.stop()
-          .then(() => posScanner.clear())
-          .catch(() => {})
-          .finally(() => {
-            posScanner = null;
-          });
-      }
-    }
-
-    function startPosScanner() {
-      stopPosScanner();
-
-      posScanner = new Html5Qrcode("pos-scanner-reader");
-
-      posScanner.start(
-        { facingMode: "environment" },
-        {
-          fps: 10,
-          qrbox: { width: 260, height: 180 }
-        },
-        async (decodedText) => {
-          const cleanValue = normalizeCodeValue(decodedText);
-          stopPosScanner();
-          await searchProductByCode(cleanValue);
-        },
-        () => {}
-      ).catch(() => {
-        setScanStatus('No se pudo acceder a la cámara.', 'error', 'modal');
-      });
     }
 
     function openScannerModal() {
@@ -1737,14 +2047,16 @@
         return;
       }
 
+      cancelScannerRestart();
+
       posScannerModal = bootstrap.Modal.getOrCreateInstance(posScannerModalEl);
       posScannerModal.show();
 
-      setScanStatus('Listo para escanear o buscar manualmente.', 'info', 'modal');
+      setScanStatus('Preparando cámara...', 'info', 'modal');
 
       setTimeout(() => {
         startPosScanner();
-      }, 350);
+      }, 500);
     }
 
     searchInput?.addEventListener('input', syncSearch);
@@ -1770,19 +2082,19 @@
       });
     });
 
-    paymentMethod.addEventListener('change', function () {
+    paymentMethod?.addEventListener('change', function () {
       getTotal();
     });
 
-    cashAmount.addEventListener('input', function () {
+    cashAmount?.addEventListener('input', function () {
       getTotal();
     });
 
-    digitalAmount.addEventListener('input', function () {
+    digitalAmount?.addEventListener('input', function () {
       getTotal();
     });
 
-    receivedAmount.addEventListener('input', function () {
+    receivedAmount?.addEventListener('input', function () {
       getTotal();
     });
 
@@ -1790,10 +2102,12 @@
       qtyInputs.forEach(input => {
         if (!input.disabled) input.value = 0;
       });
-      cashAmount.value = '0';
-      digitalAmount.value = '0';
-      receivedAmount.value = '0';
-      changeAmount.value = '0.00';
+
+      if (cashAmount) cashAmount.value = '0';
+      if (digitalAmount) digitalAmount.value = '0';
+      if (receivedAmount) receivedAmount.value = '0';
+      if (changeAmount) changeAmount.value = '0.00';
+
       clearHighlights();
       clearScanStatus();
       getTotal();
@@ -1808,25 +2122,43 @@
     });
 
     manualSearchBtn?.addEventListener('click', async function () {
+      cancelScannerRestart();
+      scannerBusy = false;
       await searchProductByCode(manualCodeInput.value);
     });
 
     manualCodeInput?.addEventListener('keydown', async function (e) {
       if (e.key === 'Enter') {
         e.preventDefault();
+        cancelScannerRestart();
+        scannerBusy = false;
         await searchProductByCode(manualCodeInput.value);
       }
     });
 
-    posScannerModalEl?.addEventListener('hidden.bs.modal', function () {
-      stopPosScanner();
-      manualCodeInput.value = '';
+    posScannerModalEl?.addEventListener('shown.bs.modal', function () {
+      const closeBtn = posScannerModalEl.querySelector('.btn-close');
+      if (closeBtn) closeBtn.blur();
+    });
+
+    posScannerModalEl?.addEventListener('hidden.bs.modal', async function () {
+      cancelScannerRestart();
+      scannerBusy = false;
+      lastDecodedValue = '';
+      lastDecodedAt = 0;
+
+      await stopPosScanner();
+
+      if (manualCodeInput) manualCodeInput.value = '';
       setScanStatus('Listo para escanear o buscar manualmente.', 'info', 'modal');
+
+      const closeBtn = posScannerModalEl.querySelector('.btn-close');
+      if (closeBtn) closeBtn.blur();
     });
 
     document.getElementById('posForm')?.addEventListener('submit', function (e) {
       const total = getTotal();
-      const method = paymentMethod.value;
+      const method = paymentMethod?.value || 'efectivo';
 
       if (total <= 0) {
         e.preventDefault();
@@ -1835,8 +2167,8 @@
       }
 
       if (method === 'mixto') {
-        const cash = Number(cashAmount.value || 0);
-        const digital = Number(digitalAmount.value || 0);
+        const cash = Number(cashAmount?.value || 0);
+        const digital = Number(digitalAmount?.value || 0);
 
         if (Math.abs((cash + digital) - total) > 0.009) {
           e.preventDefault();
@@ -1846,7 +2178,7 @@
       }
 
       if (method === 'efectivo') {
-        const recibido = Number(receivedAmount.value || 0);
+        const recibido = Number(receivedAmount?.value || 0);
 
         if (recibido < total) {
           e.preventDefault();
