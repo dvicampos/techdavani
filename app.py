@@ -17,6 +17,10 @@ import requests
 from jinja2 import TemplateNotFound
 from urllib.parse import urlparse
 from datetime import datetime, date, timedelta
+from io import BytesIO
+from pymongo import ReturnDocument
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
 
 load_dotenv()
 RECAPTCHA_SECRET_KEY = os.getenv("RECAPTCHA_SECRET_KEY")
@@ -70,6 +74,15 @@ try:
     mongo.db.booking_exceptions.create_index([("page_id", 1), ("date", 1)], unique=True, name="ex_page_date_unique")
 except Exception as e:
     app.logger.warning(f"Index booking error: {e}")
+
+try:
+    mongo.db.productos.create_index([("page_id", 1), ("sku", 1)], name="prod_page_sku_idx")
+    mongo.db.productos.create_index([("page_id", 1), ("barcode", 1)], name="prod_page_barcode_idx")
+    mongo.db.ventas.create_index([("page_id", 1), ("created_at", -1)], name="sales_page_created_idx")
+    mongo.db.ventas.create_index([("page_id", 1), ("folio", 1)], unique=True, name="sales_page_folio_unique_idx")
+    mongo.db.counters.create_index([("_id", 1)], unique=True, name="counter_id_unique_idx")
+except Exception as e:
+    app.logger.warning(f"Index POS error: {e}")
 
 mail = Mail(app)
 bcrypt = Bcrypt(app)
@@ -1783,13 +1796,46 @@ def dashboard_slug(slug):
         "$or": [{"ends_at": None}, {"ends_at": {"$gte": now}}]
     }) if "promos" in mongo.db.list_collection_names() else 0
 
+    # =========================
+    # Ventas / POS
+    # =========================
+    start_today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    end_today = datetime.utcnow().replace(hour=23, minute=59, second=59, microsecond=999999)
+
+    ventas_total = mongo.db.ventas.count_documents({"page_id": page_id}) if "ventas" in mongo.db.list_collection_names() else 0
+    ventas_hoy_docs = list(mongo.db.ventas.find({
+        "page_id": page_id,
+        "status": "paid",
+        "created_at": {"$gte": start_today, "$lte": end_today}
+    })) if "ventas" in mongo.db.list_collection_names() else []
+
+    ventas_hoy = len(ventas_hoy_docs)
+    ingreso_hoy = money2(sum(money2(v.get("total", 0)) for v in ventas_hoy_docs))
+    efectivo_hoy = money2(sum(money2(v.get("cash_amount", 0)) for v in ventas_hoy_docs))
+    digital_hoy = money2(sum(money2(v.get("digital_amount", 0)) for v in ventas_hoy_docs))
+
+    stock_bajo = mongo.db.productos.count_documents({
+        "page_id": page_id,
+        "track_inventory": True,
+        "$expr": {"$lte": ["$stock", "$min_stock"]}
+    }) if "productos" in mongo.db.list_collection_names() else 0
+
+    ventas_recent = list(mongo.db.ventas.find({
+        "page_id": page_id
+    }).sort("created_at", -1).limit(10)) if "ventas" in mongo.db.list_collection_names() else []
+
     return render_template(
         'dashboard.html',
         page=page,
         stats=stats,
         recientes=recientes,
-
-        # extras
+        ventas_total=ventas_total,
+        ventas_hoy=ventas_hoy,
+        ingreso_hoy=ingreso_hoy,
+        efectivo_hoy=efectivo_hoy,
+        digital_hoy=digital_hoy,
+        stock_bajo=stock_bajo,
+        ventas_recent=ventas_recent,
         analytics=analytics,
         daily_views=daily,
         leads_total=leads_total,
@@ -1893,6 +1939,168 @@ def delete_aviso(aviso_id):
         flash('Aviso eliminado correctamente.')
     return redirect(url_for('list_avisos'))
 
+def parse_float(v, default=0.0):
+    try:
+        return float(v)
+    except Exception:
+        return default
+
+def parse_int(v, default=0):
+    try:
+        return int(v)
+    except Exception:
+        return default
+
+def money2(v):
+    return round(float(v or 0), 2)
+
+def next_sale_folio(page_id):
+    row = mongo.db.counters.find_one_and_update(
+        {'_id': f'sales:{str(page_id)}'},
+        {'$inc': {'seq': 1}},
+        upsert=True,
+        return_document=ReturnDocument.AFTER
+    )
+    seq = int(row.get('seq', 1))
+    return f"V-{seq:06d}"
+
+def get_producto_by_id_for_page(producto_id, page_id):
+    return mongo.db.productos.find_one({
+        '_id': ObjectId(str(producto_id)),
+        'page_id': ObjectId(str(page_id))
+    })
+
+def registrar_venta(page_id, items, payment_method,
+                    cash_amount=0, digital_amount=0,
+                    customer_name='', customer_phone='',
+                    notes='', tipo='mostrador'):
+    """
+    items esperado:
+    [
+      {"producto_id": "...", "qty": 2},
+      ...
+    ]
+    """
+    page_id = ObjectId(str(page_id))
+    if not items:
+        raise ValueError("No hay productos en la venta.")
+
+    sale_items = []
+    subtotal = 0.0
+    stock_rollback = []
+
+    for raw in items:
+        producto_id = raw.get('producto_id')
+        qty = parse_int(raw.get('qty'), 0)
+
+        if not producto_id or qty <= 0:
+            continue
+
+        producto = mongo.db.productos.find_one({
+            '_id': ObjectId(str(producto_id)),
+            'page_id': page_id,
+            'active': {'$ne': False}
+        })
+
+        if not producto:
+            raise ValueError("Uno de los productos no existe o no pertenece al sitio actual.")
+
+        title = producto.get('title', 'Producto')
+        price = money2(producto.get('price', 0))
+        sku = (producto.get('sku') or '').strip()
+        barcode = (producto.get('barcode') or '').strip()
+        track_inventory = bool(producto.get('track_inventory', False))
+
+        if track_inventory:
+            updated = mongo.db.productos.find_one_and_update(
+                {
+                    '_id': producto['_id'],
+                    'page_id': page_id,
+                    'stock': {'$gte': qty}
+                },
+                {
+                    '$inc': {'stock': -qty},
+                    '$set': {'updated_at': datetime.utcnow()}
+                },
+                return_document=ReturnDocument.AFTER
+            )
+
+            if not updated:
+                for rb in stock_rollback:
+                    mongo.db.productos.update_one(
+                        {'_id': rb['producto_id'], 'page_id': page_id},
+                        {'$inc': {'stock': rb['qty']}}
+                    )
+                raise ValueError(f"Stock insuficiente para {title}")
+
+            stock_rollback.append({
+                'producto_id': producto['_id'],
+                'qty': qty
+            })
+
+        line_subtotal = money2(price * qty)
+        subtotal += line_subtotal
+
+        sale_items.append({
+            'producto_id': producto['_id'],
+            'title': title,
+            'sku': sku,
+            'barcode': barcode,
+            'qty': qty,
+            'unit_price': price,
+            'subtotal': line_subtotal,
+            'track_inventory': track_inventory
+        })
+
+    if not sale_items:
+        raise ValueError("No hay productos válidos en la venta.")
+
+    subtotal = money2(subtotal)
+    discount = 0.0
+    total = money2(subtotal - discount)
+
+    cash_amount = money2(cash_amount)
+    digital_amount = money2(digital_amount)
+
+    if payment_method == 'efectivo':
+        cash_amount = total
+        digital_amount = 0.0
+    elif payment_method in ['transferencia', 'tarjeta', 'digital']:
+        cash_amount = 0.0
+        digital_amount = total
+    elif payment_method == 'mixto':
+        if money2(cash_amount + digital_amount) != total:
+            for rb in stock_rollback:
+                mongo.db.productos.update_one(
+                    {'_id': rb['producto_id'], 'page_id': page_id},
+                    {'$inc': {'stock': rb['qty']}}
+                )
+            raise ValueError("En pago mixto, efectivo + digital debe ser igual al total.")
+
+    venta = {
+        'page_id': page_id,
+        'folio': next_sale_folio(page_id),
+        'tipo': tipo,  # mostrador | catalogo
+        'status': 'paid',
+        'customer_name': customer_name.strip(),
+        'customer_phone': customer_phone.strip(),
+        'items': sale_items,
+        'subtotal': subtotal,
+        'discount': discount,
+        'total': total,
+        'payment_method': payment_method,
+        'cash_amount': cash_amount,
+        'digital_amount': digital_amount,
+        'notes': notes.strip(),
+        'created_by': ObjectId(current_user.id),
+        'created_at': datetime.utcnow(),
+        'updated_at': datetime.utcnow(),
+    }
+
+    ins = mongo.db.ventas.insert_one(venta)
+    venta['_id'] = ins.inserted_id
+    return venta
+
 # productos
 @app.route('/productos')
 @require_active_subscription
@@ -1903,8 +2111,20 @@ def list_productos():
         flash('Selecciona un sitio.')
         return redirect(url_for('sites'))
 
-    productos = list(mongo.db.productos.find({'page_id': page_id}))
-    return render_template('list_productos.html', productos=productos)
+    productos = list(
+        mongo.db.productos.find({'page_id': page_id}).sort('title', 1)
+    )
+
+    low_stock_count = sum(
+        1 for p in productos
+        if p.get('track_inventory') and int(p.get('stock', 0)) <= int(p.get('min_stock', 0))
+    )
+
+    return render_template(
+        'list_productos.html',
+        productos=productos,
+        low_stock_count=low_stock_count
+    )
 
 from werkzeug.utils import secure_filename
 import os
@@ -1913,23 +2133,32 @@ import os
 @require_active_subscription
 @login_required
 def create_producto():
-    user = mongo.db.users.find_one({'_id': ObjectId(current_user.id)})
-    if not user:
-        flash('Usuario no encontrado.')
-        return redirect(url_for('logout'))
-
-    page_id = user.get('page_id')
+    page_id = get_current_page_id()
+    if not page_id:
+        flash('Selecciona un sitio.')
+        return redirect(url_for('sites'))
 
     if request.method == 'POST':
-        title        = request.form['title']
-        description  = request.form['description']
-        price        = float(request.form['price'])
-        show_price   = 'show_price' in request.form
+        title = (request.form.get('title') or '').strip()
+        description = (request.form.get('description') or '').strip()
+        price = parse_float(request.form.get('price'), 0)
+        show_price = 'show_price' in request.form
+        tipo = (request.form.get('tipo') or 'producto').strip().lower()
 
-        tipo         = request.form.get('tipo', 'producto').strip().lower()  
+        sku = (request.form.get('sku') or '').strip().upper()
+        barcode = (request.form.get('barcode') or '').strip()
+        stock = parse_int(request.form.get('stock'), 0)
+        min_stock = parse_int(request.form.get('min_stock'), 0)
+        track_inventory = request.form.get('track_inventory') == 'on'
+        active = request.form.get('active', 'on') == 'on'
 
-        image_file = request.files['image']
+        if not title:
+            flash('El título es obligatorio.', 'warning')
+            return redirect(url_for('create_producto'))
+
+        image_file = request.files.get('image')
         image_path = None
+
         if image_file and image_file.filename != '':
             slug = slugify(title)
             today = datetime.utcnow().strftime('%Y-%m-%d')
@@ -1947,15 +2176,22 @@ def create_producto():
         mongo.db.productos.insert_one({
             'title': title,
             'description': description,
-            'price': price,
+            'price': money2(price),  # price se queda como único precio
             'image': image_path,
             'page_id': page_id,
             'show_price': show_price,
-
-            'tipo': tipo
+            'tipo': tipo,
+            'sku': sku,
+            'barcode': barcode,
+            'stock': stock,
+            'min_stock': min_stock,
+            'track_inventory': track_inventory,
+            'active': active,
+            'created_at': datetime.utcnow(),
+            'updated_at': datetime.utcnow(),
         })
 
-        flash('Elemento creado correctamente.')
+        flash('Elemento creado correctamente.', 'success')
         return redirect(url_for('list_productos'))
 
     tipos_posibles = ['producto', 'servicio']
@@ -1965,25 +2201,39 @@ def create_producto():
 @require_active_subscription
 @login_required
 def edit_producto(producto_id):
-    producto = mongo.db.productos.find_one({'_id': ObjectId(producto_id)})
+    page_id = get_current_page_id()
+    if not page_id:
+        flash('Selecciona un sitio.')
+        return redirect(url_for('sites'))
+
+    producto = mongo.db.productos.find_one({
+        '_id': ObjectId(producto_id),
+        'page_id': page_id
+    })
 
     if not producto:
         flash('Producto no encontrado.')
         return redirect(url_for('list_productos'))
 
     if request.method == 'POST':
-        title        = request.form['title']
-        description  = request.form['description']
-        price        = float(request.form['price'])
-        show_price   = 'show_price' in request.form
+        title = (request.form.get('title') or '').strip()
+        description = (request.form.get('description') or '').strip()
+        price = parse_float(request.form.get('price'), 0)
+        show_price = 'show_price' in request.form
+        tipo = (request.form.get('tipo') or 'producto').strip().lower()
 
-        tipo         = request.form.get('tipo', 'producto').strip().lower()
+        sku = (request.form.get('sku') or '').strip().upper()
+        barcode = (request.form.get('barcode') or '').strip()
+        stock = parse_int(request.form.get('stock'), 0)
+        min_stock = parse_int(request.form.get('min_stock'), 0)
+        track_inventory = request.form.get('track_inventory') == 'on'
+        active = request.form.get('active', 'on') == 'on'
 
         image_file = request.files.get('image')
         image_path = producto.get('image')
 
         if image_file and image_file.filename != '':
-            slug = slugify(title)
+            slug = slugify(title or producto.get('title', 'producto'))
             today = datetime.utcnow().strftime('%Y-%m-%d')
             folder = os.path.join(app.config['UPLOAD_FOLDER'], slug, today)
             os.makedirs(folder, exist_ok=True)
@@ -1997,19 +2247,25 @@ def edit_producto(producto_id):
             image_path = f"{slug}/{today}/{final_filename}"
 
         mongo.db.productos.update_one(
-            {'_id': ObjectId(producto_id)},
+            {'_id': ObjectId(producto_id), 'page_id': page_id},
             {'$set': {
                 'title': title,
                 'description': description,
-                'price': price,
+                'price': money2(price),
                 'image': image_path,
                 'show_price': show_price,
-
-                'tipo': tipo
+                'tipo': tipo,
+                'sku': sku,
+                'barcode': barcode,
+                'stock': stock,
+                'min_stock': min_stock,
+                'track_inventory': track_inventory,
+                'active': active,
+                'updated_at': datetime.utcnow(),
             }}
         )
 
-        flash('Elemento actualizado correctamente.')
+        flash('Elemento actualizado correctamente.', 'success')
         return redirect(url_for('list_productos'))
 
     tipos_posibles = ['producto', 'servicio']
@@ -2019,16 +2275,246 @@ def edit_producto(producto_id):
 @require_active_subscription
 @login_required
 def delete_producto(producto_id):
-    producto = mongo.db.productos.find_one({'_id': ObjectId(producto_id)})
-    
+    page_id = get_current_page_id()
+    if not page_id:
+        flash('Selecciona un sitio.')
+        return redirect(url_for('sites'))
+
+    producto = mongo.db.productos.find_one({
+        '_id': ObjectId(producto_id),
+        'page_id': page_id
+    })
+
     if not producto:
         flash('Producto no encontrado.')
         return redirect(url_for('list_productos'))
 
-    mongo.db.productos.delete_one({'_id': ObjectId(producto_id)})
+    mongo.db.productos.delete_one({
+        '_id': ObjectId(producto_id),
+        'page_id': page_id
+    })
     flash('Producto eliminado correctamente.')
     return redirect(url_for('list_productos'))
 
+@app.route('/pos', methods=['GET', 'POST'])
+@require_active_subscription
+@current_site(required=True)
+@login_required
+def pos():
+    page_id = get_current_page_id()
+
+    if request.method == 'POST':
+        product_ids = request.form.getlist('producto_id')
+        qtys = request.form.getlist('qty')
+
+        items = []
+        for pid, qty in zip(product_ids, qtys):
+            if pid and parse_int(qty, 0) > 0:
+                items.append({
+                    'producto_id': pid,
+                    'qty': parse_int(qty, 0)
+                })
+
+        payment_method = (request.form.get('payment_method') or 'efectivo').strip().lower()
+        cash_amount = parse_float(request.form.get('cash_amount'), 0)
+        digital_amount = parse_float(request.form.get('digital_amount'), 0)
+        customer_name = (request.form.get('customer_name') or '').strip()
+        customer_phone = (request.form.get('customer_phone') or '').strip()
+        notes = (request.form.get('notes') or '').strip()
+
+        try:
+            venta = registrar_venta(
+                page_id=page_id,
+                items=items,
+                payment_method=payment_method,
+                cash_amount=cash_amount,
+                digital_amount=digital_amount,
+                customer_name=customer_name,
+                customer_phone=customer_phone,
+                notes=notes,
+                tipo='mostrador'
+            )
+            flash(f"Venta registrada correctamente: {venta['folio']}", 'success')
+            return redirect(url_for('venta_ticket_pdf', venta_id=str(venta['_id'])))
+        except Exception as e:
+            flash(str(e), 'danger')
+            return redirect(url_for('pos'))
+
+    productos = list(mongo.db.productos.find({
+        'page_id': page_id,
+        'tipo': 'producto',
+        'active': {'$ne': False}
+    }).sort('title', 1))
+
+    return render_template('pos.html', productos=productos)
+
+@app.route('/ventas')
+@require_active_subscription
+@current_site(required=True)
+@login_required
+def list_ventas():
+    page_id = get_current_page_id()
+
+    ventas = list(
+        mongo.db.ventas.find({'page_id': page_id}).sort('created_at', -1).limit(300)
+    )
+
+    total_ventas = sum(money2(v.get('total', 0)) for v in ventas)
+
+    return render_template(
+        'list_ventas.html',
+        ventas=ventas,
+        total_ventas=money2(total_ventas)
+    )
+
+@app.route('/ventas/<venta_id>')
+@require_active_subscription
+@current_site(required=True)
+@login_required
+def venta_detail(venta_id):
+    page_id = get_current_page_id()
+    venta = mongo.db.ventas.find_one({
+        '_id': ObjectId(venta_id),
+        'page_id': page_id
+    })
+
+    if not venta:
+        flash('Venta no encontrada.', 'warning')
+        return redirect(url_for('list_ventas'))
+
+    return render_template('venta_detail.html', venta=venta)
+
+@app.route('/ventas/<venta_id>/ticket.pdf')
+@require_active_subscription
+@current_site(required=True)
+@login_required
+def venta_ticket_pdf(venta_id):
+    page_id = get_current_page_id()
+
+    venta = mongo.db.ventas.find_one({
+        '_id': ObjectId(venta_id),
+        'page_id': page_id
+    })
+
+    if not venta:
+        flash('Venta no encontrada.', 'warning')
+        return redirect(url_for('list_ventas'))
+
+    page = mongo.db.page_data.find_one({'_id': page_id}) or {}
+    business_name = page.get('business_name', 'Mi negocio')
+
+    buffer = BytesIO()
+    p = canvas.Canvas(buffer, pagesize=letter)
+
+    y = 760
+    p.setFont("Helvetica-Bold", 15)
+    p.drawString(50, y, business_name)
+
+    y -= 20
+    p.setFont("Helvetica-Bold", 12)
+    p.drawString(50, y, f"Ticket {venta.get('folio', '')}")
+
+    y -= 18
+    p.setFont("Helvetica", 10)
+    p.drawString(50, y, f"Fecha: {venta['created_at'].strftime('%d/%m/%Y %H:%M')}")
+    y -= 16
+    p.drawString(50, y, f"Cliente: {venta.get('customer_name') or 'Mostrador'}")
+    y -= 16
+    p.drawString(50, y, f"Teléfono: {venta.get('customer_phone') or '-'}")
+    y -= 20
+
+    p.setFont("Helvetica-Bold", 10)
+    p.drawString(50, y, "Cant.")
+    p.drawString(100, y, "Producto")
+    p.drawString(430, y, "Importe")
+    y -= 14
+
+    p.setFont("Helvetica", 10)
+    for item in venta.get('items', []):
+        linea_producto = f"{item.get('title', 'Producto')} (${money2(item.get('unit_price', 0)):.2f})"
+        p.drawString(50, y, str(item.get('qty', 0)))
+        p.drawString(100, y, linea_producto[:55])
+        p.drawRightString(550, y, f"${money2(item.get('subtotal', 0)):.2f}")
+        y -= 16
+
+        if y < 80:
+            p.showPage()
+            y = 760
+
+    y -= 10
+    p.line(50, y, 550, y)
+    y -= 18
+
+    p.drawString(50, y, f"Subtotal: ${money2(venta.get('subtotal', 0)):.2f}")
+    y -= 16
+    p.drawString(50, y, f"Descuento: ${money2(venta.get('discount', 0)):.2f}")
+    y -= 16
+
+    p.setFont("Helvetica-Bold", 11)
+    p.drawString(50, y, f"Total: ${money2(venta.get('total', 0)):.2f}")
+    y -= 18
+
+    p.setFont("Helvetica", 10)
+    p.drawString(50, y, f"Método de pago: {venta.get('payment_method', '-')}")
+    y -= 16
+    p.drawString(50, y, f"Efectivo: ${money2(venta.get('cash_amount', 0)):.2f}")
+    y -= 16
+    p.drawString(50, y, f"Digital: ${money2(venta.get('digital_amount', 0)):.2f}")
+    y -= 20
+
+    notes = (venta.get('notes') or '').strip()
+    if notes:
+        p.drawString(50, y, f"Notas: {notes[:80]}")
+
+    p.showPage()
+    p.save()
+
+    buffer.seek(0)
+    return Response(
+        buffer.getvalue(),
+        mimetype='application/pdf',
+        headers={
+            'Content-Disposition': f'inline; filename={venta.get("folio", "ticket")}.pdf'
+        }
+    )
+
+@app.route('/corte-caja')
+@require_active_subscription
+@current_site(required=True)
+@login_required
+def corte_caja():
+    page_id = get_current_page_id()
+    date_str = (request.args.get('date') or datetime.utcnow().strftime('%Y-%m-%d')).strip()
+
+    try:
+        start = datetime.strptime(date_str + ' 00:00:00', '%Y-%m-%d %H:%M:%S')
+        end = datetime.strptime(date_str + ' 23:59:59', '%Y-%m-%d %H:%M:%S')
+    except Exception:
+        flash('Fecha inválida. Usa YYYY-MM-DD.', 'warning')
+        return redirect(url_for('corte_caja'))
+
+    ventas = list(mongo.db.ventas.find({
+        'page_id': page_id,
+        'status': 'paid',
+        'created_at': {'$gte': start, '$lte': end}
+    }).sort('created_at', -1))
+
+    total = money2(sum(money2(v.get('total', 0)) for v in ventas))
+    efectivo = money2(sum(money2(v.get('cash_amount', 0)) for v in ventas))
+    digital = money2(sum(money2(v.get('digital_amount', 0)) for v in ventas))
+    tickets = len(ventas)
+    promedio = money2(total / tickets) if tickets else 0.0
+
+    return render_template(
+        'corte_caja.html',
+        ventas=ventas,
+        fecha=date_str,
+        total=total,
+        efectivo=efectivo,
+        digital=digital,
+        tickets=tickets,
+        promedio=promedio
+    )
 
 @app.route('/admin/users')
 @require_active_subscription

@@ -4,7 +4,7 @@
 {% block content %}
 <style>
   .create-product-page {
-    max-width: 980px;
+    max-width: 1080px;
     margin: 0 auto;
     padding: 28px 0 34px;
   }
@@ -42,7 +42,7 @@
     color: rgba(221, 232, 255, 0.78);
     font-size: 0.98rem;
     line-height: 1.65;
-    max-width: 700px;
+    max-width: 760px;
   }
 
   .btn-back-product {
@@ -100,6 +100,20 @@
     color: #1d4ed8;
   }
 
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #111827;
+    margin: 4px 0 16px;
+  }
+
+  .section-title i {
+    color: #4f46e5;
+  }
+
   .form-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -144,14 +158,26 @@
     line-height: 1.55;
   }
 
+  .field-box,
   .price-box,
   .type-box,
   .image-box,
-  .switch-box {
+  .switch-box,
+  .inventory-panel {
     padding: 16px;
     border-radius: 18px;
     background: #fbfcff;
     border: 1px solid #e4eaf3;
+  }
+
+  .inventory-panel {
+    background: linear-gradient(180deg, #fbfcff 0%, #f8fbff 100%);
+  }
+
+  .inventory-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
   }
 
   .switch-box {
@@ -198,6 +224,17 @@
     display: none;
   }
 
+  .inventory-note {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: rgba(59, 130, 246, 0.06);
+    border: 1px dashed rgba(59, 130, 246, 0.22);
+    color: #475467;
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+
   .actions-bar {
     margin-top: 26px;
     display: flex;
@@ -242,6 +279,10 @@
     box-shadow: 0 16px 28px rgba(34, 197, 94, 0.3);
   }
 
+  .hidden-soft {
+    display: none;
+  }
+
   @media (max-width: 768px) {
     .create-product-page {
       padding: 18px 0 24px;
@@ -256,7 +297,8 @@
       border-radius: 18px;
     }
 
-    .form-grid {
+    .form-grid,
+    .inventory-grid {
       grid-template-columns: 1fr;
     }
 
@@ -292,7 +334,10 @@
   <div class="create-product-topbar">
     <div class="create-product-heading">
       <h2><i class="bi bi-bag-plus-fill"></i> Crear Producto</h2>
-      <p>Agrega un nuevo producto o servicio a tu catálogo con información clara, imagen atractiva y precio bien definido.</p>
+      <p>
+        Agrega un nuevo producto o servicio a tu catálogo con una presentación más profesional,
+        mejor control interno y datos listos para inventario y punto de venta.
+      </p>
     </div>
 
     <a href="{{ url_for('dashboard') }}" class="btn-back-product">
@@ -303,11 +348,19 @@
 
   <div class="create-product-card">
     <div class="info-strip">
-      <strong>Sugerencia:</strong> usa títulos breves, descripciones claras y una buena imagen para que tu catálogo se vea más profesional y atractivo.
+      <strong>Sugerencia:</strong> usa nombres claros, un precio correcto y, si es un producto físico,
+      agrega SKU, código y stock para que después puedas venderlo desde mostrador sin complicaciones.
     </div>
 
     <form method="POST" enctype="multipart/form-data">
       <div class="form-grid">
+        <div class="full-width">
+          <div class="section-title">
+            <i class="bi bi-info-circle-fill"></i>
+            Información general
+          </div>
+        </div>
+
         <div class="full-width">
           <label for="title" class="form-label">Título</label>
           <input
@@ -330,7 +383,7 @@
             placeholder="Describe qué incluye, beneficios o detalles importantes..."
             required
           ></textarea>
-          <div class="helper-text">Procura que la descripción sea útil y fácil de leer.</div>
+          <div class="helper-text">Procura que la descripción sea útil, clara y fácil de leer.</div>
         </div>
 
         <div>
@@ -346,7 +399,9 @@
               placeholder="0.00"
               required
             >
-            <div class="helper-text">Ingresa el precio con decimales si aplica.</div>
+            <div class="helper-text">
+              Este campo será tu único precio registrado para el producto o servicio.
+            </div>
           </div>
         </div>
 
@@ -363,6 +418,36 @@
             <div class="helper-text">
               Selecciona <strong>Servicio</strong> si es algo que haces, o <strong>Producto</strong> si es algo físico que vendes.
             </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="field-box">
+            <label for="sku" class="form-label">SKU</label>
+            <input
+              type="text"
+              id="sku"
+              name="sku"
+              class="form-control"
+              placeholder="Ej. PROD-001"
+              maxlength="80"
+            >
+            <div class="helper-text">Clave interna para localizar el producto más rápido.</div>
+          </div>
+        </div>
+
+        <div>
+          <div class="field-box">
+            <label for="barcode" class="form-label">Código de barras</label>
+            <input
+              type="text"
+              id="barcode"
+              name="barcode"
+              class="form-control"
+              placeholder="Ej. 7501234567890"
+              maxlength="120"
+            >
+            <div class="helper-text">Puedes usar EAN, UPC o cualquier código interno.</div>
           </div>
         </div>
 
@@ -387,6 +472,87 @@
         </div>
 
         <div class="full-width">
+          <div class="switch-box">
+            <div class="text">
+              <h6>Activo en catálogo</h6>
+              <p>Déjalo activo si deseas que siga disponible para mostrarse y venderse dentro del sistema.</p>
+            </div>
+
+            <div class="form-check form-switch">
+              <input
+                class="form-check-input"
+                type="checkbox"
+                name="active"
+                id="active"
+                checked
+              >
+              <label class="form-check-label" for="active">Activo</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="full-width" id="inventorySection">
+          <div class="inventory-panel">
+            <div class="section-title">
+              <i class="bi bi-box-seam-fill"></i>
+              Inventario y control interno
+            </div>
+
+            <div class="inventory-grid">
+              <div class="switch-box">
+                <div class="text">
+                  <h6>Controlar inventario</h6>
+                  <p>Activa esta opción para descontar stock automáticamente cuando registres una venta.</p>
+                </div>
+
+                <div class="form-check form-switch">
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    name="track_inventory"
+                    id="track_inventory"
+                    checked
+                  >
+                  <label class="form-check-label" for="track_inventory">Controlar inventario</label>
+                </div>
+              </div>
+
+              <div class="field-box">
+                <label for="stock" class="form-label">Stock inicial</label>
+                <input
+                  type="number"
+                  id="stock"
+                  name="stock"
+                  min="0"
+                  step="1"
+                  value="0"
+                  class="form-control"
+                >
+                <div class="helper-text">Cantidad disponible actualmente.</div>
+              </div>
+
+              <div class="field-box">
+                <label for="min_stock" class="form-label">Stock mínimo</label>
+                <input
+                  type="number"
+                  id="min_stock"
+                  name="min_stock"
+                  min="0"
+                  step="1"
+                  value="0"
+                  class="form-control"
+                >
+                <div class="helper-text">Te servirá para identificar productos con stock bajo.</div>
+              </div>
+            </div>
+
+            <div class="inventory-note">
+              Si seleccionas <strong>Servicio</strong>, esta sección se ocultará porque normalmente no necesita control de existencias.
+            </div>
+          </div>
+        </div>
+
+        <div class="full-width">
           <div class="image-box">
             <label for="image" class="form-label">Imagen</label>
             <input
@@ -396,7 +562,9 @@
               class="form-control"
               accept="image/*"
             >
-            <div class="helper-text">Sube una imagen de buena calidad para mejorar la presentación del producto.</div>
+            <div class="helper-text">
+              Sube una imagen de buena calidad para mejorar la presentación del producto o servicio.
+            </div>
           </div>
         </div>
       </div>
@@ -415,4 +583,30 @@
     </form>
   </div>
 </div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const tipoSelect = document.getElementById('tipo');
+    const inventorySection = document.getElementById('inventorySection');
+    const trackInventory = document.getElementById('track_inventory');
+    const stockInput = document.getElementById('stock');
+    const minStockInput = document.getElementById('min_stock');
+
+    function syncInventorySection() {
+      const isService = tipoSelect.value === 'servicio';
+
+      if (isService) {
+        inventorySection.classList.add('hidden-soft');
+        trackInventory.checked = false;
+        stockInput.value = 0;
+        minStockInput.value = 0;
+      } else {
+        inventorySection.classList.remove('hidden-soft');
+      }
+    }
+
+    tipoSelect.addEventListener('change', syncInventorySection);
+    syncInventorySection();
+  });
+</script>
 {% endblock %}

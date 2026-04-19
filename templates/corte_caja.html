@@ -1,0 +1,649 @@
+{% extends "layout.html" %}
+{% block title %}Corte de Caja{% endblock %}
+
+{% block content %}
+{% set ITEMS = ventas|default([]) %}
+{% set FECHA = fecha|default('') %}
+
+<style>
+  .cash-page {
+    max-width: 1220px;
+    margin: 0 auto;
+    padding: 28px 0 36px;
+  }
+
+  .cash-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 18px;
+    flex-wrap: wrap;
+    margin-bottom: 22px;
+  }
+
+  .cash-heading {
+    flex: 1 1 430px;
+  }
+
+  .cash-heading h2 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 2.05rem;
+    font-weight: 800;
+    color: #f8fbff;
+    letter-spacing: -0.02em;
+  }
+
+  .cash-heading h2 i {
+    color: #5ea0ff;
+  }
+
+  .cash-heading p {
+    margin: 10px 0 0;
+    color: rgba(221, 232, 255, 0.78);
+    font-size: 0.98rem;
+    line-height: 1.65;
+    max-width: 760px;
+  }
+
+  .cash-actions-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .btn-cash-back,
+  .btn-cash-sales,
+  .btn-cash-pos {
+    border-radius: 14px;
+    padding: 11px 18px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    text-decoration: none;
+    transition: all 0.25s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-cash-back {
+    color: #dbe9ff;
+    border: 1px solid rgba(135, 164, 255, 0.24);
+    background: rgba(255, 255, 255, 0.04);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+  }
+
+  .btn-cash-back:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(135, 164, 255, 0.4);
+    transform: translateY(-1px);
+  }
+
+  .btn-cash-sales {
+    color: #bfdbfe;
+    border: 1px solid rgba(96, 165, 250, 0.24);
+    background: rgba(37, 99, 235, 0.16);
+    box-shadow: 0 10px 22px rgba(37, 99, 235, 0.18);
+  }
+
+  .btn-cash-sales:hover {
+    color: #fff;
+    background: rgba(37, 99, 235, 0.24);
+  }
+
+  .btn-cash-pos {
+    color: #fff;
+    border: 1px solid rgba(34, 197, 94, 0.48);
+    background: linear-gradient(135deg, #16a34a, #22c55e);
+    box-shadow: 0 12px 24px rgba(34, 197, 94, 0.20);
+  }
+
+  .btn-cash-pos:hover {
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 16px 28px rgba(34, 197, 94, 0.28);
+  }
+
+  .cash-filter-card,
+  .cash-table-card {
+    background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(247,249,255,0.97));
+    border: 1px solid rgba(223, 228, 237, 0.95);
+    border-radius: 24px;
+    padding: 22px;
+    box-shadow: 0 18px 42px rgba(15, 23, 42, 0.16);
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 22px;
+  }
+
+  .cash-filter-card::before,
+  .cash-table-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 4px;
+    background: linear-gradient(90deg, #0d6efd, #6f42c1, #8b5cf6);
+  }
+
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #111827;
+    margin: 0 0 16px;
+  }
+
+  .section-title i {
+    color: #4f46e5;
+  }
+
+  .filter-row {
+    display: flex;
+    gap: 14px;
+    align-items: end;
+    flex-wrap: wrap;
+  }
+
+  .filter-group {
+    flex: 1 1 240px;
+  }
+
+  .form-label {
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 8px;
+  }
+
+  .form-control {
+    border-radius: 14px !important;
+    border: 1px solid #d8e0ea !important;
+    box-shadow: none !important;
+    min-height: 48px;
+  }
+
+  .form-control:focus {
+    border-color: #86b7fe !important;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.12) !important;
+  }
+
+  .btn-filter {
+    border: 1px solid rgba(37, 99, 235, 0.45);
+    background: linear-gradient(135deg, #2563eb, #3b82f6);
+    color: #fff;
+    border-radius: 14px;
+    padding: 11px 18px;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.25s ease;
+    box-shadow: 0 12px 24px rgba(59, 130, 246, 0.22);
+    text-decoration: none;
+  }
+
+  .btn-filter:hover {
+    color: #fff;
+    transform: translateY(-1px);
+  }
+
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .summary-card {
+    background: #ffffff;
+    border: 1px solid #e5eaf2;
+    border-radius: 20px;
+    padding: 18px;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+  }
+
+  .summary-card .top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .summary-card .icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    font-size: 1.15rem;
+  }
+
+  .icon-total {
+    color: #2563eb;
+    background: #eff6ff;
+  }
+
+  .icon-cash {
+    color: #166534;
+    background: #f0fdf4;
+  }
+
+  .icon-digital {
+    color: #7c3aed;
+    background: #f5f3ff;
+  }
+
+  .icon-ticket {
+    color: #92400e;
+    background: #fff7ed;
+  }
+
+  .summary-card .label {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+    font-weight: 800;
+  }
+
+  .summary-card .value {
+    font-size: 1.42rem;
+    font-weight: 900;
+    color: #0f172a;
+  }
+
+  .summary-card .sub {
+    margin-top: 4px;
+    color: #64748b;
+    font-size: 0.84rem;
+  }
+
+  .table-wrap {
+    overflow-x: auto;
+  }
+
+  .cash-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 12px;
+    min-width: 930px;
+  }
+
+  .cash-table thead th {
+    font-size: 0.76rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 800;
+    color: #64748b;
+    padding: 0 14px 10px;
+    border: 0;
+    white-space: nowrap;
+  }
+
+  .cash-table tbody tr {
+    background: #ffffff;
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.06);
+  }
+
+  .cash-table tbody td {
+    padding: 16px 14px;
+    vertical-align: middle;
+    border-top: 1px solid #e9eef5;
+    border-bottom: 1px solid #e9eef5;
+    color: #0f172a;
+    font-size: 0.93rem;
+  }
+
+  .cash-table tbody td:first-child {
+    border-left: 1px solid #e9eef5;
+    border-top-left-radius: 16px;
+    border-bottom-left-radius: 16px;
+  }
+
+  .cash-table tbody td:last-child {
+    border-right: 1px solid #e9eef5;
+    border-top-right-radius: 16px;
+    border-bottom-right-radius: 16px;
+  }
+
+  .folio-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 10px;
+    border-radius: 999px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
+    font-size: 0.78rem;
+    font-weight: 800;
+  }
+
+  .pill-pay {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    font-size: 0.79rem;
+    font-weight: 800;
+    border: 1px solid transparent;
+    white-space: nowrap;
+  }
+
+  .pill-cash {
+    color: #166534;
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+  }
+
+  .pill-digital {
+    color: #1d4ed8;
+    background: #eff6ff;
+    border-color: #bfdbfe;
+  }
+
+  .pill-mixed {
+    color: #7c3aed;
+    background: #f5f3ff;
+    border-color: #ddd6fe;
+  }
+
+  .cash-total {
+    font-size: 1rem;
+    font-weight: 900;
+    color: #15803d;
+    white-space: nowrap;
+  }
+
+  .btn-ticket-row {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    border-radius: 12px;
+    padding: 9px 12px;
+    font-weight: 700;
+    text-decoration: none;
+    font-size: 0.86rem;
+    transition: all 0.2s ease;
+    border: 1px solid #bbf7d0;
+    color: #166534;
+    background: #f0fdf4;
+    white-space: nowrap;
+  }
+
+  .btn-ticket-row:hover {
+    color: #14532d;
+    background: #dcfce7;
+  }
+
+  .empty-cut {
+    padding: 52px 24px;
+    text-align: center;
+    border-radius: 22px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.97), rgba(244,247,255,0.96));
+    border: 1px solid rgba(223, 228, 237, 0.95);
+    box-shadow: 0 18px 38px rgba(15, 23, 42, 0.10);
+  }
+
+  .empty-icon {
+    width: 82px;
+    height: 82px;
+    margin: 0 auto 16px;
+    border-radius: 22px;
+    display: grid;
+    place-items: center;
+    font-size: 2.3rem;
+    background: linear-gradient(135deg, #eff6ff, #eef2ff);
+    color: #2563eb;
+    box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.08);
+  }
+
+  .empty-cut h3 {
+    margin: 0 0 10px;
+    font-weight: 800;
+    color: #101828;
+  }
+
+  .empty-cut p {
+    margin: 0;
+    color: #667085;
+    line-height: 1.7;
+  }
+
+  @media (max-width: 992px) {
+    .summary-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 768px) {
+    .cash-page {
+      padding: 18px 0 24px;
+    }
+
+    .cash-heading h2 {
+      font-size: 1.7rem;
+    }
+
+    .cash-actions-top {
+      width: 100%;
+    }
+
+    .btn-cash-back,
+    .btn-cash-sales,
+    .btn-cash-pos,
+    .btn-filter {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .summary-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .cash-filter-card,
+    .cash-table-card {
+      padding: 18px;
+      border-radius: 18px;
+    }
+  }
+</style>
+
+<div class="cash-page">
+  <div class="cash-topbar">
+    <div class="cash-heading">
+      <h2><i class="bi bi-cash-stack"></i> Corte de Caja</h2>
+      <p>
+        Consulta el resumen diario de ventas, separando efectivo y digital,
+        con detalle de tickets registrados por fecha.
+      </p>
+    </div>
+
+    <div class="cash-actions-top">
+      <a href="{{ url_for('pos') }}" class="btn-cash-pos">
+        <i class="bi bi-shop-window"></i>
+        Abrir POS
+      </a>
+
+      <a href="{{ url_for('list_ventas') }}" class="btn-cash-sales">
+        <i class="bi bi-receipt-cutoff"></i>
+        Ver ventas
+      </a>
+
+      <a href="{{ url_for('dashboard') }}" class="btn-cash-back">
+        <i class="bi bi-arrow-left-circle"></i>
+        Regresar
+      </a>
+    </div>
+  </div>
+
+  <div class="cash-filter-card">
+    <div class="section-title">
+      <i class="bi bi-calendar-range-fill"></i>
+      Filtrar por fecha
+    </div>
+
+    <form method="GET">
+      <div class="filter-row">
+        <div class="filter-group">
+          <label for="date" class="form-label">Fecha del corte</label>
+          <input
+            type="date"
+            id="date"
+            name="date"
+            class="form-control"
+            value="{{ FECHA }}"
+          >
+        </div>
+
+        <div>
+          <button type="submit" class="btn-filter">
+            <i class="bi bi-funnel-fill"></i>
+            Aplicar filtro
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="cash-table-card">
+    <div class="section-title">
+      <i class="bi bi-bar-chart-fill"></i>
+      Resumen del día {{ FECHA if FECHA else '' }}
+    </div>
+
+    <div class="summary-grid">
+      <div class="summary-card">
+        <div class="top">
+          <div class="label">Total vendido</div>
+          <div class="icon icon-total"><i class="bi bi-cash-coin"></i></div>
+        </div>
+        <div class="value">$ {{ '%.2f'|format(total|default(0)|float) }}</div>
+        <div class="sub">Suma total del día</div>
+      </div>
+
+      <div class="summary-card">
+        <div class="top">
+          <div class="label">Efectivo</div>
+          <div class="icon icon-cash"><i class="bi bi-wallet2"></i></div>
+        </div>
+        <div class="value">$ {{ '%.2f'|format(efectivo|default(0)|float) }}</div>
+        <div class="sub">Cobrado en efectivo</div>
+      </div>
+
+      <div class="summary-card">
+        <div class="top">
+          <div class="label">Digital</div>
+          <div class="icon icon-digital"><i class="bi bi-phone"></i></div>
+        </div>
+        <div class="value">$ {{ '%.2f'|format(digital|default(0)|float) }}</div>
+        <div class="sub">Tarjeta, transferencia y digital</div>
+      </div>
+
+      <div class="summary-card">
+        <div class="top">
+          <div class="label">Tickets</div>
+          <div class="icon icon-ticket"><i class="bi bi-receipt"></i></div>
+        </div>
+        <div class="value">{{ tickets|default(0) }}</div>
+        <div class="sub">Promedio: $ {{ '%.2f'|format(promedio|default(0)|float) }}</div>
+      </div>
+    </div>
+  </div>
+
+  {% if ITEMS %}
+    <div class="cash-table-card">
+      <div class="section-title">
+        <i class="bi bi-list-ul"></i>
+        Ventas del día
+      </div>
+
+      <div class="table-wrap">
+        <table class="cash-table">
+          <thead>
+            <tr>
+              <th>Folio</th>
+              <th>Hora</th>
+              <th>Cliente</th>
+              <th>Pago</th>
+              <th>Total</th>
+              <th>Ticket</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for venta in ITEMS %}
+              {% set pm = venta.get('payment_method', '') %}
+              <tr>
+                <td>
+                  <span class="folio-badge">
+                    <i class="bi bi-hash"></i>
+                    {{ venta.get('folio', '—') }}
+                  </span>
+                </td>
+
+                <td>
+                  {% if venta.get('created_at') %}
+                    {{ venta.get('created_at').strftime('%I:%M %p') }}
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+
+                <td>
+                  <strong>{{ venta.get('customer_name') or 'Mostrador' }}</strong>
+                </td>
+
+                <td>
+                  <span class="pill-pay
+                    {% if pm == 'efectivo' %}pill-cash
+                    {% elif pm in ['transferencia', 'tarjeta', 'digital'] %}pill-digital
+                    {% else %}pill-mixed{% endif %}">
+                    <i class="bi
+                      {% if pm == 'efectivo' %}bi-cash-coin
+                      {% elif pm == 'tarjeta' %}bi-credit-card-2-front
+                      {% elif pm == 'transferencia' %}bi-bank
+                      {% elif pm == 'digital' %}bi-phone
+                      {% else %}bi-shuffle{% endif %}">
+                    </i>
+                    {{ pm|capitalize if pm else '—' }}
+                  </span>
+                </td>
+
+                <td>
+                  <div class="cash-total">
+                    $ {{ '%.2f'|format(venta.get('total', 0)|float) }}
+                  </div>
+                </td>
+
+                <td>
+                  <a href="{{ url_for('venta_ticket_pdf', venta_id=venta._id) }}" target="_blank" class="btn-ticket-row">
+                    <i class="bi bi-file-earmark-pdf"></i>
+                    Ticket
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% else %}
+    <div class="empty-cut">
+      <div class="empty-icon">
+        <i class="bi bi-calendar-x"></i>
+      </div>
+      <h3>No hay ventas registradas para esta fecha</h3>
+      <p>
+        Cambia la fecha del filtro o registra nuevas operaciones desde el punto de venta.
+      </p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

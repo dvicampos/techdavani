@@ -1,73 +1,651 @@
 {% extends "layout.html" %}
+{% block title %}Editar Producto{% endblock %}
+
 {% block content %}
-<div class="container my-5">
-    <h2 class="mb-4">✏ Editar Producto</h2>
+<style>
+  .create-product-page {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 28px 0 34px;
+  }
+
+  .create-product-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 22px;
+  }
+
+  .create-product-heading {
+    flex: 1 1 430px;
+  }
+
+  .create-product-heading h2 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 2.05rem;
+    font-weight: 800;
+    color: #f8fbff;
+    letter-spacing: -0.02em;
+  }
+
+  .create-product-heading h2 i {
+    color: #5ea0ff;
+  }
+
+  .create-product-heading p {
+    margin: 10px 0 0;
+    color: rgba(221, 232, 255, 0.78);
+    font-size: 0.98rem;
+    line-height: 1.65;
+    max-width: 760px;
+  }
+
+  .btn-back-product {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    padding: 11px 16px;
+    border-radius: 14px;
+    font-weight: 700;
+    color: #dbe9ff;
+    border: 1px solid rgba(135, 164, 255, 0.24);
+    background: rgba(255, 255, 255, 0.04);
+    transition: all 0.25s ease;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+  }
+
+  .btn-back-product:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(135, 164, 255, 0.4);
+    transform: translateY(-1px);
+  }
+
+  .create-product-card {
+    background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(247,249,255,0.97));
+    border: 1px solid rgba(223, 228, 237, 0.95);
+    border-radius: 24px;
+    padding: 26px;
+    box-shadow: 0 18px 42px rgba(15, 23, 42, 0.16);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .create-product-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 4px;
+    background: linear-gradient(90deg, #0d6efd, #6f42c1, #8b5cf6);
+  }
+
+  .info-strip {
+    margin-bottom: 22px;
+    padding: 15px 16px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, rgba(13, 110, 253, 0.08), rgba(111, 66, 193, 0.08));
+    border: 1px solid rgba(122, 152, 255, 0.16);
+    color: #475467;
+    font-size: 0.94rem;
+    line-height: 1.65;
+  }
+
+  .info-strip strong {
+    color: #1d4ed8;
+  }
+
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #111827;
+    margin: 4px 0 16px;
+  }
+
+  .section-title i {
+    color: #4f46e5;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+
+  .full-width {
+    grid-column: 1 / -1;
+  }
+
+  .form-label {
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 8px;
+  }
+
+  .form-control,
+  .form-select,
+  textarea {
+    border-radius: 14px !important;
+    border: 1px solid #d8e0ea !important;
+    box-shadow: none !important;
+    min-height: 48px;
+  }
+
+  textarea.form-control {
+    min-height: 160px;
+    resize: vertical;
+  }
+
+  .form-control:focus,
+  .form-select:focus,
+  textarea:focus {
+    border-color: #86b7fe !important;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.12) !important;
+  }
+
+  .helper-text {
+    margin-top: 6px;
+    color: #667085;
+    font-size: 0.88rem;
+    line-height: 1.55;
+  }
+
+  .field-box,
+  .price-box,
+  .type-box,
+  .image-box,
+  .switch-box,
+  .inventory-panel,
+  .preview-box {
+    padding: 16px;
+    border-radius: 18px;
+    background: #fbfcff;
+    border: 1px solid #e4eaf3;
+  }
+
+  .inventory-panel {
+    background: linear-gradient(180deg, #fbfcff 0%, #f8fbff 100%);
+  }
+
+  .inventory-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+  }
+
+  .switch-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    min-height: 100%;
+  }
+
+  .switch-box .text {
+    flex: 1;
+  }
+
+  .switch-box .text h6 {
+    margin: 0 0 4px;
+    font-size: 1rem;
+    font-weight: 800;
+    color: #111827;
+  }
+
+  .switch-box .text p {
+    margin: 0;
+    color: #667085;
+    font-size: 0.9rem;
+    line-height: 1.55;
+  }
+
+  .form-check.form-switch {
+    margin: 0;
+    padding-left: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  .form-check-input {
+    width: 3rem !important;
+    height: 1.6rem;
+    margin-left: 0 !important;
+    cursor: pointer;
+  }
+
+  .form-check-label {
+    display: none;
+  }
+
+  .inventory-note {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: rgba(59, 130, 246, 0.06);
+    border: 1px dashed rgba(59, 130, 246, 0.22);
+    color: #475467;
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+
+  .current-image-wrap {
+    margin-top: 14px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  .current-image-wrap img {
+    max-height: 110px;
+    border-radius: 14px;
+    border: 1px solid #d6dfeb;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+    background: #fff;
+  }
+
+  .current-image-meta {
+    color: #667085;
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+
+  .actions-bar {
+    margin-top: 26px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .btn-cancel-product,
+  .btn-save-product {
+    border-radius: 14px;
+    padding: 11px 18px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    transition: all 0.25s ease;
+  }
+
+  .btn-cancel-product {
+    border: 1px solid #d5dbe5;
+    background: #fff;
+    color: #344054;
+  }
+
+  .btn-cancel-product:hover {
+    color: #111827;
+    background: #f9fafb;
+  }
+
+  .btn-save-product {
+    border: 1px solid rgba(37, 99, 235, 0.45);
+    background: linear-gradient(135deg, #2563eb, #3b82f6);
+    color: #fff;
+    box-shadow: 0 12px 24px rgba(59, 130, 246, 0.22);
+  }
+
+  .btn-save-product:hover {
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 16px 28px rgba(59, 130, 246, 0.30);
+  }
+
+  .hidden-soft {
+    display: none;
+  }
+
+  @media (max-width: 768px) {
+    .create-product-page {
+      padding: 18px 0 24px;
+    }
+
+    .create-product-heading h2 {
+      font-size: 1.7rem;
+    }
+
+    .create-product-card {
+      padding: 18px;
+      border-radius: 18px;
+    }
+
+    .form-grid,
+    .inventory-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .actions-bar {
+      justify-content: stretch;
+    }
+
+    .btn-cancel-product,
+    .btn-save-product,
+    .btn-back-product {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .switch-box {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .create-product-heading h2 {
+      font-size: 1.5rem;
+    }
+
+    .create-product-heading p {
+      font-size: 0.93rem;
+    }
+  }
+</style>
+
+<div class="create-product-page">
+  <div class="create-product-topbar">
+    <div class="create-product-heading">
+      <h2><i class="bi bi-pencil-square"></i> Editar Producto</h2>
+      <p>
+        Actualiza la información del producto o servicio, ajusta su inventario y mantén tu catálogo
+        ordenado, limpio y listo para vender.
+      </p>
+    </div>
+
+    <a href="{{ url_for('list_productos') }}" class="btn-back-product">
+      <i class="bi bi-arrow-left-circle"></i>
+      Regresar
+    </a>
+  </div>
+
+  <div class="create-product-card">
+    <div class="info-strip">
+      <strong>Tip:</strong> si cambias el tipo a <strong>Servicio</strong>, la sección de inventario se ocultará.
+      Si es un producto físico, conviene mantener SKU, stock y stock mínimo actualizados.
+    </div>
 
     <form method="POST" enctype="multipart/form-data">
-
-        <div class="mb-3">
-            <label class="form-label">Título</label>
-            <input type="text" name="title" class="form-control"
-                value="{{ producto['title'] }}" required>
+      <div class="form-grid">
+        <div class="full-width">
+          <div class="section-title">
+            <i class="bi bi-info-circle-fill"></i>
+            Información general
+          </div>
         </div>
 
-        <div class="mb-3">
-            <label class="form-label">Descripción</label>
-            <textarea name="description" class="form-control" required>{{ producto['description'] }}</textarea>
+        <div class="full-width">
+          <label for="title" class="form-label">Título</label>
+          <input
+            type="text"
+            id="title"
+            name="title"
+            class="form-control"
+            value="{{ producto.get('title', '') }}"
+            placeholder="Ej. Corte premium, playera edición especial..."
+            required
+          >
+          <div class="helper-text">El nombre debe ser claro y fácil de identificar.</div>
         </div>
 
-        <div class="mb-3">
-            <label class="form-label">Precio</label>
-            <input type="number" name="price" step="0.01" class="form-control"
-                value="{{ producto['price'] }}" required>
+        <div class="full-width">
+          <label for="description" class="form-label">Descripción</label>
+          <textarea
+            id="description"
+            name="description"
+            class="form-control"
+            placeholder="Describe qué incluye, beneficios o detalles importantes..."
+            required
+          >{{ producto.get('description', '') }}</textarea>
+          <div class="helper-text">Procura que la descripción sea útil, clara y fácil de leer.</div>
         </div>
 
-        <div class="mb-3">
+        <div>
+          <div class="price-box">
+            <label for="price" class="form-label">Precio</label>
+            <input
+              type="number"
+              id="price"
+              name="price"
+              step="0.01"
+              min="0"
+              class="form-control"
+              value="{{ producto.get('price', 0) }}"
+              placeholder="0.00"
+              required
+            >
+            <div class="helper-text">Este sigue siendo tu único precio guardado para este producto o servicio.</div>
+          </div>
+        </div>
+
+        <div>
+          <div class="type-box">
             <label for="tipo" class="form-label">Tipo</label>
-            <select name="tipo" id="tipo" class="form-control">
-                {% for t in tipos_posibles %}
-                    <option value="{{ t }}"
-                        {% if producto.get('tipo','producto') == t %}selected{% endif %}>
-                        {{ t|capitalize }}
-                    </option>
-                {% endfor %}
+            <select name="tipo" id="tipo" class="form-select">
+              {% for t in tipos_posibles %}
+                <option value="{{ t }}"
+                  {% if producto.get('tipo', 'producto') == t %}selected{% endif %}>
+                  {{ t|capitalize }}
+                </option>
+              {% endfor %}
             </select>
-            <div class="form-text">
-                "Servicio" = mano de obra / cita. "Producto" = vendes físicamente.
+            <div class="helper-text">
+              <strong>Servicio</strong> = mano de obra o cita. <strong>Producto</strong> = algo físico que vendes.
             </div>
+          </div>
         </div>
 
-        <div class="form-check mb-3">
-            <input class="form-check-input"
+        <div>
+          <div class="field-box">
+            <label for="sku" class="form-label">SKU</label>
+            <input
+              type="text"
+              id="sku"
+              name="sku"
+              class="form-control"
+              value="{{ producto.get('sku', '') }}"
+              placeholder="Ej. PROD-001"
+              maxlength="80"
+            >
+            <div class="helper-text">Clave interna para ubicar el producto más rápido.</div>
+          </div>
+        </div>
+
+        <div>
+          <div class="field-box">
+            <label for="barcode" class="form-label">Código de barras</label>
+            <input
+              type="text"
+              id="barcode"
+              name="barcode"
+              class="form-control"
+              value="{{ producto.get('barcode', '') }}"
+              placeholder="Ej. 7501234567890"
+              maxlength="120"
+            >
+            <div class="helper-text">Puedes guardar EAN, UPC o un código interno.</div>
+          </div>
+        </div>
+
+        <div class="full-width">
+          <div class="switch-box">
+            <div class="text">
+              <h6>Mostrar precio</h6>
+              <p>Activa esta opción si deseas que el precio aparezca visible dentro del catálogo.</p>
+            </div>
+
+            <div class="form-check form-switch">
+              <input
+                class="form-check-input"
                 type="checkbox"
                 name="show_price"
                 id="show_price"
-                {% if producto.get('show_price') %}checked{% endif %}>
-            <label class="form-check-label" for="show_price">
-                Mostrar precio
-            </label>
+                {% if producto.get('show_price') %}checked{% endif %}
+              >
+              <label class="form-check-label" for="show_price">Mostrar precio</label>
+            </div>
+          </div>
         </div>
 
-        <div class="mb-3">
-            <label class="form-label">Imagen (subir nueva opcional)</label>
-            <input type="file" name="image" class="form-control">
-            {% if producto.get('image') %}
-                <div class="mt-2">
-                    <small class="text-muted d-block mb-1">Imagen actual:</small>
-                    <img src="{{ url_for('uploaded_file', filename=producto['image']) }}"
-                         alt="Imagen actual"
-                         style="max-height:100px; border:1px solid #ccc; border-radius:6px;">
+        <div class="full-width">
+          <div class="switch-box">
+            <div class="text">
+              <h6>Activo en catálogo</h6>
+              <p>Desactívalo si no quieres que siga apareciendo ni vendiéndose por ahora.</p>
+            </div>
+
+            <div class="form-check form-switch">
+              <input
+                class="form-check-input"
+                type="checkbox"
+                name="active"
+                id="active"
+                {% if producto.get('active', True) %}checked{% endif %}
+              >
+              <label class="form-check-label" for="active">Activo</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="full-width" id="inventorySection">
+          <div class="inventory-panel">
+            <div class="section-title">
+              <i class="bi bi-box-seam-fill"></i>
+              Inventario y control interno
+            </div>
+
+            <div class="inventory-grid">
+              <div class="switch-box">
+                <div class="text">
+                  <h6>Controlar inventario</h6>
+                  <p>Si está activo, el sistema descontará stock automáticamente cuando registres una venta.</p>
                 </div>
-            {% endif %}
+
+                <div class="form-check form-switch">
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    name="track_inventory"
+                    id="track_inventory"
+                    {% if producto.get('track_inventory', False) %}checked{% endif %}
+                  >
+                  <label class="form-check-label" for="track_inventory">Controlar inventario</label>
+                </div>
+              </div>
+
+              <div class="field-box">
+                <label for="stock" class="form-label">Stock actual</label>
+                <input
+                  type="number"
+                  id="stock"
+                  name="stock"
+                  min="0"
+                  step="1"
+                  value="{{ producto.get('stock', 0) }}"
+                  class="form-control"
+                >
+                <div class="helper-text">Cantidad disponible actualmente.</div>
+              </div>
+
+              <div class="field-box">
+                <label for="min_stock" class="form-label">Stock mínimo</label>
+                <input
+                  type="number"
+                  id="min_stock"
+                  name="min_stock"
+                  min="0"
+                  step="1"
+                  value="{{ producto.get('min_stock', 0) }}"
+                  class="form-control"
+                >
+                <div class="helper-text">Te servirá para marcar productos con inventario bajo.</div>
+              </div>
+            </div>
+
+            <div class="inventory-note">
+              Si cambias este elemento a <strong>Servicio</strong>, el control de inventario no será necesario.
+            </div>
+          </div>
         </div>
 
-        <button type="submit" class="btn btn-primary">Actualizar</button>
-    </form>
+        <div class="full-width">
+          <div class="image-box">
+            <label for="image" class="form-label">Imagen (subir nueva opcional)</label>
+            <input
+              type="file"
+              id="image"
+              name="image"
+              class="form-control"
+              accept="image/*"
+            >
+            <div class="helper-text">
+              Solo sube una nueva imagen si deseas reemplazar la actual.
+            </div>
 
-    <div class="mt-4 text-center">
-        <a href="{{ url_for('list_productos') }}" class="btn btn-outline-dark">
-            <i class="bi bi-arrow-left-circle"></i> Regresar
+            {% if producto.get('image') %}
+              <div class="current-image-wrap">
+                <img
+                  src="{{ url_for('uploaded_file', filename=producto['image']) }}"
+                  alt="Imagen actual"
+                >
+                <div class="current-image-meta">
+                  <strong class="d-block text-dark mb-1">Imagen actual</strong>
+                  Esta imagen seguirá mostrándose mientras no cargues una nueva.
+                </div>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="actions-bar">
+        <a href="{{ url_for('list_productos') }}" class="btn-cancel-product">
+          <i class="bi bi-x-circle"></i>
+          Cancelar
         </a>
-    </div>
+
+        <button type="submit" class="btn-save-product">
+          <i class="bi bi-check2-circle"></i>
+          Actualizar
+        </button>
+      </div>
+    </form>
+  </div>
 </div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const tipoSelect = document.getElementById('tipo');
+    const inventorySection = document.getElementById('inventorySection');
+    const trackInventory = document.getElementById('track_inventory');
+    const stockInput = document.getElementById('stock');
+    const minStockInput = document.getElementById('min_stock');
+
+    function syncInventorySection() {
+      const isService = tipoSelect.value === 'servicio';
+
+      if (isService) {
+        inventorySection.classList.add('hidden-soft');
+        trackInventory.checked = false;
+        stockInput.value = 0;
+        minStockInput.value = 0;
+      } else {
+        inventorySection.classList.remove('hidden-soft');
+      }
+    }
+
+    tipoSelect.addEventListener('change', syncInventorySection);
+    syncInventorySection();
+  });
+</script>
 {% endblock %}

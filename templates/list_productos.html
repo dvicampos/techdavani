@@ -5,10 +5,12 @@
 {% set items = productos|list %}
 {% set productos_fisicos = items | rejectattr('tipo', 'equalto', 'servicio') | list %}
 {% set servicios = items | selectattr('tipo', 'equalto', 'servicio') | list %}
+{% set activos = items | rejectattr('active', 'equalto', false) | list %}
+{% set inactivos = items | selectattr('active', 'equalto', false) | list %}
 
 <style>
   .catalogo-page {
-    max-width: 1160px;
+    max-width: 1180px;
     margin: 0 auto;
     padding: 28px 0 36px;
   }
@@ -46,7 +48,7 @@
     color: rgba(221, 232, 255, 0.78);
     font-size: 0.98rem;
     line-height: 1.65;
-    max-width: 700px;
+    max-width: 760px;
   }
 
   .catalogo-actions-top {
@@ -56,7 +58,8 @@
     flex-wrap: wrap;
   }
 
-  .btn-back-catalogo {
+  .btn-back-catalogo,
+  .btn-new-catalogo {
     border-radius: 14px;
     padding: 11px 18px;
     font-weight: 700;
@@ -66,6 +69,9 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
+  }
+
+  .btn-back-catalogo {
     color: #dbe9ff;
     border: 1px solid rgba(135, 164, 255, 0.24);
     background: rgba(255, 255, 255, 0.04);
@@ -77,6 +83,19 @@
     background: rgba(255, 255, 255, 0.08);
     border-color: rgba(135, 164, 255, 0.4);
     transform: translateY(-1px);
+  }
+
+  .btn-new-catalogo {
+    color: #fff;
+    border: 1px solid rgba(34, 197, 94, 0.48);
+    background: linear-gradient(135deg, #16a34a, #22c55e);
+    box-shadow: 0 12px 24px rgba(34, 197, 94, 0.20);
+  }
+
+  .btn-new-catalogo:hover {
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 16px 28px rgba(34, 197, 94, 0.28);
   }
 
   .catalogo-summary {
@@ -148,7 +167,7 @@
 
   .catalogo-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
     gap: 22px;
   }
 
@@ -194,6 +213,47 @@
     height: 100%;
     object-fit: cover;
     display: block;
+  }
+
+  .catalogo-top-badges {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    right: 14px;
+    z-index: 3;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .mini-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    padding: 7px 10px;
+    border-radius: 999px;
+    backdrop-filter: blur(10px);
+  }
+
+  .mini-active {
+    color: #166534;
+    background: rgba(240, 253, 244, 0.94);
+    border: 1px solid #bbf7d0;
+  }
+
+  .mini-inactive {
+    color: #991b1b;
+    background: rgba(254, 242, 242, 0.94);
+    border: 1px solid #fecaca;
+  }
+
+  .mini-low-stock {
+    color: #92400e;
+    background: rgba(255, 251, 235, 0.94);
+    border: 1px solid #fde68a;
   }
 
   .catalogo-no-image {
@@ -255,8 +315,83 @@
     color: #475467;
     line-height: 1.68;
     font-size: 0.95rem;
-    margin-bottom: 18px;
+    margin-bottom: 16px;
     flex-grow: 1;
+  }
+
+  .catalogo-meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .meta-chip {
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    min-height: 100%;
+  }
+
+  .meta-chip .label {
+    display: block;
+    font-size: 0.74rem;
+    font-weight: 800;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+  }
+
+  .meta-chip .value {
+    color: #0f172a;
+    font-weight: 700;
+    font-size: 0.93rem;
+    line-height: 1.4;
+    word-break: break-word;
+  }
+
+  .inventory-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .inventory-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 800;
+    border: 1px solid transparent;
+  }
+
+  .pill-stock {
+    color: #1d4ed8;
+    background: #eff6ff;
+    border-color: #bfdbfe;
+  }
+
+  .pill-min {
+    color: #7c2d12;
+    background: #fff7ed;
+    border-color: #fdba74;
+  }
+
+  .pill-track {
+    color: #166534;
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+  }
+
+  .pill-no-track {
+    color: #6b7280;
+    background: #f3f4f6;
+    border-color: #d1d5db;
   }
 
   .catalogo-price {
@@ -378,13 +513,18 @@
       width: 100%;
     }
 
-    .btn-back-catalogo {
+    .btn-back-catalogo,
+    .btn-new-catalogo {
       width: 100%;
       justify-content: center;
     }
 
     .catalogo-image-wrap {
       height: 200px;
+    }
+
+    .catalogo-meta-grid {
+      grid-template-columns: 1fr;
     }
   }
 
@@ -408,10 +548,18 @@
   <div class="catalogo-topbar">
     <div class="catalogo-heading">
       <h2><i class="bi bi-grid-1x2-fill"></i> Catálogo</h2>
-      <p>Administra tu catálogo separado por productos y servicios para tener una vista más clara, ordenada y profesional.</p>
+      <p>
+        Administra tu catálogo separado por productos y servicios con una vista más clara,
+        elegante y lista para inventario y punto de venta.
+      </p>
     </div>
 
     <div class="catalogo-actions-top">
+      <a href="{{ url_for('create_producto') }}" class="btn-new-catalogo">
+        <i class="bi bi-plus-circle"></i>
+        Nuevo elemento
+      </a>
+
       <a href="{{ url_for('dashboard') }}" class="btn-back-catalogo">
         <i class="bi bi-arrow-left-circle"></i>
         Regresar
@@ -424,15 +572,144 @@
       <i class="bi bi-box-seam"></i>
       {{ productos_fisicos|length }} producto{% if productos_fisicos|length != 1 %}s{% endif %}
     </div>
+
     <div class="summary-pill">
-      <i class="bi bi-scissors"></i>
+      <i class="bi bi-stars"></i>
       {{ servicios|length }} servicio{% if servicios|length != 1 %}s{% endif %}
     </div>
+
     <div class="summary-pill">
-      <i class="bi bi-collection"></i>
-      {{ items|length }} total
+      <i class="bi bi-check-circle"></i>
+      {{ activos|length }} activo{% if activos|length != 1 %}s{% endif %}
+    </div>
+
+    <div class="summary-pill">
+      <i class="bi bi-pause-circle"></i>
+      {{ inactivos|length }} inactivo{% if inactivos|length != 1 %}s{% endif %}
+    </div>
+
+    <div class="summary-pill">
+      <i class="bi bi-exclamation-triangle"></i>
+      {{ low_stock_count|default(0) }} stock bajo
     </div>
   </div>
+
+  {% macro render_item_card(producto, es_servicio=False) %}
+    {% set stock = producto.get('stock', 0) %}
+    {% set min_stock = producto.get('min_stock', 0) %}
+    {% set track_inventory = producto.get('track_inventory', False) %}
+    {% set active = producto.get('active', True) %}
+    {% set low_stock = (not es_servicio) and track_inventory and (stock <= min_stock) %}
+    <article class="catalogo-card">
+      <div class="catalogo-image-wrap">
+        <div class="catalogo-top-badges">
+          <div class="mini-badge {{ 'mini-active' if active else 'mini-inactive' }}">
+            <i class="bi {{ 'bi-check-circle-fill' if active else 'bi-slash-circle-fill' }}"></i>
+            {{ 'Activo' if active else 'Inactivo' }}
+          </div>
+
+          {% if low_stock %}
+            <div class="mini-badge mini-low-stock">
+              <i class="bi bi-exclamation-triangle-fill"></i>
+              Stock bajo
+            </div>
+          {% endif %}
+        </div>
+
+        {% if producto.image %}
+          <img src="{{ url_for('uploaded_file', filename=producto.image) }}" alt="{{ producto.title }}">
+        {% else %}
+          <div class="catalogo-no-image">
+            <i class="bi bi-image"></i>
+            <span>Sin imagen</span>
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="catalogo-body">
+        <div class="catalogo-badge {{ 'badge-servicio' if es_servicio else 'badge-producto' }}">
+          <i class="bi {{ 'bi-stars' if es_servicio else 'bi-box-seam' }}"></i>
+          {{ 'Servicio' if es_servicio else 'Producto' }}
+        </div>
+
+        <h5 class="catalogo-title">{{ producto.title }}</h5>
+
+        <p class="catalogo-description">
+          {{ producto.description | default('', true) | truncate(150) }}
+        </p>
+
+        <div class="catalogo-meta-grid">
+          <div class="meta-chip">
+            <span class="label">SKU</span>
+            <span class="value">{{ producto.get('sku', '—') if producto.get('sku') else '—' }}</span>
+          </div>
+
+          <div class="meta-chip">
+            <span class="label">Código</span>
+            <span class="value">{{ producto.get('barcode', '—') if producto.get('barcode') else '—' }}</span>
+          </div>
+        </div>
+
+        {% if not es_servicio %}
+          <div class="inventory-row">
+            <div class="inventory-pill pill-stock">
+              <i class="bi bi-boxes"></i>
+              Stock: {{ stock }}
+            </div>
+
+            <div class="inventory-pill pill-min">
+              <i class="bi bi-arrow-down-circle"></i>
+              Mín.: {{ min_stock }}
+            </div>
+
+            {% if track_inventory %}
+              <div class="inventory-pill pill-track">
+                <i class="bi bi-shield-check"></i>
+                Inventario activo
+              </div>
+            {% else %}
+              <div class="inventory-pill pill-no-track">
+                <i class="bi bi-slash-circle"></i>
+                Sin control
+              </div>
+            {% endif %}
+          </div>
+        {% else %}
+          <div class="inventory-row">
+            <div class="inventory-pill pill-no-track">
+              <i class="bi bi-scissors"></i>
+              Sin inventario
+            </div>
+          </div>
+        {% endif %}
+
+        {% if producto.get('show_price', True) %}
+          <div class="catalogo-price">
+            <i class="bi bi-cash-coin"></i>
+            $ {{ '%.2f'|format(producto.get('price', 0)|float) }}
+          </div>
+        {% endif %}
+
+        <div class="catalogo-actions">
+          <a href="{{ url_for('edit_producto', producto_id=producto._id) }}" class="btn-edit-item">
+            <i class="bi bi-pencil-square"></i>
+            Editar
+          </a>
+
+          <form action="{{ url_for('delete_producto', producto_id=producto._id) }}" method="POST" class="delete-form">
+            <button
+              type="submit"
+              class="btn-delete-item"
+              onclick="return confirm('¿Estás seguro de eliminar este {{ 'servicio' if es_servicio else 'producto' }}?')"
+            >
+              <i class="bi bi-trash3"></i>
+              Eliminar
+            </button>
+          </form>
+        </div>
+      </div>
+    </article>
+  {% endmacro %}
 
   {% if items %}
     <section class="catalogo-section">
@@ -450,58 +727,13 @@
       {% if productos_fisicos %}
         <div class="catalogo-grid">
           {% for producto in productos_fisicos %}
-            <article class="catalogo-card">
-              <div class="catalogo-image-wrap">
-                {% if producto.image %}
-                  <img src="{{ url_for('uploaded_file', filename=producto.image) }}" alt="{{ producto.title }}">
-                {% else %}
-                  <div class="catalogo-no-image">
-                    <i class="bi bi-image"></i>
-                    <span>Sin imagen</span>
-                  </div>
-                {% endif %}
-              </div>
-
-              <div class="catalogo-body">
-                <div class="catalogo-badge badge-producto">
-                  <i class="bi bi-box-seam"></i>
-                  Producto
-                </div>
-
-                <h5 class="catalogo-title">{{ producto.title }}</h5>
-
-                <p class="catalogo-description">
-                  {{ producto.description | truncate(150) }}
-                </p>
-
-                {% if producto.get('show_price', True) %}
-                  <div class="catalogo-price">
-                    <i class="bi bi-cash-coin"></i>
-                    $ {{ producto.price }}
-                  </div>
-                {% endif %}
-
-                <div class="catalogo-actions">
-                  <a href="{{ url_for('edit_producto', producto_id=producto._id) }}" class="btn-edit-item">
-                    <i class="bi bi-pencil-square"></i>
-                    Editar
-                  </a>
-
-                  <form action="{{ url_for('delete_producto', producto_id=producto._id) }}" method="POST" class="delete-form">
-                    <button type="submit" class="btn-delete-item" onclick="return confirm('¿Estás seguro de eliminar este producto?')">
-                      <i class="bi bi-trash3"></i>
-                      Eliminar
-                    </button>
-                  </form>
-                </div>
-              </div>
-            </article>
+            {{ render_item_card(producto, False) }}
           {% endfor %}
         </div>
       {% else %}
         <div class="empty-section">
           <h4>No hay productos registrados</h4>
-          <p>Cuando agregues productos físicos aparecerán aquí separados de los servicios.</p>
+          <p>Cuando agregues productos físicos aparecerán aquí con su control de stock e información interna.</p>
         </div>
       {% endif %}
     </section>
@@ -521,52 +753,7 @@
       {% if servicios %}
         <div class="catalogo-grid">
           {% for producto in servicios %}
-            <article class="catalogo-card">
-              <div class="catalogo-image-wrap">
-                {% if producto.image %}
-                  <img src="{{ url_for('uploaded_file', filename=producto.image) }}" alt="{{ producto.title }}">
-                {% else %}
-                  <div class="catalogo-no-image">
-                    <i class="bi bi-image"></i>
-                    <span>Sin imagen</span>
-                  </div>
-                {% endif %}
-              </div>
-
-              <div class="catalogo-body">
-                <div class="catalogo-badge badge-servicio">
-                  <i class="bi bi-stars"></i>
-                  Servicio
-                </div>
-
-                <h5 class="catalogo-title">{{ producto.title }}</h5>
-
-                <p class="catalogo-description">
-                  {{ producto.description | truncate(150) }}
-                </p>
-
-                {% if producto.get('show_price', True) %}
-                  <div class="catalogo-price">
-                    <i class="bi bi-cash-coin"></i>
-                    $ {{ producto.price }}
-                  </div>
-                {% endif %}
-
-                <div class="catalogo-actions">
-                  <a href="{{ url_for('edit_producto', producto_id=producto._id) }}" class="btn-edit-item">
-                    <i class="bi bi-pencil-square"></i>
-                    Editar
-                  </a>
-
-                  <form action="{{ url_for('delete_producto', producto_id=producto._id) }}" method="POST" class="delete-form">
-                    <button type="submit" class="btn-delete-item" onclick="return confirm('¿Estás seguro de eliminar este servicio?')">
-                      <i class="bi bi-trash3"></i>
-                      Eliminar
-                    </button>
-                  </form>
-                </div>
-              </div>
-            </article>
+            {{ render_item_card(producto, True) }}
           {% endfor %}
         </div>
       {% else %}
@@ -582,7 +769,7 @@
         <i class="bi bi-bag-x"></i>
       </div>
       <h3>No hay elementos en el catálogo</h3>
-      <p>Cuando agregues productos o servicios aparecerán aquí organizados por categoría.</p>
+      <p>Cuando agregues productos o servicios aparecerán aquí organizados, con estilo y listos para administrar mejor.</p>
     </div>
   {% endif %}
 </div>
