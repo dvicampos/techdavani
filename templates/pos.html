@@ -848,7 +848,10 @@
       justify-content: center;
     }
 
-    .mix-row,
+    .mix-row {
+      grid-template-columns: 1fr;
+    }
+
     .product-meta {
       grid-template-columns: 1fr;
     }
@@ -1207,6 +1210,44 @@
             </div>
           </div>
 
+          <div id="cashFields" class="hidden-soft">
+            <div class="mix-row">
+              <div>
+                <label for="received_amount" class="form-label">Monto recibido</label>
+                <input
+                  type="number"
+                  id="received_amount"
+                  name="received_amount"
+                  step="0.01"
+                  min="0"
+                  value="0"
+                  class="form-control"
+                  placeholder="0.00"
+                >
+                <div class="helper-text">
+                  Captura cuánto dinero te entregó el cliente.
+                </div>
+              </div>
+
+              <div>
+                <label for="change_amount" class="form-label">Cambio</label>
+                <input
+                  type="number"
+                  id="change_amount"
+                  name="change_amount"
+                  step="0.01"
+                  min="0"
+                  value="0"
+                  class="form-control"
+                  readonly
+                >
+                <div class="helper-text">
+                  Este valor se calcula automáticamente.
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div id="mixFields" class="hidden-soft">
             <div class="mix-row">
               <div>
@@ -1333,8 +1374,11 @@
     const qtyInputs = document.querySelectorAll('.js-qty-input');
     const paymentMethod = document.getElementById('payment_method');
     const mixFields = document.getElementById('mixFields');
+    const cashFields = document.getElementById('cashFields');
     const cashAmount = document.getElementById('cash_amount');
     const digitalAmount = document.getElementById('digital_amount');
+    const receivedAmount = document.getElementById('received_amount');
+    const changeAmount = document.getElementById('change_amount');
     const paymentNote = document.getElementById('paymentNote');
     const clearAllBtn = document.getElementById('clearAllBtn');
     const submitBtn = document.getElementById('submitBtn');
@@ -1457,6 +1501,8 @@
       const method = paymentMethod.value;
 
       paymentNote.classList.remove('is-error');
+      mixFields.classList.add('hidden-soft');
+      cashFields.classList.add('hidden-soft');
 
       if (method === 'mixto') {
         mixFields.classList.remove('hidden-soft');
@@ -1465,13 +1511,16 @@
         const digital = Number(digitalAmount.value || 0);
         const sum = cash + digital;
 
+        receivedAmount.value = '0';
+        changeAmount.value = '0.00';
+
         if (Math.abs(sum - total) > 0.009) {
           paymentNote.classList.add('is-error');
           paymentNote.innerHTML = `
             En pago mixto, <strong>efectivo + digital</strong> debe ser igual al total de la venta.
             <br>Total actual: <strong>${money(total)}</strong> · Capturado: <strong>${money(sum)}</strong>
           `;
-          submitBtn.disabled = total <= 0;
+          submitBtn.disabled = total <= 0 || total === 0;
         } else {
           paymentNote.innerHTML = `
             Pago mixto correcto.
@@ -1479,23 +1528,71 @@
           `;
           submitBtn.disabled = total <= 0;
         }
-      } else {
-        mixFields.classList.add('hidden-soft');
+
+        return;
+      }
+
+      if (method === 'efectivo') {
+        cashFields.classList.remove('hidden-soft');
+
+        const recibido = Number(receivedAmount.value || 0);
+        const cambio = recibido - total;
+
+        changeAmount.value = cambio > 0 ? cambio.toFixed(2) : '0.00';
+
         cashAmount.value = '0';
         digitalAmount.value = '0';
 
-        if (method === 'efectivo') {
-          paymentNote.innerHTML = `Se registrará el total completo en <strong>efectivo</strong>.`;
-        } else if (method === 'transferencia') {
-          paymentNote.innerHTML = `Se registrará el total completo en <strong>transferencia</strong>.`;
-        } else if (method === 'tarjeta') {
-          paymentNote.innerHTML = `Se registrará el total completo en <strong>tarjeta</strong>.`;
-        } else {
-          paymentNote.innerHTML = `Se registrará el total completo en <strong>digital</strong>.`;
+        if (total <= 0) {
+          paymentNote.innerHTML = `Selecciona productos para calcular el total.`;
+          submitBtn.disabled = true;
+          return;
         }
 
-        submitBtn.disabled = total <= 0;
+        if (recibido <= 0) {
+          paymentNote.classList.add('is-error');
+          paymentNote.innerHTML = `
+            Captura el <strong>monto recibido</strong> para calcular el cambio.
+            <br>Total actual: <strong>${money(total)}</strong>
+          `;
+          submitBtn.disabled = true;
+          return;
+        }
+
+        if (recibido < total) {
+          paymentNote.classList.add('is-error');
+          paymentNote.innerHTML = `
+            El monto recibido es menor al total.
+            <br>Total: <strong>${money(total)}</strong> · Recibido: <strong>${money(recibido)}</strong>
+            <br>Faltan: <strong>${money(total - recibido)}</strong>
+          `;
+          submitBtn.disabled = true;
+          return;
+        }
+
+        paymentNote.innerHTML = `
+          Cobro en <strong>efectivo</strong> correcto.
+          <br>Total: <strong>${money(total)}</strong> · Recibido: <strong>${money(recibido)}</strong>
+          <br>Cambio a devolver: <strong>${money(cambio)}</strong>
+        `;
+        submitBtn.disabled = false;
+        return;
       }
+
+      cashAmount.value = '0';
+      digitalAmount.value = '0';
+      receivedAmount.value = '0';
+      changeAmount.value = '0.00';
+
+      if (method === 'transferencia') {
+        paymentNote.innerHTML = `Se registrará el total completo en <strong>transferencia</strong>.`;
+      } else if (method === 'tarjeta') {
+        paymentNote.innerHTML = `Se registrará el total completo en <strong>tarjeta</strong>.`;
+      } else {
+        paymentNote.innerHTML = `Se registrará el total completo en <strong>digital</strong>.`;
+      }
+
+      submitBtn.disabled = total <= 0;
     }
 
     function syncSearch() {
@@ -1685,12 +1782,18 @@
       getTotal();
     });
 
+    receivedAmount.addEventListener('input', function () {
+      getTotal();
+    });
+
     clearAllBtn?.addEventListener('click', function () {
       qtyInputs.forEach(input => {
         if (!input.disabled) input.value = 0;
       });
       cashAmount.value = '0';
       digitalAmount.value = '0';
+      receivedAmount.value = '0';
+      changeAmount.value = '0.00';
       clearHighlights();
       clearScanStatus();
       getTotal();
@@ -1738,6 +1841,17 @@
         if (Math.abs((cash + digital) - total) > 0.009) {
           e.preventDefault();
           alert('En pago mixto, efectivo + digital debe ser igual al total.');
+          return;
+        }
+      }
+
+      if (method === 'efectivo') {
+        const recibido = Number(receivedAmount.value || 0);
+
+        if (recibido < total) {
+          e.preventDefault();
+          alert('El monto recibido no puede ser menor al total.');
+          return;
         }
       }
     });
