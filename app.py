@@ -1,28 +1,37 @@
-from flask import Flask, request, render_template, redirect, url_for, flash, send_from_directory, render_template_string, Response
+from flask import (
+    Flask, request, render_template, redirect, url_for, flash,
+    send_from_directory, render_template_string, Response, send_file, current_app
+)
 from flask_pymongo import PyMongo
 from flask_mail import Mail, Message
 from flask_bcrypt import Bcrypt
-from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
+from flask_login import (
+    LoginManager, UserMixin, login_user, logout_user,
+    login_required, current_user
+)
 from itsdangerous import URLSafeTimedSerializer
 from werkzeug.utils import secure_filename
 from werkzeug.security import check_password_hash, generate_password_hash
 from dotenv import load_dotenv
-from datetime import datetime
+from datetime import datetime, date, timedelta
 from bson.objectid import ObjectId
 from functools import wraps
-import os
-import re
-from dotenv import load_dotenv
-import requests
 from jinja2 import TemplateNotFound
 from urllib.parse import urlparse
-from datetime import datetime, date, timedelta
 from io import BytesIO
 from pymongo import ReturnDocument
+
+import os
+import re
+import requests
+import qrcode
+
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
-import qrcode
-from flask import send_file, render_template_string
+from reportlab.lib.units import mm
+from reportlab.lib import colors
+from reportlab.lib.utils import ImageReader
+from reportlab.pdfbase.pdfmetrics import stringWidth
 
 load_dotenv()
 RECAPTCHA_SECRET_KEY = os.getenv("RECAPTCHA_SECRET_KEY")
@@ -2707,6 +2716,521 @@ def venta_detail(venta_id):
 
     return render_template('venta_detail.html', venta=venta)
 
+PAYMENT_LABELS = {
+    'efectivo': 'Efectivo',
+    'transferencia': 'Transferencia',
+    'tarjeta': 'Tarjeta',
+    'digital': 'Digital',
+    'mixto': 'Mixto',
+}
+
+
+def fmt_money(value):
+    try:
+        return f"{float(value or 0):,.2f}"
+    except Exception:
+        return "0.00"
+
+
+def fmt_dt(dt):
+    if not dt:
+        return "-"
+    try:
+        return dt.strftime('%d/%m/%Y %H:%M')
+    except Exception:
+        return str(dt)
+
+
+def safe_text(value, fallback='-'):
+    text = str(value).strip() if value is not None else ''
+    return text or fallback
+
+
+def wrap_text(text, max_width, font_name="Helvetica", font_size=9):
+    text = safe_text(text, '')
+    if not text:
+        return []
+
+    result = []
+
+    for paragraph in text.splitlines():
+        paragraph = paragraph.strip()
+        if not paragraph:
+            result.append('')
+            continue
+
+        words = paragraph.split()
+        current = words[0]
+
+        for word in words[1:]:
+            test = f"{current} {word}"
+            if stringWidth(test, font_name, font_size) <= max_width:
+                current = test
+            else:
+                result.append(current)
+                current = word
+
+        result.append(current)
+
+    return result
+
+
+def draw_wrapped_lines(pdf, lines, x, y, line_height=11, font_name="Helvetica", font_size=9, color=colors.black):
+    pdf.setFillColor(color)
+    pdf.setFont(font_name, font_size)
+
+    for line in lines:
+        pdf.drawString(x, y, line)
+        y -= line_height
+
+    return y
+
+
+def resolve_logo_reader(page):
+    """
+    Ajusta aquí si en tu BD el campo del logo tiene otro nombre.
+    Intenta con:
+    - page['logo']
+    - page['logo_url']
+    - page['business_logo']
+    """
+    logo_value = (
+        page.get('logo')
+        or page.get('logo_url')
+        or page.get('business_logo')
+        or page.get('branding_logo')
+    )
+
+    if not logo_value:
+        return None
+
+    upload_folder = current_app.config.get('UPLOAD_FOLDER', '')
+    candidates = []
+
+    if os.path.isabs(logo_value):
+        candidates.append(logo_value)
+
+    if upload_folder:
+        candidates.append(os.path.join(upload_folder, logo_value))
+        candidates.append(os.path.join(upload_folder, os.path.basename(logo_value)))
+
+    for path in candidates:
+        if path and os.path.exists(path):
+            try:
+                return ImageReader(path)
+            except Exception:
+                pass
+
+    return None
+
+
+def estimate_thermal_height(venta):
+    items = venta.get('items', []) or []
+    notes = safe_text(venta.get('notes'), '')
+    customer_name = safe_text(venta.get('customer_name'), '')
+    customer_phone = safe_text(venta.get('customer_phone'), '')
+
+    base = 155 * mm
+    items_space = max(1, len(items)) * (12 * mm)
+
+    extra = 0
+    if notes:
+        extra += max(10 * mm, (len(notes) // 34 + 2) * 5 * mm)
+    if customer_name:
+        extra += 6 * mm
+    if customer_phone:
+        extra += 6 * mm
+
+    return base + items_space + extra
+
+
+def draw_logo_centered(pdf, logo_reader, center_x, top_y, max_width, max_height):
+    if not logo_reader:
+        return top_y
+
+    try:
+        iw, ih = logo_reader.getSize()
+        if iw <= 0 or ih <= 0:
+            return top_y
+
+        scale = min(max_width / iw, max_height / ih)
+        draw_w = iw * scale
+        draw_h = ih * scale
+        x = center_x - (draw_w / 2)
+
+        pdf.drawImage(
+            logo_reader,
+            x,
+            top_y - draw_h,
+            width=draw_w,
+            height=draw_h,
+            preserveAspectRatio=True,
+            mask='auto'
+        )
+        return top_y - draw_h
+    except Exception:
+        return top_y
+
+
+def draw_letter_header(pdf, page, venta, business_name, width, height):
+    accent = colors.HexColor("#1d4ed8")
+    dark = colors.HexColor("#0f172a")
+    muted = colors.HexColor("#64748b")
+    soft = colors.HexColor("#e2e8f0")
+
+    margin_x = 42
+    content_w = width - (margin_x * 2)
+    y = height - 38
+
+    logo_reader = resolve_logo_reader(page)
+    if logo_reader:
+        y = draw_logo_centered(pdf, logo_reader, width / 2, y, max_width=120, max_height=46)
+        y -= 10
+
+    pdf.setFillColor(dark)
+    pdf.setFont("Helvetica-Bold", 18)
+    pdf.drawCentredString(width / 2, y, business_name)
+    y -= 20
+
+    phone = page.get('phone') or page.get('business_phone') or page.get('whatsapp') or ''
+    address = page.get('address') or page.get('business_address') or ''
+    header_meta = " · ".join([v for v in [safe_text(phone, ''), safe_text(address, '')] if v])
+
+    if header_meta:
+        pdf.setFillColor(muted)
+        pdf.setFont("Helvetica", 9)
+        pdf.drawCentredString(width / 2, y, header_meta)
+        y -= 16
+
+    pdf.setStrokeColor(accent)
+    pdf.setLineWidth(1.2)
+    pdf.line(margin_x, y, width - margin_x, y)
+    y -= 18
+
+    # Caja de datos
+    box_h = 66
+    pdf.setFillColor(colors.white)
+    pdf.setStrokeColor(soft)
+    pdf.roundRect(margin_x, y - box_h, content_w, box_h, 10, fill=1, stroke=1)
+
+    pdf.setFillColor(muted)
+    pdf.setFont("Helvetica-Bold", 8)
+    pdf.drawString(margin_x + 14, y - 16, "FOLIO")
+    pdf.drawString(margin_x + 170, y - 16, "FECHA")
+    pdf.drawString(margin_x + 360, y - 16, "CLIENTE")
+
+    pdf.setFillColor(dark)
+    pdf.setFont("Helvetica-Bold", 12)
+    pdf.drawString(margin_x + 14, y - 32, safe_text(venta.get('folio'), 'SIN FOLIO'))
+
+    pdf.setFont("Helvetica", 10)
+    pdf.drawString(margin_x + 170, y - 32, fmt_dt(venta.get('created_at')))
+    pdf.drawString(margin_x + 360, y - 32, safe_text(venta.get('customer_name'), 'Mostrador'))
+
+    pdf.setFillColor(muted)
+    pdf.setFont("Helvetica-Bold", 8)
+    pdf.drawString(margin_x + 14, y - 48, "TELÉFONO")
+
+    pdf.setFillColor(dark)
+    pdf.setFont("Helvetica", 10)
+    pdf.drawString(margin_x + 14, y - 62, safe_text(venta.get('customer_phone'), '-'))
+
+    return y - box_h - 18
+
+
+def draw_letter_items_header(pdf, margin_x, y, width):
+    dark = colors.HexColor("#0f172a")
+    accent = colors.HexColor("#eff6ff")
+    line = colors.HexColor("#dbe5f1")
+
+    pdf.setFillColor(accent)
+    pdf.setStrokeColor(line)
+    pdf.roundRect(margin_x, y - 20, width, 20, 8, fill=1, stroke=1)
+
+    pdf.setFillColor(dark)
+    pdf.setFont("Helvetica-Bold", 9)
+    pdf.drawString(margin_x + 10, y - 13, "CANT.")
+    pdf.drawString(margin_x + 58, y - 13, "PRODUCTO")
+    pdf.drawRightString(margin_x + width - 90, y - 13, "P/U")
+    pdf.drawRightString(margin_x + width - 14, y - 13, "IMPORTE")
+
+    return y - 28
+
+
+def build_letter_ticket(pdf, venta, page, business_name):
+    width, height = letter
+    margin_x = 42
+    content_w = width - (margin_x * 2)
+    dark = colors.HexColor("#0f172a")
+    muted = colors.HexColor("#64748b")
+    soft = colors.HexColor("#e2e8f0")
+    accent = colors.HexColor("#1d4ed8")
+    green = colors.HexColor("#15803d")
+
+    y = draw_letter_header(pdf, page, venta, business_name, width, height)
+    y = draw_letter_items_header(pdf, margin_x, y, content_w)
+
+    items = venta.get('items', []) or []
+
+    for item in items:
+        qty = item.get('qty', 0)
+        title = safe_text(item.get('title'), 'Producto')
+        unit_price = float(item.get('unit_price', 0) or 0)
+        subtotal = float(item.get('subtotal', 0) or 0)
+
+        lines = wrap_text(title, max_width=content_w - 185, font_name="Helvetica", font_size=9)
+        row_h = max(22, 12 + (len(lines) * 11))
+
+        if y - row_h < 120:
+            pdf.showPage()
+            y = height - 50
+            pdf.setStrokeColor(accent)
+            pdf.setLineWidth(1)
+            pdf.line(margin_x, y, width - margin_x, y)
+            y -= 18
+            pdf.setFillColor(dark)
+            pdf.setFont("Helvetica-Bold", 14)
+            pdf.drawString(margin_x, y, f"Ticket {safe_text(venta.get('folio'), 'SIN FOLIO')} - Continuación")
+            y -= 18
+            y = draw_letter_items_header(pdf, margin_x, y, content_w)
+
+        pdf.setStrokeColor(soft)
+        pdf.line(margin_x, y - row_h + 6, margin_x + content_w, y - row_h + 6)
+
+        pdf.setFillColor(dark)
+        pdf.setFont("Helvetica-Bold", 9)
+        pdf.drawString(margin_x + 10, y - 6, str(qty))
+
+        current_y = y - 6
+        pdf.setFont("Helvetica", 9)
+        for line in lines:
+            pdf.drawString(margin_x + 58, current_y, line)
+            current_y -= 11
+
+        pdf.setFont("Helvetica", 9)
+        pdf.drawRightString(margin_x + content_w - 90, y - 6, f"${fmt_money(unit_price)}")
+        pdf.setFont("Helvetica-Bold", 9)
+        pdf.drawRightString(margin_x + content_w - 14, y - 6, f"${fmt_money(subtotal)}")
+
+        y -= row_h
+
+    y -= 8
+
+    # Totales
+    totals_w = 220
+    totals_x = width - margin_x - totals_w
+
+    pdf.setFillColor(colors.white)
+    pdf.setStrokeColor(soft)
+    pdf.roundRect(totals_x, y - 82, totals_w, 82, 10, fill=1, stroke=1)
+
+    pdf.setFillColor(muted)
+    pdf.setFont("Helvetica", 9)
+    pdf.drawString(totals_x + 14, y - 18, "Subtotal")
+    pdf.drawRightString(totals_x + totals_w - 14, y - 18, f"${fmt_money(venta.get('subtotal', 0))}")
+
+    pdf.drawString(totals_x + 14, y - 34, "Descuento")
+    pdf.drawRightString(totals_x + totals_w - 14, y - 34, f"${fmt_money(venta.get('discount', 0))}")
+
+    pdf.setStrokeColor(soft)
+    pdf.line(totals_x + 14, y - 44, totals_x + totals_w - 14, y - 44)
+
+    pdf.setFillColor(dark)
+    pdf.setFont("Helvetica-Bold", 12)
+    pdf.drawString(totals_x + 14, y - 62, "TOTAL")
+    pdf.setFillColor(green)
+    pdf.drawRightString(totals_x + totals_w - 14, y - 62, f"${fmt_money(venta.get('total', 0))}")
+
+    y -= 104
+
+    # Pago / notas
+    pay_label = PAYMENT_LABELS.get(venta.get('payment_method'), safe_text(venta.get('payment_method')))
+    pdf.setFillColor(dark)
+    pdf.setFont("Helvetica-Bold", 10)
+    pdf.drawString(margin_x, y, "Detalle de pago")
+    y -= 16
+
+    pdf.setFont("Helvetica", 9)
+    pdf.setFillColor(muted)
+    pdf.drawString(margin_x, y, f"Método: {pay_label}")
+    y -= 13
+    pdf.drawString(margin_x, y, f"Efectivo: ${fmt_money(venta.get('cash_amount', 0))}")
+    y -= 13
+    pdf.drawString(margin_x, y, f"Digital: ${fmt_money(venta.get('digital_amount', 0))}")
+    y -= 18
+
+    notes = safe_text(venta.get('notes'), '')
+    if notes:
+        pdf.setFillColor(dark)
+        pdf.setFont("Helvetica-Bold", 10)
+        pdf.drawString(margin_x, y, "Notas")
+        y -= 14
+
+        note_lines = wrap_text(notes, max_width=content_w, font_name="Helvetica", font_size=9)
+        y = draw_wrapped_lines(
+            pdf,
+            note_lines,
+            margin_x,
+            y,
+            line_height=11,
+            font_name="Helvetica",
+            font_size=9,
+            color=muted
+        )
+        y -= 8
+
+    pdf.setStrokeColor(soft)
+    pdf.line(margin_x, y, width - margin_x, y)
+    y -= 18
+
+    pdf.setFillColor(muted)
+    pdf.setFont("Helvetica-Oblique", 9)
+    pdf.drawCentredString(width / 2, y, "Gracias por tu compra")
+
+
+def build_thermal_ticket(pdf, venta, page, business_name, page_size):
+    width, height = page_size
+    margin_x = 6 * mm
+    content_w = width - (margin_x * 2)
+    center_x = width / 2
+
+    dark = colors.HexColor("#111827")
+    muted = colors.HexColor("#6b7280")
+    soft = colors.HexColor("#d1d5db")
+    green = colors.HexColor("#166534")
+
+    y = height - 8 * mm
+
+    logo_reader = resolve_logo_reader(page)
+    if logo_reader:
+        y = draw_logo_centered(pdf, logo_reader, center_x, y, max_width=34 * mm, max_height=18 * mm)
+        y -= 3 * mm
+
+    pdf.setFillColor(dark)
+    pdf.setFont("Helvetica-Bold", 11)
+    pdf.drawCentredString(center_x, y, business_name[:34])
+    y -= 5 * mm
+
+    phone = page.get('phone') or page.get('business_phone') or page.get('whatsapp') or ''
+    address = page.get('address') or page.get('business_address') or ''
+    meta = [v for v in [safe_text(phone, ''), safe_text(address, '')] if v]
+
+    pdf.setFont("Helvetica", 7.5)
+    pdf.setFillColor(muted)
+    for row in meta[:2]:
+        lines = wrap_text(row, content_w, "Helvetica", 7.5)
+        for line in lines[:2]:
+            pdf.drawCentredString(center_x, y, line)
+            y -= 4 * mm
+
+    pdf.setStrokeColor(soft)
+    pdf.line(margin_x, y, width - margin_x, y)
+    y -= 5 * mm
+
+    pdf.setFillColor(dark)
+    pdf.setFont("Helvetica-Bold", 9)
+    pdf.drawCentredString(center_x, y, f"TICKET {safe_text(venta.get('folio'), 'SIN FOLIO')}")
+    y -= 5 * mm
+
+    pdf.setFillColor(muted)
+    pdf.setFont("Helvetica", 7.5)
+    pdf.drawString(margin_x, y, f"Fecha: {fmt_dt(venta.get('created_at'))}")
+    y -= 4.5 * mm
+    pdf.drawString(margin_x, y, f"Cliente: {safe_text(venta.get('customer_name'), 'Mostrador')}")
+    y -= 4.5 * mm
+    pdf.drawString(margin_x, y, f"Tel: {safe_text(venta.get('customer_phone'), '-')}")
+    y -= 5 * mm
+
+    pdf.setStrokeColor(soft)
+    pdf.line(margin_x, y, width - margin_x, y)
+    y -= 4 * mm
+
+    items = venta.get('items', []) or []
+    for item in items:
+        qty = item.get('qty', 0)
+        title = safe_text(item.get('title'), 'Producto')
+        unit_price = float(item.get('unit_price', 0) or 0)
+        subtotal = float(item.get('subtotal', 0) or 0)
+
+        title_lines = wrap_text(f"{qty} x {title}", content_w, "Helvetica-Bold", 8)
+        pdf.setFillColor(dark)
+        pdf.setFont("Helvetica-Bold", 8)
+        for line in title_lines:
+            pdf.drawString(margin_x, y, line)
+            y -= 4 * mm
+
+        pdf.setFillColor(muted)
+        pdf.setFont("Helvetica", 7.5)
+        pdf.drawString(margin_x, y, f"P/U: ${fmt_money(unit_price)}")
+        pdf.drawRightString(width - margin_x, y, f"${fmt_money(subtotal)}")
+        y -= 5 * mm
+
+    pdf.setStrokeColor(soft)
+    pdf.line(margin_x, y, width - margin_x, y)
+    y -= 5 * mm
+
+    pdf.setFillColor(muted)
+    pdf.setFont("Helvetica", 8)
+    pdf.drawString(margin_x, y, "Subtotal")
+    pdf.drawRightString(width - margin_x, y, f"${fmt_money(venta.get('subtotal', 0))}")
+    y -= 4.5 * mm
+
+    pdf.drawString(margin_x, y, "Descuento")
+    pdf.drawRightString(width - margin_x, y, f"${fmt_money(venta.get('discount', 0))}")
+    y -= 5 * mm
+
+    pdf.setFillColor(dark)
+    pdf.setFont("Helvetica-Bold", 10)
+    pdf.drawString(margin_x, y, "TOTAL")
+    pdf.setFillColor(green)
+    pdf.drawRightString(width - margin_x, y, f"${fmt_money(venta.get('total', 0))}")
+    y -= 6 * mm
+
+    pay_label = PAYMENT_LABELS.get(venta.get('payment_method'), safe_text(venta.get('payment_method')))
+
+    pdf.setFillColor(muted)
+    pdf.setFont("Helvetica", 7.5)
+    pdf.drawString(margin_x, y, f"Método: {pay_label}")
+    y -= 4.5 * mm
+    pdf.drawString(margin_x, y, f"Efectivo: ${fmt_money(venta.get('cash_amount', 0))}")
+    y -= 4.5 * mm
+    pdf.drawString(margin_x, y, f"Digital: ${fmt_money(venta.get('digital_amount', 0))}")
+    y -= 5 * mm
+
+    notes = safe_text(venta.get('notes'), '')
+    if notes:
+        pdf.setStrokeColor(soft)
+        pdf.line(margin_x, y, width - margin_x, y)
+        y -= 4.5 * mm
+
+        pdf.setFillColor(dark)
+        pdf.setFont("Helvetica-Bold", 8)
+        pdf.drawString(margin_x, y, "Notas")
+        y -= 4.5 * mm
+
+        note_lines = wrap_text(notes, content_w, "Helvetica", 7.5)
+        pdf.setFillColor(muted)
+        pdf.setFont("Helvetica", 7.5)
+        for line in note_lines:
+            pdf.drawString(margin_x, y, line)
+            y -= 4 * mm
+
+        y -= 2 * mm
+
+    pdf.setStrokeColor(soft)
+    pdf.line(margin_x, y, width - margin_x, y)
+    y -= 6 * mm
+
+    pdf.setFillColor(dark)
+    pdf.setFont("Helvetica-Bold", 8.5)
+    pdf.drawCentredString(center_x, y, "¡Gracias por tu compra!")
+    y -= 4.5 * mm
+
+    pdf.setFillColor(muted)
+    pdf.setFont("Helvetica", 7)
+    pdf.drawCentredString(center_x, y, "Conserva este comprobante")
+
+
 @app.route('/ventas/<venta_id>/ticket.pdf')
 @require_active_subscription
 @current_site(required=True)
@@ -2726,78 +3250,33 @@ def venta_ticket_pdf(venta_id):
     page = mongo.db.page_data.find_one({'_id': page_id}) or {}
     business_name = page.get('business_name', 'Mi negocio')
 
+    paper = (request.args.get('paper') or 'letter').strip().lower()
+    if paper not in ('letter', 'thermal'):
+        paper = 'letter'
+
     buffer = BytesIO()
-    p = canvas.Canvas(buffer, pagesize=letter)
 
-    y = 760
-    p.setFont("Helvetica-Bold", 15)
-    p.drawString(50, y, business_name)
+    if paper == 'thermal':
+        page_size = (80 * mm, estimate_thermal_height(venta))
+        pdf = canvas.Canvas(buffer, pagesize=page_size)
+        pdf.setTitle(f"Ticket {safe_text(venta.get('folio'), 'ticket')}")
+        build_thermal_ticket(pdf, venta, page, business_name, page_size)
+        filename = f'{safe_text(venta.get("folio"), "ticket")}_thermal.pdf'
+    else:
+        pdf = canvas.Canvas(buffer, pagesize=letter)
+        pdf.setTitle(f"Ticket {safe_text(venta.get('folio'), 'ticket')}")
+        build_letter_ticket(pdf, venta, page, business_name)
+        filename = f'{safe_text(venta.get("folio"), "ticket")}_letter.pdf'
 
-    y -= 20
-    p.setFont("Helvetica-Bold", 12)
-    p.drawString(50, y, f"Ticket {venta.get('folio', '')}")
-
-    y -= 18
-    p.setFont("Helvetica", 10)
-    p.drawString(50, y, f"Fecha: {venta['created_at'].strftime('%d/%m/%Y %H:%M')}")
-    y -= 16
-    p.drawString(50, y, f"Cliente: {venta.get('customer_name') or 'Mostrador'}")
-    y -= 16
-    p.drawString(50, y, f"Teléfono: {venta.get('customer_phone') or '-'}")
-    y -= 20
-
-    p.setFont("Helvetica-Bold", 10)
-    p.drawString(50, y, "Cant.")
-    p.drawString(100, y, "Producto")
-    p.drawString(430, y, "Importe")
-    y -= 14
-
-    p.setFont("Helvetica", 10)
-    for item in venta.get('items', []):
-        linea_producto = f"{item.get('title', 'Producto')} (${money2(item.get('unit_price', 0)):.2f})"
-        p.drawString(50, y, str(item.get('qty', 0)))
-        p.drawString(100, y, linea_producto[:55])
-        p.drawRightString(550, y, f"${money2(item.get('subtotal', 0)):.2f}")
-        y -= 16
-
-        if y < 80:
-            p.showPage()
-            y = 760
-
-    y -= 10
-    p.line(50, y, 550, y)
-    y -= 18
-
-    p.drawString(50, y, f"Subtotal: ${money2(venta.get('subtotal', 0)):.2f}")
-    y -= 16
-    p.drawString(50, y, f"Descuento: ${money2(venta.get('discount', 0)):.2f}")
-    y -= 16
-
-    p.setFont("Helvetica-Bold", 11)
-    p.drawString(50, y, f"Total: ${money2(venta.get('total', 0)):.2f}")
-    y -= 18
-
-    p.setFont("Helvetica", 10)
-    p.drawString(50, y, f"Método de pago: {venta.get('payment_method', '-')}")
-    y -= 16
-    p.drawString(50, y, f"Efectivo: ${money2(venta.get('cash_amount', 0)):.2f}")
-    y -= 16
-    p.drawString(50, y, f"Digital: ${money2(venta.get('digital_amount', 0)):.2f}")
-    y -= 20
-
-    notes = (venta.get('notes') or '').strip()
-    if notes:
-        p.drawString(50, y, f"Notas: {notes[:80]}")
-
-    p.showPage()
-    p.save()
+    pdf.showPage()
+    pdf.save()
 
     buffer.seek(0)
     return Response(
         buffer.getvalue(),
         mimetype='application/pdf',
         headers={
-            'Content-Disposition': f'inline; filename={venta.get("folio", "ticket")}.pdf'
+            'Content-Disposition': f'inline; filename={filename}'
         }
     )
 
