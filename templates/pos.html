@@ -3,10 +3,24 @@
 
 {% block content %}
 <style>
+  :root {
+    --pos-bg-soft: rgba(255,255,255,0.04);
+    --pos-line: rgba(148, 163, 184, 0.18);
+    --pos-shadow: 0 18px 42px rgba(15, 23, 42, 0.16);
+    --pos-shadow-soft: 0 10px 28px rgba(15, 23, 42, 0.10);
+    --pos-blue: #2563eb;
+    --pos-blue-2: #4f46e5;
+    --pos-green: #16a34a;
+    --pos-red: #dc2626;
+    --pos-text: #0f172a;
+    --pos-muted: #64748b;
+    --pos-card: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(247,249,255,0.97));
+  }
+
   .pos-page {
-    max-width: 1280px;
+    max-width: 1360px;
     margin: 0 auto;
-    padding: 28px 0 90px;
+    padding: 24px 0 96px;
   }
 
   .pos-topbar {
@@ -15,7 +29,7 @@
     align-items: flex-start;
     gap: 18px;
     flex-wrap: wrap;
-    margin-bottom: 22px;
+    margin-bottom: 20px;
   }
 
   .pos-heading {
@@ -27,7 +41,7 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    font-size: 2.05rem;
+    font-size: 2rem;
     font-weight: 800;
     color: #f8fbff;
     letter-spacing: -0.02em;
@@ -40,9 +54,9 @@
   .pos-heading p {
     margin: 10px 0 0;
     color: rgba(221, 232, 255, 0.78);
-    font-size: 0.98rem;
+    font-size: 0.97rem;
     line-height: 1.65;
-    max-width: 780px;
+    max-width: 760px;
   }
 
   .pos-actions-top {
@@ -55,18 +69,27 @@
   .btn-pos-clear,
   .btn-pos-scan,
   .btn-pos-search-clear,
-  .btn-mobile-checkout {
+  .btn-mobile-checkout,
+  .btn-add-product,
+  .qty-step-btn,
+  .remove-item-btn {
     border-radius: 14px;
-    padding: 11px 18px;
     font-weight: 700;
-    font-size: 0.95rem;
+    font-size: 0.94rem;
     text-decoration: none;
-    transition: all 0.25s ease;
+    transition: all 0.22s ease;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
     border: none;
+  }
+
+  .btn-pos-back,
+  .btn-pos-clear,
+  .btn-pos-scan,
+  .btn-pos-search-clear {
+    padding: 11px 18px;
   }
 
   .btn-pos-back {
@@ -77,7 +100,7 @@
   }
 
   .btn-pos-back:hover {
-    color: #ffffff;
+    color: #fff;
     background: rgba(255, 255, 255, 0.08);
     border-color: rgba(135, 164, 255, 0.4);
     transform: translateY(-1px);
@@ -93,7 +116,6 @@
 
   .btn-pos-clear:hover {
     background: #ffedd5;
-    color: #9a3412;
     transform: translateY(-1px);
   }
 
@@ -106,7 +128,6 @@
   }
 
   .btn-pos-scan:hover {
-    color: #14532d;
     transform: translateY(-1px);
     box-shadow: 0 14px 26px rgba(34, 197, 94, 0.22);
   }
@@ -124,15 +145,15 @@
   }
 
   .pos-summary-strip {
-    margin-bottom: 24px;
-    padding: 16px 18px;
+    margin-bottom: 22px;
+    padding: 14px 16px;
     border-radius: 18px;
     background: linear-gradient(135deg, rgba(13, 110, 253, 0.10), rgba(111, 66, 193, 0.10));
     border: 1px solid rgba(122, 152, 255, 0.18);
     box-shadow: 0 16px 30px rgba(0, 0, 0, 0.14);
     color: rgba(224, 234, 255, 0.88);
     display: flex;
-    gap: 14px;
+    gap: 12px;
     flex-wrap: wrap;
     align-items: center;
   }
@@ -144,26 +165,26 @@
     padding: 9px 14px;
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.08);
-    color: #ffffff;
+    color: #fff;
     font-weight: 700;
-    font-size: 0.94rem;
+    font-size: 0.92rem;
     border: 1px solid rgba(255, 255, 255, 0.10);
   }
 
   .pos-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1.45fr) 370px;
+    grid-template-columns: minmax(0, 1.7fr) 380px;
     gap: 22px;
     align-items: start;
   }
 
   .pos-main-card,
   .pos-side-card {
-    background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(247,249,255,0.97));
+    background: var(--pos-card);
     border: 1px solid rgba(223, 228, 237, 0.95);
     border-radius: 24px;
     padding: 22px;
-    box-shadow: 0 18px 42px rgba(15, 23, 42, 0.16);
+    box-shadow: var(--pos-shadow);
     position: relative;
     overflow: hidden;
   }
@@ -181,7 +202,7 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    font-size: 1.05rem;
+    font-size: 1.04rem;
     font-weight: 800;
     color: #111827;
     margin: 0 0 16px;
@@ -191,19 +212,32 @@
     color: #4f46e5;
   }
 
+  .finder-card,
+  .selected-card {
+    border-radius: 20px;
+    border: 1px solid #e5eaf2;
+    background: rgba(255,255,255,0.76);
+    box-shadow: var(--pos-shadow-soft);
+    padding: 18px;
+  }
+
+  .selected-card {
+    margin-top: 18px;
+  }
+
   .pos-toolbar {
     display: grid;
     grid-template-columns: minmax(0,1fr) auto;
     gap: 14px;
-    margin-bottom: 18px;
     align-items: start;
+    margin-bottom: 14px;
   }
 
   .toolbar-side {
     display: flex;
-    flex-direction: column;
     gap: 10px;
-    min-width: 150px;
+    flex-wrap: wrap;
+    align-items: stretch;
   }
 
   .search-wrap {
@@ -219,7 +253,7 @@
 
   .search-input {
     width: 100%;
-    min-height: 48px;
+    min-height: 50px;
     border-radius: 14px;
     border: 1px solid #d8e0ea;
     padding: 12px 14px 12px 42px;
@@ -233,10 +267,14 @@
     box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.12);
   }
 
-  .helper-inline {
+  .helper-inline,
+  .helper-text {
     color: #667085;
-    font-size: 0.88rem;
+    font-size: 0.87rem;
     line-height: 1.55;
+  }
+
+  .helper-inline {
     margin-top: 6px;
   }
 
@@ -245,7 +283,7 @@
     align-items: center;
     gap: 10px;
     flex-wrap: wrap;
-    margin-bottom: 16px;
+    margin-bottom: 14px;
   }
 
   .result-pill {
@@ -261,214 +299,396 @@
     font-size: 0.84rem;
   }
 
-  .products-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(245px, 1fr));
-    gap: 18px;
+  .results-hint {
+    color: #667085;
+    font-size: 0.84rem;
+    font-weight: 600;
   }
 
-  .product-card {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 20px;
-    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+  .scan-status {
+    margin-top: 10px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    font-size: 0.9rem;
+    line-height: 1.55;
+    display: none;
+  }
+
+  .scan-status.show {
+    display: block;
+  }
+
+  .scan-status.is-info {
+    background: rgba(59, 130, 246, 0.08);
+    border: 1px dashed rgba(59, 130, 246, 0.24);
+    color: #1d4ed8;
+  }
+
+  .scan-status.is-success {
+    background: rgba(34, 197, 94, 0.10);
+    border: 1px dashed rgba(34, 197, 94, 0.24);
+    color: #166534;
+  }
+
+  .scan-status.is-error {
+    background: rgba(239, 68, 68, 0.10);
+    border: 1px dashed rgba(239, 68, 68, 0.24);
+    color: #991b1b;
+  }
+
+  .search-shell {
+    border: 1px solid #e4eaf3;
+    background: #fbfcff;
+    border-radius: 18px;
     overflow: hidden;
+    min-height: 350px;
     display: flex;
     flex-direction: column;
-    min-height: 100%;
-    transition: all 0.25s ease;
-    position: relative;
   }
 
-  .product-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 18px 34px rgba(15, 23, 42, 0.12);
+  .search-results-list {
+    max-height: 370px;
+    overflow: auto;
+    padding: 10px;
   }
 
-  .product-card.product-highlight {
-    outline: 2px solid rgba(37, 99, 235, 0.35);
-    box-shadow: 0 0 0 0.3rem rgba(37, 99, 235, 0.10), 0 18px 34px rgba(15, 23, 42, 0.16);
+  .product-search-item {
+    display: grid;
+    grid-template-columns: 68px minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+    padding: 12px;
+    border-radius: 16px;
+    border: 1px solid #e6ebf3;
+    background: #fff;
+    transition: all 0.22s ease;
+    margin-bottom: 10px;
   }
 
-  .product-image {
-    height: 180px;
+  .product-search-item:last-child {
+    margin-bottom: 0;
+  }
+
+  .product-search-item:hover {
+    border-color: #bfdbfe;
+    box-shadow: 0 10px 24px rgba(37, 99, 235, 0.08);
+    transform: translateY(-1px);
+  }
+
+  .product-search-item.product-highlight {
+    border-color: rgba(37, 99, 235, 0.45);
+    box-shadow: 0 0 0 0.26rem rgba(37, 99, 235, 0.10), 0 14px 26px rgba(15, 23, 42, 0.10);
+  }
+
+  .product-thumb {
+    width: 68px;
+    height: 68px;
+    border-radius: 16px;
+    overflow: hidden;
     background: linear-gradient(135deg, #eef4ff, #f8fbff);
     display: flex;
     align-items: center;
     justify-content: center;
-    overflow: hidden;
-    position: relative;
+    flex-shrink: 0;
   }
 
-  .product-image img {
+  .product-thumb img {
     width: 100%;
     height: 100%;
     object-fit: cover;
   }
 
-  .product-no-image {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    color: #94a3b8;
-    font-weight: 700;
-  }
-
-  .product-no-image i {
-    font-size: 2rem;
+  .product-thumb i {
+    font-size: 1.45rem;
     color: #60a5fa;
   }
 
-  .product-top-badges {
-    position: absolute;
-    top: 12px;
-    left: 12px;
-    right: 12px;
-    display: flex;
-    justify-content: space-between;
-    gap: 8px;
-    flex-wrap: wrap;
+  .product-quick-info {
+    min-width: 0;
   }
 
-  .mini-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.75rem;
-    font-weight: 800;
-    padding: 7px 10px;
-    border-radius: 999px;
-    backdrop-filter: blur(10px);
-  }
-
-  .mini-stock-ok {
-    color: #166534;
-    background: rgba(240, 253, 244, 0.94);
-    border: 1px solid #bbf7d0;
-  }
-
-  .mini-low-stock {
-    color: #92400e;
-    background: rgba(255, 251, 235, 0.94);
-    border: 1px solid #fde68a;
-  }
-
-  .mini-no-track {
-    color: #6b7280;
-    background: rgba(249, 250, 251, 0.95);
-    border: 1px solid #d1d5db;
-  }
-
-  .mini-out {
-    color: #991b1b;
-    background: rgba(254, 242, 242, 0.95);
-    border: 1px solid #fecaca;
-  }
-
-  .product-body {
-    padding: 18px;
-    display: flex;
-    flex-direction: column;
-    flex-grow: 1;
-  }
-
-  .product-title {
-    margin: 0 0 8px;
-    font-size: 1.04rem;
+  .product-quick-title {
+    margin: 0 0 4px;
+    font-size: 0.98rem;
     font-weight: 800;
     color: #101828;
     line-height: 1.35;
   }
 
-  .product-desc {
-    color: #475467;
-    line-height: 1.62;
-    font-size: 0.92rem;
-    margin-bottom: 14px;
-    min-height: 48px;
+  .product-quick-desc {
+    margin: 0 0 8px;
+    font-size: 0.86rem;
+    color: #667085;
+    line-height: 1.45;
   }
 
-  .product-meta {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-bottom: 14px;
+  .product-quick-meta {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
   }
 
-  .meta-chip {
-    padding: 10px 12px;
-    border-radius: 14px;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-  }
-
-  .meta-chip .label {
-    display: block;
-    font-size: 0.72rem;
+  .quick-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
     font-weight: 800;
+    border-radius: 999px;
+    padding: 6px 10px;
+    border: 1px solid #dbe5f1;
+    background: #f8fafc;
+    color: #475467;
+  }
+
+  .quick-chip.is-price {
+    background: #ecfdf3;
+    border-color: #bbf7d0;
+    color: #15803d;
+  }
+
+  .quick-chip.is-ok {
+    background: rgba(240, 253, 244, 0.94);
+    border-color: #bbf7d0;
+    color: #166534;
+  }
+
+  .quick-chip.is-low {
+    background: rgba(255, 251, 235, 0.94);
+    border-color: #fde68a;
+    color: #92400e;
+  }
+
+  .quick-chip.is-out {
+    background: rgba(254, 242, 242, 0.95);
+    border-color: #fecaca;
+    color: #991b1b;
+  }
+
+  .quick-chip.is-neutral {
+    background: rgba(249, 250, 251, 0.95);
+    border-color: #d1d5db;
+    color: #6b7280;
+  }
+
+  .product-quick-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+    min-width: 122px;
+  }
+
+  .btn-add-product {
+    padding: 10px 14px;
+    color: #fff;
+    background: linear-gradient(135deg, #2563eb, #4f46e5);
+    box-shadow: 0 10px 22px rgba(37, 99, 235, 0.18);
+    cursor: pointer;
+  }
+
+  .btn-add-product:hover {
+    color: #fff;
+    transform: translateY(-1px);
+  }
+
+  .btn-add-product:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .search-state {
+    min-height: 350px;
+    display: grid;
+    place-items: center;
+    text-align: center;
+    padding: 28px;
+  }
+
+  .search-state-box {
+    max-width: 420px;
+  }
+
+  .search-state .icon {
+    width: 78px;
+    height: 78px;
+    margin: 0 auto 16px;
+    border-radius: 22px;
+    display: grid;
+    place-items: center;
+    font-size: 2rem;
+    background: linear-gradient(135deg, #eff6ff, #eef2ff);
+    color: #2563eb;
+    box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.08);
+  }
+
+  .search-state h4 {
+    margin: 0 0 10px;
+    font-weight: 800;
+    color: #101828;
+  }
+
+  .search-state p {
+    margin: 0;
+    color: #667085;
+    line-height: 1.7;
+  }
+
+  .selected-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+
+  .selected-header-meta {
+    color: #667085;
+    font-size: 0.88rem;
+    font-weight: 600;
+  }
+
+  .selected-cart-wrap {
+    border: 1px solid #e4eaf3;
+    background: #fbfcff;
+    border-radius: 18px;
+    min-height: 300px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .selected-cart-list {
+    max-height: 380px;
+    overflow: auto;
+    padding: 12px;
+  }
+
+  .selected-empty {
+    min-height: 300px;
+    display: grid;
+    place-items: center;
+    text-align: center;
+    padding: 26px;
     color: #64748b;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    margin-bottom: 4px;
   }
 
-  .meta-chip .value {
-    color: #0f172a;
-    font-weight: 700;
-    font-size: 0.9rem;
+  .selected-empty .icon {
+    width: 76px;
+    height: 76px;
+    margin: 0 auto 15px;
+    border-radius: 22px;
+    display: grid;
+    place-items: center;
+    font-size: 2rem;
+    background: linear-gradient(135deg, #eff6ff, #eef2ff);
+    color: #2563eb;
+  }
+
+  .cart-row {
+    display: grid;
+    grid-template-columns: minmax(0,1fr) auto;
+    gap: 14px;
+    align-items: center;
+    padding: 14px;
+    border-radius: 16px;
+    background: #fff;
+    border: 1px solid #e5eaf2;
+    margin-bottom: 10px;
+    transition: all 0.22s ease;
+  }
+
+  .cart-row:last-child {
+    margin-bottom: 0;
+  }
+
+  .cart-row.is-touched {
+    border-color: rgba(37, 99, 235, 0.45);
+    box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.08);
+  }
+
+  .cart-row-title {
+    margin: 0 0 5px;
+    color: #111827;
+    font-size: 0.97rem;
+    font-weight: 800;
     line-height: 1.35;
-    word-break: break-word;
   }
 
-  .product-price {
+  .cart-row-meta {
+    color: #64748b;
+    font-size: 0.82rem;
+    line-height: 1.5;
+  }
+
+  .cart-row-side {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+  }
+
+  .cart-row-total {
+    color: #15803d;
+    font-size: 1rem;
+    font-weight: 900;
+    white-space: nowrap;
+  }
+
+  .qty-stepper {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    width: fit-content;
-    margin-bottom: 14px;
-    padding: 9px 14px;
-    border-radius: 999px;
-    background: #ecfdf3;
-    color: #15803d;
-    border: 1px solid #bbf7d0;
-    font-weight: 800;
-    font-size: 1rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
   }
 
-  .qty-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-top: auto;
-  }
-
-  .qty-label {
-    font-size: 0.85rem;
-    font-weight: 800;
-    color: #334155;
-    min-width: 70px;
-  }
-
-  .qty-input {
-    width: 100%;
-    min-height: 46px;
-    border-radius: 14px;
-    border: 1px solid #d8e0ea;
-    padding: 10px 12px;
-    outline: none;
-    transition: all 0.25s ease;
-  }
-
-  .qty-input:focus {
-    border-color: #86b7fe;
-    box-shadow: 0 0 0 0.18rem rgba(13, 110, 253, 0.10);
-  }
-
-  .qty-input:disabled {
+  .qty-step-btn,
+  .remove-item-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
     background: #f8fafc;
-    color: #94a3b8;
-    cursor: not-allowed;
+    border: 1px solid #dbe5ef;
+    color: #334155;
+    cursor: pointer;
+  }
+
+  .qty-step-btn:hover,
+  .remove-item-btn:hover {
+    background: #eef4ff;
+    border-color: #bfd3f9;
+    color: #1d4ed8;
+  }
+
+  .remove-item-btn:hover {
+    color: #dc2626;
+    border-color: #fecaca;
+    background: #fff1f2;
+  }
+
+  .selected-qty-input {
+    width: 74px;
+    height: 38px;
+    border-radius: 12px;
+    border: 1px solid #d8e0ea;
+    background: #fff;
+    text-align: center;
+    font-weight: 800;
+    color: #0f172a;
+    outline: none;
+  }
+
+  .selected-qty-input:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.15rem rgba(13, 110, 253, 0.10);
+  }
+
+  .hidden-store {
+    display: none !important;
   }
 
   .pos-side-card {
@@ -531,59 +751,6 @@
     color: #15803d;
   }
 
-  .selected-items-box {
-    border-radius: 16px;
-    border: 1px solid #e4eaf3;
-    background: #fff;
-    padding: 14px;
-    max-height: 240px;
-    overflow: auto;
-  }
-
-  .selected-item {
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 10px 0;
-    border-bottom: 1px dashed #e5e7eb;
-  }
-
-  .selected-item:last-child {
-    border-bottom: 0;
-    padding-bottom: 0;
-  }
-
-  .selected-item:first-child {
-    padding-top: 0;
-  }
-
-  .selected-item-name {
-    color: #111827;
-    font-weight: 700;
-    font-size: 0.9rem;
-    line-height: 1.4;
-  }
-
-  .selected-item-meta {
-    color: #64748b;
-    font-size: 0.82rem;
-    margin-top: 3px;
-  }
-
-  .selected-item-total {
-    color: #15803d;
-    font-weight: 900;
-    font-size: 0.9rem;
-    white-space: nowrap;
-  }
-
-  .selected-empty {
-    color: #64748b;
-    font-size: 0.9rem;
-    text-align: center;
-    padding: 10px 0;
-  }
-
   .form-label {
     font-weight: 700;
     color: #1f2937;
@@ -609,13 +776,6 @@
   textarea:focus {
     border-color: #86b7fe !important;
     box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.12) !important;
-  }
-
-  .helper-text {
-    margin-top: 6px;
-    color: #667085;
-    font-size: 0.85rem;
-    line-height: 1.55;
   }
 
   .mix-row {
@@ -672,77 +832,8 @@
     box-shadow: none;
   }
 
-  .empty-products,
-  .empty-search {
-    padding: 44px 24px;
-    text-align: center;
-    border-radius: 22px;
-    background: linear-gradient(135deg, rgba(255,255,255,0.97), rgba(244,247,255,0.96));
-    border: 1px solid rgba(223, 228, 237, 0.95);
-    box-shadow: 0 18px 38px rgba(15, 23, 42, 0.10);
-  }
-
-  .empty-products .icon,
-  .empty-search .icon {
-    width: 82px;
-    height: 82px;
-    margin: 0 auto 16px;
-    border-radius: 22px;
-    display: grid;
-    place-items: center;
-    font-size: 2.3rem;
-    background: linear-gradient(135deg, #eff6ff, #eef2ff);
-    color: #2563eb;
-    box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.08);
-  }
-
-  .empty-products h4,
-  .empty-search h4 {
-    margin: 0 0 10px;
-    font-weight: 800;
-    color: #101828;
-  }
-
-  .empty-products p,
-  .empty-search p {
-    margin: 0;
-    color: #667085;
-    line-height: 1.7;
-  }
-
   .hidden-soft {
     display: none !important;
-  }
-
-  .scan-status {
-    margin-top: 10px;
-    padding: 12px 14px;
-    border-radius: 14px;
-    font-size: 0.9rem;
-    line-height: 1.55;
-    display: none;
-  }
-
-  .scan-status.show {
-    display: block;
-  }
-
-  .scan-status.is-info {
-    background: rgba(59, 130, 246, 0.08);
-    border: 1px dashed rgba(59, 130, 246, 0.24);
-    color: #1d4ed8;
-  }
-
-  .scan-status.is-success {
-    background: rgba(34, 197, 94, 0.10);
-    border: 1px dashed rgba(34, 197, 94, 0.24);
-    color: #166534;
-  }
-
-  .scan-status.is-error {
-    background: rgba(239, 68, 68, 0.10);
-    border: 1px dashed rgba(239, 68, 68, 0.24);
-    color: #991b1b;
   }
 
   .scan-manual-row {
@@ -797,6 +888,7 @@
     background: linear-gradient(135deg, #16a34a, #22c55e);
     color: #fff;
     box-shadow: 0 10px 22px rgba(34,197,94,.22);
+    padding: 10px 15px;
     flex-shrink: 0;
   }
 
@@ -804,17 +896,12 @@
     color: #fff;
   }
 
-  @media (max-width: 1080px) {
+  @media (max-width: 1120px) {
     .pos-layout {
       grid-template-columns: 1fr;
     }
 
-    .pos-main-card {
-      order: 2;
-    }
-
     .pos-side-card {
-      order: 1;
       position: static;
       top: auto;
     }
@@ -829,15 +916,12 @@
       font-size: 1.7rem;
     }
 
-    .pos-actions-top,
     .pos-toolbar {
-      width: 100%;
       grid-template-columns: 1fr;
     }
 
     .toolbar-side {
-      flex-direction: row;
-      flex-wrap: wrap;
+      width: 100%;
     }
 
     .btn-pos-back,
@@ -848,11 +932,33 @@
       justify-content: center;
     }
 
-    .mix-row {
+    .product-search-item {
+      grid-template-columns: 1fr;
+      align-items: stretch;
+    }
+
+    .product-quick-actions {
+      align-items: stretch;
+      min-width: 0;
+    }
+
+    .btn-add-product {
+      width: 100%;
+    }
+
+    .cart-row {
       grid-template-columns: 1fr;
     }
 
-    .product-meta {
+    .cart-row-side {
+      align-items: stretch;
+    }
+
+    .qty-stepper {
+      justify-content: flex-start;
+    }
+
+    .mix-row {
       grid-template-columns: 1fr;
     }
 
@@ -864,14 +970,6 @@
   @media (max-width: 480px) {
     .pos-heading h2 {
       font-size: 1.5rem;
-    }
-
-    .pos-heading p {
-      font-size: 0.93rem;
-    }
-
-    .products-grid {
-      grid-template-columns: 1fr;
     }
 
     .summary-pill {
@@ -895,8 +993,8 @@
     <div class="pos-heading">
       <h2><i class="bi bi-shop-window"></i> Punto de Venta</h2>
       <p>
-        Registra ventas de mostrador, selecciona productos, ajusta cantidades y genera una operación
-        lista para ticket digital y corte de caja.
+        Busca rápido, agrega sólo lo necesario y registra la venta sin llenar la pantalla de productos.
+        Diseñado para que sea más claro, más limpio y más fácil de usar.
       </p>
     </div>
 
@@ -908,7 +1006,7 @@
 
       <button type="button" class="btn-pos-clear" id="clearAllBtn">
         <i class="bi bi-eraser"></i>
-        Limpiar cantidades
+        Limpiar venta
       </button>
 
       <a href="{{ url_for('dashboard') }}" class="btn-pos-back">
@@ -921,7 +1019,7 @@
   <div class="pos-summary-strip">
     <div class="summary-pill">
       <i class="bi bi-box-seam"></i>
-      {{ productos|length }} producto{% if productos|length != 1 %}s{% endif %}
+      Catálogo cargado: {{ productos|length }}
     </div>
     <div class="summary-pill">
       <i class="bi bi-cart-check"></i>
@@ -938,184 +1036,225 @@
 
     <div class="pos-layout">
       <div class="pos-main-card">
-        <div class="section-title">
-          <i class="bi bi-grid-1x2-fill"></i>
-          Selección de productos
-        </div>
-
-        <div class="pos-toolbar">
-          <div class="search-wrap">
+        <div class="finder-card">
+          <div class="section-title">
             <i class="bi bi-search"></i>
-            <input
-              type="text"
-              id="productSearch"
-              class="search-input"
-              placeholder="Buscar por nombre, SKU o código..."
-            >
-            <div class="helper-inline">
-              Puedes buscar rápidamente por nombre, SKU o código de barras.
-            </div>
+            Buscar y agregar productos
           </div>
 
-          <div class="toolbar-side">
-            <button type="button" class="btn-pos-search-clear" id="clearSearchBtn">
-              <i class="bi bi-x-circle"></i>
-              Limpiar búsqueda
-            </button>
-          </div>
-        </div>
-
-        <div class="toolbar-meta">
-          <div class="result-pill">
-            <i class="bi bi-funnel"></i>
-            Resultados visibles: <span id="visibleResultsCount">{{ productos|length }}</span>
-          </div>
-        </div>
-
-        <div id="scanStatus" class="scan-status"></div>
-
-        {% if productos %}
-          <div class="products-grid" id="productsGrid">
-            {% for p in productos %}
-              {% set stock = p.get('stock', 0) %}
-              {% set min_stock = p.get('min_stock', 0) %}
-              {% set track_inventory = p.get('track_inventory', False) %}
-              {% set out_of_stock = track_inventory and stock <= 0 %}
-              {% set low_stock = track_inventory and stock > 0 and stock <= min_stock %}
-
-              <article
-                class="product-card product-item"
-                data-search="{{ (p.get('title','') ~ ' ' ~ p.get('sku','') ~ ' ' ~ p.get('barcode',''))|lower }}"
-                data-title="{{ p.get('title','Producto') }}"
-                data-price="{{ p.get('price', 0)|float }}"
-                data-product-id="{{ p._id }}"
-                data-barcode="{{ p.get('barcode','') }}"
-              >
-                <div class="product-image">
-                  <div class="product-top-badges">
-                    {% if track_inventory %}
-                      {% if out_of_stock %}
-                        <div class="mini-badge mini-out">
-                          <i class="bi bi-x-octagon-fill"></i>
-                          Sin stock
-                        </div>
-                      {% elif low_stock %}
-                        <div class="mini-badge mini-low-stock">
-                          <i class="bi bi-exclamation-triangle-fill"></i>
-                          Stock bajo
-                        </div>
-                      {% else %}
-                        <div class="mini-badge mini-stock-ok">
-                          <i class="bi bi-check-circle-fill"></i>
-                          Disponible
-                        </div>
-                      {% endif %}
-                    {% else %}
-                      <div class="mini-badge mini-no-track">
-                        <i class="bi bi-shield-slash"></i>
-                        Sin control
-                      </div>
-                    {% endif %}
-                  </div>
-
-                  {% if p.get('image') %}
-                    <img src="{{ url_for('uploaded_file', filename=p.get('image')) }}" alt="{{ p.get('title', 'Producto') }}">
-                  {% else %}
-                    <div class="product-no-image">
-                      <i class="bi bi-image"></i>
-                      <span>Sin imagen</span>
-                    </div>
-                  {% endif %}
-                </div>
-
-                <div class="product-body">
-                  <h5 class="product-title">{{ p.get('title', 'Producto') }}</h5>
-
-                  <p class="product-desc">
-                    {{ p.get('description', '')|truncate(120) }}
-                  </p>
-
-                  <div class="product-meta">
-                    <div class="meta-chip">
-                      <span class="label">SKU</span>
-                      <span class="value">{{ p.get('sku', '—') if p.get('sku') else '—' }}</span>
-                    </div>
-
-                    <div class="meta-chip">
-                      <span class="label">Código</span>
-                      <span class="value">{{ p.get('barcode', '—') if p.get('barcode') else '—' }}</span>
-                    </div>
-                  </div>
-
-                  <div class="product-meta">
-                    <div class="meta-chip">
-                      <span class="label">Stock</span>
-                      <span class="value">
-                        {% if track_inventory %}
-                          {{ stock }}
-                        {% else %}
-                          Sin control
-                        {% endif %}
-                      </span>
-                    </div>
-
-                    <div class="meta-chip">
-                      <span class="label">Mínimo</span>
-                      <span class="value">
-                        {% if track_inventory %}
-                          {{ min_stock }}
-                        {% else %}
-                          —
-                        {% endif %}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div class="product-price">
-                    <i class="bi bi-cash-coin"></i>
-                    $ {{ '%.2f'|format(p.get('price', 0)|float) }}
-                  </div>
-
-                  <input type="hidden" name="producto_id" value="{{ p._id }}">
-
-                  <div class="qty-row">
-                    <div class="qty-label">Cantidad</div>
-                    <input
-                      type="number"
-                      name="qty"
-                      class="qty-input js-qty-input"
-                      min="0"
-                      step="1"
-                      value="0"
-                      data-price="{{ p.get('price', 0)|float }}"
-                      data-title="{{ p.get('title', 'Producto') }}"
-                      {% if track_inventory %}max="{{ stock }}"{% endif %}
-                      {% if out_of_stock %}disabled{% endif %}
-                    >
-                  </div>
-                </div>
-              </article>
-            {% endfor %}
-          </div>
-
-          <div class="empty-search hidden-soft" id="productsEmptyState">
-            <div class="icon">
+          <div class="pos-toolbar">
+            <div class="search-wrap">
               <i class="bi bi-search"></i>
+              <input
+                type="text"
+                id="productSearch"
+                class="search-input"
+                placeholder="Escribe nombre, SKU o código..."
+                autocomplete="off"
+              >
+              <div class="helper-inline">
+                Aquí no se muestran todos los productos. Sólo aparecen los resultados de tu búsqueda.
+              </div>
             </div>
-            <h4>No se encontraron productos</h4>
-            <p>Prueba con otro nombre, SKU o código de barras.</p>
-          </div>
-        {% else %}
-          <div class="empty-products">
-            <div class="icon">
-              <i class="bi bi-bag-x"></i>
+
+            <div class="toolbar-side">
+              <button type="button" class="btn-pos-search-clear" id="clearSearchBtn">
+                <i class="bi bi-x-circle"></i>
+                Limpiar búsqueda
+              </button>
             </div>
-            <h4>No hay productos disponibles</h4>
-            <p>
-              Primero agrega productos activos en tu catálogo para poder registrar ventas desde mostrador.
-            </p>
           </div>
-        {% endif %}
+
+          <div class="toolbar-meta">
+            <div class="result-pill">
+              <i class="bi bi-funnel"></i>
+              Resultados visibles: <span id="visibleResultsCount">0</span>
+            </div>
+            <div class="results-hint" id="resultsHint"></div>
+          </div>
+
+          <div id="scanStatus" class="scan-status"></div>
+
+          {% if productos %}
+            <div class="search-shell">
+              <div class="search-state" id="searchIdleState">
+                <div class="search-state-box">
+                  <div class="icon">
+                    <i class="bi bi-search-heart"></i>
+                  </div>
+                  <h4>Busca un producto para empezar</h4>
+                  <p>
+                    Escribe el nombre, SKU o código de barras. También puedes usar el botón de escaneo para agregarlo más rápido.
+                  </p>
+                </div>
+              </div>
+
+              <div class="search-state hidden-soft" id="searchEmptyState">
+                <div class="search-state-box">
+                  <div class="icon">
+                    <i class="bi bi-search"></i>
+                  </div>
+                  <h4>No se encontraron coincidencias</h4>
+                  <p>Prueba con otro nombre, SKU o código de barras.</p>
+                </div>
+              </div>
+
+              <div class="search-results-list hidden-soft" id="searchResultsList">
+                {% for p in productos %}
+                  {% set stock = p.get('stock', 0) %}
+                  {% set min_stock = p.get('min_stock', 0) %}
+                  {% set track_inventory = p.get('track_inventory', False) %}
+                  {% set out_of_stock = track_inventory and stock <= 0 %}
+                  {% set low_stock = track_inventory and stock > 0 and stock <= min_stock %}
+
+                  <article
+                    class="product-search-item hidden-soft"
+                    data-search="{{ (p.get('title','') ~ ' ' ~ p.get('sku','') ~ ' ' ~ p.get('barcode',''))|lower }}"
+                    data-title="{{ p.get('title','Producto') }}"
+                    data-price="{{ p.get('price', 0)|float }}"
+                    data-product-id="{{ p._id }}"
+                    data-barcode="{{ p.get('barcode','') }}"
+                    data-sku="{{ p.get('sku','') }}"
+                    data-stock="{{ stock }}"
+                    data-min-stock="{{ min_stock }}"
+                    data-track-inventory="{{ 1 if track_inventory else 0 }}"
+                    data-out-of-stock="{{ 1 if out_of_stock else 0 }}"
+                  >
+                    <div class="product-thumb">
+                      {% if p.get('image') %}
+                        <img src="{{ url_for('uploaded_file', filename=p.get('image')) }}" alt="{{ p.get('title', 'Producto') }}">
+                      {% else %}
+                        <i class="bi bi-image"></i>
+                      {% endif %}
+                    </div>
+
+                    <div class="product-quick-info">
+                      <h5 class="product-quick-title">{{ p.get('title', 'Producto') }}</h5>
+                      <p class="product-quick-desc">
+                        {{ p.get('description', '')|truncate(90) if p.get('description') else 'Sin descripción.' }}
+                      </p>
+
+                      <div class="product-quick-meta">
+                        <span class="quick-chip is-price">
+                          <i class="bi bi-cash-coin"></i>
+                          $ {{ '%.2f'|format(p.get('price', 0)|float) }}
+                        </span>
+
+                        <span class="quick-chip">
+                          <i class="bi bi-upc"></i>
+                          {{ p.get('sku', 'Sin SKU') if p.get('sku') else 'Sin SKU' }}
+                        </span>
+
+                        {% if track_inventory %}
+                          {% if out_of_stock %}
+                            <span class="quick-chip is-out">
+                              <i class="bi bi-x-octagon-fill"></i>
+                              Sin stock
+                            </span>
+                          {% elif low_stock %}
+                            <span class="quick-chip is-low">
+                              <i class="bi bi-exclamation-triangle-fill"></i>
+                              Stock {{ stock }}
+                            </span>
+                          {% else %}
+                            <span class="quick-chip is-ok">
+                              <i class="bi bi-check-circle-fill"></i>
+                              Stock {{ stock }}
+                            </span>
+                          {% endif %}
+                        {% else %}
+                          <span class="quick-chip is-neutral">
+                            <i class="bi bi-shield-slash"></i>
+                            Sin control
+                          </span>
+                        {% endif %}
+
+                        {% if p.get('barcode') %}
+                          <span class="quick-chip">
+                            <i class="bi bi-qr-code-scan"></i>
+                            {{ p.get('barcode') }}
+                          </span>
+                        {% endif %}
+                      </div>
+                    </div>
+
+                    <div class="product-quick-actions">
+                      <button
+                        type="button"
+                        class="btn-add-product js-add-product"
+                        {% if out_of_stock %}disabled{% endif %}
+                      >
+                        <i class="bi bi-plus-circle"></i>
+                        Agregar
+                      </button>
+                    </div>
+
+                    <div class="hidden-store">
+                      <input type="hidden" name="producto_id" value="{{ p._id }}">
+                      <input
+                        type="number"
+                        name="qty"
+                        class="js-qty-input"
+                        min="0"
+                        step="1"
+                        value="0"
+                        data-price="{{ p.get('price', 0)|float }}"
+                        data-title="{{ p.get('title', 'Producto') }}"
+                        {% if track_inventory %}max="{{ stock }}"{% endif %}
+                      >
+                    </div>
+                  </article>
+                {% endfor %}
+              </div>
+            </div>
+          {% else %}
+            <div class="search-shell">
+              <div class="search-state">
+                <div class="search-state-box">
+                  <div class="icon">
+                    <i class="bi bi-bag-x"></i>
+                  </div>
+                  <h4>No hay productos disponibles</h4>
+                  <p>
+                    Primero agrega productos activos en tu catálogo para poder registrar ventas desde mostrador.
+                  </p>
+                </div>
+              </div>
+            </div>
+          {% endif %}
+        </div>
+
+        <div class="selected-card">
+          <div class="selected-header">
+            <div>
+              <div class="section-title" style="margin-bottom:8px;">
+                <i class="bi bi-cart-check-fill"></i>
+                Productos seleccionados
+              </div>
+              <div class="selected-header-meta">
+                Aquí sólo aparecen los productos agregados a la venta.
+              </div>
+            </div>
+            <div class="result-pill">
+              <i class="bi bi-bag-check"></i>
+              Piezas: <span id="piecesCount">0</span>
+            </div>
+          </div>
+
+          <div class="selected-cart-wrap">
+            <div class="selected-empty" id="selectedEmptyState">
+              <div>
+                <div class="icon">
+                  <i class="bi bi-cart3"></i>
+                </div>
+                <div style="font-weight:800; color:#111827; margin-bottom:8px;">Todavía no agregas productos</div>
+                <div>Busca un artículo y presióna <strong>Agregar</strong> para empezar la venta.</div>
+              </div>
+            </div>
+
+            <div class="selected-cart-list" id="selectedCartList"></div>
+          </div>
+        </div>
       </div>
 
       <aside class="pos-side-card" id="checkoutPanel">
@@ -1132,7 +1271,7 @@
             </div>
             <div class="summary-line">
               <span>Piezas totales</span>
-              <strong id="piecesCount">0</strong>
+              <strong id="piecesCountAside">0</strong>
             </div>
             <div class="summary-line">
               <span>Subtotal</span>
@@ -1143,20 +1282,6 @@
               <div class="label">Total</div>
               <div class="value" id="totalValue">$0.00</div>
             </div>
-          </div>
-        </div>
-
-        <div class="side-block">
-          <div class="section-title">
-            <i class="bi bi-list-check"></i>
-            Seleccionados
-          </div>
-
-          <div class="selected-items-box">
-            <div class="selected-empty" id="selectedEmptyState">
-              Todavía no has agregado productos a la venta.
-            </div>
-            <div id="selectedItemsList"></div>
           </div>
         </div>
 
@@ -1175,7 +1300,7 @@
               class="form-control"
               placeholder="Opcional"
             >
-            <div class="helper-text">Puedes dejarlo vacío si es venta rápida de mostrador.</div>
+            <div class="helper-text">Puedes dejarlo vacío si es una venta rápida de mostrador.</div>
           </div>
 
           <div class="mb-3">
@@ -1334,7 +1459,7 @@
 
       <div class="modal-body">
         <div class="alert alert-info mb-3">
-          Escanea el QR del producto o su código de barras para localizarlo y sumarlo automáticamente.
+          Escanea el QR del producto o su código de barras para localizarlo y agregarlo automáticamente.
         </div>
 
         <div id="pos-scanner-reader" style="width:100%; min-height:320px;"></div>
@@ -1370,8 +1495,11 @@
   document.addEventListener('DOMContentLoaded', function () {
     const searchInput = document.getElementById('productSearch');
     const clearSearchBtn = document.getElementById('clearSearchBtn');
-    const productCards = document.querySelectorAll('.product-item');
-    const qtyInputs = document.querySelectorAll('.js-qty-input');
+    const clearAllBtn = document.getElementById('clearAllBtn');
+    const submitBtn = document.getElementById('submitBtn');
+    const openScannerBtn = document.getElementById('openScannerBtn');
+    const goCheckoutBtn = document.getElementById('goCheckoutBtn');
+
     const paymentMethod = document.getElementById('payment_method');
     const mixFields = document.getElementById('mixFields');
     const cashFields = document.getElementById('cashFields');
@@ -1380,22 +1508,25 @@
     const receivedAmount = document.getElementById('received_amount');
     const changeAmount = document.getElementById('change_amount');
     const paymentNote = document.getElementById('paymentNote');
-    const clearAllBtn = document.getElementById('clearAllBtn');
-    const submitBtn = document.getElementById('submitBtn');
-    const openScannerBtn = document.getElementById('openScannerBtn');
-    const goCheckoutBtn = document.getElementById('goCheckoutBtn');
 
     const selectedItemsCount = document.getElementById('selectedItemsCount');
     const selectedCount = document.getElementById('selectedCount');
     const piecesCount = document.getElementById('piecesCount');
+    const piecesCountAside = document.getElementById('piecesCountAside');
     const subtotalValue = document.getElementById('subtotalValue');
     const totalValue = document.getElementById('totalValue');
     const summaryStripTotal = document.getElementById('summaryStripTotal');
     const mobileTotalValue = document.getElementById('mobileTotalValue');
     const visibleResultsCount = document.getElementById('visibleResultsCount');
-    const productsEmptyState = document.getElementById('productsEmptyState');
-    const selectedItemsList = document.getElementById('selectedItemsList');
+    const resultsHint = document.getElementById('resultsHint');
+
+    const selectedCartList = document.getElementById('selectedCartList');
     const selectedEmptyState = document.getElementById('selectedEmptyState');
+
+    const searchResultsList = document.getElementById('searchResultsList');
+    const searchIdleState = document.getElementById('searchIdleState');
+    const searchEmptyState = document.getElementById('searchEmptyState');
+
     const scanStatus = document.getElementById('scanStatus');
 
     const posScannerModalEl = document.getElementById('posScannerModal');
@@ -1403,6 +1534,15 @@
     const manualSearchBtn = document.getElementById('manualSearchBtn');
     const modalScanStatus = document.getElementById('modalScanStatus');
     const scannedCodeBuffer = document.getElementById('scannedCodeBuffer');
+
+    const productItems = Array.from(document.querySelectorAll('.product-search-item'));
+    const qtyInputs = Array.from(document.querySelectorAll('.js-qty-input'));
+    const maxSearchResults = 8;
+
+    const productMap = new Map();
+    productItems.forEach(item => {
+      productMap.set(String(item.dataset.productId || ''), item);
+    });
 
     let posScannerModal = null;
     let zxingReader = null;
@@ -1412,6 +1552,7 @@
     let lastDecodedValue = '';
     let lastDecodedAt = 0;
     let restartScannerTimer = null;
+    let lastTouchedProductId = '';
 
     function money(n) {
       return '$' + (Number(n || 0)).toFixed(2);
@@ -1436,9 +1577,7 @@
     }
 
     function extractCodeFromScannedValue(value) {
-      let raw = String(value || '');
-
-      raw = raw
+      let raw = String(value || '')
         .replace(/[\u200B-\u200D\uFEFF]/g, '')
         .replace(/\r?\n|\r/g, '')
         .trim();
@@ -1465,7 +1604,6 @@
       try {
         if (/^https?:\/\//i.test(raw)) {
           const url = new URL(raw);
-
           const candidate =
             url.searchParams.get('code') ||
             url.searchParams.get('barcode') ||
@@ -1486,13 +1624,9 @@
       return raw;
     }
 
-    function normalizeCodeValue(value) {
-      return extractCodeFromScannedValue(value).trim();
-    }
-
     function buildCodeCandidates(value) {
       const raw = String(value || '').trim();
-      const normalized = normalizeCodeValue(raw);
+      const normalized = extractCodeFromScannedValue(raw);
 
       const candidates = new Set();
 
@@ -1532,10 +1666,9 @@
     }
 
     function clearScanStatus() {
-      if (scanStatus) {
-        scanStatus.className = 'scan-status';
-        scanStatus.innerHTML = '';
-      }
+      if (!scanStatus) return;
+      scanStatus.className = 'scan-status';
+      scanStatus.innerHTML = '';
     }
 
     function cancelScannerRestart() {
@@ -1571,34 +1704,115 @@
       }, delay);
     }
 
+    function getQtyInputFromItem(item) {
+      return item ? item.querySelector('.js-qty-input') : null;
+    }
+
+    function getProductItemById(productId) {
+      return productMap.get(String(productId || '')) || null;
+    }
+
+    function getItemData(item) {
+      return {
+        id: String(item?.dataset.productId || ''),
+        title: item?.dataset.title || 'Producto',
+        price: Number(item?.dataset.price || 0),
+        barcode: item?.dataset.barcode || '',
+        sku: item?.dataset.sku || '',
+        stock: Number(item?.dataset.stock || 0),
+        minStock: Number(item?.dataset.minStock || 0),
+        trackInventory: String(item?.dataset.trackInventory || '0') === '1',
+        outOfStock: String(item?.dataset.outOfStock || '0') === '1'
+      };
+    }
+
+    function clampQty(input, nextValue) {
+      if (!input) return 0;
+
+      let value = Number(nextValue || 0);
+      const maxAttr = input.getAttribute('max');
+
+      if (!Number.isFinite(value)) value = 0;
+      if (value < 0) value = 0;
+
+      if (maxAttr !== null && maxAttr !== '' && value > Number(maxAttr)) {
+        value = Number(maxAttr);
+      }
+
+      input.value = value;
+      return value;
+    }
+
+    function flashProduct(item) {
+      if (!item) return;
+      item.classList.add('product-highlight');
+      setTimeout(() => item.classList.remove('product-highlight'), 1800);
+    }
+
     function renderSelectedItems() {
       let html = '';
       let hasItems = false;
 
-      qtyInputs.forEach(input => {
-        const qty = Number(input.value || 0);
+      productItems.forEach(item => {
+        const qtyInput = getQtyInputFromItem(item);
+        const qty = Number(qtyInput?.value || 0);
         if (qty <= 0) return;
 
         hasItems = true;
-        const card = input.closest('.product-item');
-        const title = input.dataset.title || 'Producto';
-        const price = Number(input.dataset.price || 0);
-        const subtotal = qty * price;
-        const code = card?.dataset.barcode || '—';
+        const data = getItemData(item);
+        const subtotal = qty * data.price;
+        const stockText = data.trackInventory ? `Stock: ${data.stock}` : 'Sin control de inventario';
 
         html += `
-          <div class="selected-item">
+          <div class="cart-row ${lastTouchedProductId === data.id ? 'is-touched' : ''}" data-product-id="${safeText(data.id)}">
             <div>
-              <div class="selected-item-name">${safeText(title)}</div>
-              <div class="selected-item-meta">Cant.: ${qty} · Código: ${safeText(code || '—')}</div>
+              <div class="cart-row-title">${safeText(data.title)}</div>
+              <div class="cart-row-meta">
+                SKU: ${safeText(data.sku || '—')} · Código: ${safeText(data.barcode || '—')} · ${safeText(stockText)}
+              </div>
             </div>
-            <div class="selected-item-total">${money(subtotal)}</div>
+
+            <div class="cart-row-side">
+              <div class="cart-row-total">${money(subtotal)}</div>
+
+              <div class="qty-stepper">
+                <button type="button" class="qty-step-btn js-step-minus" data-product-id="${safeText(data.id)}">
+                  <i class="bi bi-dash-lg"></i>
+                </button>
+
+                <input
+                  type="number"
+                  class="selected-qty-input js-selected-qty"
+                  data-product-id="${safeText(data.id)}"
+                  value="${qty}"
+                  min="0"
+                  ${data.trackInventory ? `max="${data.stock}"` : ''}
+                >
+
+                <button type="button" class="qty-step-btn js-step-plus" data-product-id="${safeText(data.id)}" ${data.outOfStock ? 'disabled' : ''}>
+                  <i class="bi bi-plus-lg"></i>
+                </button>
+
+                <button type="button" class="remove-item-btn js-remove-product" data-product-id="${safeText(data.id)}">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </div>
           </div>
         `;
       });
 
-      if (selectedItemsList) selectedItemsList.innerHTML = html;
+      if (selectedCartList) selectedCartList.innerHTML = html;
       if (selectedEmptyState) selectedEmptyState.classList.toggle('hidden-soft', hasItems);
+      if (selectedCartList) selectedCartList.classList.toggle('hidden-soft', !hasItems);
+
+      if (lastTouchedProductId) {
+        setTimeout(() => {
+          lastTouchedProductId = '';
+          const touched = document.querySelector('.cart-row.is-touched');
+          if (touched) touched.classList.remove('is-touched');
+        }, 1200);
+      }
     }
 
     function getTotal() {
@@ -1620,6 +1834,7 @@
       if (selectedItemsCount) selectedItemsCount.textContent = selected;
       if (selectedCount) selectedCount.textContent = selected;
       if (piecesCount) piecesCount.textContent = pieces;
+      if (piecesCountAside) piecesCountAside.textContent = pieces;
       if (subtotalValue) subtotalValue.textContent = money(total);
       if (totalValue) totalValue.textContent = money(total);
       if (summaryStripTotal) summaryStripTotal.textContent = money(total);
@@ -1637,6 +1852,12 @@
       if (mixFields) mixFields.classList.add('hidden-soft');
       if (cashFields) cashFields.classList.add('hidden-soft');
 
+      if (total <= 0) {
+        if (paymentNote) paymentNote.innerHTML = 'Selecciona al menos un producto para calcular el total.';
+        if (submitBtn) submitBtn.disabled = true;
+        return;
+      }
+
       if (method === 'mixto') {
         if (mixFields) mixFields.classList.remove('hidden-soft');
 
@@ -1651,11 +1872,11 @@
           if (paymentNote) {
             paymentNote.classList.add('is-error');
             paymentNote.innerHTML = `
-              En pago mixto, <strong>efectivo + digital</strong> debe ser igual al total de la venta.
+              En pago mixto, <strong>efectivo + digital</strong> debe ser igual al total.
               <br>Total actual: <strong>${money(total)}</strong> · Capturado: <strong>${money(sum)}</strong>
             `;
           }
-          if (submitBtn) submitBtn.disabled = total <= 0;
+          if (submitBtn) submitBtn.disabled = true;
         } else {
           if (paymentNote) {
             paymentNote.innerHTML = `
@@ -1663,7 +1884,7 @@
               <br>Total: <strong>${money(total)}</strong> · Capturado: <strong>${money(sum)}</strong>
             `;
           }
-          if (submitBtn) submitBtn.disabled = total <= 0;
+          if (submitBtn) submitBtn.disabled = false;
         }
         return;
       }
@@ -1678,12 +1899,6 @@
 
         if (cashAmount) cashAmount.value = '0';
         if (digitalAmount) digitalAmount.value = '0';
-
-        if (total <= 0) {
-          if (paymentNote) paymentNote.innerHTML = `Selecciona productos para calcular el total.`;
-          if (submitBtn) submitBtn.disabled = true;
-          return;
-        }
 
         if (recibido <= 0) {
           if (paymentNote) {
@@ -1736,51 +1951,68 @@
         }
       }
 
-      if (submitBtn) submitBtn.disabled = total <= 0;
+      if (submitBtn) submitBtn.disabled = false;
     }
 
     function syncSearch() {
       const q = (searchInput?.value || '').trim().toLowerCase();
-      let visible = 0;
+      let matches = 0;
+      let shown = 0;
 
-      productCards.forEach(card => {
-        const hay = String(card.dataset.search || '').toLowerCase();
-        const shouldHide = q && !hay.includes(q);
+      productItems.forEach(item => {
+        const hay = String(item.dataset.search || '').toLowerCase();
+        const matched = q && hay.includes(q);
 
-        card.classList.toggle('hidden-soft', shouldHide);
-        if (!shouldHide) visible += 1;
+        if (matched) matches += 1;
+
+        const shouldShow = matched && shown < maxSearchResults;
+        item.classList.toggle('hidden-soft', !shouldShow);
+
+        if (shouldShow) shown += 1;
       });
 
-      if (visibleResultsCount) visibleResultsCount.textContent = visible;
-      if (productsEmptyState) productsEmptyState.classList.toggle('hidden-soft', visible > 0);
+      if (visibleResultsCount) visibleResultsCount.textContent = shown;
+
+      if (!q) {
+        searchIdleState?.classList.remove('hidden-soft');
+        searchEmptyState?.classList.add('hidden-soft');
+        searchResultsList?.classList.add('hidden-soft');
+        if (resultsHint) resultsHint.textContent = '';
+        return;
+      }
+
+      if (matches <= 0) {
+        searchIdleState?.classList.add('hidden-soft');
+        searchEmptyState?.classList.remove('hidden-soft');
+        searchResultsList?.classList.add('hidden-soft');
+        if (resultsHint) resultsHint.textContent = '';
+        return;
+      }
+
+      searchIdleState?.classList.add('hidden-soft');
+      searchEmptyState?.classList.add('hidden-soft');
+      searchResultsList?.classList.remove('hidden-soft');
+
+      if (resultsHint) {
+        resultsHint.textContent = matches > maxSearchResults
+          ? `Mostrando ${shown} de ${matches}. Escribe más para afinar la búsqueda.`
+          : '';
+      }
     }
 
     function clearHighlights() {
-      productCards.forEach(card => card.classList.remove('product-highlight'));
+      productItems.forEach(item => item.classList.remove('product-highlight'));
     }
 
-    function revealAllProducts() {
-      if (searchInput) searchInput.value = '';
+    function revealSearchByText(text) {
+      if (!searchInput) return;
+      searchInput.value = text || '';
       syncSearch();
     }
 
-    function highlightCard(card) {
-      clearHighlights();
-      card.classList.add('product-highlight');
-      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-      setTimeout(() => {
-        card.classList.remove('product-highlight');
-      }, 2200);
-    }
-
-    function increaseProductQty(card, productTitle) {
-      const qtyInput = card.querySelector('.js-qty-input');
-
-      if (!qtyInput || qtyInput.disabled) {
-        setScanStatus(`El producto <strong>${safeText(productTitle)}</strong> no está disponible para venta en este momento.`, 'error', 'page');
-        return false;
-      }
+    function increaseProductQty(item, productTitle) {
+      const qtyInput = getQtyInputFromItem(item);
+      if (!qtyInput) return false;
 
       let currentQty = Number(qtyInput.value || 0);
       const max = qtyInput.getAttribute('max');
@@ -1790,33 +2022,46 @@
         return false;
       }
 
+      lastTouchedProductId = String(item.dataset.productId || '');
       qtyInput.value = currentQty + 1;
-      qtyInput.dispatchEvent(new Event('input'));
-      highlightCard(card);
+      getTotal();
+      flashProduct(item);
 
       setScanStatus(`Se agregó <strong>${safeText(productTitle)}</strong> a la venta.`, 'success', 'page');
       return true;
+    }
+
+    function setProductQtyById(productId, nextQty) {
+      const item = getProductItemById(productId);
+      const qtyInput = getQtyInputFromItem(item);
+      if (!item || !qtyInput) return;
+
+      lastTouchedProductId = String(productId || '');
+      clampQty(qtyInput, nextQty);
+      getTotal();
     }
 
     function findCardByDirectCode(code) {
       const wanted = normalizeCompare(code);
       if (!wanted) return null;
 
-      for (const card of productCards) {
-        const cardId = normalizeCompare(card.dataset.productId || '');
-        const cardBarcode = normalizeCompare(card.dataset.barcode || '');
-        const cardSearch = String(card.dataset.search || '').toLowerCase();
-        const tokens = cardSearch.split(/\s+/).map(normalizeCompare).filter(Boolean);
+      for (const item of productItems) {
+        const productId = normalizeCompare(item.dataset.productId || '');
+        const barcode = normalizeCompare(item.dataset.barcode || '');
+        const sku = normalizeCompare(item.dataset.sku || '');
+        const hay = String(item.dataset.search || '').toLowerCase();
+        const tokens = hay.split(/\s+/).map(normalizeCompare).filter(Boolean);
 
-        if (cardId && cardId === wanted) return card;
-        if (cardBarcode && cardBarcode === wanted) return card;
-        if (tokens.includes(wanted)) return card;
+        if (productId && productId === wanted) return item;
+        if (barcode && barcode === wanted) return item;
+        if (sku && sku === wanted) return item;
+        if (tokens.includes(wanted)) return item;
       }
 
       return null;
     }
 
-    function findMatchingCard(producto, scannedCode = '') {
+    function findMatchingItem(producto, scannedCode = '') {
       const candidates = [
         producto?.id,
         producto?._id,
@@ -1826,8 +2071,8 @@
       ].filter(Boolean);
 
       for (const candidate of candidates) {
-        const card = findCardByDirectCode(candidate);
-        if (card) return card;
+        const item = findCardByDirectCode(candidate);
+        if (item) return item;
       }
 
       return null;
@@ -1838,7 +2083,6 @@
 
       if (!candidates.length) {
         setScanStatus('Debes capturar un código válido.', 'error', 'modal');
-        scheduleScannerRestart(1400, 'Listo para volver a escanear.');
         return;
       }
 
@@ -1850,17 +2094,15 @@
         'modal'
       );
 
-      revealAllProducts();
-
       for (const candidate of candidates) {
-        const localCard = findCardByDirectCode(candidate);
+        const localItem = findCardByDirectCode(candidate);
 
-        if (localCard) {
-          const localTitle = localCard.dataset.title || 'Producto';
-          const ok = increaseProductQty(localCard, localTitle);
+        if (localItem) {
+          const localTitle = localItem.dataset.title || 'Producto';
+          const ok = increaseProductQty(localItem, localTitle);
 
           if (ok) {
-            cancelScannerRestart();
+            revealSearchByText(localTitle);
             setScanStatus(`Producto encontrado localmente: <strong>${safeText(localTitle)}</strong>.`, 'success', 'modal');
             if (manualCodeInput) manualCodeInput.value = '';
             if (posScannerModal) posScannerModal.hide();
@@ -1890,14 +2132,14 @@
           if (!res.ok || !data.ok) continue;
 
           const producto = data.producto || {};
-          const card = findMatchingCard(producto, candidate);
+          const item = findMatchingItem(producto, candidate);
 
-          if (!card) continue;
+          if (!item) continue;
 
-          const ok = increaseProductQty(card, producto.title || card.dataset.title || 'Producto');
+          const ok = increaseProductQty(item, producto.title || item.dataset.title || 'Producto');
 
           if (ok) {
-            cancelScannerRestart();
+            revealSearchByText(producto.title || item.dataset.title || '');
             setScanStatus(`Producto encontrado: <strong>${safeText(producto.title || 'Producto')}</strong>.`, 'success', 'modal');
             if (manualCodeInput) manualCodeInput.value = '';
             if (posScannerModal) posScannerModal.hide();
@@ -1918,8 +2160,7 @@
         'modal'
       );
       setScanStatus('No existe un producto con ese código.', 'error', 'page');
-
-      scheduleScannerRestart(1700, 'No existe ese código. Listo para volver a escanear.');
+      scheduleScannerRestart(1800, 'No existe ese código. Listo para volver a escanear.');
     }
 
     function ensureScannerVideo() {
@@ -1962,29 +2203,6 @@
       }
     }
 
-    async function getPreferredCameraId() {
-      try {
-        const tempStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: 'environment' } },
-          audio: false
-        });
-        tempStream.getTracks().forEach(t => t.stop());
-      } catch (_) {}
-
-      const tempReader = new ZXing.BrowserMultiFormatReader();
-      const devices = await tempReader.listVideoInputDevices();
-
-      if (!devices || !devices.length) {
-        throw new Error('No se encontraron cámaras disponibles.');
-      }
-
-      const preferred =
-        devices.find(d => /back|rear|environment|trasera|trase/i.test(d.label || '')) ||
-        devices[0];
-
-      return preferred.deviceId;
-    }
-
     async function startPosScanner() {
       if (scannerStarting) return;
       if (!isScannerModalOpen()) return;
@@ -1996,11 +2214,19 @@
         await stopPosScanner();
         ensureScannerVideo();
 
-        const deviceId = await getPreferredCameraId();
         zxingReader = new ZXing.BrowserMultiFormatReader();
 
-        zxingControls = await zxingReader.decodeFromVideoDevice(
-          deviceId,
+        const constraints = {
+          audio: false,
+          video: {
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          }
+        };
+
+        zxingControls = await zxingReader.decodeFromConstraints(
+          constraints,
           'pos-scanner-video',
           async (result, err) => {
             if (result) {
@@ -2056,51 +2282,22 @@
 
       setTimeout(() => {
         startPosScanner();
-      }, 500);
+      }, 400);
     }
+
+    clearSearchBtn?.addEventListener('click', function () {
+      if (searchInput) {
+        searchInput.value = '';
+        syncSearch();
+        searchInput.focus();
+      }
+    });
 
     searchInput?.addEventListener('input', syncSearch);
 
-    clearSearchBtn?.addEventListener('click', function () {
-      searchInput.value = '';
-      syncSearch();
-      searchInput.focus();
-    });
-
-    qtyInputs.forEach(input => {
-      input.addEventListener('input', function () {
-        const max = input.getAttribute('max');
-        let value = Number(input.value || 0);
-
-        if (value < 0) value = 0;
-        if (max !== null && max !== '' && value > Number(max)) {
-          value = Number(max);
-        }
-
-        input.value = value;
-        getTotal();
-      });
-    });
-
-    paymentMethod?.addEventListener('change', function () {
-      getTotal();
-    });
-
-    cashAmount?.addEventListener('input', function () {
-      getTotal();
-    });
-
-    digitalAmount?.addEventListener('input', function () {
-      getTotal();
-    });
-
-    receivedAmount?.addEventListener('input', function () {
-      getTotal();
-    });
-
     clearAllBtn?.addEventListener('click', function () {
       qtyInputs.forEach(input => {
-        if (!input.disabled) input.value = 0;
+        input.value = 0;
       });
 
       if (cashAmount) cashAmount.value = '0';
@@ -2108,14 +2305,65 @@
       if (receivedAmount) receivedAmount.value = '0';
       if (changeAmount) changeAmount.value = '0.00';
 
+      lastTouchedProductId = '';
       clearHighlights();
       clearScanStatus();
       getTotal();
+
+      if (searchInput) {
+        searchInput.value = '';
+        syncSearch();
+      }
     });
 
-    openScannerBtn?.addEventListener('click', function () {
-      openScannerModal();
+    productItems.forEach(item => {
+      const addBtn = item.querySelector('.js-add-product');
+      addBtn?.addEventListener('click', function () {
+        const data = getItemData(item);
+        increaseProductQty(item, data.title);
+      });
     });
+
+    selectedCartList?.addEventListener('click', function (e) {
+      const minusBtn = e.target.closest('.js-step-minus');
+      const plusBtn = e.target.closest('.js-step-plus');
+      const removeBtn = e.target.closest('.js-remove-product');
+
+      if (minusBtn) {
+        const productId = minusBtn.dataset.productId;
+        const item = getProductItemById(productId);
+        const qtyInput = getQtyInputFromItem(item);
+        const current = Number(qtyInput?.value || 0);
+        setProductQtyById(productId, current - 1);
+      }
+
+      if (plusBtn) {
+        const productId = plusBtn.dataset.productId;
+        const item = getProductItemById(productId);
+        const data = getItemData(item);
+        increaseProductQty(item, data.title);
+      }
+
+      if (removeBtn) {
+        const productId = removeBtn.dataset.productId;
+        setProductQtyById(productId, 0);
+      }
+    });
+
+    selectedCartList?.addEventListener('input', function (e) {
+      const qtyField = e.target.closest('.js-selected-qty');
+      if (!qtyField) return;
+
+      const productId = qtyField.dataset.productId;
+      setProductQtyById(productId, qtyField.value);
+    });
+
+    paymentMethod?.addEventListener('change', getTotal);
+    cashAmount?.addEventListener('input', getTotal);
+    digitalAmount?.addEventListener('input', getTotal);
+    receivedAmount?.addEventListener('input', getTotal);
+
+    openScannerBtn?.addEventListener('click', openScannerModal);
 
     goCheckoutBtn?.addEventListener('click', function () {
       document.getElementById('checkoutPanel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -2151,9 +2399,6 @@
 
       if (manualCodeInput) manualCodeInput.value = '';
       setScanStatus('Listo para escanear o buscar manualmente.', 'info', 'modal');
-
-      const closeBtn = posScannerModalEl.querySelector('.btn-close');
-      if (closeBtn) closeBtn.blur();
     });
 
     document.getElementById('posForm')?.addEventListener('submit', function (e) {
