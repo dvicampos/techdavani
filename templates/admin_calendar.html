@@ -2,75 +2,885 @@
 {% block title %}Calendario de Reservas{% endblock %}
 
 {% block content %}
-<div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-4 gap-3">
-  <h2 class="mb-0 fw-bold text-dark">
-    <i class="bi bi-calendar3 me-2"></i>Calendario — {{ ym }}
-  </h2>
-  <div class="d-flex gap-2">
-    <div class="btn-group shadow-sm">
-      <a class="btn btn-outline-secondary" href="{{ url_for('admin_calendar', ym=prev_month) }}" title="Mes Anterior">&larr;</a>
-      <a class="btn btn-outline-secondary fw-semibold" href="{{ url_for('admin_calendar') }}">Hoy</a>
-      <a class="btn btn-outline-secondary" href="{{ url_for('admin_calendar', ym=next_month) }}" title="Mes Siguiente">&rarr;</a>
-    </div>
-    <a class="btn btn-primary shadow-sm" href="{{ url_for('admin_appointments') }}">Ver Lista</a>
-  </div>
-</div>
-
-<style>
-  /* Contenedor responsivo */
-  .cal-wrapper { overflow-x: auto; padding-bottom: 1rem; }
-  .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(140px, 1fr)); gap: 12px; min-width: 1000px; }
-  .cal-head { text-align: center; font-weight: 700; color: #64748b; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.5px; }
-  
-  /* Celdas del calendario */
-  .cal-cell { border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; min-height: 110px; background: #ffffff; display: flex; flex-direction: column; align-items: center; transition: border-color 0.2s; }
-  .cal-cell:hover { border-color: #cbd5e1; }
-  .cal-cell-empty { background: #f8fafc; border: 1px dashed #e2e8f0; border-radius: 12px; }
-  
-  /* Número del día centrado */
-  .cal-day { font-weight: 700; font-size: 1.1rem; color: #334155; background: #f1f5f9; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; border-radius: 50%; margin-bottom: 10px; }
-  
-  /* Tarjetas dentro del modal */
-  .appt { font-size: 0.9rem; padding: 12px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid transparent; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-  .appt-title { font-weight: 600; color: #1e293b; margin-bottom: 4px; font-size: 1rem;}
-  .appt-meta { font-size: 0.85rem; color: #64748b; }
-  
-  /* Colores por estado */
-  .st-pending { background: #fff7ed; border-color: #f97316; }
-  .st-approved { background: #ecfdf5; border-color: #10b981; }
-  .st-rejected { background: #fef2f2; border-color: #ef4444; opacity: 0.75; }
-</style>
-
-<div class="cal-wrapper">
-  <div class="cal-grid mb-3">
-    {% for h in ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"] %}
-      <div class="cal-head">{{ h }}</div>
-    {% endfor %}
-  </div>
-
-  <div class="cal-grid">
-    {% for week in weeks %}
-      {% for day in week %}
-        {% if day == 0 %}
-          <div class="cal-cell-empty"></div>
+{% set ns = namespace(total=0, pending=0, approved=0, rejected=0, active_days=0) %}
+{% for week in weeks %}
+  {% for day in week %}
+    {% if day != 0 %}
+      {% set dkey = "%04d-%02d-%02d"|format(year, month, day) %}
+      {% set day_appts = by_day.get(dkey) or [] %}
+      {% if day_appts|length > 0 %}
+        {% set ns.active_days = ns.active_days + 1 %}
+      {% endif %}
+      {% for a in day_appts %}
+        {% set ns.total = ns.total + 1 %}
+        {% if a.get('status') == 'approved' %}
+          {% set ns.approved = ns.approved + 1 %}
+        {% elif a.get('status') == 'rejected' %}
+          {% set ns.rejected = ns.rejected + 1 %}
         {% else %}
-          {% set dkey = "%04d-%02d-%02d"|format(year, month, day) %}
-          {% set day_appts = by_day.get(dkey) or [] %}
-          
-          <div class="cal-cell">
-            <div class="cal-day">{{ day }}</div>
-            
-            {% if day_appts|length > 0 %}
-              <button class="btn btn-sm btn-outline-primary w-100" data-bs-toggle="modal" data-bs-target="#modal-{{ dkey }}">
-                Ver {{ day_appts|length }} cita{% if day_appts|length > 1 %}s{% endif %}
-              </button>
-            {% else %}
-              <span class="text-muted" style="font-size: 0.75rem;">Sin citas</span>
-            {% endif %}
-          </div>
+          {% set ns.pending = ns.pending + 1 %}
         {% endif %}
       {% endfor %}
-    {% endfor %}
+    {% endif %}
+  {% endfor %}
+{% endfor %}
+
+<style>
+  .calendar-page {
+    max-width: 1360px;
+    margin: 0 auto;
+    padding: 28px 0 90px;
+  }
+
+  .calendar-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 18px;
+    flex-wrap: wrap;
+    margin-bottom: 22px;
+  }
+
+  .calendar-heading {
+    flex: 1 1 460px;
+  }
+
+  .calendar-heading h2 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 2rem;
+    font-weight: 800;
+    color: #f8fbff;
+    letter-spacing: -0.02em;
+  }
+
+  .calendar-heading h2 i {
+    color: #60a5fa;
+  }
+
+  .calendar-heading p {
+    margin: 10px 0 0;
+    color: rgba(221, 232, 255, 0.78);
+    font-size: 0.97rem;
+    line-height: 1.65;
+    max-width: 760px;
+  }
+
+  .calendar-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .btn-cal-nav,
+  .btn-cal-view,
+  .btn-cal-primary {
+    border-radius: 14px;
+    padding: 11px 18px;
+    font-weight: 700;
+    font-size: 0.94rem;
+    text-decoration: none;
+    transition: all 0.25s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: none;
+  }
+
+  .btn-cal-nav,
+  .btn-cal-view {
+    color: #dbe9ff;
+    border: 1px solid rgba(135, 164, 255, 0.24);
+    background: rgba(255, 255, 255, 0.04);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+  }
+
+  .btn-cal-nav:hover,
+  .btn-cal-view:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(135, 164, 255, 0.4);
+    transform: translateY(-1px);
+  }
+
+  .btn-cal-primary {
+    color: #fff;
+    border: 1px solid rgba(37, 99, 235, 0.45);
+    background: linear-gradient(135deg, #2563eb, #4f46e5);
+    box-shadow: 0 12px 24px rgba(37, 99, 235, 0.22);
+  }
+
+  .btn-cal-primary:hover {
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 16px 28px rgba(37, 99, 235, 0.30);
+  }
+
+  .calendar-nav-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    border-radius: 16px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    box-shadow: 0 12px 26px rgba(0, 0, 0, 0.14);
+  }
+
+  .calendar-summary-strip {
+    margin-bottom: 24px;
+    padding: 16px 18px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, rgba(13, 110, 253, 0.10), rgba(111, 66, 193, 0.10));
+    border: 1px solid rgba(122, 152, 255, 0.18);
+    box-shadow: 0 16px 30px rgba(0, 0, 0, 0.14);
+    color: rgba(224, 234, 255, 0.88);
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .summary-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 14px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.92rem;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+  }
+
+  .calendar-card {
+    background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(247,249,255,0.97));
+    border: 1px solid rgba(223, 228, 237, 0.95);
+    border-radius: 24px;
+    padding: 22px;
+    box-shadow: 0 18px 42px rgba(15, 23, 42, 0.16);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .calendar-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 4px;
+    background: linear-gradient(90deg, #0d6efd, #6f42c1, #8b5cf6);
+  }
+
+  .calendar-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+  }
+
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #111827;
+    margin: 0;
+  }
+
+  .section-title i {
+    color: #4f46e5;
+  }
+
+  .section-subtitle {
+    color: #667085;
+    font-size: 0.92rem;
+    line-height: 1.6;
+    margin-top: 6px;
+  }
+
+  .month-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 999px;
+    padding: 10px 14px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+    font-weight: 800;
+    font-size: 0.88rem;
+  }
+
+  .desktop-calendar {
+    display: block;
+  }
+
+  .mobile-calendar {
+    display: none;
+  }
+
+  .cal-wrapper {
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
+
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(150px, 1fr));
+    gap: 14px;
+    min-width: 1080px;
+  }
+
+  .cal-head {
+    text-align: center;
+    font-weight: 800;
+    color: #64748b;
+    text-transform: uppercase;
+    font-size: 0.80rem;
+    letter-spacing: 0.06em;
+    padding: 8px 6px;
+  }
+
+  .cal-cell,
+  .cal-cell-empty {
+    border-radius: 20px;
+    min-height: 168px;
+    position: relative;
+  }
+
+  .cal-cell-empty {
+    background: linear-gradient(135deg, rgba(248,250,252,0.92), rgba(241,245,249,0.86));
+    border: 1px dashed #dbe3ee;
+  }
+
+  .cal-cell {
+    border: 1px solid #e4eaf3;
+    background: #ffffff;
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition: all 0.22s ease;
+  }
+
+  .cal-cell:hover {
+    border-color: #bfd3f9;
+    box-shadow: 0 14px 30px rgba(37, 99, 235, 0.10);
+    transform: translateY(-2px);
+  }
+
+  .cal-cell-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .cal-day {
+    font-weight: 900;
+    font-size: 1rem;
+    color: #1e293b;
+    background: #f1f5f9;
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    border-radius: 14px;
+    box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.14);
+  }
+
+  .cal-count-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 999px;
+    padding: 7px 10px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+    font-size: 0.76rem;
+    font-weight: 800;
+  }
+
+  .cal-empty-note {
+    margin-top: auto;
+    text-align: center;
+    color: #94a3b8;
+    font-size: 0.82rem;
+    padding: 14px 10px;
+    border-radius: 14px;
+    background: #f8fafc;
+    border: 1px dashed #e2e8f0;
+  }
+
+  .cal-preview-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .cal-preview-item {
+    border-radius: 14px;
+    padding: 10px 11px;
+    border-left: 4px solid transparent;
+    background: #f8fafc;
+    box-shadow: inset 0 0 0 1px rgba(226, 232, 240, 0.8);
+  }
+
+  .cal-preview-item .name {
+    font-size: 0.86rem;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.35;
+    margin-bottom: 3px;
+  }
+
+  .cal-preview-item .meta {
+    font-size: 0.77rem;
+    color: #64748b;
+    line-height: 1.4;
+  }
+
+  .cal-preview-more {
+    text-align: center;
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: #1d4ed8;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 12px;
+    padding: 8px 10px;
+  }
+
+  .st-pending {
+    background: #fff7ed;
+    border-left-color: #f97316;
+  }
+
+  .st-approved {
+    background: #ecfdf5;
+    border-left-color: #10b981;
+  }
+
+  .st-rejected {
+    background: #fef2f2;
+    border-left-color: #ef4444;
+    opacity: 0.88;
+  }
+
+  .btn-open-day {
+    width: 100%;
+    margin-top: auto;
+    border-radius: 14px;
+    border: 1px solid #bfdbfe;
+    background: #eff6ff;
+    color: #1d4ed8;
+    padding: 10px 12px;
+    font-size: 0.86rem;
+    font-weight: 800;
+    transition: all 0.22s ease;
+  }
+
+  .btn-open-day:hover {
+    background: #dbeafe;
+    color: #1e40af;
+  }
+
+  .mobile-days-list {
+    display: grid;
+    gap: 14px;
+  }
+
+  .mobile-day-card {
+    border: 1px solid #e4eaf3;
+    background: #fff;
+    border-radius: 20px;
+    padding: 16px;
+    box-shadow: 0 10px 26px rgba(15, 23, 42, 0.06);
+  }
+
+  .mobile-day-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .mobile-day-date {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .mobile-day-number {
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-weight: 900;
+    font-size: 1rem;
+  }
+
+  .mobile-day-label {
+    color: #0f172a;
+    font-weight: 800;
+    font-size: 0.96rem;
+  }
+
+  .mobile-day-sub {
+    color: #64748b;
+    font-size: 0.82rem;
+    margin-top: 2px;
+  }
+
+  .mobile-day-count {
+    border-radius: 999px;
+    padding: 7px 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 0.78rem;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+
+  .mobile-preview-list {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .mobile-preview-item {
+    border-radius: 14px;
+    padding: 11px 12px;
+    border-left: 4px solid transparent;
+  }
+
+  .mobile-preview-item .name {
+    font-size: 0.88rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 3px;
+  }
+
+  .mobile-preview-item .meta {
+    font-size: 0.79rem;
+    color: #64748b;
+  }
+
+  .mobile-empty-state {
+    text-align: center;
+    padding: 30px 18px;
+    color: #64748b;
+    border: 1px dashed #dbe3ee;
+    border-radius: 18px;
+    background: #f8fafc;
+  }
+
+  .mobile-empty-state i {
+    font-size: 1.8rem;
+    color: #94a3b8;
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  .appt-modal .modal-content {
+    border: none;
+    border-radius: 22px;
+    overflow: hidden;
+    box-shadow: 0 24px 52px rgba(15, 23, 42, 0.22);
+  }
+
+  .appt-modal .modal-header {
+    border-bottom: 1px solid #eef2f7;
+    background: linear-gradient(135deg, #f8fbff, #f6f7ff);
+    padding: 18px 20px;
+  }
+
+  .appt-modal .modal-title {
+    font-weight: 800;
+    color: #111827;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .appt-modal .modal-title i {
+    color: #2563eb;
+  }
+
+  .appt-modal .modal-body {
+    padding: 18px;
+    background: #fbfcff;
+  }
+
+  .appt {
+    font-size: 0.9rem;
+    padding: 14px;
+    border-radius: 16px;
+    margin-bottom: 12px;
+    border-left: 4px solid transparent;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+  }
+
+  .appt:last-child {
+    margin-bottom: 0;
+  }
+
+  .appt-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .appt-title {
+    font-weight: 800;
+    color: #1e293b;
+    margin-bottom: 4px;
+    font-size: 1rem;
+    line-height: 1.35;
+  }
+
+  .appt-meta {
+    font-size: 0.86rem;
+    color: #64748b;
+    display: grid;
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .appt-meta strong {
+    color: #0f172a;
+  }
+
+  .appt-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px dashed rgba(148, 163, 184, 0.32);
+  }
+
+  .appt-actions form {
+    flex: 1 1 0;
+    margin: 0;
+  }
+
+  .btn-approve,
+  .btn-reject {
+    width: 100%;
+    border-radius: 12px;
+    font-weight: 800;
+    padding: 10px 12px;
+    border: none;
+  }
+
+  .btn-approve {
+    background: linear-gradient(135deg, #16a34a, #22c55e);
+    color: #fff;
+    box-shadow: 0 10px 22px rgba(34, 197, 94, 0.18);
+  }
+
+  .btn-reject {
+    background: linear-gradient(135deg, #dc2626, #ef4444);
+    color: #fff;
+    box-shadow: 0 10px 22px rgba(239, 68, 68, 0.18);
+  }
+
+  @media (max-width: 1199px) {
+    .cal-grid {
+      grid-template-columns: repeat(7, minmax(135px, 1fr));
+      min-width: 980px;
+      gap: 12px;
+    }
+
+    .cal-cell {
+      min-height: 158px;
+      padding: 12px;
+    }
+  }
+
+  @media (max-width: 991px) {
+    .desktop-calendar {
+      display: none;
+    }
+
+    .mobile-calendar {
+      display: block;
+    }
+
+    .calendar-card {
+      padding: 18px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .calendar-page {
+      padding: 18px 0 82px;
+    }
+
+    .calendar-heading h2 {
+      font-size: 1.65rem;
+    }
+
+    .calendar-actions {
+      width: 100%;
+      flex-direction: column;
+    }
+
+    .calendar-nav-group {
+      width: 100%;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn-cal-nav,
+    .btn-cal-view,
+    .btn-cal-primary,
+    .summary-pill {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .calendar-toolbar {
+      align-items: stretch;
+    }
+
+    .month-pill {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .appt-head {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .appt-actions {
+      flex-direction: column;
+    }
+
+    .appt-actions form {
+      width: 100%;
+    }
+  }
+</style>
+
+<div class="calendar-page">
+  <div class="calendar-topbar">
+    <div class="calendar-heading">
+      <h2><i class="bi bi-calendar3"></i> Calendario de Reservas</h2>
+      <p>
+        Visualiza el mes completo, revisa citas por día y administra rápidamente las reservas pendientes
+        desde una vista más clara y ordenada.
+      </p>
+    </div>
+
+    <div class="calendar-actions">
+      <div class="calendar-nav-group">
+        <a class="btn-cal-nav" href="{{ url_for('admin_calendar', ym=prev_month) }}" title="Mes anterior">
+          <i class="bi bi-arrow-left"></i>
+        </a>
+        <a class="btn-cal-view" href="{{ url_for('admin_calendar') }}">
+          <i class="bi bi-calendar-date"></i>
+          Hoy
+        </a>
+        <a class="btn-cal-nav" href="{{ url_for('admin_calendar', ym=next_month) }}" title="Mes siguiente">
+          <i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+
+      <a class="btn-cal-primary" href="{{ url_for('admin_appointments') }}">
+        <i class="bi bi-list-ul"></i>
+        Ver lista
+      </a>
+    </div>
+  </div>
+
+  <div class="calendar-summary-strip">
+    <div class="summary-pill">
+      <i class="bi bi-calendar2-month"></i>
+      {{ ym }}
+    </div>
+    <div class="summary-pill">
+      <i class="bi bi-collection"></i>
+      {{ ns.total }} cita{% if ns.total != 1 %}s{% endif %}
+    </div>
+    <div class="summary-pill">
+      <i class="bi bi-patch-check"></i>
+      Aprobadas: {{ ns.approved }}
+    </div>
+    <div class="summary-pill">
+      <i class="bi bi-hourglass-split"></i>
+      Pendientes: {{ ns.pending }}
+    </div>
+    <div class="summary-pill">
+      <i class="bi bi-calendar-week"></i>
+      Días con agenda: {{ ns.active_days }}
+    </div>
+  </div>
+
+  <div class="calendar-card">
+    <div class="calendar-toolbar">
+      <div>
+        <div class="section-title">
+          <i class="bi bi-grid-3x3-gap-fill"></i>
+          Vista mensual
+        </div>
+        <div class="section-subtitle">
+          En móvil cambia automáticamente a tarjetas por día para que sea más cómodo de usar.
+        </div>
+      </div>
+
+      <div class="month-pill">
+        <i class="bi bi-stars"></i>
+        Mes actual: {{ ym }}
+      </div>
+    </div>
+
+    <div class="desktop-calendar">
+      <div class="cal-wrapper">
+        <div class="cal-grid mb-3">
+          {% for h in ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"] %}
+            <div class="cal-head">{{ h }}</div>
+          {% endfor %}
+        </div>
+
+        <div class="cal-grid">
+          {% for week in weeks %}
+            {% for day in week %}
+              {% if day == 0 %}
+                <div class="cal-cell-empty"></div>
+              {% else %}
+                {% set dkey = "%04d-%02d-%02d"|format(year, month, day) %}
+                {% set day_appts = by_day.get(dkey) or [] %}
+
+                <div class="cal-cell {% if day_appts|length > 0 %}has-items{% endif %}">
+                  <div class="cal-cell-top">
+                    <div class="cal-day">{{ day }}</div>
+
+                    {% if day_appts|length > 0 %}
+                      <div class="cal-count-badge">
+                        <i class="bi bi-bell"></i>
+                        {{ day_appts|length }}
+                      </div>
+                    {% endif %}
+                  </div>
+
+                  {% if day_appts|length > 0 %}
+                    <div class="cal-preview-list">
+                      {% for a in day_appts[:2] %}
+                        {% set st = a.get("status", "pending") %}
+                        <div class="cal-preview-item st-{{ st }}">
+                          <div class="name">{{ a.get("customer_name", "Sin nombre") }}</div>
+                          <div class="meta">
+                            {{ a.get("start_at").strftime("%H:%M") }} · {{ a.get("service_title", "Servicio") }}
+                          </div>
+                        </div>
+                      {% endfor %}
+
+                      {% if day_appts|length > 2 %}
+                        <div class="cal-preview-more">
+                          + {{ day_appts|length - 2 }} más
+                        </div>
+                      {% endif %}
+                    </div>
+
+                    <button
+                      class="btn-open-day"
+                      data-bs-toggle="modal"
+                      data-bs-target="#modal-{{ dkey }}"
+                      type="button"
+                    >
+                      Ver {{ day_appts|length }} cita{% if day_appts|length > 1 %}s{% endif %}
+                    </button>
+                  {% else %}
+                    <div class="cal-empty-note">
+                      <i class="bi bi-calendar2-x d-block mb-1"></i>
+                      Sin citas
+                    </div>
+                  {% endif %}
+                </div>
+              {% endif %}
+            {% endfor %}
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="mobile-calendar">
+      <div class="mobile-days-list">
+        {% set mobile_has_items = false %}
+        {% for week in weeks %}
+          {% for day in week %}
+            {% if day != 0 %}
+              {% set dkey = "%04d-%02d-%02d"|format(year, month, day) %}
+              {% set day_appts = by_day.get(dkey) or [] %}
+              {% if day_appts|length > 0 %}
+                {% set mobile_has_items = true %}
+                <div class="mobile-day-card">
+                  <div class="mobile-day-head">
+                    <div class="mobile-day-date">
+                      <div class="mobile-day-number">{{ day }}</div>
+                      <div>
+                        <div class="mobile-day-label">{{ dkey }}</div>
+                        <div class="mobile-day-sub">Agenda del día</div>
+                      </div>
+                    </div>
+
+                    <div class="mobile-day-count">
+                      {{ day_appts|length }} cita{% if day_appts|length > 1 %}s{% endif %}
+                    </div>
+                  </div>
+
+                  <div class="mobile-preview-list">
+                    {% for a in day_appts[:3] %}
+                      {% set st = a.get("status", "pending") %}
+                      <div class="mobile-preview-item st-{{ st }}">
+                        <div class="name">{{ a.get("customer_name", "Sin nombre") }}</div>
+                        <div class="meta">
+                          {{ a.get("start_at").strftime("%H:%M") }} · {{ a.get("service_title", "Servicio") }}
+                        </div>
+                      </div>
+                    {% endfor %}
+                  </div>
+
+                  <button
+                    class="btn-open-day"
+                    data-bs-toggle="modal"
+                    data-bs-target="#modal-{{ dkey }}"
+                    type="button"
+                  >
+                    Ver detalle del día
+                  </button>
+                </div>
+              {% endif %}
+            {% endif %}
+          {% endfor %}
+        {% endfor %}
+
+        {% if ns.active_days == 0 %}
+          <div class="mobile-empty-state">
+            <i class="bi bi-calendar2-x"></i>
+            No hay citas registradas en este mes.
+          </div>
+        {% endif %}
+      </div>
+    </div>
   </div>
 </div>
 
@@ -79,56 +889,68 @@
     {% if day != 0 %}
       {% set dkey = "%04d-%02d-%02d"|format(year, month, day) %}
       {% set day_appts = by_day.get(dkey) or [] %}
-      
+
       {% if day_appts|length > 0 %}
-      <div class="modal fade" id="modal-{{ dkey }}" tabindex="-1" aria-labelledby="modalLabel-{{ dkey }}" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title fw-bold" id="modalLabel-{{ dkey }}">Citas del {{ day }}/{{ month }}/{{ year }}</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-            </div>
-            <div class="modal-body">
-              
-              {% for a in day_appts %}
-                {% set st = a.get("status", "pending") %}
-                <div class="appt st-{{ st }}">
-                  <div class="d-flex justify-content-between align-items-start">
-                    <div class="appt-title">{{ a.get("customer_name", "Sin Nombre") }}</div>
-                    <span class="badge text-bg-{{ 'warning' if st == 'pending' else 'success' if st == 'approved' else 'danger' }}">
-                      {{ 'Pendiente' if st == 'pending' else 'Aprobada' if st == 'approved' else 'Rechazada' }}
-                    </span>
-                  </div>
-                  
-                  <div class="appt-meta d-flex flex-column gap-1 mt-1">
-                    <span>
-                      <strong class="text-dark"><i class="bi bi-clock"></i> {{ a.get("start_at").strftime("%H:%M") }}</strong> 
-                      · {{ a.get("service_title", "Servicio") }}
-                    </span>
-                    {% if a.get("phone") %}
-                      <span><i class="bi bi-telephone"></i> {{ a.get("phone") }}</span>
+        <div class="modal fade appt-modal" id="modal-{{ dkey }}" tabindex="-1" aria-labelledby="modalLabel-{{ dkey }}" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="modalLabel-{{ dkey }}">
+                  <i class="bi bi-calendar-event"></i>
+                  Citas del {{ day }}/{{ month }}/{{ year }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+              </div>
+
+              <div class="modal-body">
+                {% for a in day_appts %}
+                  {% set st = a.get("status", "pending") %}
+                  <div class="appt st-{{ st }}">
+                    <div class="appt-head">
+                      <div>
+                        <div class="appt-title">{{ a.get("customer_name", "Sin Nombre") }}</div>
+                      </div>
+
+                      <span class="badge text-bg-{{ 'warning' if st == 'pending' else 'success' if st == 'approved' else 'danger' }}">
+                        {{ 'Pendiente' if st == 'pending' else 'Aprobada' if st == 'approved' else 'Rechazada' }}
+                      </span>
+                    </div>
+
+                    <div class="appt-meta">
+                      <span>
+                        <strong><i class="bi bi-clock"></i> {{ a.get("start_at").strftime("%H:%M") }}</strong>
+                        · {{ a.get("service_title", "Servicio") }}
+                      </span>
+
+                      {% if a.get("phone") %}
+                        <span><i class="bi bi-telephone"></i> {{ a.get("phone") }}</span>
+                      {% endif %}
+                    </div>
+
+                    {% if st == "pending" %}
+                      <div class="appt-actions">
+                        <form method="POST" action="{{ url_for('admin_appointments_action', appt_id=a['_id'], action='approve') }}">
+                          <button class="btn-approve" type="submit">
+                            <i class="bi bi-check2-circle"></i>
+                            Aprobar
+                          </button>
+                        </form>
+
+                        <form method="POST" action="{{ url_for('admin_appointments_action', appt_id=a['_id'], action='reject') }}">
+                          <button class="btn-reject" type="submit">
+                            <i class="bi bi-x-circle"></i>
+                            Rechazar
+                          </button>
+                        </form>
+                      </div>
                     {% endif %}
                   </div>
-
-                  {% if st == "pending" %}
-                  <div class="d-flex gap-2 mt-3 pt-3 border-top border-secondary-subtle">
-                    <form method="POST" action="{{ url_for('admin_appointments_action', appt_id=a['_id'], action='approve') }}" class="m-0 flex-grow-1">
-                      <button class="btn btn-success btn-sm w-100" type="submit">Aprobar</button>
-                    </form>
-                    <form method="POST" action="{{ url_for('admin_appointments_action', appt_id=a['_id'], action='reject') }}" class="m-0 flex-grow-1">
-                      <button class="btn btn-danger btn-sm w-100" type="submit">Rechazar</button>
-                    </form>
-                  </div>
-                  {% endif %}
-                </div>
-              {% endfor %}
-              
+                {% endfor %}
+              </div>
             </div>
           </div>
         </div>
-      </div>
       {% endif %}
-      
     {% endif %}
   {% endfor %}
 {% endfor %}

@@ -1013,13 +1013,14 @@ def admin_booking_exceptions():
             flash("Fecha inválida (usa YYYY-MM-DD).", "danger")
             return redirect(url_for("admin_booking_exceptions"))
 
+        now = datetime.utcnow()
+
         doc = {
             "page_id": ObjectId(page_id),
             "date": dstr,
             "type": typ,
             "reason": reason,
-            "updated_at": datetime.utcnow(),
-            "created_at": datetime.utcnow()
+            "updated_at": now
         }
 
         if typ == "custom_hours":
@@ -1040,19 +1041,23 @@ def admin_booking_exceptions():
             doc["close"] = None
             doc["breaks"] = []
 
-        # upsert por (page_id, date) para que editar sea sobrescribir
         mongo.db.booking_exceptions.update_one(
             {"page_id": ObjectId(page_id), "date": dstr},
-            {"$set": doc, "$setOnInsert": {"created_at": datetime.utcnow()}},
+            {
+                "$set": doc,
+                "$setOnInsert": {"created_at": now}
+            },
             upsert=True
         )
 
         flash("Excepción guardada ✅", "success")
         return redirect(url_for("admin_booking_exceptions"))
 
-    exceptions = list(mongo.db.booking_exceptions.find(
-        {"page_id": ObjectId(page_id)}
-    ).sort("date", 1))
+    exceptions = list(
+        mongo.db.booking_exceptions.find(
+            {"page_id": ObjectId(page_id)}
+        ).sort("date", 1)
+    )
 
     return render_template("admin_booking_exceptions.html", exceptions=exceptions)
 

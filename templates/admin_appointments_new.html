@@ -2,63 +2,489 @@
 {% block title %}Nueva Cita{% endblock %}
 
 {% block content %}
-<div class="container py-4">
-  <div class="d-flex align-items-center justify-content-between mb-3">
-    <div>
-      <h2 class="mb-0">Crear Cita (Dashboard)</h2>
-      <small class="text-muted">Agrega una cita manualmente (aprobada o pendiente).</small>
+<style>
+  .appt-create-page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 28px 0 90px;
+  }
+
+  .appt-create-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 18px;
+    flex-wrap: wrap;
+    margin-bottom: 22px;
+  }
+
+  .appt-create-heading {
+    flex: 1 1 460px;
+  }
+
+  .appt-create-heading h2 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 2rem;
+    font-weight: 800;
+    color: #f8fbff;
+    letter-spacing: -0.02em;
+  }
+
+  .appt-create-heading h2 i {
+    color: #60a5fa;
+  }
+
+  .appt-create-heading p {
+    margin: 10px 0 0;
+    color: rgba(221, 232, 255, 0.78);
+    font-size: 0.97rem;
+    line-height: 1.65;
+    max-width: 760px;
+  }
+
+  .appt-create-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .btn-appt-back,
+  .btn-appt-secondary,
+  .btn-appt-primary {
+    border-radius: 14px;
+    padding: 11px 18px;
+    font-weight: 700;
+    font-size: 0.94rem;
+    text-decoration: none;
+    transition: all 0.25s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: none;
+  }
+
+  .btn-appt-back,
+  .btn-appt-secondary {
+    color: #dbe9ff;
+    border: 1px solid rgba(135, 164, 255, 0.24);
+    background: rgba(255, 255, 255, 0.04);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+  }
+
+  .btn-appt-back:hover,
+  .btn-appt-secondary:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(135, 164, 255, 0.4);
+    transform: translateY(-1px);
+  }
+
+  .appt-summary-strip {
+    margin-bottom: 24px;
+    padding: 16px 18px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, rgba(13, 110, 253, 0.10), rgba(111, 66, 193, 0.10));
+    border: 1px solid rgba(122, 152, 255, 0.18);
+    box-shadow: 0 16px 30px rgba(0, 0, 0, 0.14);
+    color: rgba(224, 234, 255, 0.88);
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .summary-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 14px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.92rem;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+  }
+
+  .flash-stack {
+    display: grid;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .flash-card {
+    border-radius: 16px;
+    padding: 14px 16px;
+    border: 1px solid transparent;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.10);
+    font-weight: 600;
+  }
+
+  .flash-card.success,
+  .flash-card.sucess {
+    background: #ecfdf3;
+    color: #166534;
+    border-color: #bbf7d0;
+  }
+
+  .flash-card.warning {
+    background: #fff7ed;
+    color: #9a3412;
+    border-color: #fdba74;
+  }
+
+  .flash-card.danger,
+  .flash-card.error {
+    background: #fef2f2;
+    color: #991b1b;
+    border-color: #fecaca;
+  }
+
+  .flash-card.info,
+  .flash-card.message,
+  .flash-card.primary {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border-color: #bfdbfe;
+  }
+
+  .appt-create-card {
+    background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(247,249,255,0.97));
+    border: 1px solid rgba(223, 228, 237, 0.95);
+    border-radius: 24px;
+    padding: 22px;
+    box-shadow: 0 18px 42px rgba(15, 23, 42, 0.16);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .appt-create-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 4px;
+    background: linear-gradient(90deg, #0d6efd, #6f42c1, #8b5cf6);
+  }
+
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #111827;
+    margin: 0 0 10px;
+  }
+
+  .section-title i {
+    color: #4f46e5;
+  }
+
+  .section-subtitle {
+    margin: 0 0 18px;
+    color: #667085;
+    font-size: 0.92rem;
+    line-height: 1.6;
+  }
+
+  .helper-box {
+    margin-bottom: 18px;
+    padding: 14px 15px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #eff6ff, #eef2ff);
+    border: 1px solid #dbeafe;
+    color: #1e40af;
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+
+  .helper-box strong {
+    color: #1d4ed8;
+  }
+
+  .form-label {
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 8px;
+  }
+
+  .form-control,
+  .form-select {
+    border-radius: 14px !important;
+    border: 1px solid #d8e0ea !important;
+    box-shadow: none !important;
+    min-height: 48px;
+  }
+
+  .form-control:focus,
+  .form-select:focus {
+    border-color: #86b7fe !important;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.12) !important;
+  }
+
+  .form-text {
+    color: #667085 !important;
+    margin-top: 6px;
+    font-size: 0.85rem;
+    line-height: 1.55;
+  }
+
+  .field-box {
+    border: 1px solid #e7edf5;
+    border-radius: 18px;
+    padding: 16px;
+    background: #fbfcff;
+    height: 100%;
+  }
+
+  .field-box-title {
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .field-box-title i {
+    color: #2563eb;
+  }
+
+  .status-hint {
+    margin-top: 10px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    color: #475467;
+    font-size: 0.88rem;
+    line-height: 1.55;
+  }
+
+  .form-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 24px;
+  }
+
+  .btn-appt-primary {
+    flex: 1 1 260px;
+    border: 1px solid rgba(37, 99, 235, 0.45);
+    background: linear-gradient(135deg, #2563eb, #4f46e5);
+    color: #fff;
+    box-shadow: 0 12px 24px rgba(37, 99, 235, 0.22);
+  }
+
+  .btn-appt-primary:hover {
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 16px 28px rgba(37, 99, 235, 0.30);
+  }
+
+  @media (max-width: 768px) {
+    .appt-create-page {
+      padding: 18px 0 80px;
+    }
+
+    .appt-create-heading h2 {
+      font-size: 1.65rem;
+    }
+
+    .appt-create-actions {
+      width: 100%;
+    }
+
+    .btn-appt-back,
+    .btn-appt-secondary,
+    .btn-appt-primary,
+    .summary-pill {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .form-actions {
+      flex-direction: column;
+    }
+  }
+</style>
+
+<div class="appt-create-page">
+  <div class="appt-create-topbar">
+    <div class="appt-create-heading">
+      <h2><i class="bi bi-calendar-plus-fill"></i> Crear Cita</h2>
+      <p>
+        Registra una cita manualmente desde el dashboard, ya sea como aprobada o pendiente,
+        para tener mejor control de la agenda y de las reservas capturadas por el equipo.
+      </p>
     </div>
-    <a class="btn btn-outline-secondary" href="{{ url_for('admin_appointments') }}">Volver</a>
+
+    <div class="appt-create-actions">
+      <a class="btn-appt-back" href="{{ url_for('admin_appointments') }}">
+        <i class="bi bi-arrow-left-circle"></i>
+        Volver
+      </a>
+    </div>
+  </div>
+
+  <div class="appt-summary-strip">
+    <div class="summary-pill">
+      <i class="bi bi-person-plus"></i>
+      Alta manual de cita
+    </div>
+    <div class="summary-pill">
+      <i class="bi bi-clock-history"></i>
+      Estado inicial configurable
+    </div>
+    <div class="summary-pill">
+      <i class="bi bi-calendar-check"></i>
+      Gestión desde dashboard
+    </div>
   </div>
 
   {% with msgs = get_flashed_messages(with_categories=true) %}
     {% if msgs %}
-      {% for cat, msg in msgs %}
-        <div class="alert alert-{{ 'warning' if cat=='message' else cat }} mb-3" role="alert">{{ msg }}</div>
-      {% endfor %}
+      <div class="flash-stack">
+        {% for cat, msg in msgs %}
+          <div class="flash-card {{ 'warning' if cat=='message' else cat }}">
+            {{ msg }}
+          </div>
+        {% endfor %}
+      </div>
     {% endif %}
   {% endwith %}
 
-  <div class="card shadow-sm">
-    <div class="card-body">
-      <form method="POST">
-        <div class="row g-3">
-          <div class="col-md-6">
+  <div class="appt-create-card">
+    <div class="section-title">
+      <i class="bi bi-journal-plus"></i>
+      Nueva cita manual
+    </div>
+    <div class="section-subtitle">
+      Captura los datos del cliente, el servicio y la fecha/hora de inicio para registrar la cita.
+    </div>
+
+    <div class="helper-box">
+      <strong>Tip:</strong> usa <em>Aprobada</em> cuando la cita ya esté confirmada con el cliente,
+      y <em>Pendiente</em> cuando todavía falte validar disponibilidad o confirmación final.
+    </div>
+
+    <form method="POST">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div class="field-box">
+            <div class="field-box-title">
+              <i class="bi bi-person-fill"></i>
+              Cliente
+            </div>
+
             <label class="form-label">Nombre del cliente</label>
-            <input type="text" class="form-control" name="customer_name" required>
+            <input
+              type="text"
+              class="form-control"
+              name="customer_name"
+              placeholder="Ej. María López"
+              required
+            >
+            <div class="form-text">Escribe el nombre completo o el nombre de referencia del cliente.</div>
           </div>
+        </div>
 
-          <div class="col-md-6">
+        <div class="col-md-6">
+          <div class="field-box">
+            <div class="field-box-title">
+              <i class="bi bi-telephone-fill"></i>
+              Contacto
+            </div>
+
             <label class="form-label">Teléfono</label>
-            <input type="text" class="form-control" name="phone" required>
+            <input
+              type="text"
+              class="form-control"
+              name="phone"
+              placeholder="Ej. 5512345678"
+              required
+            >
+            <div class="form-text">Útil para confirmar, reprogramar o localizar al cliente rápidamente.</div>
           </div>
+        </div>
 
-          <div class="col-md-6">
+        <div class="col-md-6">
+          <div class="field-box">
+            <div class="field-box-title">
+              <i class="bi bi-briefcase-fill"></i>
+              Servicio
+            </div>
+
             <label class="form-label">Servicio</label>
-            <input type="text" class="form-control" name="service_title" required>
+            <input
+              type="text"
+              class="form-control"
+              name="service_title"
+              placeholder="Ej. Consulta, corte, masaje, asesoría..."
+              required
+            >
+            <div class="form-text">Indica el nombre del servicio que se agendó manualmente.</div>
           </div>
+        </div>
 
-          <div class="col-md-6">
+        <div class="col-md-6">
+          <div class="field-box">
+            <div class="field-box-title">
+              <i class="bi bi-calendar2-event-fill"></i>
+              Programación
+            </div>
+
             <label class="form-label">Inicio</label>
-            <input type="datetime-local" class="form-control" name="start_at" required>
-            <div class="form-text">Usa hora local (naive).</div>
+            <input
+              type="datetime-local"
+              class="form-control"
+              name="start_at"
+              required
+            >
+            <div class="form-text">Usa la fecha y hora local del negocio.</div>
           </div>
+        </div>
 
-          <div class="col-md-4">
+        <div class="col-md-5 col-lg-4">
+          <div class="field-box">
+            <div class="field-box-title">
+              <i class="bi bi-patch-check-fill"></i>
+              Estado
+            </div>
+
             <label class="form-label">Status</label>
             <select class="form-select" name="status">
               <option value="approved">Aprobada</option>
               <option value="pending">Pendiente</option>
             </select>
+
+            <div class="status-hint">
+              <strong>Aprobada:</strong> la cita ya queda confirmada.<br>
+              <strong>Pendiente:</strong> aún necesita validación o seguimiento.
+            </div>
           </div>
         </div>
+      </div>
 
-        <div class="d-flex gap-2 mt-4">
-          <button class="btn btn-primary" type="submit">Crear cita</button>
-          <a class="btn btn-outline-primary" href="{{ url_for('admin_booking_settings') }}">Ver configuración</a>
-        </div>
-      </form>
-    </div>
+      <div class="form-actions">
+        <button class="btn-appt-primary" type="submit">
+          <i class="bi bi-check2-circle"></i>
+          Crear cita
+        </button>
+
+        <a class="btn-appt-secondary" href="{{ url_for('admin_booking_settings') }}">
+          <i class="bi bi-sliders2"></i>
+          Ver configuración
+        </a>
+      </div>
+    </form>
   </div>
 </div>
 {% endblock %}

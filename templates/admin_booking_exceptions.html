@@ -2,157 +2,777 @@
 {% block title %}Reservas - Excepciones{% endblock %}
 
 {% block content %}
-<div class="container py-4">
-  <div class="d-flex align-items-center justify-content-between mb-3">
-    <div>
-      <h2 class="mb-0">Excepciones / Festivos</h2>
-      <small class="text-muted">Cierra días específicos o define horario especial por fecha.</small>
+{% set closed_count = exceptions|selectattr('type', 'equalto', 'closed')|list|length %}
+{% set custom_count = exceptions|selectattr('type', 'equalto', 'custom_hours')|list|length %}
+
+<style>
+  .exceptions-page {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 28px 0 90px;
+  }
+
+  .exceptions-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 18px;
+    flex-wrap: wrap;
+    margin-bottom: 22px;
+  }
+
+  .exceptions-heading {
+    flex: 1 1 460px;
+  }
+
+  .exceptions-heading h2 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 2rem;
+    font-weight: 800;
+    color: #f8fbff;
+    letter-spacing: -0.02em;
+  }
+
+  .exceptions-heading h2 i {
+    color: #60a5fa;
+  }
+
+  .exceptions-heading p {
+    margin: 10px 0 0;
+    color: rgba(221, 232, 255, 0.78);
+    font-size: 0.97rem;
+    line-height: 1.65;
+    max-width: 760px;
+  }
+
+  .exceptions-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .btn-ex-back,
+  .btn-ex-secondary,
+  .btn-ex-primary,
+  .btn-ex-danger,
+  .btn-ex-edit {
+    border-radius: 14px;
+    padding: 11px 18px;
+    font-weight: 700;
+    font-size: 0.94rem;
+    text-decoration: none;
+    transition: all 0.25s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: none;
+  }
+
+  .btn-ex-back,
+  .btn-ex-secondary {
+    color: #dbe9ff;
+    border: 1px solid rgba(135, 164, 255, 0.24);
+    background: rgba(255, 255, 255, 0.04);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+  }
+
+  .btn-ex-back:hover,
+  .btn-ex-secondary:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(135, 164, 255, 0.4);
+    transform: translateY(-1px);
+  }
+
+  .exceptions-summary-strip {
+    margin-bottom: 24px;
+    padding: 16px 18px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, rgba(13, 110, 253, 0.10), rgba(111, 66, 193, 0.10));
+    border: 1px solid rgba(122, 152, 255, 0.18);
+    box-shadow: 0 16px 30px rgba(0, 0, 0, 0.14);
+    color: rgba(224, 234, 255, 0.88);
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .summary-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 14px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.92rem;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+  }
+
+  .flash-stack {
+    display: grid;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .flash-card {
+    border-radius: 16px;
+    padding: 14px 16px;
+    border: 1px solid transparent;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.10);
+    font-weight: 600;
+  }
+
+  .flash-card.success,
+  .flash-card.sucess {
+    background: #ecfdf3;
+    color: #166534;
+    border-color: #bbf7d0;
+  }
+
+  .flash-card.warning {
+    background: #fff7ed;
+    color: #9a3412;
+    border-color: #fdba74;
+  }
+
+  .flash-card.danger,
+  .flash-card.error {
+    background: #fef2f2;
+    color: #991b1b;
+    border-color: #fecaca;
+  }
+
+  .flash-card.info,
+  .flash-card.message,
+  .flash-card.primary {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border-color: #bfdbfe;
+  }
+
+  .exceptions-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
+    gap: 22px;
+    align-items: start;
+  }
+
+  .exceptions-card {
+    background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(247,249,255,0.97));
+    border: 1px solid rgba(223, 228, 237, 0.95);
+    border-radius: 24px;
+    padding: 22px;
+    box-shadow: 0 18px 42px rgba(15, 23, 42, 0.16);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .exceptions-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 4px;
+    background: linear-gradient(90deg, #0d6efd, #6f42c1, #8b5cf6);
+  }
+
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #111827;
+    margin: 0 0 16px;
+  }
+
+  .section-title i {
+    color: #4f46e5;
+  }
+
+  .section-subtitle {
+    margin: -6px 0 18px;
+    color: #667085;
+    font-size: 0.92rem;
+    line-height: 1.6;
+  }
+
+  .helper-box {
+    margin-bottom: 18px;
+    padding: 14px 15px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #eff6ff, #eef2ff);
+    border: 1px solid #dbeafe;
+    color: #1e40af;
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+
+  .helper-box strong {
+    color: #1d4ed8;
+  }
+
+  .form-label {
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 8px;
+  }
+
+  .form-control,
+  .form-select {
+    border-radius: 14px !important;
+    border: 1px solid #d8e0ea !important;
+    box-shadow: none !important;
+    min-height: 48px;
+  }
+
+  .form-control:focus,
+  .form-select:focus {
+    border-color: #86b7fe !important;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.12) !important;
+  }
+
+  .form-text {
+    color: #667085 !important;
+    margin-top: 6px;
+    font-size: 0.85rem;
+    line-height: 1.55;
+  }
+
+  .special-hours-box {
+    border: 1px solid #dbe4f0;
+    border-radius: 18px;
+    padding: 16px;
+    margin-bottom: 18px;
+    background: #fbfcff;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.7);
+  }
+
+  .sub-block-title {
+    font-size: 0.88rem;
+    font-weight: 800;
+    color: #334155;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .sub-block-title i {
+    color: #2563eb;
+  }
+
+  .btn-save-exception {
+    width: 100%;
+    margin-top: 4px;
+    border: 1px solid rgba(37, 99, 235, 0.45);
+    background: linear-gradient(135deg, #2563eb, #4f46e5);
+    color: #fff;
+    border-radius: 16px;
+    padding: 13px 18px;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.25s ease;
+    box-shadow: 0 12px 24px rgba(37, 99, 235, 0.22);
+  }
+
+  .btn-save-exception:hover {
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 16px 28px rgba(37, 99, 235, 0.30);
+  }
+
+  .list-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+
+  .list-counter {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+    font-weight: 800;
+    font-size: 0.84rem;
+  }
+
+  .list-shell {
+    border-radius: 20px;
+    border: 1px solid #e5eaf2;
+    background: #fff;
+    overflow: hidden;
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+  }
+
+  .table {
+    margin-bottom: 0;
+  }
+
+  .table thead th {
+    border-bottom: none !important;
+    background: #f8fafc;
+    color: #334155;
+    font-size: 0.82rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 16px 14px;
+    white-space: nowrap;
+  }
+
+  .table tbody td {
+    padding: 16px 14px;
+    vertical-align: middle;
+    border-color: #edf2f7;
+  }
+
+  .table tbody tr:hover {
+    background: rgba(37, 99, 235, 0.03);
+  }
+
+  .date-strong {
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  .detail-muted,
+  .text-soft {
+    color: #64748b;
+    font-size: 0.88rem;
+    line-height: 1.5;
+  }
+
+  .badge-soft-danger,
+  .badge-soft-info {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 999px;
+    padding: 8px 12px;
+    font-size: 0.78rem;
+    font-weight: 800;
+  }
+
+  .badge-soft-danger {
+    color: #991b1b;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+  }
+
+  .badge-soft-info {
+    color: #1d4ed8;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+  }
+
+  .inline-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .btn-ex-edit {
+    color: #1d4ed8;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    padding: 9px 12px;
+    font-size: 0.85rem;
+  }
+
+  .btn-ex-edit:hover {
+    background: #dbeafe;
+    color: #1e40af;
+    transform: translateY(-1px);
+  }
+
+  .btn-ex-danger {
+    color: #991b1b;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    padding: 9px 12px;
+    font-size: 0.85rem;
+  }
+
+  .btn-ex-danger:hover {
+    background: #fee2e2;
+    color: #7f1d1d;
+    transform: translateY(-1px);
+  }
+
+  .empty-state {
+    padding: 40px 24px;
+    text-align: center;
+    background: linear-gradient(135deg, rgba(255,255,255,0.98), rgba(244,247,255,0.96));
+  }
+
+  .empty-state .icon {
+    width: 82px;
+    height: 82px;
+    margin: 0 auto 16px;
+    border-radius: 22px;
+    display: grid;
+    place-items: center;
+    font-size: 2.1rem;
+    background: linear-gradient(135deg, #eff6ff, #eef2ff);
+    color: #2563eb;
+    box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.08);
+  }
+
+  .empty-state h4 {
+    margin: 0 0 10px;
+    font-weight: 800;
+    color: #101828;
+  }
+
+  .empty-state p {
+    margin: 0;
+    color: #667085;
+    line-height: 1.7;
+  }
+
+  @media (max-width: 1080px) {
+    .exceptions-layout {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .exceptions-page {
+      padding: 18px 0 80px;
+    }
+
+    .exceptions-heading h2 {
+      font-size: 1.65rem;
+    }
+
+    .exceptions-actions {
+      width: 100%;
+    }
+
+    .btn-ex-back,
+    .btn-ex-secondary {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .table thead {
+      display: none;
+    }
+
+    .table,
+    .table tbody,
+    .table tr,
+    .table td {
+      display: block;
+      width: 100%;
+    }
+
+    .table tbody tr {
+      padding: 12px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .table tbody td {
+      border: none;
+      padding: 8px 4px;
+    }
+
+    .table tbody td::before {
+      content: attr(data-label);
+      display: block;
+      font-size: 0.74rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #64748b;
+      margin-bottom: 4px;
+    }
+
+    .inline-actions {
+      justify-content: flex-start;
+      margin-top: 4px;
+    }
+
+    .summary-pill {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+</style>
+
+<div class="exceptions-page">
+  <div class="exceptions-topbar">
+    <div class="exceptions-heading">
+      <h2><i class="bi bi-calendar-x-fill"></i> Excepciones / Festivos</h2>
+      <p>
+        Cierra fechas específicas, registra festivos o configura horarios especiales para días puntuales
+        sin modificar tu disponibilidad semanal general.
+      </p>
     </div>
-    <div class="d-flex gap-2">
-      <a class="btn btn-outline-secondary" href="{{ url_for('admin_booking_settings') }}">Configuración semanal</a>
-      <a class="btn btn-outline-secondary" href="{{ url_for('dashboard') }}">Volver</a>
+
+    <div class="exceptions-actions">
+      <a class="btn-ex-secondary" href="{{ url_for('admin_booking_settings') }}">
+        <i class="bi bi-calendar-week"></i>
+        Configuración semanal
+      </a>
+      <a class="btn-ex-back" href="{{ url_for('dashboard') }}">
+        <i class="bi bi-arrow-left-circle"></i>
+        Volver
+      </a>
+    </div>
+  </div>
+
+  <div class="exceptions-summary-strip">
+    <div class="summary-pill">
+      <i class="bi bi-collection"></i>
+      {{ exceptions|length }} registro{% if exceptions|length != 1 %}s{% endif %}
+    </div>
+    <div class="summary-pill">
+      <i class="bi bi-x-octagon"></i>
+      Cerrados: {{ closed_count }}
+    </div>
+    <div class="summary-pill">
+      <i class="bi bi-clock-history"></i>
+      Horarios especiales: {{ custom_count }}
     </div>
   </div>
 
   {% with msgs = get_flashed_messages(with_categories=true) %}
     {% if msgs %}
-      {% for cat, msg in msgs %}
-        <div class="alert alert-{{ 'warning' if cat=='message' else cat }} mb-3" role="alert">{{ msg }}</div>
-      {% endfor %}
+      <div class="flash-stack">
+        {% for cat, msg in msgs %}
+          <div class="flash-card {{ 'warning' if cat=='message' else cat }}">
+            {{ msg }}
+          </div>
+        {% endfor %}
+      </div>
     {% endif %}
   {% endwith %}
 
-  <div class="row g-3">
-    <div class="col-lg-5">
-      <div class="card shadow-sm">
-        <div class="card-header">
-          <strong>Agregar / sobrescribir excepción</strong>
-        </div>
-        <div class="card-body">
-          <form method="POST">
-            <div class="mb-3">
-              <label class="form-label">Fecha (YYYY-MM-DD)</label>
-              <input type="date" class="form-control" name="date" required>
-            </div>
-
-            <div class="mb-3">
-              <label class="form-label">Tipo</label>
-              <select class="form-select" name="type" id="ex_type" required>
-                <option value="closed">Cerrado (festivo)</option>
-                <option value="custom_hours">Horario especial</option>
-              </select>
-              <div class="form-text">Si existe una excepción para esa fecha, se actualiza (upsert).</div>
-            </div>
-
-            <div id="custom_hours_block" class="border rounded p-3 mb-3" style="display:none;">
-              <div class="row g-2">
-                <div class="col-6">
-                  <label class="form-label">Abre</label>
-                  <input type="time" class="form-control" name="open">
-                </div>
-                <div class="col-6">
-                  <label class="form-label">Cierra</label>
-                  <input type="time" class="form-control" name="close">
-                </div>
-              </div>
-
-              <hr>
-
-              <div class="row g-2">
-                <div class="col-6">
-                  <label class="form-label">Break inicio (opcional)</label>
-                  <input type="time" class="form-control" name="break_start">
-                </div>
-                <div class="col-6">
-                  <label class="form-label">Break fin (opcional)</label>
-                  <input type="time" class="form-control" name="break_end">
-                </div>
-              </div>
-            </div>
-
-            <div class="mb-3">
-              <label class="form-label">Motivo (opcional)</label>
-              <input type="text" class="form-control" name="reason" placeholder="Ej. Día festivo, mantenimiento, evento...">
-            </div>
-
-            <button class="btn btn-primary w-100" type="submit">Guardar excepción</button>
-          </form>
-        </div>
+  <div class="exceptions-layout">
+    <div class="exceptions-card">
+      <div class="section-title">
+        <i class="bi bi-plus-circle-fill"></i>
+        Agregar o sobrescribir excepción
       </div>
+      <div class="section-subtitle">
+        Si ya existe un registro para la fecha, se actualizará automáticamente.
+      </div>
+
+      <div class="helper-box">
+        <strong>Tip:</strong> usa <em>Cerrado</em> para días festivos, descansos o cierres totales.
+        Usa <em>Horario especial</em> cuando sólo quieras cambiar la hora de apertura/cierre de un día específico.
+      </div>
+
+      <form method="POST">
+        <div class="mb-3">
+          <label class="form-label">Fecha</label>
+          <input type="date" class="form-control" name="date" required>
+          <div class="form-text">Selecciona el día exacto al que quieres aplicar la excepción.</div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Tipo de excepción</label>
+          <select class="form-select" name="type" id="ex_type" required>
+            <option value="closed">Cerrado (festivo)</option>
+            <option value="custom_hours">Horario especial</option>
+          </select>
+          <div class="form-text">Esto sobrescribe la configuración normal de ese día.</div>
+        </div>
+
+        <div id="custom_hours_block" class="special-hours-box" style="display:none;">
+          <div class="sub-block-title">
+            <i class="bi bi-clock-fill"></i>
+            Horario personalizado
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-sm-6">
+              <label class="form-label">Abre</label>
+              <input type="time" class="form-control" name="open">
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label">Cierra</label>
+              <input type="time" class="form-control" name="close">
+            </div>
+          </div>
+
+          <div class="sub-block-title">
+            <i class="bi bi-cup-hot-fill"></i>
+            Break opcional
+          </div>
+
+          <div class="row g-3">
+            <div class="col-sm-6">
+              <label class="form-label">Break inicio</label>
+              <input type="time" class="form-control" name="break_start">
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label">Break fin</label>
+              <input type="time" class="form-control" name="break_end">
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Motivo</label>
+          <input
+            type="text"
+            class="form-control"
+            name="reason"
+            placeholder="Ej. Día festivo, mantenimiento, capacitación, evento..."
+          >
+          <div class="form-text">Opcional, pero útil para que tu equipo sepa por qué se cambió ese día.</div>
+        </div>
+
+        <button class="btn-save-exception" type="submit">
+          <i class="bi bi-check2-circle"></i>
+          Guardar excepción
+        </button>
+      </form>
     </div>
 
-    <div class="col-lg-7">
-      <div class="card shadow-sm">
-        <div class="card-header d-flex align-items-center justify-content-between">
-          <strong>Listado</strong>
-          <small class="text-muted">{{ exceptions|length }} registros</small>
+    <div class="exceptions-card">
+      <div class="list-topbar">
+        <div>
+          <div class="section-title mb-1">
+            <i class="bi bi-list-ul"></i>
+            Listado de excepciones
+          </div>
+          <div class="section-subtitle mb-0">
+            Revisa, edita o elimina fechas especiales registradas.
+          </div>
         </div>
-        <div class="card-body p-0">
-          {% if not exceptions %}
-            <div class="p-3">
-              <div class="alert alert-light border mb-0">Aún no tienes excepciones registradas.</div>
+
+        <div class="list-counter">
+          <i class="bi bi-calendar2-check"></i>
+          {{ exceptions|length }} registro{% if exceptions|length != 1 %}s{% endif %}
+        </div>
+      </div>
+
+      <div class="list-shell">
+        {% if not exceptions %}
+          <div class="empty-state">
+            <div class="icon">
+              <i class="bi bi-calendar2-heart"></i>
             </div>
-          {% else %}
-            <div class="table-responsive">
-              <table class="table mb-0 align-middle">
-                <thead class="table-light">
+            <h4>Aún no tienes excepciones registradas</h4>
+            <p>
+              Cuando agregues festivos o horarios especiales, aparecerán aquí para que los administres fácilmente.
+            </p>
+          </div>
+        {% else %}
+          <div class="table-responsive">
+            <table class="table align-middle">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Tipo</th>
+                  <th>Detalle</th>
+                  <th>Motivo</th>
+                  <th class="text-end">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for ex in exceptions %}
                   <tr>
-                    <th>Fecha</th>
-                    <th>Tipo</th>
-                    <th>Detalle</th>
-                    <th>Motivo</th>
-                    <th class="text-end">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for ex in exceptions %}
-                    <tr>
-                      <td><strong>{{ ex.date }}</strong></td>
-                      <td>
-                        {% if ex.type == 'closed' %}
-                          <span class="badge bg-danger">Cerrado</span>
-                        {% else %}
-                          <span class="badge bg-info text-dark">Horario especial</span>
-                        {% endif %}
-                      </td>
-                      <td>
-                        {% if ex.type == 'custom_hours' %}
+                    <td data-label="Fecha">
+                      <div class="date-strong">{{ ex.date }}</div>
+                    </td>
+
+                    <td data-label="Tipo">
+                      {% if ex.type == 'closed' %}
+                        <span class="badge-soft-danger">
+                          <i class="bi bi-x-circle-fill"></i>
+                          Cerrado
+                        </span>
+                      {% else %}
+                        <span class="badge-soft-info">
+                          <i class="bi bi-clock-fill"></i>
+                          Horario especial
+                        </span>
+                      {% endif %}
+                    </td>
+
+                    <td data-label="Detalle">
+                      {% if ex.type == 'custom_hours' %}
+                        <div class="date-strong" style="font-size:0.92rem;">
                           {{ ex.open or '' }} - {{ ex.close or '' }}
-                          {% if ex.breaks and ex.breaks|length > 0 %}
-                            <div class="text-muted small">Break: {{ ex.breaks[0].start }} - {{ ex.breaks[0].end }}</div>
-                          {% endif %}
-                        {% else %}
-                          <span class="text-muted">—</span>
+                        </div>
+                        {% if ex.breaks and ex.breaks|length > 0 %}
+                          <div class="detail-muted">
+                            Break: {{ ex.breaks[0].start }} - {{ ex.breaks[0].end }}
+                          </div>
                         {% endif %}
-                      </td>
-                      <td class="text-muted">{{ ex.reason or '' }}</td>
-                      <td class="text-end">
-                        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('admin_booking_exception_edit', ex_id=ex._id) }}">Editar</a>
-                        <form method="POST" action="{{ url_for('admin_booking_exception_delete', ex_id=ex._id) }}" class="d-inline"
-                              onsubmit="return confirm('¿Eliminar excepción del ' + '{{ ex.date }}' + '?');">
-                          <button class="btn btn-sm btn-outline-danger" type="submit">Eliminar</button>
+                      {% else %}
+                        <span class="text-soft">Sin atención ese día</span>
+                      {% endif %}
+                    </td>
+
+                    <td data-label="Motivo">
+                      <span class="text-soft">{{ ex.reason or '—' }}</span>
+                    </td>
+
+                    <td data-label="Acciones" class="text-end">
+                      <div class="inline-actions">
+                        <a class="btn-ex-edit" href="{{ url_for('admin_booking_exception_edit', ex_id=ex._id) }}">
+                          <i class="bi bi-pencil-square"></i>
+                          Editar
+                        </a>
+
+                        <form
+                          method="POST"
+                          action="{{ url_for('admin_booking_exception_delete', ex_id=ex._id) }}"
+                          class="d-inline"
+                          onsubmit="return confirm('¿Eliminar excepción del ' + '{{ ex.date }}' + '?');"
+                        >
+                          <button class="btn-ex-danger" type="submit">
+                            <i class="bi bi-trash3"></i>
+                            Eliminar
+                          </button>
                         </form>
-                      </td>
-                    </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-            </div>
-          {% endif %}
-        </div>
+                      </div>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% endif %}
       </div>
     </div>
   </div>
 </div>
 
 <script>
-  (function(){
+  (function () {
     const sel = document.getElementById('ex_type');
     const block = document.getElementById('custom_hours_block');
-    function sync(){
+
+    function sync() {
+      if (!sel || !block) return;
       block.style.display = (sel.value === 'custom_hours') ? 'block' : 'none';
     }
-    if(sel && block){
+
+    if (sel && block) {
       sel.addEventListener('change', sync);
       sync();
     }
