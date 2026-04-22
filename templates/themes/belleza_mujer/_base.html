@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  {% set site_title = meta_title or page.get('business_name') or negocio.get('business_name') or 'Salón de belleza' %}
+  {% set site_desc = meta_description or page.get('slogan') or page.get('description') or negocio.get('description') or 'Belleza, cuidado y bienestar.' %}
+  {% set cover = page.get('cover_image') or page.get('image') or negocio.get('cover_image') or negocio.get('image') %}
+
+  <title>{{ site_title }}</title>
+  <meta name="description" content="{{ site_desc|striptags|truncate(180) }}">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    :root{
+      --rose: {{ page.get('color') or negocio.get('color') or '#d86c9a' }};
+      --rose-soft: #f9dbe7;
+      --rose-pale: #fff4f8;
+      --berry: #7a3658;
+      --gold: #caa46a;
+      --ink: #3f2a34;
+      --muted: #7f6671;
+      --line: rgba(122,54,88,.16);
+      --card: rgba(255,255,255,.88);
+      --bg:
+        radial-gradient(circle at top right, rgba(216,108,154,.18), transparent 28%),
+        radial-gradient(circle at bottom left, rgba(202,164,106,.18), transparent 24%),
+        linear-gradient(180deg, #fff9fb 0%, #fff2f7 50%, #fffafc 100%);
+      --shadow: 0 22px 60px rgba(122,54,88,.12);
+      --radius-xl: 28px;
+      --radius-lg: 22px;
+      --radius-md: 16px;
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ margin:0; padding:0; background:var(--bg); color:var(--ink); }
+    body{ font-family:"Inter",system-ui,sans-serif; }
+
+    .font-display{
+      font-family:"Cormorant Garamond", serif;
+      letter-spacing:-.02em;
+    }
+
+    .glass-nav{
+      position:sticky; top:0; z-index:1040;
+      background:rgba(255,255,255,.75);
+      backdrop-filter: blur(16px);
+      border-bottom:1px solid rgba(122,54,88,.08);
+    }
+
+    .navbar-brand{
+      color:var(--berry)!important;
+      font-weight:700;
+      font-size:1.6rem;
+    }
+
+    .nav-link{
+      color:var(--ink)!important;
+      font-weight:600;
+      border-radius:999px;
+      padding:.7rem 1rem!important;
+      transition:.2s ease;
+    }
+
+    .nav-link:hover{
+      background:rgba(216,108,154,.1);
+      color:var(--berry)!important;
+    }
+
+    .btn-beauty{
+      border:none;
+      background:linear-gradient(135deg, var(--rose), var(--berry));
+      color:#fff;
+      border-radius:999px;
+      padding:.9rem 1.25rem;
+      font-weight:700;
+      box-shadow:0 10px 24px rgba(122,54,88,.22);
+    }
+
+    .btn-beauty:hover{
+      color:#fff;
+      transform:translateY(-1px);
+    }
+
+    .btn-soft{
+      border:1px solid rgba(122,54,88,.14);
+      background:rgba(255,255,255,.78);
+      color:var(--berry);
+      border-radius:999px;
+      padding:.9rem 1.25rem;
+      font-weight:700;
+      backdrop-filter: blur(10px);
+    }
+
+    .btn-soft:hover{
+      color:var(--berry);
+      background:#fff;
+    }
+
+    .section-space{ padding: 72px 0; }
+
+    .card-beauty{
+      background:var(--card);
+      border:1px solid rgba(255,255,255,.5);
+      border-radius:var(--radius-xl);
+      box-shadow:var(--shadow);
+      backdrop-filter:blur(14px);
+    }
+
+    .card-soft{
+      background:rgba(255,255,255,.82);
+      border:1px solid var(--line);
+      border-radius:var(--radius-lg);
+      box-shadow:0 14px 34px rgba(122,54,88,.08);
+    }
+
+    .chip{
+      display:inline-flex;
+      align-items:center;
+      gap:.45rem;
+      padding:.55rem .9rem;
+      border-radius:999px;
+      background:rgba(255,255,255,.9);
+      border:1px solid rgba(216,108,154,.18);
+      color:var(--berry);
+      font-weight:600;
+      font-size:.92rem;
+    }
+
+    .section-kicker{
+      color:var(--rose);
+      text-transform:uppercase;
+      letter-spacing:.16em;
+      font-size:.78rem;
+      font-weight:800;
+    }
+
+    .section-title{
+      font-size: clamp(2rem, 4vw, 4rem);
+      line-height:.95;
+      margin:0;
+    }
+
+    .section-text{
+      color:var(--muted);
+      font-size:1.03rem;
+      line-height:1.75;
+    }
+
+    .cover-image{
+      width:100%;
+      aspect-ratio:16/8;
+      object-fit:cover;
+      border-radius:var(--radius-xl);
+      box-shadow:var(--shadow);
+    }
+
+    .thumb-image{
+      width:100%;
+      aspect-ratio:4/3;
+      object-fit:cover;
+      border-radius:20px;
+    }
+
+    .post-image{
+      width:100%;
+      aspect-ratio:16/9;
+      object-fit:cover;
+      border-radius:24px;
+      box-shadow:var(--shadow);
+    }
+
+    .article-body{
+      color:#59434c;
+      font-size:1.05rem;
+      line-height:1.85;
+    }
+
+    .article-body img{
+      max-width:100%;
+      border-radius:18px;
+      margin:1rem 0;
+    }
+
+    .footer-beauty{
+      padding:44px 0 56px;
+      margin-top:40px;
+      border-top:1px solid rgba(122,54,88,.08);
+      background:rgba(255,255,255,.6);
+      backdrop-filter: blur(12px);
+    }
+
+    .footer-link{
+      color:var(--berry);
+      text-decoration:none;
+      font-weight:600;
+    }
+
+    .footer-link:hover{
+      color:var(--rose);
+    }
+
+    .search-input{
+      min-height:56px;
+      border-radius:18px;
+      border:1px solid rgba(122,54,88,.14);
+      background:rgba(255,255,255,.9);
+    }
+
+    @media (max-width: 767.98px){
+      .section-space{ padding:56px 0; }
+    }
+  </style>
+
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  {% set site_slug = slug or page.get('slug') or negocio.get('slug') %}
+  {% set site_name = page.get('business_name') or negocio.get('business_name') or 'Salón de belleza' %}
+
+  <nav class="navbar navbar-expand-lg glass-nav">
+    <div class="container py-2">
+      <a class="navbar-brand font-display" href="{{ url_for('negocio_por_slug', slug=site_slug) }}">
+        {{ site_name }}
+      </a>
+
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#beautyNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="beautyNav">
+        <ul class="navbar-nav ms-auto align-items-lg-center gap-2">
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('negocio_por_slug', slug=site_slug) }}">Inicio</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('negocio_por_slug', slug=site_slug) }}#servicios">Servicios</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('negocio_por_slug', slug=site_slug) }}#galeria">Galería</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('lista_blogs_negocio_slug', slug=site_slug) }}">Blog</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('negocio_por_slug', slug=site_slug) }}#contacto">Contacto</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  {% block content %}{% endblock %}
+
+  <footer class="footer-beauty">
+    <div class="container">
+      <div class="row g-4 align-items-start">
+        <div class="col-lg-5">
+          <h3 class="font-display fw-bold mb-2">{{ site_name }}</h3>
+          <p class="section-text mb-0">
+            {{ page.get('slogan') or negocio.get('slogan') or page.get('description') or negocio.get('description') or 'Belleza, cuidado y bienestar para ti.' }}
+          </p>
+        </div>
+
+        <div class="col-lg-3">
+          <div class="fw-bold mb-3">Explora</div>
+          <div class="d-flex flex-column gap-2">
+            <a class="footer-link" href="{{ url_for('negocio_por_slug', slug=site_slug) }}">Inicio</a>
+            <a class="footer-link" href="{{ url_for('lista_blogs_negocio_slug', slug=site_slug) }}">Blog</a>
+          </div>
+        </div>
+
+        <div class="col-lg-4">
+          <div class="fw-bold mb-3">Síguenos</div>
+          <div class="d-flex gap-3 fs-4">
+            {% if page.get('instagram') %}<a href="{{ page.instagram }}" target="_blank" class="footer-link"><i class="bi bi-instagram"></i></a>{% endif %}
+            {% if page.get('facebook') %}<a href="{{ page.facebook }}" target="_blank" class="footer-link"><i class="bi bi-facebook"></i></a>{% endif %}
+            {% if page.get('tiktok') %}<a href="{{ page.tiktok }}" target="_blank" class="footer-link"><i class="bi bi-tiktok"></i></a>{% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-4 mt-4 border-top">
+        <small class="text-muted">© {{ current_year or 2026 }} {{ site_name }}. Todos los derechos reservados.</small>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

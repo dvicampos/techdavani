@@ -32,6 +32,7 @@ from reportlab.lib.units import mm
 from reportlab.lib import colors
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfbase.pdfmetrics import stringWidth
+from urllib.parse import quote_plus
 
 load_dotenv()
 RECAPTCHA_SECRET_KEY = os.getenv("RECAPTCHA_SECRET_KEY")
@@ -3787,35 +3788,44 @@ def switch_site(site_id):
     return redirect(url_for('dashboard'))
 
 DEFAULT_HTML_TEMPLATES = {
-    "base": "detalle_negocio.html",
-    "classico": "public/page_core.html",
-    "brutal":  "public/page_public_crafts.html",
-    "restaurante": "public/restaurant.html",
-    "barber": "public/barber.html",
-    "rope": "public/rope.html",
-    "coffe": "public/coffe.html",
-    "dentist": "public/dentist.html",
-    "flowers": "public/floreria.html",
-    "restaurantblack": "public/restaurant_min.html",
-    "festivo": "public/festivo.html",
-    "salon_belleza": "public/barber_1.html",
-    "dentista": "public/dentista.html",
-    "inflables": "public/inflables.html",
-    "alquiler": "public/alquiler.html",
-    "cafe_celebrate": "public/cafe_celebrate.html",
-    "bar_restaurant": "public/bar_restaurant.html",
-    "bar_rockandroll": "public/bar_rockandroll.html",
-    "videojuegos_sala": "public/videojuegos_sala.html",
-    "musica": "public/musica.html",
-    "belleza_premium": "public/belleza_premium.html",
-    "tienda_regalos": "public/tienda_regalos.html",
-    "bisuteria": "public/bisuteria.html",
-    "tinto": "public/tinto.html",
-    "artesanias": "public/artesanias.html",
-    "abarrotes": "public/abarrotes.html",
-    "belleza_mujer": "public/belleza_mujer.html",
-    "pet": "public/pet.html",
+    "classico": "themes/classico/site.html",
+    "belleza_mujer": "themes/belleza_mujer/site.html",
+    "barber_shop": "themes/barber_shop/site.html",
 }
+
+# =========================================================
+# THEME PACKS: un tema controla varias vistas del sitio
+# =========================================================
+
+DEFAULT_THEME_KEY = "classico"
+
+THEME_VIEWS = {
+    "classico": {
+        "site": "themes/classico/site.html",
+        "blog_index": "themes/classico/blog_index.html",
+        "blog_post": "themes/classico/blog_post.html",
+    },
+    "belleza_mujer": {
+        "site": "themes/belleza_mujer/site.html",
+        "blog_index": "themes/belleza_mujer/blog_index.html",
+        "blog_post": "themes/belleza_mujer/blog_post.html",
+    },
+    "barber_shop": {
+        "site": "themes/barber_shop/site.html",
+        "blog_index": "themes/barber_shop/blog_index.html",
+        "blog_post": "themes/barber_shop/blog_post.html",
+    },
+}
+
+def get_theme_key(page_doc):
+    if not page_doc:
+        return DEFAULT_THEME_KEY
+    return (page_doc.get("default_html") or DEFAULT_THEME_KEY).strip()
+
+def get_theme_view(page_doc, view_type):
+    theme_key = get_theme_key(page_doc)
+    pack = THEME_VIEWS.get(theme_key) or THEME_VIEWS[DEFAULT_THEME_KEY]
+    return pack.get(view_type) or THEME_VIEWS[DEFAULT_THEME_KEY][view_type]
 
 @app.route('/manage_page')
 @require_active_subscription
@@ -4329,6 +4339,79 @@ def api_create_appointment():
 
     return {"ok": True, "appointment_id": str(ins.inserted_id)}
 
+from urllib.parse import quote_plus
+from datetime import datetime
+from flask import request, redirect, url_for, flash, abort
+
+@app.route('/n/<slug>/reservar', methods=['GET', 'POST'])
+def crear_reserva_publica(slug):
+    negocio = mongo.db.page_data.find_one({'slug': slug})
+    if not negocio:
+        abort(404)
+
+    if request.method == 'GET':
+        return redirect(url_for('negocio_por_slug', slug=slug) + '#reservas')
+
+    nombre = (request.form.get('nombre') or '').strip()
+    telefono = (request.form.get('telefono') or '').strip()
+    email = (request.form.get('email') or '').strip()
+    servicio = (request.form.get('servicio') or '').strip()
+    fecha = (request.form.get('fecha') or '').strip()
+    hora = (request.form.get('hora') or '').strip()
+    notas = (request.form.get('notas') or '').strip()
+
+    if not nombre or not telefono or not servicio or not fecha or not hora:
+        flash('Completa nombre, teléfono, servicio, fecha y hora para reservar.', 'warning')
+        return redirect(url_for('negocio_por_slug', slug=slug) + '#reservas')
+
+    cita_dt = None
+    try:
+        cita_dt = datetime.strptime(f"{fecha} {hora}", "%Y-%m-%d %H:%M")
+    except Exception:
+        pass
+
+    reserva_doc = {
+        'page_id': negocio['_id'],
+        'slug': slug,
+        'business_name': negocio.get('business_name'),
+        'nombre': nombre,
+        'telefono': telefono,
+        'email': email,
+        'servicio': servicio,
+        'fecha': fecha,
+        'hora': hora,
+        'notas': notas,
+        'status': 'pendiente',
+        'source': 'public_reservation_form',
+        'created_at': datetime.utcnow(),
+    }
+
+    if cita_dt:
+        reserva_doc['appointment_at'] = cita_dt
+
+    mongo.db.reservas.insert_one(reserva_doc)
+
+    flash('Tu reserva fue enviada correctamente. Te contactaremos para confirmar.', 'success')
+
+    wa = (negocio.get('whatsapp') or '').replace(' ', '')
+    if wa:
+        mensaje = (
+            f"Hola, soy {nombre}. "
+            f"Quiero reservar una cita en {negocio.get('business_name', 'su negocio')}.\n"
+            f"Servicio: {servicio}\n"
+            f"Fecha: {fecha}\n"
+            f"Hora: {hora}\n"
+            f"Teléfono: {telefono}"
+        )
+        if email:
+            mensaje += f"\nEmail: {email}"
+        if notas:
+            mensaje += f"\nNotas: {notas}"
+
+        return redirect(f"https://wa.me/{wa}?text={quote_plus(mensaje)}")
+
+    return redirect(url_for('negocio_por_slug', slug=slug) + '#reservas')
+
 import calendar as pycal
 
 @app.route("/admin/calendar")
@@ -4479,43 +4562,52 @@ def admin_promos_toggle(promo_id):
 
 
 from flask import abort
+from flask import abort
+from jinja2 import TemplateNotFound
 
 @app.route('/n/<slug>', methods=['GET', 'POST'])
 def negocio_por_slug(slug):
-    # ✅ Fuente de verdad: slug
     negocio = mongo.db.page_data.find_one({'slug': slug})
     if not negocio:
         abort(404)
 
-    # Sidebars (si lo usas)
     negocios = mongo.db.page_data.find()
 
-    # Colecciones asociadas
-    posts = list(mongo.db.posts.find({'page_id': negocio['_id']}).limit(3))
-    avisos = list(mongo.db.avisos.find({'page_id': negocio['_id']}))
+    posts = list(
+        mongo.db.posts.find({'page_id': negocio['_id']})
+        .sort('date', -1)
+        .limit(3)
+    )
+    avisos = list(
+        mongo.db.avisos.find({'page_id': negocio['_id']})
+        .sort('date', -1)
+    )
     productos_all = list(mongo.db.productos.find({'page_id': negocio['_id']}))
 
     productos_fisicos = [p for p in productos_all if p.get('tipo', 'producto') == 'producto']
     servicios = [p for p in productos_all if p.get('tipo', 'producto') == 'servicio']
 
-    reseñas = list(mongo.db.reseñas.find({'page_id': negocio['_id']}))
+    reseñas = list(
+        mongo.db.reseñas.find({'page_id': negocio['_id']})
+        .sort('fecha', -1)
+    )
 
-    # ✅ Promos activas (marketing orgánico)
     now = datetime.utcnow()
-    promos = list(mongo.db.promos.find({
-        "page_id": negocio["_id"],
-        "active": True,
-        "starts_at": {"$lte": now},
-        "$or": [
-            {"ends_at": None},
-            {"ends_at": {"$gte": now}}
-        ]
-    }).sort([("priority", -1), ("created_at", -1)]).limit(3))
+    promos = list(
+        mongo.db.promos.find({
+            "page_id": negocio["_id"],
+            "active": True,
+            "starts_at": {"$lte": now},
+            "$or": [
+                {"ends_at": None},
+                {"ends_at": {"$gte": now}}
+            ]
+        }).sort([("priority", -1), ("created_at", -1)]).limit(3)
+    )
 
-    # Alta de reseña (POST)
     if request.method == 'POST':
-        nombre_usuario = request.form.get('nombre')
-        comentario = request.form.get('comentario')
+        nombre_usuario = (request.form.get('nombre') or '').strip()
+        comentario = (request.form.get('comentario') or '').strip()
         try:
             estrellas = int(request.form.get('estrellas', 0))
         except (TypeError, ValueError):
@@ -4532,7 +4624,6 @@ def negocio_por_slug(slug):
             flash("Gracias por tu reseña 🙌")
             return redirect(url_for('negocio_por_slug', slug=slug))
 
-    # Normalizar strings->listas para chips
     def _to_list(val):
         if isinstance(val, list):
             return [str(x).strip() for x in val if str(x).strip()]
@@ -4543,12 +4634,11 @@ def negocio_por_slug(slug):
     services_list = _to_list(negocio.get('services', ''))
     pm_list = _to_list(negocio.get('payment_methods', ''))
 
-    # Elegir plantilla por default_html o override ?tpl=
-    tpl_key = request.args.get('tpl') or negocio.get('default_html') or 'classico'
-    template_name = DEFAULT_HTML_TEMPLATES.get(tpl_key, DEFAULT_HTML_TEMPLATES['classico'])
+    template_name = get_theme_view(negocio, "site")
 
     ctx = dict(
         page=negocio,
+        negocio=negocio,
         negocios=negocios,
         posts=posts,
         avisos=avisos,
@@ -4557,14 +4647,125 @@ def negocio_por_slug(slug):
         reseñas=reseñas,
         services_list=services_list,
         pm_list=pm_list,
-        promos=promos,      # ✅ para mostrar promos
-        slug=slug           # ✅ útil en JS para track/leads
+        promos=promos,
+        slug=slug,
+        theme_key=get_theme_key(negocio),
+        current_year=datetime.now().year
     )
 
     try:
         return render_template(template_name, **ctx)
     except TemplateNotFound:
-        return render_template(DEFAULT_HTML_TEMPLATES['classico'], **ctx)
+        return render_template(get_theme_view({"default_html": DEFAULT_THEME_KEY}, "site"), **ctx)
+
+@app.route('/negocio/<nombre>/blogs', methods=['GET'])
+def lista_blogs_negocio(nombre):
+    negocio = mongo.db.page_data.find_one({'business_name': nombre})
+    if not negocio:
+        flash('Negocio no encontrado.')
+        return redirect(url_for('lista_negocios'))
+
+    negocio = ensure_page_has_slug(negocio)
+    return redirect(
+        url_for(
+            'lista_blogs_negocio_slug',
+            slug=negocio['slug'],
+            **request.args.to_dict()
+        )
+    )
+
+@app.route('/n/<slug>/blog', methods=['GET'])
+def lista_blogs_negocio_slug(slug):
+    negocio = mongo.db.page_data.find_one({'slug': slug})
+    if not negocio:
+        abort(404)
+
+    negocios = mongo.db.page_data.find()
+
+    page = request.args.get('page', 1, type=int)
+    per_page = 15
+    query = request.args.get('search', '', type=str).strip()
+
+    filtro = {'page_id': negocio['_id']}
+    if query:
+        filtro['title'] = {'$regex': query, '$options': 'i'}
+
+    posts = list(
+        mongo.db.posts.find(filtro)
+        .sort('date', -1)
+        .skip((page - 1) * per_page)
+        .limit(per_page)
+    )
+
+    total_posts = mongo.db.posts.count_documents(filtro)
+
+    template_name = get_theme_view(negocio, "blog_index")
+
+    ctx = dict(
+        page=negocio,
+        negocio=negocio,
+        negocios=negocios,
+        posts=posts,
+        total_posts=total_posts,
+        page_number=page,
+        per_page=per_page,
+        query=query,
+        slug=slug,
+        theme_key=get_theme_key(negocio),
+        current_year=datetime.now().year
+    )
+
+    try:
+        return render_template(template_name, **ctx)
+    except TemplateNotFound:
+        return render_template(get_theme_view({"default_html": DEFAULT_THEME_KEY}, "blog_index"), **ctx)
+
+@app.route('/n/<slug>/blog/<post_id>', methods=['GET'])
+def ver_post_slug(slug, post_id):
+    negocio = mongo.db.page_data.find_one({'slug': slug})
+    if not negocio:
+        abort(404)
+
+    try:
+        post = mongo.db.posts.find_one({
+            '_id': ObjectId(post_id),
+            'page_id': negocio['_id']
+        })
+    except Exception:
+        post = None
+
+    if not post:
+        abort(404)
+
+    negocios = mongo.db.page_data.find()
+
+    if isinstance(post.get('date'), datetime):
+        post['date'] = post['date'].replace(tzinfo=None)
+
+    related_posts = list(
+        mongo.db.posts.find({
+            'page_id': negocio['_id'],
+            '_id': {'$ne': post['_id']}
+        }).sort('date', -1).limit(4)
+    )
+
+    template_name = get_theme_view(negocio, "blog_post")
+
+    ctx = dict(
+        page=negocio,
+        negocio=negocio,
+        negocios=negocios,
+        post=post,
+        related_posts=related_posts,
+        slug=slug,
+        theme_key=get_theme_key(negocio),
+        current_year=datetime.now().year
+    )
+
+    try:
+        return render_template(template_name, **ctx)
+    except TemplateNotFound:
+        return render_template(get_theme_view({"default_html": DEFAULT_THEME_KEY}, "blog_post"), **ctx)
 
 @app.route('/negocios')
 def lista_negocios():
@@ -4573,20 +4774,26 @@ def lista_negocios():
 
 @app.route('/post/<post_id>')
 def ver_post(post_id):
-    negocios = mongo.db.page_data.find()
-    post = mongo.db.posts.find_one({'_id': ObjectId(post_id)})
+    try:
+        post = mongo.db.posts.find_one({'_id': ObjectId(post_id)})
+    except Exception:
+        post = None
+
     if not post:
         return "Post no encontrado", 404
 
-    post['date'] = post['date'].replace(tzinfo=None) if isinstance(post['date'], datetime) else datetime.utcnow()
-    negocio = mongo.db.page_data.find_one({'_id': post['page_id']}) if 'page_id' in post else None
+    negocio = mongo.db.page_data.find_one({'_id': post['page_id']}) if post.get('page_id') else None
+    if not negocio:
+        return "Negocio no encontrado", 404
 
-    return render_template(
-        'post_detalle.html',
-        post=post,
-        negocio=negocio,
-        negocios=negocios,
-        current_year=datetime.now().year
+    negocio = ensure_page_has_slug(negocio)
+
+    return redirect(
+        url_for(
+            'ver_post_slug',
+            slug=negocio['slug'],
+            post_id=str(post['_id'])
+        )
     )
 
 @app.route('/reset_password', methods=['GET', 'POST'])
@@ -4660,51 +4867,6 @@ def confirm_reset(token):
         return redirect(url_for('login'))
 
     return render_template('confirm_reset_password.html', token=token)
-
-
-@app.route('/negocio/<nombre>/blogs', methods=['GET', 'POST'])
-def lista_blogs_negocio(nombre):
-    # Buscar el negocio por nombre
-    negocio = mongo.db.page_data.find_one({'business_name': nombre})
-    negocios = mongo.db.page_data.find()
-    if not negocio:
-        flash('Negocio no encontrado.')
-        return redirect(url_for('lista_negocios'))  # Redirige si no se encuentra el negocio
-
-    # Paginación
-    page = request.args.get('page', 1, type=int)  # Página actual
-    per_page = 15  # Número de posts por página
-
-    # Obtener la búsqueda (si existe)
-    query = request.args.get('search', '', type=str)
-
-    # Si hay búsqueda, buscar posts que coincidan con el término
-    if query:
-        posts = list(
-            mongo.db.posts.find({
-                'page_id': negocio['_id'],
-                'title': {'$regex': query, '$options': 'i'}
-            }).skip((page - 1) * per_page).limit(per_page)
-        )
-    else:
-        posts = list(
-            mongo.db.posts.find({'page_id': negocio['_id']})
-            .skip((page - 1) * per_page).limit(per_page)
-        )
-
-    total_posts = mongo.db.posts.count_documents({'page_id': negocio['_id']})
-
-    return render_template(
-        'lista_blogs_negocio.html',
-        negocio=negocio,
-        negocios=negocios,
-        posts=posts,
-        total_posts=total_posts,
-        page=page,
-        per_page=per_page,
-        query=query
-    )
-
 
 @app.route('/robots.txt')
 def robots():

@@ -1,195 +1,302 @@
+{% set site_slug = slug or page.get('slug','') %}
+{% set booking_action = url_for('crear_reserva_publica', slug=site_slug) %}
+{% set booking_title = page.get('booking_title') or 'Reserva tu cita' %}
+{% set booking_subtitle = page.get('booking_subtitle') or 'Completa el formulario y aparta tu horario.' %}
+{% set services_source = servicios if servicios is defined and servicios else [] %}
+
 <section id="reservas" class="container my-5">
-  <h2 class="section-title brand-font">Reservar cita</h2>
+  <style>
+  .booking-form-shell{
+    --booking-accent: {{ page.get('color') or '#c89b53' }};
+    --booking-accent-2: #f0c37a;
 
-  <div class="card card-brutal p-3 p-md-4"
-       data-slug="{{ slug or page.get('slug','') }}">
-    <p class="text-muted-2 mb-3">Elige un día y un horario disponible.</p>
+    --booking-bg: var(--ui-surface, #ffffff);
+    --booking-panel: var(--ui-surface-2, #f8f8f8);
+    --booking-border: var(--ui-border, rgba(0,0,0,.12));
 
-    <div class="row g-3">
-      <div class="col-md-4">
-        <label class="form-label small">Fecha</label>
-        <input id="apptDate" type="date" class="form-control" style="border:3px solid var(--border)">
+    --booking-text: var(--ui-text, #1f1f1f);
+    --booking-text-soft: var(--ui-text-soft, #5f5f5f);
+    --booking-placeholder: var(--ui-placeholder, #8a8a8a);
+
+    --booking-input-bg: var(--ui-input-bg, #ffffff);
+    --booking-input-text: var(--ui-input-text, #1f1f1f);
+    --booking-input-border: var(--ui-input-border, rgba(0,0,0,.14));
+
+    --booking-shadow: var(--ui-shadow, 0 18px 50px rgba(0,0,0,.10));
+    --booking-on-accent: var(--ui-on-accent, #111111);
+
+    position: relative;
+    overflow: hidden;
+    border-radius: 28px;
+    padding: 1.4rem;
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--booking-bg) 94%, transparent), color-mix(in srgb, var(--booking-panel) 96%, transparent));
+    border: 1px solid var(--booking-border);
+    box-shadow: var(--booking-shadow);
+    backdrop-filter: blur(10px);
+  }
+
+  .booking-form-shell::before{
+    content:"";
+    position:absolute;
+    inset:auto -90px -90px auto;
+    width:220px;
+    height:220px;
+    border-radius:50%;
+    background: radial-gradient(circle, color-mix(in srgb, var(--booking-accent) 18%, transparent), transparent 65%);
+    pointer-events:none;
+  }
+
+  .booking-kicker{
+    display:inline-flex;
+    align-items:center;
+    gap:.5rem;
+    border-radius:999px;
+    padding:.45rem .85rem;
+    font-weight:700;
+    font-size:.86rem;
+    background: linear-gradient(135deg, var(--booking-accent), var(--booking-accent-2));
+    color: var(--booking-on-accent);
+    box-shadow: 0 10px 24px rgba(0,0,0,.12);
+  }
+
+  .booking-title{
+    font-size: clamp(2rem, 4vw, 3rem);
+    line-height: 1;
+    margin: .9rem 0 .8rem;
+    color: var(--booking-text);
+    font-weight: 800;
+    letter-spacing: -.03em;
+  }
+
+  .booking-subtitle{
+    color: var(--booking-text-soft);
+    max-width: 760px;
+    line-height: 1.75;
+    margin-bottom: 0;
+  }
+
+  .booking-panel{
+    margin-top: 1.3rem;
+    border-radius: 24px;
+    padding: 1.1rem;
+    background: color-mix(in srgb, var(--booking-panel) 96%, transparent);
+    border: 1px solid var(--booking-border);
+    backdrop-filter: blur(8px);
+  }
+
+  .booking-label{
+    display:block;
+    font-size:.92rem;
+    font-weight:700;
+    color: var(--booking-text);
+    margin-bottom:.5rem;
+  }
+
+  .booking-form-shell .form-control,
+  .booking-form-shell .form-select{
+    background: var(--booking-input-bg);
+    border: 1px solid var(--booking-input-border);
+    color: var(--booking-input-text);
+    border-radius: 16px;
+    min-height: 50px;
+    box-shadow: none;
+  }
+
+  .booking-form-shell .form-control::placeholder{
+    color: var(--booking-placeholder);
+    opacity: 1;
+  }
+
+  .booking-form-shell .form-control:focus,
+  .booking-form-shell .form-select:focus{
+    background: var(--booking-input-bg);
+    border-color: var(--booking-accent);
+    color: var(--booking-input-text);
+    box-shadow: 0 0 0 .2rem color-mix(in srgb, var(--booking-accent) 16%, transparent);
+  }
+
+  .booking-form-shell textarea.form-control{
+    min-height: 120px;
+    resize: vertical;
+  }
+
+  .booking-form-shell .form-select option{
+    background: var(--booking-input-bg);
+    color: var(--booking-input-text);
+  }
+
+  .booking-btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:.55rem;
+    border:none;
+    border-radius:999px;
+    padding:.92rem 1.2rem;
+    font-weight:800;
+    text-decoration:none;
+    transition: .18s ease;
+    min-height: 50px;
+  }
+
+  .booking-btn:hover{
+    transform: translateY(-1px);
+  }
+
+  .booking-btn-primary{
+    background: linear-gradient(135deg, var(--booking-accent), var(--booking-accent-2));
+    color: var(--booking-on-accent);
+    box-shadow: 0 10px 24px rgba(0,0,0,.12);
+    width: 100%;
+  }
+
+  .booking-btn-primary:hover{
+    color: var(--booking-on-accent);
+  }
+
+  .booking-help{
+    margin-top: .9rem;
+    color: var(--booking-text-soft);
+    font-size: .92rem;
+    line-height: 1.65;
+  }
+
+  @media (max-width: 768px){
+    .booking-form-shell{
+      padding: 1.05rem;
+      border-radius: 22px;
+    }
+
+    .booking-panel{
+      padding: .95rem;
+      border-radius: 18px;
+    }
+  }
+</style>
+
+  <div class="booking-form-shell">
+    <div class="row g-4 align-items-start">
+      <div class="col-lg-5">
+        <span class="booking-kicker">
+          <i class="bi bi-calendar2-check"></i>
+          Reservas
+        </span>
+
+        <h2 class="booking-title">{{ booking_title }}</h2>
+        <p class="booking-subtitle">{{ booking_subtitle }}</p>
+
+        <div class="booking-help">
+          Llena tus datos, elige servicio, fecha y hora.  
+          Después podremos confirmar tu cita desde el sistema.
+        </div>
       </div>
 
-      <div class="col-md-4">
-        <label class="form-label small">Hora disponible</label>
-        <select id="apptSlot" class="form-select" style="border:3px solid var(--border)" disabled>
-          <option value="">Selecciona una fecha</option>
-        </select>
-      </div>
+      <div class="col-lg-7">
+        <div class="booking-panel">
+          <form method="POST" action="{{ booking_action }}" class="row g-3">
+            <input type="hidden" name="slug" value="{{ site_slug }}">
 
-      <div class="col-md-4">
-        <label class="form-label small">Servicio</label>
-        <input id="apptService" class="form-control" style="border:3px solid var(--border)"
-               placeholder="Ej. Corte / Baño / Consulta">
-      </div>
+            <div class="col-md-6">
+              <label class="booking-label" for="booking_name">Nombre completo</label>
+              <input
+                type="text"
+                class="form-control"
+                id="booking_name"
+                name="nombre"
+                placeholder="Ej. Juan Pérez"
+                required
+              >
+            </div>
 
-      <div class="col-md-6">
-        <label class="form-label small">Nombre</label>
-        <input id="apptName" class="form-control" style="border:3px solid var(--border)"
-               placeholder="Tu nombre">
-      </div>
+            <div class="col-md-6">
+              <label class="booking-label" for="booking_phone">Teléfono</label>
+              <input
+                type="tel"
+                class="form-control"
+                id="booking_phone"
+                name="telefono"
+                placeholder="Ej. 5512345678"
+                required
+              >
+            </div>
 
-      <div class="col-md-6">
-        <label class="form-label small">Teléfono</label>
-        <input id="apptPhone" class="form-control" style="border:3px solid var(--border)"
-               placeholder="Ej. 246...">
-      </div>
+            <div class="col-md-6">
+              <label class="booking-label" for="booking_email">Correo</label>
+              <input
+                type="email"
+                class="form-control"
+                id="booking_email"
+                name="email"
+                placeholder="Ej. cliente@email.com"
+              >
+            </div>
 
-      <div class="col-12 d-flex flex-wrap align-items-center gap-2">
-        <button id="apptBtn" class="btn btn-brutal btn-brand hover-raise" type="button">
-          <i class="bi bi-calendar-check me-1"></i> Reservar
-        </button>
+            <div class="col-md-6">
+              <label class="booking-label" for="booking_service">Servicio</label>
 
-        <button id="apptReset" class="btn btn-brutal btn-ghost hover-raise" type="button">
-          Limpiar
-        </button>
+              {% if services_source and services_source|length > 0 %}
+                <select class="form-select" id="booking_service" name="servicio" required>
+                  <option value="">Selecciona un servicio</option>
+                  {% for item in services_source %}
+                    <option value="{{ item.title if item.title is defined else item.get('title','') }}">
+                      {{ item.title if item.title is defined else item.get('title','Servicio') }}
+                    </option>
+                  {% endfor %}
+                </select>
+              {% else %}
+                <input
+                  type="text"
+                  class="form-control"
+                  id="booking_service"
+                  name="servicio"
+                  placeholder="Ej. Corte clásico"
+                  required
+                >
+              {% endif %}
+            </div>
 
-        <small id="apptMsg" class="text-muted-2 ms-1"></small>
+            <div class="col-md-6">
+              <label class="booking-label" for="booking_date">Fecha</label>
+              <input
+                type="date"
+                class="form-control"
+                id="booking_date"
+                name="fecha"
+                required
+              >
+            </div>
+
+            <div class="col-md-6">
+              <label class="booking-label" for="booking_time">Hora</label>
+              <input
+                type="time"
+                class="form-control"
+                id="booking_time"
+                name="hora"
+                required
+              >
+            </div>
+
+            <div class="col-12">
+              <label class="booking-label" for="booking_notes">Notas adicionales</label>
+              <textarea
+                class="form-control"
+                id="booking_notes"
+                name="notas"
+                placeholder="Escribe aquí algo importante sobre tu cita..."
+              ></textarea>
+            </div>
+
+            <div class="col-12">
+              <button type="submit" class="booking-btn booking-btn-primary">
+                <i class="bi bi-calendar-check"></i>
+                Enviar reserva
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   </div>
 </section>
-
-<script>
-(() => {
-  const root = document.querySelector('#reservas [data-slug]');
-  if(!root) return;
-
-  // OJO: no uses const SITE_SLUG aquí (ya existe en tu página grande)
-  const reservasSlug = (root.dataset.slug || "").trim();
-
-  const $date = document.getElementById("apptDate");
-  const $slot = document.getElementById("apptSlot");
-  const $name = document.getElementById("apptName");
-  const $phone = document.getElementById("apptPhone");
-  const $service = document.getElementById("apptService");
-  const $btn = document.getElementById("apptBtn");
-  const $reset = document.getElementById("apptReset");
-  const $msg = document.getElementById("apptMsg");
-
-  const setMsg = (t) => { if($msg) $msg.textContent = t || ""; };
-
-  const fmtHM = (iso) => {
-    const dt = new Date(iso);
-    const hh = String(dt.getHours()).padStart(2,'0');
-    const mm = String(dt.getMinutes()).padStart(2,'0');
-    return `${hh}:${mm}`;
-  };
-
-  async function loadSlots() {
-    const d = ($date.value || "").trim();
-
-    if(!reservasSlug){
-      setMsg("Falta slug del sitio (configuración).");
-      $slot.disabled = true;
-      return;
-    }
-
-    if(!d){
-      $slot.innerHTML = `<option value="">Selecciona una fecha</option>`;
-      $slot.disabled = true;
-      setMsg("");
-      return;
-    }
-
-    setMsg("Cargando horarios...");
-    $slot.disabled = true;
-
-    try{
-      const r = await fetch(`/api/availability?slug=${encodeURIComponent(reservasSlug)}&date=${encodeURIComponent(d)}`);
-      const j = await r.json();
-
-      if(!j || !j.ok){
-        setMsg("No se pudo cargar disponibilidad.");
-        $slot.innerHTML = `<option value="">Error al cargar</option>`;
-        return;
-      }
-
-      const slots = j.slots || [];
-      if(slots.length === 0){
-        $slot.innerHTML = `<option value="">Sin horarios disponibles</option>`;
-        setMsg("");
-        return;
-      }
-
-      $slot.innerHTML = `<option value="">Elige un horario</option>` + slots.map(s => {
-        return `<option value="${s}">${fmtHM(s)}</option>`;
-      }).join("");
-
-      $slot.disabled = false;
-      setMsg("");
-    }catch(e){
-      setMsg("No se pudo cargar disponibilidad (red).");
-      $slot.innerHTML = `<option value="">Error de red</option>`;
-    }
-  }
-
-  async function book() {
-    const payload = {
-      slug: reservasSlug,
-      name: ($name.value || "").trim(),
-      phone: ($phone.value || "").trim(),
-      service: ($service.value || "").trim(),
-      start_at: ($slot.value || "").trim()
-    };
-
-    if(!payload.name || !payload.phone || !payload.service || !payload.start_at){
-      setMsg("Completa nombre, teléfono, servicio y horario.");
-      return;
-    }
-
-    setMsg("Enviando reserva...");
-    $btn.disabled = true;
-
-    try{
-      const r = await fetch("/api/appointments", {
-        method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify(payload)
-      });
-
-      const j = await r.json().catch(()=>({ok:false}));
-
-      if(r.status === 409 && j && j.error === "slot_ocupado"){
-        setMsg("Ese horario se acaba de ocupar. Elige otro.");
-        await loadSlots();
-        return;
-      }
-
-      if(!j || !j.ok){
-        setMsg("No se pudo reservar. Revisa los datos.");
-        return;
-      }
-
-      setMsg("Listo. Tu cita quedó en revisión (pendiente).");
-      $name.value = ""; $phone.value = ""; $service.value = "";
-      $slot.value = "";
-      await loadSlots();
-
-      // Si tienes tu función track() global, la usamos sin romper si no existe
-      if(typeof track === "function"){
-        track("appointment_created", { start_at: payload.start_at, service: payload.service });
-      }
-    }catch(e){
-      setMsg("No se pudo reservar (red).");
-    }finally{
-      $btn.disabled = false;
-    }
-  }
-
-  function resetForm(){
-    $date.value = "";
-    $slot.innerHTML = `<option value="">Selecciona una fecha</option>`;
-    $slot.disabled = true;
-    $name.value = "";
-    $phone.value = "";
-    $service.value = "";
-    setMsg("");
-  }
-
-  $date.addEventListener("change", loadSlots);
-  $btn.addEventListener("click", book);
-  $reset.addEventListener("click", resetForm);
-})();
-</script>

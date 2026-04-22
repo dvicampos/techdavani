@@ -1,0 +1,93 @@
+{% extends "themes/belleza_mujer/_base.html" %}
+
+{% set meta_title = "Blog | " ~ (page.get('business_name') or negocio.get('business_name') or 'Salón de belleza') %}
+{% set meta_description = "Tendencias, consejos y artículos de belleza." %}
+
+{% block content %}
+<section class="section-space">
+  <div class="container">
+    <div class="text-center mb-5">
+      <span class="section-kicker">Blog</span>
+      <h1 class="font-display section-title mt-2">Inspiración, belleza y bienestar</h1>
+      <p class="section-text mt-3 mx-auto" style="max-width:760px;">
+        Explora artículos, tendencias, tips y novedades para sentirte radiante todos los días.
+      </p>
+    </div>
+
+    <div class="card-beauty p-3 p-lg-4 mb-5">
+      <form method="GET" action="{{ url_for('lista_blogs_negocio_slug', slug=slug) }}">
+        <div class="row g-3 align-items-center">
+          <div class="col-lg-9">
+            <input
+              type="text"
+              name="search"
+              value="{{ query or '' }}"
+              class="form-control search-input"
+              placeholder="Buscar artículos por título..."
+            >
+          </div>
+          <div class="col-lg-3 d-grid">
+            <button type="submit" class="btn btn-beauty">
+              <i class="bi bi-search me-1"></i> Buscar
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    {% if posts and posts|length > 0 %}
+      <div class="row g-4">
+        {% for post in posts %}
+          {% set post_cover = post.get('cabecera') or page.get('cover_image') or page.get('image') %}
+          <div class="col-md-6 col-xl-4">
+            <article class="card-soft h-100 overflow-hidden">
+              {% if post_cover %}
+                <img class="thumb-image" src="{{ url_for('uploaded_file', filename=post_cover) }}" alt="{{ post.get('title','Post') }}">
+              {% endif %}
+              <div class="p-4">
+                <div class="chip mb-3">
+                  <i class="bi bi-calendar3"></i>
+                  {{ post.get('date').strftime('%d/%m/%Y') if post.get('date') else 'Blog' }}
+                </div>
+                <h3 class="h4 fw-bold">{{ post.get('title','Sin título') }}</h3>
+                <p class="section-text">{{ post.get('content','')|striptags|truncate(130) }}</p>
+                <a class="btn btn-beauty" href="{{ url_for('ver_post_slug', slug=slug, post_id=post['_id']) }}">
+                  Leer artículo
+                </a>
+              </div>
+            </article>
+          </div>
+        {% endfor %}
+      </div>
+
+      {% set current_page_num = page_number or page or 1 %}
+      {% set total_pages = ((total_posts or 0) / (per_page or 15))|round(0, 'ceil')|int %}
+      {% if total_pages > 1 %}
+        <nav class="mt-5">
+          <ul class="pagination justify-content-center flex-wrap gap-2">
+            {% for n in range(1, total_pages + 1) %}
+              <li class="page-item">
+                <a
+                  class="page-link rounded-pill border-0 px-4 py-2 {% if n == current_page_num %}text-white{% endif %}"
+                  {% if n == current_page_num %}style="background:linear-gradient(135deg,var(--rose),var(--berry));"{% else %}style="background:#fff;color:var(--berry);"{% endif %}
+                  href="{{ url_for('lista_blogs_negocio_slug', slug=slug, page=n, search=query or '') }}"
+                >
+                  {{ n }}
+                </a>
+              </li>
+            {% endfor %}
+          </ul>
+        </nav>
+      {% endif %}
+    {% else %}
+      <div class="card-soft p-5 text-center">
+        <div class="fs-1 mb-3">🪞</div>
+        <h3 class="font-display fw-bold">Aún no hay publicaciones</h3>
+        <p class="section-text mb-0">
+          {% if query %}No encontramos resultados para tu búsqueda.{% else %}Todavía no se han publicado artículos en este blog.{% endif %}
+        </p>
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

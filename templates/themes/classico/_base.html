@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  {% set site_title = meta_title
+      or page.get('business_name')
+      or negocio.get('business_name')
+      or 'Mi negocio' %}
+  {% set site_desc = meta_description
+      or page.get('slogan')
+      or page.get('description')
+      or negocio.get('slogan')
+      or negocio.get('description')
+      or 'Sitio web del negocio' %}
+
+  {% set cover = page.get('cover_image') or page.get('image') or negocio.get('cover_image') or negocio.get('image') %}
+  {% if cover and not (cover.startswith('http://') or cover.startswith('https://')) %}
+    {% set cover = url_for('uploaded_file', filename=cover, _external=True) %}
+  {% endif %}
+
+  <title>{{ site_title }}</title>
+  <meta name="description" content="{{ site_desc|striptags|truncate(180) }}">
+  <meta name="author" content="{{ page.get('business_name') or negocio.get('business_name') or '' }}">
+
+  <meta property="og:title" content="{{ site_title }}">
+  <meta property="og:description" content="{{ site_desc|striptags|truncate(200) }}">
+  <meta property="og:image" content="{{ cover or url_for('static', filename='images/default.png', _external=True) }}">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="{{ request.url }}">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    :root{
+      --brand: {{ page.get('color') or negocio.get('color') or '#0ea5e9' }};
+      --brand-2: #111827;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --ink: #0f172a;
+      --muted: #64748b;
+      --border: #0f172a;
+      --radius: 18px;
+      --shadow: 6px 6px 0 #0f172a;
+      --shadow-sm: 4px 4px 0 #0f172a;
+      --shadow-xs: 2px 2px 0 #0f172a;
+    }
+
+    html, body {
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    body {
+      font-family: Inter, system-ui, -apple-system, Segoe UI, sans-serif;
+    }
+
+    .brand-font {
+      font-family: "Space Grotesk", Inter, system-ui, sans-serif;
+    }
+
+    .site-nav {
+      position: sticky;
+      top: 0;
+      z-index: 1030;
+      background: rgba(255,255,255,.92);
+      backdrop-filter: blur(8px);
+      border-bottom: 3px solid var(--border);
+      box-shadow: var(--shadow-xs);
+    }
+
+    .site-nav .navbar-brand {
+      font-weight: 800;
+      letter-spacing: -.03em;
+      color: var(--ink);
+    }
+
+    .nav-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: .45rem;
+      padding: .65rem 1rem;
+      border: 2px solid var(--border);
+      border-radius: 999px;
+      background: #fff;
+      color: var(--ink);
+      text-decoration: none;
+      font-weight: 700;
+      transition: .2s ease;
+      box-shadow: var(--shadow-xs);
+    }
+
+    .nav-chip:hover {
+      transform: translate(-1px, -1px);
+      box-shadow: var(--shadow-sm);
+      color: var(--ink);
+    }
+
+    .btn-brand {
+      border: 2px solid var(--border);
+      background: var(--brand);
+      color: #0b0b0b;
+      font-weight: 800;
+      border-radius: 14px;
+      box-shadow: var(--shadow-xs);
+    }
+
+    .btn-brand:hover {
+      color: #0b0b0b;
+      transform: translate(-1px, -1px);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn-ghost {
+      border: 2px solid var(--border);
+      background: #fff;
+      color: var(--ink);
+      font-weight: 800;
+      border-radius: 14px;
+      box-shadow: var(--shadow-xs);
+    }
+
+    .btn-ghost:hover {
+      color: var(--ink);
+      transform: translate(-1px, -1px);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .section-shell {
+      padding: 32px 0 72px;
+    }
+
+    .card-neo {
+      background: var(--card);
+      border: 3px solid var(--border);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+    }
+
+    .card-neo-sm {
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .hero-mini {
+      padding: 44px 0 22px;
+    }
+
+    .hero-mini h1 {
+      font-size: clamp(2rem, 4vw, 3.4rem);
+      line-height: .98;
+      letter-spacing: -.05em;
+      margin: 0;
+    }
+
+    .hero-mini p {
+      font-size: 1.05rem;
+      margin: 14px 0 0;
+      color: var(--muted);
+      max-width: 760px;
+    }
+
+    .cover-box {
+      width: 100%;
+      aspect-ratio: 16/7;
+      object-fit: cover;
+      border-radius: 22px;
+      border: 3px solid var(--border);
+      box-shadow: var(--shadow);
+      background: #e5e7eb;
+    }
+
+    .post-cover {
+      width: 100%;
+      aspect-ratio: 16/9;
+      object-fit: cover;
+      border-radius: 18px;
+      border: 2px solid var(--border);
+      box-shadow: var(--shadow-sm);
+      background: #e5e7eb;
+    }
+
+    .post-card-title {
+      font-size: 1.1rem;
+      line-height: 1.15;
+      letter-spacing: -.03em;
+      margin: 0;
+    }
+
+    .badge-soft {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      padding: .45rem .8rem;
+      border: 2px solid var(--border);
+      border-radius: 999px;
+      background: #fff;
+      font-weight: 700;
+      box-shadow: var(--shadow-xs);
+    }
+
+    .search-box .form-control {
+      border: 2px solid var(--border);
+      border-radius: 14px;
+      min-height: 52px;
+      box-shadow: var(--shadow-xs);
+    }
+
+    .search-box .form-control:focus {
+      border-color: var(--border);
+      box-shadow: 0 0 0 .2rem rgba(0,0,0,.08);
+    }
+
+    .search-box .btn {
+      min-height: 52px;
+      border-radius: 14px;
+    }
+
+    .article-body {
+      font-size: 1.05rem;
+      line-height: 1.8;
+      color: #172033;
+    }
+
+    .article-body img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 16px;
+      border: 2px solid var(--border);
+      box-shadow: var(--shadow-xs);
+      margin: 1rem 0;
+    }
+
+    .article-body iframe,
+    .article-body video {
+      max-width: 100%;
+      border-radius: 16px;
+    }
+
+    .footer-box {
+      margin-top: 48px;
+      border-top: 3px solid var(--border);
+      background: #fff;
+    }
+
+    .footer-link {
+      color: var(--ink);
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    .footer-link:hover {
+      color: var(--ink);
+      text-decoration: underline;
+    }
+
+    @media (max-width: 767.98px) {
+      .section-shell {
+        padding: 24px 0 56px;
+      }
+      .hero-mini {
+        padding: 26px 0 18px;
+      }
+    }
+  </style>
+
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  {% set site_slug = slug or page.get('slug') or negocio.get('slug') %}
+  {% set site_name = page.get('business_name') or negocio.get('business_name') or 'Mi negocio' %}
+  {% set wa = page.get('whatsapp') or negocio.get('whatsapp') %}
+  {% set ig = page.get('instagram') or negocio.get('instagram') %}
+  {% set fb = page.get('facebook') or negocio.get('facebook') %}
+  {% set tk = page.get('tiktok') or negocio.get('tiktok') %}
+
+  <nav class="navbar navbar-expand-lg site-nav">
+    <div class="container py-2">
+      <a class="navbar-brand brand-font" href="{{ url_for('negocio_por_slug', slug=site_slug) }}">
+        {{ site_name }}
+      </a>
+
+      <button class="navbar-toggler border-2" type="button" data-bs-toggle="collapse" data-bs-target="#topNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div id="topNav" class="collapse navbar-collapse">
+        <div class="ms-auto d-flex flex-column flex-lg-row gap-2 gap-lg-3 mt-3 mt-lg-0">
+          <a class="nav-chip" href="{{ url_for('negocio_por_slug', slug=site_slug) }}">
+            <i class="bi bi-house-door"></i> Inicio
+          </a>
+          <a class="nav-chip" href="{{ url_for('lista_blogs_negocio_slug', slug=site_slug) }}">
+            <i class="bi bi-journal-text"></i> Blog
+          </a>
+          {% if wa %}
+          <a class="nav-chip" href="https://wa.me/{{ wa|replace(' ','') }}" target="_blank" rel="noopener">
+            <i class="bi bi-whatsapp"></i> WhatsApp
+          </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  {% block content %}{% endblock %}
+
+  <footer class="footer-box">
+    <div class="container py-4 py-lg-5">
+      <div class="row g-4 align-items-start">
+        <div class="col-lg-6">
+          <h3 class="brand-font fw-bold mb-2">{{ site_name }}</h3>
+          <p class="muted mb-0">
+            {{ page.get('slogan') or negocio.get('slogan') or page.get('description') or negocio.get('description') or 'Gracias por visitar nuestro sitio.' }}
+          </p>
+        </div>
+
+        <div class="col-lg-3">
+          <div class="fw-bold mb-2">Explorar</div>
+          <div class="d-flex flex-column gap-2">
+            <a class="footer-link" href="{{ url_for('negocio_por_slug', slug=site_slug) }}">Inicio</a>
+            <a class="footer-link" href="{{ url_for('lista_blogs_negocio_slug', slug=site_slug) }}">Blog</a>
+          </div>
+        </div>
+
+        <div class="col-lg-3">
+          <div class="fw-bold mb-2">Redes</div>
+          <div class="d-flex gap-3 fs-4">
+            {% if ig %}<a href="{{ ig }}" target="_blank" rel="noopener" class="text-dark"><i class="bi bi-instagram"></i></a>{% endif %}
+            {% if fb %}<a href="{{ fb }}" target="_blank" rel="noopener" class="text-dark"><i class="bi bi-facebook"></i></a>{% endif %}
+            {% if tk %}<a href="{{ tk }}" target="_blank" rel="noopener" class="text-dark"><i class="bi bi-tiktok"></i></a>{% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-4 mt-4 border-top">
+        <small class="muted">© {{ current_year or 2026 }} {{ site_name }}. Todos los derechos reservados.</small>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

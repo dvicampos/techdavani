@@ -1,0 +1,1672 @@
+{% extends "themes/barber_shop/_base.html" %}
+
+{% set meta_title = (page.get('business_name') or 'Barber Shop') ~ ' | Corte, estilo y presencia' %}
+{% set meta_description = page.get('slogan') or page.get('description') or 'Barbería premium con cortes, barba, estilo y atención profesional.' %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+
+<style>
+  :root{
+  --accent: {{ page.get('color') or '#c89b53' }};
+  --accent-2: #f0c37a;
+  --accent-3: #8c6734;
+
+  --bg: #0a0b0d;
+  --bg-2: #111317;
+  --bg-3: #171a1f;
+  --panel: rgba(18,20,24,.94);
+  --panel-soft: rgba(24,27,33,.88);
+  --panel-strong: #121418;
+
+  --ink: #f7f3eb;
+  --ink-soft: #e6dccd;
+  --muted: #c9bea9;
+  --muted-2: #aa9f8e;
+
+  --line: rgba(240,195,122,.16);
+  --line-strong: rgba(240,195,122,.28);
+
+  --ui-bg: #0f1114;
+  --ui-surface: #171a1f;
+  --ui-surface-2: #1d2127;
+  --ui-border: rgba(240,195,122,.16);
+
+  --ui-text: #f7f3eb;
+  --ui-text-soft: #d7cbb8;
+  --ui-placeholder: #a99b86;
+
+  --ui-input-bg: #111418;
+  --ui-input-text: #f7f3eb;
+  --ui-input-border: rgba(240,195,122,.18);
+
+  --ui-shadow: 0 20px 60px rgba(0,0,0,.35);
+  --ui-on-accent: #111111;
+}
+
+  *{
+    box-sizing: border-box;
+  }
+
+  html, body{
+    margin: 0;
+    padding: 0;
+    background:
+      radial-gradient(circle at top right, rgba(200,155,83,.12), transparent 20%),
+      radial-gradient(circle at bottom left, rgba(200,155,83,.06), transparent 18%),
+      linear-gradient(180deg, #090a0c 0%, #101216 48%, #0b0d10 100%);
+    color: var(--ink);
+  }
+
+  body{
+    font-family: Inter, system-ui, -apple-system, Segoe UI, sans-serif;
+    min-height: 100vh;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  img{
+    max-width: 100%;
+    display: block;
+  }
+
+  a{
+    text-decoration: none;
+  }
+
+  .display-font{
+    font-family: Oswald, Inter, sans-serif;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+
+  .brand-font{
+    font-family: Oswald, Inter, sans-serif;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+
+  .container{
+    position: relative;
+    z-index: 1;
+  }
+
+  /* NAV */
+  .site-nav,
+  .nb{
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: rgba(10, 11, 13, 0.84);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .site-nav .navbar-brand,
+  .nb .navbar-brand{
+    color: var(--accent-2) !important;
+    font-family: Oswald, sans-serif;
+    font-size: clamp(1.2rem, 2vw, 1.55rem);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  .site-nav .nav-link,
+  .nb .nav-link{
+    color: var(--ink) !important;
+    font-weight: 600;
+    border-radius: 999px;
+    padding: .68rem .95rem !important;
+    transition: .18s ease;
+  }
+
+  .site-nav .nav-link:hover,
+  .nb .nav-link:hover{
+    background: rgba(240,195,122,.08);
+    color: var(--accent-2) !important;
+  }
+
+  .navbar-toggler{
+    border: 1px solid var(--line-strong) !important;
+    color: var(--accent-2) !important;
+    box-shadow: none !important;
+  }
+
+  /* HERO */
+  .hero-barber,
+  .hero{
+    position: relative;
+    overflow: hidden;
+    padding: 64px 0 42px;
+    {% if page.get('cover_image') %}
+    background:
+      linear-gradient(90deg, rgba(7,8,10,.94) 0%, rgba(7,8,10,.76) 34%, rgba(7,8,10,.38) 70%),
+      url("{{ url_for('uploaded_file', filename=page.cover_image) }}") center/cover no-repeat;
+    {% else %}
+    background:
+      radial-gradient(circle at right top, rgba(200,155,83,.13), transparent 22%),
+      linear-gradient(180deg, #0a0b0d 0%, #13161a 100%);
+    {% endif %}
+  }
+
+  .hero-panel,
+  .hero-card{
+    background: rgba(10, 12, 15, 0.68);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-xl);
+    padding: 30px;
+  }
+
+  .hero-avatar{
+    width: min(100%, 250px);
+    aspect-ratio: 1/1;
+    border-radius: 26px;
+    object-fit: cover;
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow-lg);
+    background: #121418;
+    margin-inline: auto;
+  }
+
+  .hero-kicker,
+  .badge-pill{
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    background: rgba(240,195,122,.12);
+    color: var(--accent-2);
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    padding: .46rem .86rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    font-size: .82rem;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .hero h1,
+  .hero-barber h1{
+    color: var(--ink);
+    font-size: clamp(2.3rem, 5vw, 4.7rem);
+    line-height: .98;
+    margin-bottom: .75rem;
+  }
+
+  .hero p,
+  .hero-barber p{
+    color: var(--ink-soft);
+  }
+
+  /* BUTTONS */
+  .btn-barber,
+  .btn-brutal{
+    border: none;
+    border-radius: 999px;
+    padding: .84rem 1.16rem;
+    font-weight: 800;
+    letter-spacing: .02em;
+    transition: .18s ease;
+  }
+
+  .btn-gold,
+  .btn-brand{
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #121212;
+    box-shadow: 0 10px 26px rgba(200,155,83,.22);
+  }
+
+  .btn-gold:hover,
+  .btn-brand:hover{
+    color: #111;
+    filter: brightness(1.04);
+    transform: translateY(-1px);
+  }
+
+  .btn-outline-barber,
+  .btn-ghost{
+    background: rgba(255,255,255,.02);
+    color: var(--ink);
+    border: 1px solid var(--line-strong);
+  }
+
+  .btn-outline-barber:hover,
+  .btn-ghost:hover{
+    color: var(--accent-2);
+    background: rgba(240,195,122,.08);
+    transform: translateY(-1px);
+  }
+
+  /* COMMON SECTION */
+  .section-shell{
+    position: relative;
+    padding: 70px 0;
+  }
+
+  .section-shell::before{
+    content:"";
+    position:absolute;
+    inset: 18px 12px;
+    border-radius: 34px;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .section-a::before{ background: linear-gradient(135deg, rgba(240,195,122,.06), rgba(255,255,255,0)); }
+  .section-b::before{ background: linear-gradient(135deg, rgba(255,255,255,.015), rgba(240,195,122,.04)); }
+  .section-c::before{ background: linear-gradient(135deg, rgba(240,195,122,.04), rgba(240,195,122,.01)); }
+  .section-d::before{ background: linear-gradient(135deg, rgba(255,255,255,.01), rgba(240,195,122,.07)); }
+
+  .section-title{
+    color: var(--accent-2);
+    font-family: Oswald, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    margin-bottom: 1rem;
+    font-size: clamp(2rem, 4vw, 3rem);
+    position: relative;
+    padding-left: 1rem;
+    line-height: 1;
+  }
+
+  .section-title::before{
+    content:"";
+    position:absolute;
+    left:0;
+    top:.18em;
+    bottom:.18em;
+    width:6px;
+    border-radius:999px;
+    background: linear-gradient(180deg, var(--accent), var(--accent-2));
+  }
+
+  .section-intro{
+    color: var(--muted);
+    max-width: 760px;
+    line-height: 1.8;
+    margin-bottom: 1.25rem;
+    font-size: 1rem;
+  }
+
+  /* PANELS / CARDS */
+  .barber-panel,
+  .card-barber,
+  .card-brutal,
+  .post-card,
+  .post-panel{
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+  }
+
+  .barber-panel{
+    padding: 24px;
+  }
+
+  .card-barber .card-header,
+  .card-brutal .card-header{
+    background: rgba(255,255,255,.02);
+    border-bottom: 1px solid var(--line);
+    color: var(--accent-2);
+    font-weight: 700;
+  }
+
+  .card-body,
+  .card-footer{
+    color: var(--ink);
+  }
+
+  .card-footer{
+    background: rgba(255,255,255,.02) !important;
+    border-top: 1px solid rgba(240,195,122,.08);
+  }
+
+  .post-card .body{
+    padding: 1.1rem 1.1rem 1.25rem;
+  }
+
+  .post-card img,
+  .post-cover{
+    width: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .post-card img{
+    height: 230px;
+  }
+
+  .post-cover{
+    max-height: 520px;
+    border-radius: 22px;
+    border: 1px solid var(--line);
+  }
+
+  .meta-chip,
+  .chip{
+    display:inline-flex;
+    align-items:center;
+    gap:.45rem;
+    border-radius:999px;
+    border:1px solid var(--line-strong);
+    background: rgba(240,195,122,.08);
+    color: var(--accent-2);
+    padding: .38rem .82rem;
+    font-size: .9rem;
+    font-weight: 600;
+  }
+
+  /* TEXT VISIBILITY */
+  p,
+  li,
+  label,
+  .form-label,
+  .small,
+  small,
+  .text-muted-2{
+    color: var(--ink-soft);
+  }
+
+  .section-intro,
+  .text-muted,
+  .muted,
+  .footer-link,
+  .article-body,
+  .article-body p,
+  .article-body li{
+    color: var(--muted);
+  }
+
+  h1,h2,h3,h4,h5,h6,
+  .display-font,
+  .brand-font{
+    color: var(--ink);
+  }
+
+  strong{
+    color: var(--ink);
+  }
+
+  /* FORMS */
+  .form-control,
+  .form-select,
+  textarea{
+    background: rgba(255,255,255,.04) !important;
+    border: 1px solid var(--line-strong) !important;
+    color: var(--ink) !important;
+    border-radius: 16px !important;
+    min-height: 48px;
+    box-shadow: none !important;
+  }
+
+  textarea.form-control{
+    min-height: 120px;
+  }
+
+  .form-control::placeholder,
+  textarea::placeholder{
+    color: var(--muted-2) !important;
+    opacity: 1;
+  }
+
+  .form-control:focus,
+  .form-select:focus,
+  textarea:focus{
+    border-color: var(--accent-2) !important;
+    box-shadow: 0 0 0 .2rem rgba(240,195,122,.10) !important;
+    background: rgba(255,255,255,.06) !important;
+    color: var(--ink) !important;
+  }
+
+  /* SEARCH */
+  .search-box .form-control{
+    min-height: 54px;
+    background: rgba(255,255,255,.04);
+    border: 1px solid var(--line-strong);
+    color: var(--ink);
+    border-radius: 18px;
+  }
+
+  /* ARTICLE BODY */
+  .article-body{
+    color: var(--ink-soft);
+    line-height: 1.9;
+    font-size: 1.04rem;
+  }
+
+  .article-body h1,
+  .article-body h2,
+  .article-body h3,
+  .article-body h4{
+    color: var(--ink);
+    margin-top: 1.4rem;
+  }
+
+  .article-body a{
+    color: var(--accent-2);
+    text-decoration: underline;
+  }
+
+  .article-body img{
+    max-width:100%;
+    border-radius:18px;
+    margin: 1rem 0;
+    border: 1px solid var(--line);
+  }
+
+  .article-body iframe,
+  .article-body video{
+    max-width:100%;
+    border-radius:18px;
+  }
+
+  /* GALLERY */
+  .gallery-wrap{
+    background: rgba(12,13,15,.74);
+    border:1px solid var(--line);
+    border-radius: 28px;
+    box-shadow: var(--shadow-lg);
+    padding: 1.5rem;
+  }
+
+  .gallery-grid{
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap:1rem;
+  }
+
+  .gal-item{
+    position:relative;
+    border:none;
+    border-radius: 20px;
+    overflow:hidden;
+    background:#121315;
+    aspect-ratio: 4/3;
+    cursor:pointer;
+    box-shadow: 0 10px 24px rgba(0,0,0,.28);
+  }
+
+  .gal-item img,
+  .gal-item video{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+  }
+
+  .gal-item::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:linear-gradient(180deg, transparent 56%, rgba(0,0,0,.62) 100%);
+    opacity:0;
+    transition:.18s ease;
+  }
+
+  .gal-item:hover::after{
+    opacity:1;
+  }
+
+  .badge-type{
+    position:absolute;
+    top:.7rem;
+    left:.7rem;
+    background: rgba(15,16,18,.88);
+    color:var(--accent-2);
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:.30rem .65rem;
+    font-size:.73rem;
+    font-weight:700;
+    display:flex;
+    align-items:center;
+    gap:.3rem;
+  }
+
+  /* MAP */
+  #map{
+    height: 320px;
+    border-radius: 18px;
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+  }
+
+  /* TICKER */
+  .ticker{
+    position: fixed;
+    left:0;
+    right:0;
+    bottom:0;
+    z-index:1001;
+    background: linear-gradient(135deg, #111214, #1a1b1f, #111214);
+    border-top: 1px solid var(--line);
+    box-shadow: 0 -8px 24px rgba(0,0,0,.22);
+    color:#fff;
+  }
+
+  .ticker .carousel-item{
+    padding:.75rem 0;
+  }
+
+  .pill-invert{
+    background: rgba(240,195,122,.12);
+    color: var(--accent-2);
+    border:1px solid var(--line-strong);
+    border-radius: 999px;
+    padding:.35rem .78rem;
+    display:inline-block;
+  }
+
+  /* FLOATING WHATSAPP */
+  .fab-wa{
+    position: fixed;
+    left:20px;
+    bottom: 12%;
+    z-index:1002;
+    text-decoration:none;
+  }
+
+  .fab-wa .btn{
+    border-radius:999px;
+    box-shadow: var(--shadow-lg);
+  }
+
+  /* MODALS */
+  .modal{
+    z-index:1080 !important;
+  }
+
+  .modal-backdrop{
+    z-index:1070 !important;
+  }
+
+  #zoomModal .modal-dialog{
+    max-width: 72vw;
+  }
+
+  #zoomModal .modal-content{
+    border:none;
+    border-radius:24px;
+    overflow:hidden;
+    box-shadow: 0 24px 70px rgba(0,0,0,.32);
+    background: rgba(17,18,20,.98);
+  }
+
+  #zoomModal .btn-close-floating{
+    position:absolute;
+    top:16px;
+    right:16px;
+    z-index:5;
+    background:#fff;
+    border:none;
+    border-radius:999px;
+    width:42px;
+    height:42px;
+    box-shadow:0 10px 24px rgba(0,0,0,.16);
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    opacity:1;
+  }
+
+  #zoomedImage{
+    display:block;
+    width:100%;
+    max-height:80vh;
+    object-fit:contain;
+    background:#111214;
+  }
+
+  body.modal-open .ticker,
+  body.modal-open .fab-wa{
+    opacity:0;
+    pointer-events:none;
+  }
+
+  body.modal-open .site-nav,
+  body.modal-open .nb{
+    pointer-events:none;
+  }
+
+  /* FOOTER */
+  .footer-barber,
+  .ft{
+    background: rgba(10,10,11,.90);
+    border-top: 1px solid var(--line);
+    padding: 32px 0 70px;
+    margin-top: 32px;
+  }
+
+  .footer-link{
+    color: var(--muted);
+    text-decoration: none;
+  }
+
+  .footer-link:hover{
+    color: var(--accent-2);
+  }
+
+  .soft-line{
+    height:1px;
+    background: linear-gradient(90deg, transparent, rgba(240,195,122,.22), transparent);
+  }
+
+  /* ALERTS */
+  .alert{
+    border-radius: 16px;
+    border: none;
+  }
+
+  .alert-warning{
+    background: rgba(245,158,11,.14);
+    color: #ffe0a6;
+  }
+
+  .alert-info{
+    background: rgba(59,130,246,.14);
+    color: #d8e7ff;
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 1200px){
+    .hero-panel,
+    .hero-card{
+      padding: 24px;
+    }
+  }
+
+  @media (max-width: 992px){
+    .section-shell{
+      padding: 58px 0;
+    }
+
+    .section-shell::before{
+      inset: 12px 8px;
+      border-radius: 26px;
+    }
+
+    .hero-barber,
+    .hero{
+      padding: 48px 0 32px;
+    }
+
+    .hero-avatar{
+      width: min(100%, 220px);
+    }
+
+    .post-card img{
+      height: 210px;
+    }
+  }
+
+  @media (max-width: 768px){
+    .hero-panel,
+    .hero-card,
+    .barber-panel{
+      padding: 18px;
+      border-radius: 22px;
+    }
+
+    .section-title{
+      font-size: 2rem;
+      padding-left: .85rem;
+    }
+
+    .section-title::before{
+      width: 5px;
+    }
+
+    .section-intro{
+      font-size: .98rem;
+      margin-bottom: 1rem;
+    }
+
+    .gallery-grid{
+      display:flex;
+      gap:1rem;
+      overflow-x:auto;
+      scroll-snap-type:x mandatory;
+      padding-bottom:.5rem;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .gal-item{
+      flex: 0 0 72vw;
+      scroll-snap-align: start;
+    }
+
+    #zoomModal .modal-dialog{
+      max-width: 94vw;
+    }
+
+    .post-card img,
+    .card-img-top{
+      height: 200px !important;
+    }
+
+    .footer-barber,
+    .ft{
+      padding-bottom: 96px;
+    }
+
+    .fab-wa{
+      left: 14px;
+      bottom: 92px;
+    }
+
+    .ticker .carousel-item{
+      padding: .65rem 0;
+      font-size: .92rem;
+    }
+  }
+
+  @media (max-width: 576px){
+    .hero-barber,
+    .hero{
+      padding: 40px 0 26px;
+    }
+
+    .hero-avatar{
+      width: min(100%, 190px);
+      border-radius: 22px;
+    }
+
+    .btn-barber,
+    .btn-brutal,
+    .btn-gold,
+    .btn-brand,
+    .btn-outline-barber,
+    .btn-ghost{
+      width: 100%;
+      justify-content: center;
+    }
+
+    .d-flex.flex-wrap.gap-2 > .btn,
+    .d-flex.flex-wrap.gap-3 > .btn{
+      width: 100%;
+    }
+
+    .card-barber,
+    .card-brutal,
+    .post-card,
+    .post-panel{
+      border-radius: 18px;
+    }
+
+    .gallery-wrap{
+      padding: 1rem;
+      border-radius: 20px;
+    }
+
+    .gal-item{
+      flex: 0 0 82vw;
+    }
+
+    .section-shell{
+      padding: 48px 0;
+    }
+
+    .section-shell::before{
+      inset: 8px 4px;
+      border-radius: 18px;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<header class="hero-barber">
+  <div class="container">
+    <div class="hero-panel">
+      <div class="row g-4 align-items-center">
+        <div class="col-md-4 text-center">
+          {% if page.get('image') %}
+            <img class="hero-avatar" src="{{ url_for('uploaded_file', filename=page['image']) }}" alt="Logo/Imagen">
+          {% else %}
+            <img class="hero-avatar" src="{{ url_for('static', filename='images/default_image.png') }}" alt="Logo/Imagen">
+          {% endif %}
+        </div>
+
+        <div class="col-md-8">
+          <div class="hero-kicker">
+            <i class="bi bi-scissors"></i> {{ page.get('category','Barber Shop') }}
+          </div>
+
+          <h1 class="display-font mt-3 mb-2" style="font-size:clamp(2.5rem,5vw,4.6rem); color:var(--ink);">
+            {{ page.get('business_name','Barber Shop') }}
+          </h1>
+
+          {% if page.get('slogan') %}
+            <p class="fs-5 mb-3" style="color:var(--muted);">{{ page['slogan'] }}</p>
+          {% endif %}
+
+          <div class="d-flex flex-wrap gap-2">
+            {% if page.get('website') %}
+            <a class="btn btn-barber btn-gold"
+              href="{{ page['website'] }}" target="_blank"
+              data-track="click_website">
+              <i class="bi bi-link-45deg me-1"></i> Visitar sitio
+            </a>
+            {% endif %}
+
+            {% if page.get('phone') %}
+            <a class="btn btn-barber btn-outline-barber"
+              href="tel:{{ page['phone'] }}"
+              data-track="click_phone">
+              <i class="bi bi-telephone me-1"></i> Llamar
+            </a>
+            {% endif %}
+
+            {% if page.get('whatsapp') %}
+            <a class="btn btn-barber btn-outline-barber"
+              href="https://wa.me/{{ page.whatsapp | replace(' ','') }}"
+              target="_blank"
+              data-track="click_whatsapp_header">
+              <i class="bi bi-whatsapp me-1"></i> WhatsApp
+            </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+{% if promos and promos|length > 0 %}
+<section class="section-shell section-a" id="promos">
+  <div class="container">
+    <h2 class="section-title">Promociones activas</h2>
+    <p class="section-intro">Aprovecha combos, descuentos y promociones especiales vigentes.</p>
+
+    <div class="row g-3">
+      {% for p in promos %}
+        <div class="col-md-6">
+          <div class="card card-barber h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <span>{{ p.title }}</span>
+              {% if p.code %}<span class="chip">{{ p.code }}</span>{% endif %}
+            </div>
+            <div class="card-body">
+              {% if p.description %}<p class="mb-2">{{ p.description }}</p>{% endif %}
+              {% if p.discount_type in ['percent','fixed'] %}
+                <div class="chip">
+                  <i class="bi bi-tag"></i>
+                  {% if p.discount_type == 'percent' %}{{ p.value }}% OFF{% else %}${{ p.value }} OFF{% endif %}
+                </div>
+              {% else %}
+                <div class="chip"><i class="bi bi-info-circle"></i> Promoción</div>
+              {% endif %}
+              {% if p.ends_at %}
+                <div class="mt-2 small" style="color:var(--muted);"><i class="bi bi-clock"></i> Vigente hasta {{ p.ends_at.strftime('%d/%m/%Y') }}</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<section class="section-shell section-b" id="info">
+  <div class="container">
+    <h2 class="section-title">Conoce la barbería</h2>
+    <p class="section-intro">Descubre su esencia, sus servicios y toda la información importante para visitar el negocio.</p>
+
+    <div class="row g-4">
+      <div class="col-md-6">
+        <div class="card card-barber h-100">
+          <div class="card-header">Sobre nosotros</div>
+          <div class="card-body">
+            <p class="mb-3"><strong>¿Quiénes somos?</strong><br>{{ page.get('description','') }}</p>
+            <div class="d-flex flex-wrap gap-2">
+              {% if page.get('services') %}<span class="chip"><i class="bi bi-scissors"></i> {{ page.services }}</span>{% endif %}
+              {% if page.get('payment_methods') %}<span class="chip"><i class="bi bi-credit-card-2-front"></i> {{ page.payment_methods }}</span>{% endif %}
+              {% if page.get('founding_date') %}<span class="chip"><i class="bi bi-calendar3"></i> {{ page.founding_date }}</span>{% endif %}
+              {% if page.get('delivery_available') %}<span class="chip"><i class="bi bi-truck"></i> Servicio a domicilio</span>{% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="card card-barber h-100">
+          <div class="card-header">Ubicación y horario</div>
+          <div class="card-body">
+            <p class="mb-2"><i class="bi bi-geo-alt-fill me-1"></i> <strong>Dirección:</strong> {{ page.get('address','') }}</p>
+            <div class="row">
+              <div class="col-6"><small style="color:var(--muted);"><i class="bi bi-pin-map"></i> CP</small><div>{{ page.get('postal_code','') }}</div></div>
+              <div class="col-6"><small style="color:var(--muted);"><i class="bi bi-buildings"></i> Ciudad</small><div>{{ page.get('city','') }}</div></div>
+            </div>
+            <div class="mt-2"><small style="color:var(--muted);"><i class="bi bi-flag"></i> Estado</small><div>{{ page.get('state','') }}</div></div>
+            <div class="mt-2"><small style="color:var(--muted);"><i class="bi bi-clock-history"></i> Horario</small><div>{{ page.get('operating_hours','') }}</div></div>
+
+            {% set lat_val = page.get('lat') %}
+            {% set lng_val = page.get('lng') %}
+            {% set has_coords = (lat_val is not none) and (lng_val is not none) and (lat_val|string|trim != '') and (lng_val|string|trim != '') %}
+
+            <div class="mt-3">
+              {% if has_coords %}
+                <div id="map" class="mb-3"></div>
+
+                <a class="btn btn-barber btn-outline-barber me-2" target="_blank"
+                  href="https://www.google.com/maps/dir/?api=1&destination={{ lat_val }},{{ lng_val }}"
+                  data-track="click_maps">
+                  <i class="bi bi-geo me-1"></i> Cómo llegar
+                </a>
+
+              {% elif page.get('address') %}
+                <a class="btn btn-barber btn-outline-barber me-2" target="_blank"
+                  href="https://www.google.com/maps/search/?api=1&query={{ page.address | urlencode }}" data-track="click_maps">
+                  <i class="bi bi-search me-1"></i> Buscar dirección
+                </a>
+              {% else %}
+                <div class="alert alert-warning py-2 px-3">Aún no hay ubicación definida.</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section-shell section-c" id="productos">
+  <div class="container">
+    <h2 class="section-title">Servicios y productos</h2>
+    <p class="section-intro">Explora cortes, barba, tratamientos y productos disponibles. También puedes cotizar desde aquí.</p>
+
+    {% if (servicios and servicios|length>0) or (productos_fisicos and productos_fisicos|length>0) %}
+
+      <div class="card card-barber p-3 mb-3">
+        <div class="d-flex align-items-center gap-2">
+          <span class="chip"><i class="bi bi-info-circle"></i></span>
+          <div>
+            <strong>Cotiza fácil:</strong> elige cantidades de servicios o productos, luego pulsa <em>Cotizar</em>.
+            Te pediremos tu nombre y abriremos WhatsApp con todo listo.
+          </div>
+        </div>
+      </div>
+
+      <form id="form-cotizar" class="row g-3">
+
+        {% if servicios and servicios|length>0 %}
+          <div class="col-12">
+            <h3 class="h5 display-font d-flex align-items-center gap-2" style="color:var(--accent-2);">
+              <i class="bi bi-scissors"></i> Servicios
+            </h3>
+          </div>
+
+          {% for item in servicios %}
+          <div class="col-12 col-sm-6 col-md-4">
+            <div class="card card-barber h-100">
+              {% if item.image %}
+                <img
+                  src="{{ url_for('uploaded_file', filename=item.image) }}"
+                  alt="{{ item.title }}"
+                  class="card-img-top img-zoom-trigger"
+                  data-bs-toggle="modal" data-bs-target="#zoomModal"
+                  data-img-src="{{ url_for('uploaded_file', filename=item.image) }}"
+                  style="object-fit:cover; height:220px; cursor: zoom-in;"
+                >
+              {% endif %}
+              <div class="card-body d-flex flex-column">
+                <div class="mb-1">
+                  <span class="chip">Servicio</span>
+                </div>
+                <h6 class="display-font mb-1">{{ item.title }}</h6>
+                {% if item.description %}<p style="color:var(--muted);" class="small">{{ item.description }}</p>{% endif %}
+                {% if item.show_price %}
+                  <div class="mb-2">
+                    <span class="chip">
+                      ${{ "%.2f"|format(item.price) }}
+                    </span>
+                  </div>
+                {% endif %}
+                <div class="mt-auto">
+                  <label class="form-label small">Cantidad / Nº de citas</label>
+                  <input
+                    type="number" min="0" value="0"
+                    class="form-control"
+                    name="prod_{{ item.title | replace(' ','_') }}"
+                    data-item-nombre="{{ item.title }}"
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        {% endif %}
+
+        {% if productos_fisicos and productos_fisicos|length>0 %}
+          <div class="col-12 mt-2">
+            <h3 class="h5 display-font d-flex align-items-center gap-2" style="color:var(--accent-2);">
+              <i class="bi bi-box-seam"></i> Productos
+            </h3>
+          </div>
+
+          {% for item in productos_fisicos %}
+          <div class="col-12 col-sm-6 col-md-4">
+            <div class="card card-barber h-100">
+              {% if item.image %}
+                <img
+                  src="{{ url_for('uploaded_file', filename=item.image) }}"
+                  alt="{{ item.title }}"
+                  class="card-img-top img-zoom-trigger"
+                  data-bs-toggle="modal" data-bs-target="#zoomModal"
+                  data-img-src="{{ url_for('uploaded_file', filename=item.image) }}"
+                  style="object-fit:cover; height:220px; cursor: zoom-in;"
+                >
+              {% endif %}
+              <div class="card-body d-flex flex-column">
+                <div class="mb-1">
+                  <span class="chip">Producto</span>
+                </div>
+                <h6 class="display-font mb-1">{{ item.title }}</h6>
+                {% if item.description %}<p style="color:var(--muted);" class="small">{{ item.description }}</p>{% endif %}
+                {% if item.show_price %}
+                  <div class="mb-2">
+                    <span class="chip">
+                      ${{ "%.2f"|format(item.price) }}
+                    </span>
+                  </div>
+                {% endif %}
+                <div class="mt-auto">
+                  <label class="form-label small">Cantidad</label>
+                  <input
+                    type="number" min="0" value="0"
+                    class="form-control"
+                    name="prod_{{ item.title | replace(' ','_') }}"
+                    data-item-nombre="{{ item.title }}"
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        {% endif %}
+
+        <div class="col-12 text-center">
+          <button type="submit" class="btn btn-barber btn-gold px-4 py-2">
+            <i class="bi bi-whatsapp me-1"></i> Cotizar
+          </button>
+        </div>
+      </form>
+
+    {% else %}
+      <div class="card card-barber p-3">No hay productos ni servicios disponibles.</div>
+    {% endif %}
+  </div>
+</section>
+
+<section class="section-shell section-b" id="galeria">
+  <div class="container">
+    <h2 class="section-title">Galería</h2>
+    <p class="section-intro">Mira estilos, cortes, espacio del negocio, trabajos recientes y contenido visual.</p>
+
+    {% set tiene_portada = page.get('cover_image') %}
+    {% set tiene_media = page.get('media_gallery') and page.media_gallery|length > 0 %}
+    {% set tiene_galeria = galeria and galeria|length > 0 %}
+    {% if tiene_portada or tiene_media or tiene_galeria %}
+      <div class="gallery-wrap">
+        <div class="gallery-grid">
+          {% if tiene_portada %}
+            <div class="gal-item" data-type="image" data-src="{{ url_for('uploaded_file', filename=page.cover_image) }}">
+              <img src="{{ url_for('uploaded_file', filename=page.cover_image) }}" alt="Portada">
+              <span class="badge-type"><i class="bi bi-image"></i> Portada</span>
+            </div>
+          {% endif %}
+
+          {% if tiene_media %}
+            {% for item in page.media_gallery %}
+              {% if item is string %}
+                <div class="gal-item" data-type="image" data-src="{{ url_for('uploaded_file', filename=item) }}">
+                  <img src="{{ url_for('uploaded_file', filename=item) }}" alt="Media">
+                  <span class="badge-type"><i class="bi bi-palette"></i> Media</span>
+                </div>
+              {% else %}
+                {% set fpath = item.path %}
+                {% set ftype = item.type or 'image' %}
+                {% if ftype == 'video' %}
+                  <div class="gal-item" data-type="video" data-src="{{ url_for('uploaded_file', filename=fpath) }}">
+                    <video src="{{ url_for('uploaded_file', filename=fpath) }}" muted playsinline></video>
+                    <span class="badge-type"><i class="bi bi-camera-reels"></i> Video</span>
+                  </div>
+                {% else %}
+                  <div class="gal-item" data-type="image" data-src="{{ url_for('uploaded_file', filename=fpath) }}">
+                    <img src="{{ url_for('uploaded_file', filename=fpath) }}" alt="Media">
+                    <span class="badge-type"><i class="bi bi-palette"></i> Media</span>
+                  </div>
+                {% endif %}
+              {% endif %}
+            {% endfor %}
+          {% endif %}
+
+          {% if tiene_galeria %}
+            {% for g in (galeria or [])[:12] %}
+              <div class="gal-item" data-type="image" data-src="{{ url_for('uploaded_file', filename=g) }}">
+                <img src="{{ url_for('uploaded_file', filename=g) }}" alt="Foto {{ loop.index }}">
+                <span class="badge-type"><i class="bi bi-scissors"></i> Galería</span>
+              </div>
+            {% endfor %}
+          {% endif %}
+        </div>
+      </div>
+    {% else %}
+      <div class="card card-barber p-3">Aún no hay imágenes. Sube una portada o envía <code>media_gallery</code>.</div>
+    {% endif %}
+  </div>
+</section>
+
+<section class="section-shell section-d" id="publicaciones">
+  <div class="container">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+      <div>
+        <h2 class="section-title mb-0">Publicaciones recientes</h2>
+        <p class="section-intro mb-0">Consejos, tendencias, novedades y contenido reciente de la barbería.</p>
+      </div>
+
+      {% if posts and posts|length > 0 %}
+        <a class="btn btn-barber btn-outline-barber"
+           href="{{ url_for('lista_blogs_negocio_slug', slug=site_slug) }}"
+           data-track="click_blog_index">
+          <i class="bi bi-journal-text me-1"></i> Ver todo el blog
+        </a>
+      {% endif %}
+    </div>
+
+    {% if posts and posts|length>0 %}
+      <div class="row g-4">
+        {% for post in posts %}
+          <div class="col-md-4">
+            <div class="card card-barber h-100">
+              {% if post.cabecera %}
+                <img src="{{ url_for('uploaded_file', filename=post.cabecera) }}" class="card-img-top" alt="Post" style="object-fit:cover; height:220px;">
+              {% endif %}
+              <div class="card-body d-flex flex-column">
+                <h5 class="display-font">{{ post.title }}</h5>
+                <p style="color:var(--muted);">{{ post.content[:110] }}{% if post.content and post.content|length > 110 %}...{% endif %}</p>
+                <a class="mt-auto btn btn-barber btn-outline-barber"
+                   href="{{ url_for('ver_post_slug', slug=site_slug, post_id=post._id) }}">
+                  Leer más
+                </a>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="card card-barber p-3">Aún no hay publicaciones.</div>
+    {% endif %}
+  </div>
+</section>
+
+<section class="section-shell section-a" id="reseñas">
+  <div class="container">
+    <h2 class="section-title">Lo que dicen nuestros clientes</h2>
+    <p class="section-intro">Reseñas reales, comentarios y experiencias de quienes ya confiaron en el servicio.</p>
+
+    <div class="card card-barber p-3 mb-4">
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          <div class="alert alert-info mb-3">
+            {% for m in messages %}<div>{{ m }}</div>{% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <form method="POST" class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Tu nombre</label>
+          <input type="text" name="nombre" class="form-control" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Calificación</label>
+          <div id="starRating">
+            {% for i in range(1,6) %}
+              <i class="bi bi-star-fill fs-3 me-1 text-secondary star-icon" data-value="{{ i }}"></i>
+            {% endfor %}
+          </div>
+          <input type="hidden" name="estrellas" id="estrellas" value="0" required>
+        </div>
+        <div class="col-12">
+          <label class="form-label">Comentario</label>
+          <textarea name="comentario" class="form-control" rows="3" required></textarea>
+        </div>
+        <div class="col-12">
+          <button class="btn btn-barber btn-gold" type="submit">Enviar reseña</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="row g-3">
+      {% if reseñas and reseñas|length>0 %}
+        {% for r in reseñas %}
+          <div class="col-md-6">
+            <div class="card card-barber h-100">
+              <div class="card-body">
+                <h5 class="display-font text-center">{{ r.nombre }}</h5>
+                <div class="text-center mb-2">
+                  {% for i in range(1,6) %}
+                    {% if i <= r.estrellas %}<i class="bi bi-star-fill text-warning"></i>{% else %}<i class="bi bi-star text-secondary"></i>{% endif %}
+                  {% endfor %}
+                </div>
+                <p>{{ r.comentario }}</p>
+              </div>
+              <div class="card-footer" style="background:rgba(255,255,255,.02);">
+                <small style="color:var(--muted);">{{ r.fecha.strftime('%d/%m/%Y') }}</small>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div class="col-12"><div class="card card-barber p-3">No hay reseñas aún.</div></div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<section class="section-shell section-c" id="contacto">
+  <div class="container">
+    <h2 class="section-title">Contacto y redes</h2>
+    <p class="section-intro">Encuentra aquí las formas directas de comunicarte con la barbería y seguir su contenido.</p>
+
+    <div class="row g-4">
+      <div class="col-md-6">
+        <div class="card card-barber h-100">
+          <div class="card-header">Vías de contacto</div>
+          <div class="card-body">
+            {% if page.get('phone') %}<p><i class="bi bi-telephone-fill me-2"></i><strong>Teléfono:</strong> {{ page.phone }}</p>{% endif %}
+            {% if page.get('email') %}<p><i class="bi bi-envelope-fill me-2"></i><strong>Email:</strong> {{ page.email }}</p>{% endif %}
+            {% if page.get('website') %}<p><i class="bi bi-globe2 me-2"></i><strong>Web:</strong> <a href="{{ page.website }}" target="_blank" data-track="click_website">{{ page.website }}</a></p>{% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="card card-barber h-100">
+          <div class="card-header">Redes</div>
+          <div class="card-body">
+            {% if page.get('facebook') %}<p><i class="bi bi-facebook me-2"></i><strong>Facebook:</strong> <a href="{{ page.facebook }}" target="_blank">Ir a Facebook</a></p>{% endif %}
+            {% if page.get('instagram') %}<p><i class="bi bi-instagram me-2"></i><strong>Instagram:</strong> <a href="{{ page.instagram }}" target="_blank">Ir a Instagram</a></p>{% endif %}
+            {% if page.get('tiktok') %}<p><i class="bi bi-tiktok me-2"></i><strong>TikTok:</strong> <a href="{{ page.tiktok }}" target="_blank">Ir a TikTok</a></p>{% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="ticker">
+  <div class="container">
+    <div id="noticiasCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="4500">
+      <div class="carousel-inner text-center">
+        {% if avisos and avisos|length>0 %}
+          {% for aviso in avisos %}
+            <div class="carousel-item {% if loop.first %}active{% endif %}">
+              <span class="pill-invert"><i class="bi bi-megaphone-fill me-1"></i> {{ aviso.title }}</span>
+              <span class="ms-2">{{ aviso.content }}</span>
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="carousel-item active">Gracias por visitarnos. Síguenos para novedades y promociones.</div>
+        {% endif %}
+      </div>
+      <button class="carousel-control-prev" type="button" data-bs-target="#noticiasCarousel" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon"></span>
+        <span class="visually-hidden">Anterior</span>
+      </button>
+      <button class="carousel-control-next" type="button" data-bs-target="#noticiasCarousel" data-bs-slide="next">
+        <span class="carousel-control-next-icon"></span>
+        <span class="visually-hidden">Siguiente</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+{% include "public/reservas.html" ignore missing %}
+{% if page.get('whatsapp') %}
+<a class="fab-wa"
+ href="https://wa.me/{{ page.whatsapp | replace(' ','') }}"
+ target="_blank" aria-label="WhatsApp"
+ data-track="click_whatsapp_fab">
+  <span class="btn btn-barber btn-gold px-3 py-2">
+    <i class="bi bi-whatsapp"></i>
+  </span>
+</a>
+{% endif %}
+
+<!-- MODAL ZOOM -->
+<div class="modal fade" id="zoomModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content position-relative">
+
+      <img id="zoomedImage" src="" class="img-fluid" alt="Zoom">
+
+      <div class="p-3 text-end">
+        <button class="btn btn-barber btn-outline-barber" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL COTIZAR -->
+<div class="modal fade" id="cotizarModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" style="max-width: 560px;">
+    <div class="modal-content" style="border:none; border-radius:24px; overflow:hidden; background:#111214; color:var(--ink);">
+      <div class="modal-header" style="background: linear-gradient(135deg, var(--accent), var(--accent-2)); color:#111;">
+        <h5 class="modal-title">Antes de cotizar ✍️</h5>
+        <button class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <p class="small" style="color:var(--muted);">
+          Déjanos tu nombre para dirigirnos a ti cuando te contactemos por WhatsApp.
+        </p>
+
+        <div class="mb-3">
+          <label class="form-label">Tu nombre</label>
+          <input type="text" class="form-control" id="nombreClienteInput" placeholder="Ej. Carlos Martínez">
+          <div class="text-danger small mt-1 d-none" id="errorModalNombre">Por favor escribe tu nombre.</div>
+        </div>
+
+        <div>
+          <div class="form-label mb-1">Tu selección:</div>
+          <div id="resumenSeleccion" class="border rounded p-2 small" style="max-height: 220px; overflow-y:auto; background:#0c0d0f; border-color:rgba(224,181,109,.14)!important;"></div>
+        </div>
+      </div>
+      <div class="modal-footer justify-content-between">
+        <button class="btn btn-barber btn-outline-barber" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-barber btn-gold" id="enviarCotizacionBtn">
+          <i class="bi bi-whatsapp me-1"></i> Enviar por WhatsApp
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+<script>
+(function () {
+  const el = document.getElementById('map');
+  if (!el) return;
+
+  const latRaw = "{{ page.get('lat','') }}";
+  const lngRaw = "{{ page.get('lng','') }}";
+
+  const lat = Number.parseFloat(latRaw);
+  const lng = Number.parseFloat(lngRaw);
+
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    el.innerHTML = `
+      <div class="alert alert-warning py-2 px-3">
+        No se pudo cargar el mapa porque las coordenadas no son válidas.
+      </div>`;
+    return;
+  }
+
+  const map = L.map('map', {
+    scrollWheelZoom: false,
+    dragging: !L.Browser.mobile,
+    tap: true
+  }).setView([lat, lng], 16);
+
+  const tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap'
+  });
+
+  tiles.on('tileerror', function () {
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap &copy; CARTO'
+    }).addTo(map);
+  });
+
+  tiles.addTo(map);
+
+  const name = "{{ page.get('business_name','')|e }}";
+  const addr = "{{ page.get('address','')|e }}";
+  const popupHtml = `
+    <div style="min-width:180px">
+      <strong>${name || 'Ubicación'}</strong><br>
+      <span style="opacity:.8">${addr || ''}</span>
+    </div>
+  `;
+
+  const marker = L.marker([lat, lng]).addTo(map);
+  marker.bindPopup(popupHtml);
+
+  const fixSize = () => {
+    try { map.invalidateSize(true); } catch(e){}
+  };
+
+  setTimeout(fixSize, 120);
+  setTimeout(fixSize, 500);
+  window.addEventListener('resize', () => setTimeout(fixSize, 80));
+})();
+</script>
+
+<script>
+const SITE_SLUG = "{{ slug or page.get('slug','') }}";
+const BUSINESS_NAME = "{{ page.get('business_name','')|e }}";
+const BUSINESS_WA = "{{ (page.get('whatsapp','') or '')|replace(' ','') }}";
+
+function track(type, meta){
+  try{
+    if(!SITE_SLUG) return;
+    fetch("/api/track", {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({ slug: SITE_SLUG, type, meta: meta || {} })
+    }).catch(()=>{});
+  }catch(e){}
+}
+
+track("view", { path: location.pathname, ref: document.referrer || "" });
+
+document.addEventListener("click", (e)=>{
+  const el = e.target.closest("[data-track]");
+  if(!el) return;
+  const type = el.getAttribute("data-track");
+  const href = el.getAttribute("href") || "";
+  track(type, { href });
+});
+
+(function zoomModule(){
+  const zoomed = document.getElementById("zoomedImage");
+  const zoomModal = document.getElementById("zoomModal");
+  if(!zoomed || !zoomModal) return;
+
+  document.addEventListener("click", (e)=>{
+    const img = e.target.closest(".img-zoom-trigger");
+    if(!img) return;
+    const src = img.getAttribute("data-img-src") || img.getAttribute("src");
+    if(src) zoomed.src = src;
+    track("open_zoom", { src: src || "" });
+  });
+
+  zoomModal.addEventListener("hidden.bs.modal", ()=>{
+    zoomed.removeAttribute("src");
+  });
+})();
+
+(function starsModule(){
+  const stars = Array.from(document.querySelectorAll(".star-icon"));
+  const input = document.getElementById("estrellas");
+  if(!stars.length || !input) return;
+
+  function paint(v){
+    stars.forEach(s=>{
+      const n = parseInt(s.dataset.value || "0", 10);
+      if(n <= v){
+        s.classList.remove("text-secondary");
+        s.classList.add("text-warning");
+      }else{
+        s.classList.remove("text-warning");
+        s.classList.add("text-secondary");
+      }
+    });
+  }
+
+  stars.forEach(s=>{
+    s.style.cursor = "pointer";
+    s.addEventListener("click", ()=>{
+      const v = parseInt(s.dataset.value || "0", 10);
+      input.value = String(v);
+      paint(v);
+      track("rate_star_select", { value: v });
+    });
+  });
+})();
+
+(async function cotizarModule(){
+  const form = document.getElementById("form-cotizar");
+  const modalEl = document.getElementById("cotizarModal");
+  const resumenEl = document.getElementById("resumenSeleccion");
+  const nombreInput = document.getElementById("nombreClienteInput");
+  const errNombre = document.getElementById("errorModalNombre");
+  const enviarBtn = document.getElementById("enviarCotizacionBtn");
+
+  if(!form || !modalEl || !resumenEl || !nombreInput || !enviarBtn) return;
+
+  const bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+  let selectedItems = [];
+
+  function getSelectedItems(){
+    const inputs = Array.from(form.querySelectorAll('input[type="number"][data-item-nombre]'));
+    const items = [];
+    for(const inp of inputs){
+      const title = (inp.dataset.itemNombre || "").trim();
+      const qty = parseInt(inp.value || "0", 10);
+      if(title && Number.isFinite(qty) && qty > 0){
+        items.push({ title, qty });
+      }
+    }
+    return items;
+  }
+
+  function renderResumen(items){
+    if(!items.length){
+      resumenEl.innerHTML = `<div class="text-muted">No seleccionaste nada todavía.</div>`;
+      return;
+    }
+    resumenEl.innerHTML = items.map(it => {
+      return `<div>• <strong>${escapeHtml(it.title)}</strong> × ${it.qty}</div>`;
+    }).join("");
+  }
+
+  function escapeHtml(s){
+    return String(s)
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
+  }
+
+  form.addEventListener("submit", (e)=>{
+    e.preventDefault();
+    selectedItems = getSelectedItems();
+
+    if(!selectedItems.length){
+      track("cotizar_empty", {});
+      resumenEl.innerHTML = `<div class="text-danger fw-bold">Selecciona al menos 1 producto/servicio con cantidad > 0.</div>`;
+      bsModal.show();
+      return;
+    }
+
+    track("cotizar_open_modal", { items: selectedItems.length });
+    renderResumen(selectedItems);
+    errNombre.classList.add("d-none");
+    nombreInput.value = "";
+    bsModal.show();
+    setTimeout(()=> nombreInput.focus(), 150);
+  });
+
+  async function createLead(nombre, items){
+    try{
+      const r = await fetch("/api/leads", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({
+          slug: SITE_SLUG,
+          nombre,
+          items,
+          canal: "whatsapp"
+        })
+      });
+      return await r.json();
+    }catch(e){
+      return { ok:false, error:"network" };
+    }
+  }
+
+  function buildWhatsAppMessage(nombre, items){
+    const lines = [];
+    lines.push(`Hola, soy ${nombre}.`);
+    lines.push(`Quisiera cotizar con ${BUSINESS_NAME}:`);
+    for(const it of items){
+      lines.push(`- ${it.title} x${it.qty}`);
+    }
+    lines.push(`Gracias.`);
+    return lines.join("\\n");
+  }
+
+  function openWhatsApp(text){
+    if(!BUSINESS_WA){
+      alert("Este negocio aún no tiene WhatsApp configurado.");
+      return;
+    }
+    const url = `https://wa.me/${BUSINESS_WA}?text=${encodeURIComponent(text)}`;
+    window.open(url, "_blank", "noopener");
+  }
+
+  enviarBtn.addEventListener("click", async ()=>{
+    const nombre = (nombreInput.value || "").trim();
+
+    if(!nombre){
+      errNombre.classList.remove("d-none");
+      track("cotizar_missing_name", {});
+      nombreInput.focus();
+      return;
+    }
+
+    if(!selectedItems.length){
+      track("cotizar_missing_items", {});
+      bsModal.hide();
+      return;
+    }
+
+    enviarBtn.disabled = true;
+    enviarBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Enviando...`;
+
+    track("cotizar_send_click", { items: selectedItems.length });
+
+    const resp = await createLead(nombre, selectedItems);
+    const msg = buildWhatsAppMessage(nombre, selectedItems);
+    openWhatsApp(msg);
+
+    if(resp && resp.ok){
+      track("lead_saved", { lead_id: resp.lead_id || "" });
+    }else{
+      track("lead_save_failed", { error: (resp && resp.error) || "unknown" });
+    }
+
+    setTimeout(()=>{
+      enviarBtn.disabled = false;
+      enviarBtn.innerHTML = `<i class="bi bi-whatsapp me-1"></i> Enviar por WhatsApp`;
+      bsModal.hide();
+    }, 250);
+  });
+})();
+</script>
+{% endblock %}

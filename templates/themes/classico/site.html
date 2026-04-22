@@ -266,11 +266,14 @@
   </style>
 </head>
 <body>
-
+  {% set site_slug = slug or page.get('slug','') %}
+  {% set site_name = page.get('business_name','Negocio') %}
   <!-- NAV -->
   <nav class="navbar navbar-expand-lg nb">
     <div class="container">
-      <a class="navbar-brand brand-font" href="/">{{ page.get('business_name','Negocio') }}</a>
+      <a class="navbar-brand brand-font" href="{{ url_for('negocio_por_slug', slug=site_slug) }}">
+        {{ site_name }}
+      </a>
 
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nv" aria-controls="nv" aria-expanded="false">
         <span class="navbar-toggler-icon"></span>
@@ -278,12 +281,33 @@
 
       <div id="nv" class="collapse navbar-collapse justify-content-end">
         <ul class="navbar-nav gap-1">
-          <li class="nav-item"><a class="nav-link" href="#info">Información</a></li>
-          <li class="nav-item"><a class="nav-link" href="#galeria">Galería</a></li>
-          <li class="nav-item"><a class="nav-link" href="#contacto">Contacto</a></li>
-          {% if posts %}<li class="nav-item"><a class="nav-link" href="#publicaciones">Publicaciones</a></li>{% endif %}
-          {% if (servicios and servicios|length>0) or (productos_fisicos and productos_fisicos|length>0) %}<li class="nav-item"><a class="nav-link" href="#productos">Productos</a></li>{% endif %}
-          <li class="nav-item"><a class="nav-link" href="#reseñas">Reseñas</a></li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('negocio_por_slug', slug=site_slug) }}#info">Información</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('negocio_por_slug', slug=site_slug) }}#galeria">Galería</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('negocio_por_slug', slug=site_slug) }}#contacto">Contacto</a>
+          </li>
+
+          {% if posts %}
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('lista_blogs_negocio_slug', slug=site_slug) }}">
+              Blog
+            </a>
+          </li>
+          {% endif %}
+
+          {% if (servicios and servicios|length>0) or (productos_fisicos and productos_fisicos|length>0) %}
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('negocio_por_slug', slug=site_slug) }}#productos">Productos</a>
+          </li>
+          {% endif %}
+
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('negocio_por_slug', slug=site_slug) }}#reseñas">Reseñas</a>
+          </li>
         </ul>
       </div>
     </div>
@@ -316,11 +340,11 @@
             {% endif %}
 
             {% if page.get('phone') %}
-            <a class="btn btn-brutal btn-ghost hover-raise"
-              href="tel:{{ page['phone'] }}"
-              data-track="click_phone" data-track="click_phone">
-              <i class="bi bi-telephone me-1"></i> Llamar
-            </a>
+              <a class="btn btn-brutal btn-ghost hover-raise"
+                href="tel:{{ page['phone'] }}"
+                data-track="click_phone">
+                <i class="bi bi-telephone me-1"></i> Llamar
+              </a>
             {% endif %}
           </div>
         </div>
@@ -329,37 +353,6 @@
   </header>
 
   {% if promos and promos|length > 0 %}
-<section class="container my-4" id="promos">
-  <h2 class="section-title brand-font">Promos activas</h2>
-  <div class="row g-3">
-    {% for p in promos %}
-      <div class="col-md-6">
-        <div class="card card-brutal h-100">
-          <div class="card-header d-flex justify-content-between align-items-center">
-            <span>{{ p.title }}</span>
-            {% if p.code %}<span class="badge-pill" style="background:#111;border-color:#fff;">{{ p.code }}</span>{% endif %}
-          </div>
-          <div class="card-body">
-            {% if p.description %}<p class="mb-2">{{ p.description }}</p>{% endif %}
-            {% if p.discount_type in ['percent','fixed'] %}
-              <div class="chip"><i class="bi bi-tag"></i>
-                {% if p.discount_type=='percent' %}{{ p.value }}% OFF{% else %}${{ p.value }} OFF{% endif %}
-              </div>
-            {% else %}
-              <div class="chip"><i class="bi bi-info-circle"></i> Promoción</div>
-            {% endif %}
-            {% if p.ends_at %}
-              <div class="mt-2 text-muted-2 small"><i class="bi bi-clock"></i> Vigente hasta {{ p.ends_at.strftime('%d/%m/%Y') }}</div>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-    {% endfor %}
-  </div>
-</section>
-{% endif %}
-
-{% if promos and promos|length > 0 %}
 <section class="container my-4" id="promos">
   <h2 class="section-title brand-font">Promos activas</h2>
   <div class="row g-3">
@@ -430,7 +423,7 @@
 
                 <a class="btn btn-brutal btn-ghost hover-raise me-2" target="_blank"
                   href="https://www.google.com/maps/dir/?api=1&destination={{ lat_val }},{{ lng_val }}"
-                  data-track="click_maps" data-track="click_maps">
+                  data-track="click_maps">
                   <i class="bi bi-geo me-1"></i> Cómo llegar
                 </a>
 
@@ -535,31 +528,58 @@
   </section>
 
   <!-- POSTS -->
-  <section class="container my-5" id="publicaciones">
-    <h2 class="section-title brand-font">Publicaciones recientes</h2>
-    {% if posts and posts|length>0 %}
-      <div class="row g-4">
-        {% for post in posts %}
-          <div class="col-md-4">
-            <div class="card card-brutal h-100">
-              {% if post.cabecera %}
-                <img src="{{ url_for('uploaded_file', filename=post.cabecera) }}" class="card-img-top" alt="Post">
-              {% endif %}
-              <div class="card-body d-flex flex-column">
-                <h5 class="brand-font">{{ post.title }}</h5>
-                <p class="text-muted-2">{{ post.content[:110] }}...</p>
-                <a class="mt-auto btn btn-brutal btn-ghost hover-raise" href="{{ url_for('ver_post', post_id=post._id) }}">
-                  Leer más
-                </a>
-              </div>
+<section class="container my-5" id="publicaciones">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+    <h2 class="section-title brand-font mb-0">Publicaciones recientes</h2>
+
+    {% if posts and posts|length > 0 %}
+      <a
+        class="btn btn-brutal btn-ghost hover-raise"
+        href="{{ url_for('lista_blogs_negocio_slug', slug=site_slug) }}"
+        data-track="click_blog_index"
+      >
+        <i class="bi bi-journal-text me-1"></i> Ver todo el blog
+      </a>
+    {% endif %}
+  </div>
+
+  {% if posts and posts|length > 0 %}
+    <div class="row g-4">
+      {% for post in posts %}
+        <div class="col-md-4">
+          <div class="card card-brutal h-100">
+            {% if post.cabecera %}
+              <img
+                src="{{ url_for('uploaded_file', filename=post.cabecera) }}"
+                class="card-img-top"
+                alt="Post"
+                style="object-fit:cover; height:220px;"
+              >
+            {% endif %}
+
+            <div class="card-body d-flex flex-column">
+              <h5 class="brand-font">{{ post.title }}</h5>
+
+              <p class="text-muted-2">
+                {{ post.content[:110] }}{% if post.content and post.content|length > 110 %}...{% endif %}
+              </p>
+
+              <a
+                class="mt-auto btn btn-brutal btn-ghost hover-raise"
+                href="{{ url_for('ver_post_slug', slug=site_slug, post_id=post._id) }}"
+                data-track="click_post"
+              >
+                Leer más
+              </a>
             </div>
           </div>
-        {% endfor %}
-      </div>
-    {% else %}
-      <div class="card card-brutal p-3">Aún no hay publicaciones.</div>
-    {% endif %}
-  </section>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="card card-brutal p-3">Aún no hay publicaciones.</div>
+  {% endif %}
+</section>
 
   <!-- PRODUCTOS / SERVICIOS / COTIZAR -->
   <section class="container my-5" id="productos">
