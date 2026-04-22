@@ -2,354 +2,969 @@
 {% block title %}Dashboard · Global PYMES{% endblock %}
 
 {% block content %}
+{% set CP = current_page() %}
+{% set wa = (CP.get('whatsapp', '') if CP else '') %}
+{% set business_name = (CP.get('business_name') if CP else 'Mi Negocio') or 'Mi Negocio' %}
 
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400..700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+{% set stats = namespace(total=0, with_items=0, general=0) %}
+{% for l in leads %}
+  {% set stats.total = stats.total + 1 %}
+  {% if l.get('items') and l.get('items')|length > 0 %}
+    {% set stats.with_items = stats.with_items + 1 %}
+  {% else %}
+    {% set stats.general = stats.general + 1 %}
+  {% endif %}
+{% endfor %}
 
-  <style>
-    /* ===== MODERN DARK THEME 2.0 ===== */
-    :root {
-      --bg-deep: #02040a;
-      --bg-surface: #0b1226;
-      --glass-border: rgba(255, 255, 255, 0.08);
-      --glass-highlight: rgba(255, 255, 255, 0.05);
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400..700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 
-      --ink: #e2e8f0;
-      --ink-muted: #94a3b8;
-      
-      --primary: #3b82f6;
-      --primary-glow: rgba(59, 130, 246, 0.5);
-      
-      --success: #10b981;
-      --success-glow: rgba(16, 185, 129, 0.5);
+<style>
+  :root {
+    --bg-deep: #040816;
+    --bg-surface: rgba(11, 18, 38, 0.72);
+    --bg-soft: rgba(255,255,255,0.04);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-border-2: rgba(148, 163, 184, 0.14);
+    --glass-highlight: rgba(255, 255, 255, 0.05);
 
-      --radius-sm: 12px;
-      --radius-md: 20px;
-      
-      --shadow-elevation: 0 20px 40px -10px rgba(0,0,0,0.6);
-      
-      /* Subtle animated gradient background */
-      --bg-gradient: radial-gradient(circle at 15% 0%, rgba(37,99,235,0.15), transparent 40%),
-                     radial-gradient(circle at 85% 20%, rgba(16,185,129,0.12), transparent 40%);
+    --ink: #e2e8f0;
+    --ink-strong: #f8fbff;
+    --ink-muted: #94a3b8;
+
+    --primary: #3b82f6;
+    --primary-soft: rgba(59, 130, 246, 0.16);
+    --primary-glow: rgba(59, 130, 246, 0.35);
+
+    --success: #10b981;
+    --success-soft: rgba(16, 185, 129, 0.14);
+    --warning: #f59e0b;
+    --warning-soft: rgba(245, 158, 11, 0.14);
+
+    --radius-sm: 14px;
+    --radius-md: 22px;
+    --radius-lg: 28px;
+
+    --shadow-elevation: 0 20px 40px -10px rgba(0,0,0,0.55);
+    --shadow-soft: 0 12px 28px rgba(15, 23, 42, 0.22);
+
+    --bg-gradient:
+      radial-gradient(circle at 12% 0%, rgba(37,99,235,0.18), transparent 38%),
+      radial-gradient(circle at 88% 16%, rgba(16,185,129,0.14), transparent 36%),
+      linear-gradient(180deg, rgba(255,255,255,0.02), transparent 35%);
+  }
+
+  body {
+    background-color: var(--bg-deep);
+    background-image: var(--bg-gradient);
+    background-attachment: fixed;
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+
+  .brand-font {
+    font-family: "Space Grotesk", sans-serif;
+    letter-spacing: -0.03em;
+  }
+
+  .dash-shell {
+    max-width: 1320px;
+    margin: 28px auto 0;
+    padding: 0 14px 90px;
+    animation: fadeIn .55s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .glass-panel {
+    background: var(--bg-surface);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    box-shadow: inset 0 1px 0 0 var(--glass-highlight), var(--shadow-elevation);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+
+  .dash-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 18px;
+    padding: 18px 22px;
+    border-bottom: 1px solid var(--glass-border);
+    background: rgba(11, 18, 38, 0.42);
+  }
+
+  .nav-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+  }
+
+  .status-dot {
+    width: 10px;
+    height: 10px;
+    background: var(--success);
+    border-radius: 50%;
+    box-shadow: 0 0 14px rgba(16, 185, 129, 0.65);
+    flex-shrink: 0;
+  }
+
+  .nav-kicker {
+    font-size: 0.7rem;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 800;
+    margin-bottom: 2px;
+  }
+
+  .nav-title {
+    font-weight: 700;
+    color: var(--ink-strong);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .nav-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .btnx {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+    padding: 0.62rem 1rem;
+    border-radius: 12px;
+    font-size: 0.86rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+    white-space: nowrap;
+  }
+
+  .btnx-ghost {
+    color: var(--ink-muted);
+    background: rgba(255,255,255,0.03);
+    border-color: rgba(255,255,255,0.06);
+  }
+
+  .btnx-ghost:hover {
+    background: rgba(255,255,255,0.08);
+    color: white;
+    transform: translateY(-1px);
+  }
+
+  .btnx-primary {
+    background: var(--primary-soft);
+    color: #93c5fd;
+    border-color: rgba(59, 130, 246, 0.28);
+    box-shadow: 0 10px 20px rgba(59, 130, 246, 0.12);
+  }
+
+  .btnx-primary:hover {
+    background: rgba(59, 130, 246, 0.24);
+    box-shadow: 0 14px 24px rgba(59, 130, 246, 0.18);
+    color: #dbeafe;
+    transform: translateY(-1px);
+  }
+
+  .dash-header {
+    padding: 28px 22px 20px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.035) 0%, transparent 100%);
+  }
+
+  .hero-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+
+  .hero-copy {
+    max-width: 760px;
+  }
+
+  .hero-copy h1 {
+    margin: 0 0 6px;
+    font-size: clamp(2rem, 4vw, 3rem);
+    line-height: 1.02;
+    color: var(--ink-strong);
+    font-weight: 800;
+  }
+
+  .hero-copy p {
+    margin: 0;
+    color: var(--ink-muted);
+    font-size: 0.98rem;
+    line-height: 1.7;
+  }
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.07);
+    color: #dbeafe;
+    font-size: 0.85rem;
+    font-weight: 800;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .stat-card {
+    border-radius: 20px;
+    padding: 16px;
+    background: rgba(2, 6, 23, 0.34);
+    border: 1px solid var(--glass-border-2);
+    box-shadow: var(--shadow-soft);
+    min-height: 110px;
+  }
+
+  .stat-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .stat-icon {
+    width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+    border-radius: 14px;
+    font-size: 1rem;
+    color: var(--ink-strong);
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.06);
+    flex-shrink: 0;
+  }
+
+  .stat-icon.primary {
+    color: #93c5fd;
+    background: rgba(59,130,246,0.14);
+    border-color: rgba(59,130,246,0.22);
+  }
+
+  .stat-icon.success {
+    color: #6ee7b7;
+    background: rgba(16,185,129,0.14);
+    border-color: rgba(16,185,129,0.22);
+  }
+
+  .stat-icon.warning {
+    color: #fcd34d;
+    background: rgba(245,158,11,0.14);
+    border-color: rgba(245,158,11,0.22);
+  }
+
+  .stat-icon.neutral {
+    color: #cbd5e1;
+    background: rgba(148,163,184,0.12);
+    border-color: rgba(148,163,184,0.20);
+  }
+
+  .stat-label {
+    color: var(--ink-muted);
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+  }
+
+  .stat-value {
+    color: var(--ink-strong);
+    font-size: 1.5rem;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .stat-note {
+    color: var(--ink-muted);
+    font-size: 0.82rem;
+    margin-top: 10px;
+    line-height: 1.5;
+  }
+
+  .alerts-wrap {
+    padding: 0 22px 18px;
+  }
+
+  .flash-stack {
+    display: grid;
+    gap: 10px;
+  }
+
+  .flash-card {
+    border-radius: 14px;
+    padding: 12px 14px;
+    border: 1px solid transparent;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.92rem;
+    font-weight: 600;
+  }
+
+  .flash-card.info,
+  .flash-card.message,
+  .flash-card.primary {
+    background: rgba(59,130,246,0.10);
+    border-color: rgba(59,130,246,0.18);
+    color: #dbeafe;
+  }
+
+  .flash-card.success {
+    background: rgba(16,185,129,0.10);
+    border-color: rgba(16,185,129,0.18);
+    color: #d1fae5;
+  }
+
+  .flash-card.warning {
+    background: rgba(245,158,11,0.12);
+    border-color: rgba(245,158,11,0.22);
+    color: #fde68a;
+  }
+
+  .flash-card.danger,
+  .flash-card.error {
+    background: rgba(239,68,68,0.12);
+    border-color: rgba(239,68,68,0.22);
+    color: #fecaca;
+  }
+
+  .content-panel {
+    margin: 0 22px 22px;
+    border: 1px solid var(--glass-border-2);
+    border-radius: 20px;
+    overflow: hidden;
+    background: rgba(2, 4, 10, 0.32);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .panel-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    padding: 16px;
+    border-bottom: 1px solid var(--glass-border-2);
+    background: rgba(255,255,255,0.02);
+    flex-wrap: wrap;
+  }
+
+  .panel-toolbar-left {
+    min-width: 260px;
+  }
+
+  .panel-title {
+    color: var(--ink-strong);
+    font-size: 0.98rem;
+    font-weight: 800;
+    margin: 0 0 4px;
+  }
+
+  .panel-subtitle {
+    color: var(--ink-muted);
+    font-size: 0.84rem;
+    margin: 0;
+  }
+
+  .panel-toolbar-right {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .search-wrap {
+    position: relative;
+    min-width: 260px;
+  }
+
+  .search-wrap i {
+    position: absolute;
+    left: 13px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--ink-muted);
+    font-size: 0.9rem;
+  }
+
+  .search-input {
+    width: 100%;
+    min-height: 44px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.04);
+    color: var(--ink-strong);
+    padding: 10px 12px 10px 38px;
+    outline: none;
+    transition: all 0.2s ease;
+  }
+
+  .search-input::placeholder {
+    color: #7c8aa5;
+  }
+
+  .search-input:focus {
+    border-color: rgba(59,130,246,0.35);
+    box-shadow: 0 0 0 0.18rem rgba(59,130,246,0.12);
+  }
+
+  .secure-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: rgba(16,185,129,0.10);
+    border: 1px solid rgba(16,185,129,0.18);
+    color: #86efac;
+    font-size: 0.78rem;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+
+  .desktop-table-wrap {
+    display: block;
+  }
+
+  .mobile-leads-list {
+    display: none;
+  }
+
+  .table-responsive {
+    margin: 0;
+  }
+
+  .custom-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+  }
+
+  .custom-table thead th {
+    text-align: left;
+    padding: 15px 18px;
+    color: var(--ink-muted);
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    background: rgba(255,255,255,0.02);
+    border-bottom: 1px solid var(--glass-border-2);
+    white-space: nowrap;
+  }
+
+  .custom-table tbody td {
+    padding: 16px 18px;
+    border-bottom: 1px solid rgba(148,163,184,0.10);
+    vertical-align: middle;
+    color: var(--ink);
+  }
+
+  .custom-table tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  .custom-table tbody tr {
+    transition: background 0.18s ease;
+  }
+
+  .custom-table tbody tr:hover {
+    background: rgba(255,255,255,0.025);
+  }
+
+  .date-cell {
+    color: var(--ink-muted);
+    font-size: 0.78rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  .date-main {
+    color: #cbd5e1;
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+
+  .date-sub {
+    opacity: 0.65;
+  }
+
+  .customer-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  .customer-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: var(--ink-strong);
+    background: linear-gradient(135deg, rgba(59,130,246,0.22), rgba(79,70,229,0.22));
+    border: 1px solid rgba(255,255,255,0.08);
+    flex-shrink: 0;
+  }
+
+  .customer-name {
+    color: var(--ink-strong);
+    font-weight: 700;
+    line-height: 1.3;
+  }
+
+  .customer-meta {
+    color: var(--ink-muted);
+    font-size: 0.74rem;
+    margin-top: 4px;
+  }
+
+  .items-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+  }
+
+  .item-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.05);
+    padding: 5px 9px;
+    border-radius: 10px;
+    font-size: 0.76rem;
+    color: #e2e8f0;
+    line-height: 1.25;
+  }
+
+  .item-qty {
+    color: var(--ink-muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+
+  .empty-items {
+    color: var(--ink-muted);
+    font-size: 0.82rem;
+    font-style: italic;
+  }
+
+  .channel-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 11px;
+    border-radius: 999px;
+    background: rgba(34, 197, 94, 0.12);
+    color: #4ade80;
+    border: 1px solid rgba(34, 197, 94, 0.18);
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .btn-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+    padding: 0.58rem 0.92rem;
+    border-radius: 10px;
+    font-size: 0.78rem;
+    font-weight: 800;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+  }
+
+  .btn-whatsapp {
+    background: #25D366;
+    color: #052e16;
+    box-shadow: 0 8px 18px rgba(37, 211, 102, 0.22);
+  }
+
+  .btn-whatsapp:hover {
+    background: #22c55e;
+    transform: translateY(-1px);
+    box-shadow: 0 12px 22px rgba(37, 211, 102, 0.28);
+    color: #04180d;
+  }
+
+  .wa-missing {
+    color: var(--ink-muted);
+    font-size: 0.8rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .mobile-leads-list {
+    padding: 14px;
+  }
+
+  .lead-card {
+    border-radius: 18px;
+    border: 1px solid rgba(148,163,184,0.12);
+    background: rgba(255,255,255,0.025);
+    padding: 14px;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.16);
+  }
+
+  .lead-card + .lead-card {
+    margin-top: 12px;
+  }
+
+  .lead-card-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: flex-start;
+    margin-bottom: 12px;
+  }
+
+  .lead-card-date {
+    color: var(--ink-muted);
+    font-size: 0.75rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .lead-block + .lead-block {
+    margin-top: 12px;
+  }
+
+  .lead-label {
+    color: var(--ink-muted);
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+  }
+
+  .lead-card-actions {
+    margin-top: 14px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .empty-state {
+    padding: 58px 22px;
+    text-align: center;
+    color: var(--ink-muted);
+  }
+
+  .empty-icon {
+    width: 86px;
+    height: 86px;
+    border-radius: 24px;
+    display: grid;
+    place-items: center;
+    margin: 0 auto 16px;
+    font-size: 2.3rem;
+    color: rgba(255,255,255,0.14);
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+
+  .empty-state h4 {
+    margin: 0 0 10px;
+    color: var(--ink-strong);
+    font-weight: 800;
+  }
+
+  .empty-state p {
+    margin: 0;
+    font-size: 0.92rem;
+    line-height: 1.7;
+  }
+
+  .empty-cta {
+    margin-top: 16px;
+  }
+
+  @media (max-width: 1100px) {
+    .stats-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 900px) {
+    .panel-toolbar {
+      align-items: stretch;
     }
 
-    body {
-      background-color: var(--bg-deep);
-      background-image: var(--bg-gradient);
-      background-attachment: fixed;
-      color: var(--ink);
-      font-family: 'Inter', sans-serif;
-      -webkit-font-smoothing: antialiased;
-      min-height: 100vh;
-    }
-
-    .brand-font { font-family: "Space Grotesk", sans-serif; letter-spacing: -0.02em; }
-    .text-balance { text-wrap: balance; }
-
-    /* ===== SHELL CONTAINER ===== */
-    .dash-shell {
-      max-width: 1200px;
-      margin: 2rem auto;
-      padding: 0 1rem;
-      animation: fadeIn 0.6s ease-out;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* ===== GLASS PANELS ===== */
-    .glass-panel {
-      background: rgba(11, 18, 38, 0.65);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid var(--glass-border);
-      box-shadow: inset 0 1px 0 0 var(--glass-highlight), var(--shadow-elevation);
-      border-radius: var(--radius-md);
-      overflow: hidden;
-    }
-
-    /* ===== NAV ===== */
-    .dash-nav {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1rem 1.5rem;
-      border-bottom: 1px solid var(--glass-border);
-      background: rgba(11, 18, 38, 0.4);
-    }
-    
-    .nav-breadcrumb {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-    }
-
-    .status-dot {
-      width: 8px; height: 8px;
-      background: var(--success);
-      border-radius: 50%;
-      box-shadow: 0 0 10px var(--success-glow);
-    }
-
-    /* ===== BUTTONS (Improved) ===== */
-    .btnx {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.5rem 1rem;
-      border-radius: 10px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      text-decoration: none;
-      transition: all 0.2s ease;
-      border: 1px solid transparent;
-    }
-    
-    .btnx-ghost {
-      color: var(--ink-muted);
-      background: rgba(255,255,255,0.03);
-      border-color: rgba(255,255,255,0.05);
-    }
-    .btnx-ghost:hover {
-      background: rgba(255,255,255,0.08);
-      color: white;
-      transform: translateY(-1px);
-    }
-
-    .btnx-primary {
-      background: rgba(59, 130, 246, 0.15);
-      color: #60a5fa;
-      border-color: rgba(59, 130, 246, 0.3);
-    }
-    .btnx-primary:hover {
-      background: rgba(59, 130, 246, 0.25);
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
-    }
-
-    /* ===== HEADER AREA ===== */
-    .dash-header {
-      padding: 2rem 1.5rem 1.5rem;
-      background: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, transparent 100%);
-    }
-    
-    .kpi-row {
-      display: flex;
-      gap: 0.75rem;
-      margin-top: 1rem;
-      flex-wrap: wrap;
-    }
-
-    .kpi-chip {
-      background: rgba(15, 23, 42, 0.6);
-      border: 1px solid var(--glass-border);
-      padding: 0.35rem 0.85rem;
-      border-radius: 50px;
-      font-size: 0.75rem;
-      color: var(--ink-muted);
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-    }
-    .kpi-chip strong { color: white; }
-
-    /* ===== TABLE STYLES ===== */
-    .table-container {
-      margin: 0 1.5rem 1.5rem;
-      border: 1px solid var(--glass-border);
-      border-radius: var(--radius-sm);
-      overflow: hidden; /* For rounded corners */
-      background: rgba(2, 4, 10, 0.3);
-    }
-
-    .custom-table {
+    .panel-toolbar-right {
       width: 100%;
-      border-collapse: collapse;
-      font-size: 0.85rem;
+      justify-content: stretch;
     }
 
-    .custom-table th {
-      text-align: left;
-      padding: 1rem 1.25rem;
-      color: var(--ink-muted);
-      font-weight: 600;
-      text-transform: uppercase;
-      font-size: 0.7rem;
-      letter-spacing: 0.05em;
-      background: rgba(255,255,255,0.02);
-      border-bottom: 1px solid var(--glass-border);
+    .search-wrap {
+      flex: 1 1 100%;
+      min-width: 0;
     }
 
-    .custom-table td {
-      padding: 1rem 1.25rem;
-      border-bottom: 1px solid var(--glass-border);
-      vertical-align: middle;
-      color: var(--ink);
+    .secure-pill {
+      width: 100%;
+      justify-content: center;
     }
 
-    .custom-table tr:last-child td { border-bottom: none; }
-    
-    .custom-table tbody tr {
-      transition: background 0.15s ease;
-    }
-    .custom-table tbody tr:hover {
-      background: rgba(255,255,255,0.03);
+    .desktop-table-wrap {
+      display: none;
     }
 
-    /* Table Elements */
-    .item-tag {
-      display: inline-block;
-      background: rgba(255,255,255,0.06);
-      padding: 2px 8px;
-      border-radius: 6px;
-      font-size: 0.75rem;
-      margin-bottom: 2px;
-      color: #e2e8f0;
-    }
-    .item-qty { color: var(--ink-muted); font-size: 0.7em; margin-left: 4px; }
-
-    .channel-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 10px;
-      border-radius: 50px;
-      background: rgba(34, 197, 94, 0.1);
-      color: #4ade80;
-      border: 1px solid rgba(34, 197, 94, 0.2);
-      font-size: 0.7rem;
-      font-weight: 700;
-      text-transform: uppercase;
-    }
-
-    .btn-action {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.4rem 0.85rem;
-      border-radius: 8px;
-      font-size: 0.75rem;
-      font-weight: 700;
-      text-decoration: none;
-      transition: all 0.2s;
-    }
-    .btn-whatsapp {
-      background: #25D366;
-      color: #052e16;
-      box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
-    }
-    .btn-whatsapp:hover {
-      background: #22c55e;
-      transform: translateY(-2px);
-      box-shadow: 0 6px 15px rgba(37, 211, 102, 0.4);
-      color: black;
-    }
-
-    /* ===== EMPTY STATE ===== */
-    .empty-state {
-      padding: 4rem 1rem;
-      text-align: center;
-      color: var(--ink-muted);
-    }
-    .empty-icon {
-      font-size: 3rem;
-      color: rgba(255,255,255,0.1);
-      margin-bottom: 1rem;
+    .mobile-leads-list {
       display: block;
     }
+  }
 
-    /* Responsive adjustments */
-    @media (max-width: 768px) {
-      .dash-nav { flex-direction: column; align-items: flex-start; gap: 1rem; }
-      .nav-actions { width: 100%; display: flex; overflow-x: auto; gap: 0.5rem; padding-bottom: 5px; }
-      .custom-table th, .custom-table td { padding: 0.85rem; }
+  @media (max-width: 768px) {
+    .dash-shell {
+      margin-top: 16px;
+      padding: 0 10px 82px;
     }
-  </style>
 
-  <div class="dash-shell">
-    
-    <div class="glass-panel">
-      <div class="dash-nav">
-        <div class="nav-breadcrumb">
-          <div class="status-dot"></div>
-          <div>
-            <div style="font-size:0.7rem; color:var(--ink-muted); text-transform:uppercase; letter-spacing:0.1em; font-weight:700;">Dashboard</div>
-            <div style="font-weight:600; color:white;">
-              {{ current_page().get('business_name') or 'Mi Negocio' }}
+    .dash-nav {
+      flex-direction: column;
+      align-items: stretch;
+      padding: 16px;
+    }
+
+    .nav-actions {
+      width: 100%;
+      justify-content: stretch;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+
+    .nav-actions .btnx {
+      flex: 1 0 auto;
+    }
+
+    .dash-header {
+      padding: 22px 16px 18px;
+    }
+
+    .hero-copy h1 {
+      font-size: 2rem;
+    }
+
+    .hero-badge {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .stats-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .alerts-wrap {
+      padding: 0 16px 16px;
+    }
+
+    .content-panel {
+      margin: 0 16px 16px;
+    }
+
+    .panel-toolbar {
+      padding: 14px;
+    }
+
+    .summary-pill,
+    .btnx {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+</style>
+
+<div class="dash-shell">
+  <div class="glass-panel">
+    <div class="dash-nav">
+      <div class="nav-breadcrumb">
+        <div class="status-dot"></div>
+        <div>
+          <div class="nav-kicker">Dashboard</div>
+          <div class="nav-title">{{ business_name }}</div>
+        </div>
+      </div>
+
+      <div class="nav-actions">
+        <a class="btnx btnx-ghost" href="{{ url_for('dashboard') }}">
+          <i class="bi bi-arrow-left"></i> Volver
+        </a>
+        <a class="btnx btnx-ghost" href="{{ url_for('billing_portal') }}">
+          <i class="bi bi-credit-card"></i> Plan
+        </a>
+        {% if CP and CP.get('slug') %}
+          <a class="btnx btnx-primary" target="_blank" href="{{ url_for('negocio_por_slug', slug=CP.slug) }}">
+            Ver Sitio <i class="bi bi-box-arrow-up-right"></i>
+          </a>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="dash-header">
+      <div class="hero-row">
+        <div class="hero-copy">
+          <h1 class="brand-font">Cotizaciones & Leads</h1>
+          <p>
+            Gestiona aquí las solicitudes recibidas desde tu sitio, identifica el interés del cliente
+            y responde rápido por WhatsApp desde una vista más clara y profesional.
+          </p>
+        </div>
+
+        <div class="hero-badge">
+          <i class="bi bi-lightning-charge-fill"></i>
+          Canal principal: WhatsApp
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-top">
+            <div>
+              <div class="stat-label">Leads totales</div>
+              <div class="stat-value">{{ stats.total }}</div>
+            </div>
+            <div class="stat-icon primary">
+              <i class="bi bi-people-fill"></i>
             </div>
           </div>
+          <div class="stat-note">Solicitudes capturadas desde el botón de cotizar.</div>
         </div>
 
-        <div class="nav-actions">
-          <a class="btnx btnx-ghost" href="{{ url_for('dashboard') }}">
-            <i class="bi bi-arrow-left"></i> Volver
-          </a>
-          <a class="btnx btnx-ghost" href="{{ url_for('billing_portal') }}">
-            <i class="bi bi-credit-card"></i> Plan
-          </a>
-          {% set CP = current_page() %}
-          {% if CP and CP.get('slug') %}
-            <a class="btnx btnx-primary" target="_blank" href="{{ url_for('negocio_por_slug', slug=CP.slug) }}">
-              Ver Sitio <i class="bi bi-box-arrow-up-right"></i>
-            </a>
-          {% endif %}
+        <div class="stat-card">
+          <div class="stat-top">
+            <div>
+              <div class="stat-label">Con productos</div>
+              <div class="stat-value">{{ stats.with_items }}</div>
+            </div>
+            <div class="stat-icon success">
+              <i class="bi bi-bag-check-fill"></i>
+            </div>
+          </div>
+          <div class="stat-note">Clientes que preguntaron por uno o más artículos específicos.</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-top">
+            <div>
+              <div class="stat-label">Consultas generales</div>
+              <div class="stat-value">{{ stats.general }}</div>
+            </div>
+            <div class="stat-icon warning">
+              <i class="bi bi-chat-left-dots-fill"></i>
+            </div>
+          </div>
+          <div class="stat-note">Mensajes sin items concretos, ideales para seguimiento comercial.</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-top">
+            <div>
+              <div class="stat-label">WhatsApp</div>
+              <div class="stat-value">{{ 'Activo' if wa else 'Falta' }}</div>
+            </div>
+            <div class="stat-icon neutral">
+              <i class="bi bi-whatsapp"></i>
+            </div>
+          </div>
+          <div class="stat-note">
+            {% if wa %}
+              Tienes número configurado para responder desde el panel.
+            {% else %}
+              Configura tu WhatsApp para habilitar respuestas rápidas.
+            {% endif %}
+          </div>
         </div>
       </div>
+    </div>
 
-      <div class="dash-header">
-        <div class="row align-items-end">
-          <div class="col-md-8">
-            <h1 class="brand-font display-6 fw-bold text-white mb-1">Cotizaciones & Leads</h1>
-            <p class="text-muted mb-0" style="font-size: 0.95rem;">
-              Gestiona aquí las solicitudes recibidas vía botón de cotizar y WhatsApp.
-            </p>
-          </div>
-        </div>
-
-        <div class="kpi-row">
-          <div class="kpi-chip">
-            <i class="bi bi-people-fill text-primary"></i>
-            Total: <strong>{{ leads|length }}</strong>
-          </div>
-          <div class="kpi-chip">
-            <i class="bi bi-whatsapp text-success"></i>
-            Canal: <strong>WhatsApp</strong>
-          </div>
-          <div class="kpi-chip">
-            <i class="bi bi-lightning-charge-fill text-warning"></i>
-            Estado: <strong>Activo</strong>
-          </div>
-        </div>
-      </div>
-
-      <div class="px-4 pb-3">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
+    <div class="alerts-wrap">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-stack">
             {% for cat, msg in messages %}
-              <div class="alert alert-{{ cat if cat else 'info' }} d-flex align-items-center gap-2 py-2 px-3" 
-                   style="background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.2); color: #dbeafe; border-radius: 10px; font-size: 0.9rem;">
-                <i class="bi bi-info-circle-fill"></i> {{ msg }}
+              <div class="flash-card {{ cat if cat else 'info' }}">
+                <i class="bi bi-info-circle-fill"></i>
+                <span>{{ msg }}</span>
               </div>
             {% endfor %}
-          {% endif %}
-        {% endwith %}
-      </div>
+          </div>
+        {% endif %}
+      {% endwith %}
+    </div>
 
-      <div class="table-container">
-        
-        <div class="d-flex justify-content-between align-items-center p-3 border-bottom border-dark-subtle" style="background: rgba(255,255,255,0.01);">
-          <div class="small fw-bold text-light">Últimos Registros</div>
-          <div class="small text-muted"><i class="bi bi-shield-check"></i> Datos seguros</div>
+    <div class="content-panel">
+      <div class="panel-toolbar">
+        <div class="panel-toolbar-left">
+          <div class="panel-title">Últimos registros</div>
+          <div class="panel-subtitle">
+            Consulta los leads recibidos y filtra rápido por cliente, producto o canal.
+          </div>
         </div>
 
-        {% if leads and leads|length > 0 %}
+        <div class="panel-toolbar-right">
+          <div class="search-wrap">
+            <i class="bi bi-search"></i>
+            <input
+              type="text"
+              id="leadSearch"
+              class="search-input"
+              placeholder="Buscar por cliente, producto, IP o canal..."
+            >
+          </div>
+
+          <div class="secure-pill">
+            <i class="bi bi-shield-check"></i>
+            Datos seguros
+          </div>
+        </div>
+      </div>
+
+      {% if leads and leads|length > 0 %}
+        <div class="desktop-table-wrap">
           <div class="table-responsive">
-            <table class="custom-table">
+            <table class="custom-table" id="desktopLeadsTable">
               <thead>
                 <tr>
-                  <th style="width: 130px;">Fecha</th>
+                  <th style="width: 120px;">Fecha</th>
                   <th>Cliente</th>
                   <th>Interés / Items</th>
                   <th>Origen</th>
@@ -358,65 +973,76 @@
               </thead>
               <tbody>
                 {% for l in leads %}
-                  <tr>
-                    <td class="text-muted font-monospace" style="font-size:0.75rem;">
+                  {% set items = (l.get('items') or []) %}
+                  {% set nsmsg = namespace(text="Hola " ~ (l.customer_name or "") ~ ", vi tu interés en: ") %}
+                  {% if items %}
+                    {% for it in items %}
+                      {% set nsmsg.text = nsmsg.text ~ (it.title or '') ~ " (" ~ (it.qty or '') ~ "), " %}
+                    {% endfor %}
+                  {% else %}
+                    {% set nsmsg.text = nsmsg.text ~ "tu consulta general." %}
+                  {% endif %}
+
+                  <tr class="lead-row"
+                      data-search="
+                        {{ (l.customer_name or '')|lower }}
+                        {{ (l.channel or 'whatsapp')|lower }}
+                        {{ (l.ip or '')|lower }}
+                        {% for it in items %} {{ (it.title or '')|lower }} {% endfor %}
+                      ">
+                    <td class="date-cell">
                       {% if l.created_at %}
-                        <div style="color:#cbd5e1">{{ l.created_at.strftime('%d %b') }}</div>
-                        <div style="opacity:0.5">{{ l.created_at.strftime('%H:%M') }}</div>
+                        <div class="date-main">{{ l.created_at.strftime('%d %b') }}</div>
+                        <div class="date-sub">{{ l.created_at.strftime('%H:%M') }}</div>
                       {% else %}
                         -
                       {% endif %}
                     </td>
 
                     <td>
-                      <div class="d-flex align-items-center gap-2">
-                        <div class="d-flex align-items-center justify-content-center bg-dark rounded-circle border border-secondary" style="width:32px; height:32px; font-size:0.75rem;">
+                      <div class="customer-row">
+                        <div class="customer-avatar">
                           {{ l.customer_name[0]|upper if l.customer_name else '?' }}
                         </div>
-                        <div>
-                          <div class="fw-bold text-white">{{ l.customer_name or 'Anónimo' }}</div>
-                          <div class="small text-muted" style="font-size: 0.7rem;">IP: {{ l.ip or 'N/A' }}</div>
+                        <div style="min-width:0;">
+                          <div class="customer-name">{{ l.customer_name or 'Anónimo' }}</div>
+                          <div class="customer-meta">IP: {{ l.ip or 'N/A' }}</div>
                         </div>
                       </div>
                     </td>
 
                     <td>
-                      {% set items = (l.get('items') or []) %}
                       {% if items %}
-                        {% for it in items %}
-                          <span class="item-tag">
-                            {{ it.title }} <span class="item-qty">×{{ it.qty }}</span>
-                          </span>
-                        {% endfor %}
+                        <div class="items-wrap">
+                          {% for it in items %}
+                            <span class="item-tag">
+                              {{ it.title }}
+                              <span class="item-qty">×{{ it.qty }}</span>
+                            </span>
+                          {% endfor %}
+                        </div>
                       {% else %}
-                        <span class="text-muted small fst-italic">Consulta general</span>
+                        <span class="empty-items">Consulta general</span>
                       {% endif %}
                     </td>
 
                     <td>
                       <span class="channel-badge">
-                        <i class="bi bi-whatsapp"></i> {{ (l.channel or 'whatsapp') }}
+                        <i class="bi bi-whatsapp"></i>
+                        {{ (l.channel or 'whatsapp') }}
                       </span>
                     </td>
 
                     <td class="text-end">
-                      {% set wa = (current_page().get('whatsapp','') if current_page() else '') %}
                       {% if wa %}
-                        {% set msg = "Hola " ~ (l.customer_name or "") ~ ", vi tu interés en: " %}
-                        {% set items = (l.get('items') or []) %}
-                        {% if items %}
-                          {% for it in items %}
-                            {% set msg = msg ~ (it.title or '') ~ " (" ~ (it.qty or '') ~ "), " %}
-                          {% endfor %}
-                        {% endif %}
-                        
-                        <a href="https://wa.me/{{ wa|replace(' ','') }}?text={{ msg|urlencode }}" 
-                           target="_blank" 
+                        <a href="https://wa.me/{{ wa|replace(' ','') }}?text={{ nsmsg.text|urlencode }}"
+                           target="_blank"
                            class="btn-action btn-whatsapp">
-                           Responder <i class="bi bi-send-fill" style="font-size:0.6rem; transform: rotate(45deg);"></i>
+                          Responder
+                          <i class="bi bi-send-fill" style="font-size:.62rem; transform:rotate(45deg);"></i>
                         </a>
                       {% else %}
-                        <span class="text-muted small" title="Configura tu WhatsApp en ajustes">
+                        <span class="wa-missing" title="Configura tu WhatsApp en ajustes">
                           <i class="bi bi-exclamation-circle"></i> Sin WA
                         </span>
                       {% endif %}
@@ -426,17 +1052,127 @@
               </tbody>
             </table>
           </div>
-        {% else %}
-          <div class="empty-state">
-            <i class="bi bi-inbox empty-icon"></i>
-            <h4 class="brand-font text-white">Aún no hay cotizaciones</h4>
-            <p class="small">Comparte tu página para empezar a recibir leads.</p>
-            {% if CP and CP.get('slug') %}
-              <a class="btnx btnx-primary mt-2" target="_blank" href="{{ url_for('negocio_por_slug', slug=CP.slug) }}">
+        </div>
+
+        <div class="mobile-leads-list" id="mobileLeadsList">
+          {% for l in leads %}
+            {% set items = (l.get('items') or []) %}
+            {% set nsmsg = namespace(text="Hola " ~ (l.customer_name or "") ~ ", vi tu interés en: ") %}
+            {% if items %}
+              {% for it in items %}
+                {% set nsmsg.text = nsmsg.text ~ (it.title or '') ~ " (" ~ (it.qty or '') ~ "), " %}
+              {% endfor %}
+            {% else %}
+              {% set nsmsg.text = nsmsg.text ~ "tu consulta general." %}
+            {% endif %}
+
+            <div class="lead-card lead-row"
+                 data-search="
+                   {{ (l.customer_name or '')|lower }}
+                   {{ (l.channel or 'whatsapp')|lower }}
+                   {{ (l.ip or '')|lower }}
+                   {% for it in items %} {{ (it.title or '')|lower }} {% endfor %}
+                 ">
+              <div class="lead-card-top">
+                <div class="customer-row">
+                  <div class="customer-avatar">
+                    {{ l.customer_name[0]|upper if l.customer_name else '?' }}
+                  </div>
+                  <div>
+                    <div class="customer-name">{{ l.customer_name or 'Anónimo' }}</div>
+                    <div class="customer-meta">IP: {{ l.ip or 'N/A' }}</div>
+                  </div>
+                </div>
+
+                <div class="lead-card-date">
+                  {% if l.created_at %}
+                    <div class="date-main">{{ l.created_at.strftime('%d %b') }}</div>
+                    <div class="date-sub">{{ l.created_at.strftime('%H:%M') }}</div>
+                  {% else %}
+                    -
+                  {% endif %}
+                </div>
+              </div>
+
+              <div class="lead-block">
+                <div class="lead-label">Interés / Items</div>
+                {% if items %}
+                  <div class="items-wrap">
+                    {% for it in items %}
+                      <span class="item-tag">
+                        {{ it.title }}
+                        <span class="item-qty">×{{ it.qty }}</span>
+                      </span>
+                    {% endfor %}
+                  </div>
+                {% else %}
+                  <div class="empty-items">Consulta general</div>
+                {% endif %}
+              </div>
+
+              <div class="lead-block">
+                <div class="lead-label">Origen</div>
+                <span class="channel-badge">
+                  <i class="bi bi-whatsapp"></i>
+                  {{ (l.channel or 'whatsapp') }}
+                </span>
+              </div>
+
+              <div class="lead-card-actions">
+                {% if wa %}
+                  <a href="https://wa.me/{{ wa|replace(' ','') }}?text={{ nsmsg.text|urlencode }}"
+                     target="_blank"
+                     class="btn-action btn-whatsapp">
+                    Responder
+                    <i class="bi bi-send-fill" style="font-size:.62rem; transform:rotate(45deg);"></i>
+                  </a>
+                {% else %}
+                  <span class="wa-missing">
+                    <i class="bi bi-exclamation-circle"></i> Sin WA configurado
+                  </span>
+                {% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state">
+          <div class="empty-icon">
+            <i class="bi bi-inbox"></i>
+          </div>
+          <h4 class="brand-font">Aún no hay cotizaciones</h4>
+          <p>Comparte tu página pública para empezar a recibir leads y solicitudes de WhatsApp.</p>
+          {% if CP and CP.get('slug') %}
+            <div class="empty-cta">
+              <a class="btnx btnx-primary" target="_blank" href="{{ url_for('negocio_por_slug', slug=CP.slug) }}">
                 Ir a mi página pública
               </a>
-            {% endif %}
-          </div>
-        {% endif %}
-      </div> </div> </div> <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+            </div>
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    const searchInput = document.getElementById('leadSearch');
+    const rows = document.querySelectorAll('.lead-row');
+
+    function syncSearch() {
+      const q = (searchInput?.value || '').trim().toLowerCase();
+
+      rows.forEach(row => {
+        const hay = String(row.dataset.search || '').toLowerCase();
+        const show = !q || hay.includes(q);
+        row.style.display = show ? '' : 'none';
+      });
+    }
+
+    if (searchInput) {
+      searchInput.addEventListener('input', syncSearch);
+    }
+  })();
+</script>
 {% endblock %}
