@@ -3791,6 +3791,17 @@ DEFAULT_HTML_TEMPLATES = {
     "classico": "themes/classico/site.html",
     "belleza_mujer": "themes/belleza_mujer/site.html",
     "barber_shop": "themes/barber_shop/site.html",
+    "fiestas_eventos": "themes/fiestas_eventos/site.html",
+    "miscelanea_market": "themes/miscelanea_market/site.html",
+    "papeleria_store": "themes/papeleria_store/site.html",
+    "farmacia_local": "themes/farmacia_local/site.html",
+    "veterinaria_care": "themes/veterinaria_care/site.html",
+    "artesanias_store": "themes/artesanias_store/site.html",
+    "floreria_bloom": "themes/floreria_bloom/site.html",
+    "tienda_regalos_glow": "themes/tienda_regalos_glow/site.html",
+    "reposteria_sweet": "themes/reposteria_sweet/site.html",
+    "cafeteria_brew": "themes/cafeteria_brew/site.html",
+    "heladeria_frost": "themes/heladeria_frost/site.html",
 }
 
 # =========================================================
@@ -3814,6 +3825,61 @@ THEME_VIEWS = {
         "site": "themes/barber_shop/site.html",
         "blog_index": "themes/barber_shop/blog_index.html",
         "blog_post": "themes/barber_shop/blog_post.html",
+    },
+    "fiestas_eventos": {
+        "site": "themes/fiestas_eventos/site.html",
+        "blog_index": "themes/fiestas_eventos/blog_index.html",
+        "blog_post": "themes/fiestas_eventos/blog_post.html",
+    },
+    "miscelanea_market": {
+        "site": "themes/miscelanea_market/site.html",
+        "blog_index": "themes/miscelanea_market/blog_index.html",
+        "blog_post": "themes/miscelanea_market/blog_post.html",
+    },
+    "papeleria_store": {
+        "site": "themes/papeleria_store/site.html",
+        "blog_index": "themes/papeleria_store/blog_index.html",
+        "blog_post": "themes/papeleria_store/blog_post.html",
+    },
+    "farmacia_local": {
+        "site": "themes/farmacia_local/site.html",
+        "blog_index": "themes/farmacia_local/blog_index.html",
+        "blog_post": "themes/farmacia_local/blog_post.html",
+    },
+    "veterinaria_care": {
+        "site": "themes/veterinaria_care/site.html",
+        "blog_index": "themes/veterinaria_care/blog_index.html",
+        "blog_post": "themes/veterinaria_care/blog_post.html",
+    },
+    "artesanias_store": {
+        "site": "themes/artesanias_store/site.html",
+        "blog_index": "themes/artesanias_store/blog_index.html",
+        "blog_post": "themes/artesanias_store/blog_post.html",
+    },
+    "floreria_bloom": {
+        "site": "themes/floreria_bloom/site.html",
+        "blog_index": "themes/floreria_bloom/blog_index.html",
+        "blog_post": "themes/floreria_bloom/blog_post.html",
+    },
+    "tienda_regalos_glow": {
+        "site": "themes/tienda_regalos_glow/site.html",
+        "blog_index": "themes/tienda_regalos_glow/blog_index.html",
+        "blog_post": "themes/tienda_regalos_glow/blog_post.html",
+    },
+    "reposteria_sweet": {
+        "site": "themes/reposteria_sweet/site.html",
+        "blog_index": "themes/reposteria_sweet/blog_index.html",
+        "blog_post": "themes/reposteria_sweet/blog_post.html",
+    },
+    "cafeteria_brew": {
+        "site": "themes/cafeteria_brew/site.html",
+        "blog_index": "themes/cafeteria_brew/blog_index.html",
+        "blog_post": "themes/cafeteria_brew/blog_post.html",
+    },
+    "heladeria_frost": {
+        "site": "themes/heladeria_frost/site.html",
+        "blog_index": "themes/heladeria_frost/blog_index.html",
+        "blog_post": "themes/heladeria_frost/blog_post.html",
     },
 }
 

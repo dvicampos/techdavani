@@ -1,0 +1,180 @@
+{% extends "themes/heladeria_frost/_base.html" %}
+
+{% set meta_title = page.get('business_name') or negocio.get('business_name') or '' %}
+{% set meta_description = page.get('slogan') or page.get('description') or negocio.get('description') or '' %}
+
+{% block extra_head %}
+<style>
+  .blog-hero{
+    padding: 60px 0 28px;
+    background:
+      radial-gradient(circle at top left, rgba(255,145,179,.13), transparent 20%),
+      radial-gradient(circle at top right, rgba(89,201,245,.14), transparent 22%),
+      linear-gradient(180deg, #fdfeff 0%, #f3fbff 100%);
+  }
+
+  .blog-wrap{
+    padding: 48px 0 64px;
+  }
+
+  .frost-panel{
+    border-radius: 32px;
+    padding: 24px;
+  }
+
+  .section-title{
+    color: var(--ink);
+    font-family: "DM Serif Display", serif;
+    margin-bottom: .7rem;
+    font-size: clamp(2rem, 4vw, 3.2rem);
+  }
+
+  .section-intro{
+    color: var(--ink-soft);
+    max-width: 760px;
+    line-height: 1.8;
+  }
+
+  .search-box .form-control{
+    min-height: 54px;
+  }
+
+  .post-card{
+    border-radius: 28px;
+    overflow: hidden;
+    height:100%;
+    transition:.22s ease;
+  }
+
+  .post-card:hover{
+    transform: translateY(-5px);
+  }
+
+  .post-card img{
+    width:100%;
+    height:230px;
+    object-fit:cover;
+  }
+
+  .post-card .body{
+    padding: 1.1rem 1.1rem 1.25rem;
+  }
+
+  .meta-chip{
+    display:inline-flex;
+    align-items:center;
+    gap:.45rem;
+    border-radius:999px;
+    border:1px solid rgba(89,201,245,.18);
+    background: rgba(89,201,245,.10);
+    color: var(--brand);
+    padding: .35rem .78rem;
+    font-size: .88rem;
+    font-weight: 600;
+  }
+
+  .pagination .page-link{
+    border:none;
+    border-radius:999px !important;
+    padding:.72rem 1rem;
+    background:#fff;
+    color:var(--ink);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .pagination .page-link:hover{
+    background:#f2fbff;
+    color:var(--brand);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="blog-hero">
+  <div class="container">
+    <div class="frost-panel glass-card animate-fade-up">
+      <div class="meta-chip mb-3"><i class="bi bi-journal-richtext"></i> Blog</div>
+      <h1 class="section-title">{{ page.get('business_name') or negocio.get('business_name') }}</h1>
+      {% if page.get('description') or negocio.get('description') %}
+        <p class="section-intro mb-0">{{ page.get('description') or negocio.get('description') }}</p>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<section class="blog-wrap">
+  <div class="container">
+    <div class="frost-panel glass-card mb-4 animate-fade-up">
+      <form method="GET" action="{{ url_for('lista_blogs_negocio_slug', slug=slug) }}" class="search-box">
+        <div class="row g-3 align-items-center">
+          <div class="col-lg-9">
+            <input
+              type="text"
+              class="form-control"
+              name="search"
+              value="{{ query or '' }}"
+              placeholder="Buscar por título..."
+            >
+          </div>
+          <div class="col-lg-3 d-grid">
+            <button type="submit" class="btn btn-frost btn-frost-primary">
+              <i class="bi bi-search"></i> Buscar
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    {% if posts and posts|length > 0 %}
+      <div class="row g-4">
+        {% for post in posts %}
+          {% set post_cover = post.get('cabecera') or page.get('cover_image') or page.get('image') %}
+          <div class="col-md-6 col-xl-4">
+            <article class="post-card glass-card">
+              {% if post_cover %}
+                <img src="{{ url_for('uploaded_file', filename=post_cover) }}" alt="{{ post.get('title','Post') }}">
+              {% endif %}
+              <div class="body d-flex flex-column h-100">
+                <div class="meta-chip mb-3">
+                  <i class="bi bi-calendar3"></i>
+                  {{ post.get('date').strftime('%d/%m/%Y') if post.get('date') else 'Blog' }}
+                </div>
+                <h3 class="h5 mb-2" style="color:var(--ink); font-weight:700;">{{ post.get('title','Sin título') }}</h3>
+                <p style="color:var(--ink-soft);">{{ post.get('content','')|striptags|truncate(130) }}</p>
+                <a class="mt-auto btn btn-frost btn-frost-soft" href="{{ url_for('ver_post_slug', slug=slug, post_id=post['_id']) }}">
+                  Leer artículo
+                </a>
+              </div>
+            </article>
+          </div>
+        {% endfor %}
+      </div>
+
+      {% set current_page_num = page_number or page or 1 %}
+      {% set total_pages = ((total_posts or 0) / (per_page or 15))|round(0, 'ceil')|int %}
+      {% if total_pages > 1 %}
+      <nav class="mt-5">
+        <ul class="pagination justify-content-center flex-wrap gap-2">
+          {% for n in range(1, total_pages + 1) %}
+          <li class="page-item">
+            <a
+              class="page-link {% if n == current_page_num %}fw-bold{% endif %}"
+              {% if n == current_page_num %}style="background:linear-gradient(135deg,var(--brand),var(--brand-2)); color:#fff;"{% endif %}
+              href="{{ url_for('lista_blogs_negocio_slug', slug=slug, page=n, search=query or '') }}"
+            >
+              {{ n }}
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+      </nav>
+      {% endif %}
+    {% else %}
+      <div class="frost-panel glass-card text-center">
+        <div class="fs-1 mb-2">🍦</div>
+        <h3 class="h4">Aún no hay publicaciones</h3>
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

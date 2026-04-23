@@ -1,0 +1,1543 @@
+{% extends "themes/heladeria_frost/_base.html" %}
+
+{% set site_slug = slug or page.get('slug','') %}
+{% set meta_title = page.get('business_name') or negocio.get('business_name') or '' %}
+{% set meta_description = page.get('slogan') or page.get('description') or negocio.get('description') or '' %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+
+<style>
+  .hero-frost{
+    position: relative;
+    overflow: hidden;
+    padding: 76px 0 42px;
+    {% if page.get('cover_image') %}
+    background:
+      linear-gradient(100deg, rgba(252,254,255,.96) 0%, rgba(252,254,255,.78) 35%, rgba(252,254,255,.40) 72%),
+      url("{{ url_for('uploaded_file', filename=page.cover_image) }}") center/cover no-repeat;
+    {% else %}
+    background:
+      radial-gradient(circle at top left, rgba(255,145,179,.18), transparent 22%),
+      radial-gradient(circle at top right, rgba(89,201,245,.20), transparent 24%),
+      radial-gradient(circle at bottom center, rgba(127,227,212,.18), transparent 22%),
+      linear-gradient(180deg, #fdfeff 0%, #f1faff 60%, #fcfeff 100%);
+    {% endif %}
+  }
+
+  .frost-blob{
+    position:absolute;
+    border-radius:999px;
+    filter: blur(2px);
+    opacity:.55;
+    pointer-events:none;
+    z-index:0;
+  }
+
+  .frost-blob.one{
+    width:170px;
+    height:170px;
+    top:20px;
+    left:5%;
+    background: radial-gradient(circle, rgba(255,145,179,.48), rgba(255,145,179,.04));
+  }
+
+  .frost-blob.two{
+    width:220px;
+    height:220px;
+    right:6%;
+    top:40px;
+    background: radial-gradient(circle, rgba(89,201,245,.44), rgba(89,201,245,.04));
+  }
+
+  .frost-blob.three{
+    width:200px;
+    height:200px;
+    left:18%;
+    bottom:-20px;
+    background: radial-gradient(circle, rgba(127,227,212,.38), rgba(127,227,212,.04));
+  }
+
+  .cone-shape{
+    position:absolute;
+    right:10%;
+    bottom:10px;
+    width:86px;
+    height:140px;
+    z-index:0;
+    opacity:.18;
+    transform: rotate(12deg);
+  }
+
+  .cone-shape::before{
+    content:"";
+    position:absolute;
+    top:0;
+    left:18px;
+    width:50px;
+    height:50px;
+    border-radius:999px;
+    background:#ffb2c6;
+    box-shadow:
+      0 30px 0 0 #8de2f8,
+      -18px 16px 0 0 #ffe087;
+  }
+
+  .cone-shape::after{
+    content:"";
+    position:absolute;
+    bottom:0;
+    left:26px;
+    width:0;
+    height:0;
+    border-left:24px solid transparent;
+    border-right:24px solid transparent;
+    border-top:76px solid #d9a568;
+  }
+
+  .hero-panel{
+    position:relative;
+    z-index:1;
+    border-radius: 40px;
+    padding: 32px;
+  }
+
+  .hero-layout{
+    display:grid;
+    grid-template-columns: 340px 1fr;
+    gap: 1.5rem;
+    align-items: center;
+  }
+
+  .brand-media{
+    position:relative;
+  }
+
+  .hero-avatar{
+    width: min(100%, 290px);
+    aspect-ratio: 1/1;
+    object-fit: cover;
+    border-radius: 34px;
+    margin-inline:auto;
+    border: 1px solid rgba(255,255,255,.7);
+    box-shadow: var(--shadow-xl);
+    background:#fff;
+  }
+
+  .hero-avatar-placeholder{
+    width: min(100%, 290px);
+    aspect-ratio:1/1;
+    margin-inline:auto;
+    border-radius:34px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:
+      radial-gradient(circle at top, rgba(255,145,179,.22), transparent 50%),
+      linear-gradient(135deg, rgba(89,201,245,.16), rgba(255,255,255,.95));
+    color: var(--brand);
+    font-size: 4.6rem;
+    border: 1px solid rgba(255,255,255,.75);
+    box-shadow: var(--shadow-xl);
+  }
+
+  .float-badge{
+    position:absolute;
+    right:12px;
+    bottom:12px;
+    border-radius:999px;
+    padding:.6rem .85rem;
+    background: rgba(255,255,255,.88);
+    border:1px solid rgba(255,255,255,.82);
+    box-shadow: var(--shadow-md);
+    font-size:.9rem;
+    font-weight:600;
+    color: var(--ink);
+  }
+
+  .hero-kicker{
+    display:inline-flex;
+    align-items:center;
+    gap:.45rem;
+    border-radius:999px;
+    padding:.46rem .88rem;
+    font-weight:700;
+    font-size:.84rem;
+    background: linear-gradient(135deg, var(--brand), var(--brand-2));
+    color:#fff;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .hero-title{
+    font-size: clamp(2.7rem, 5vw, 4.8rem);
+    line-height: .96;
+    color: var(--ink);
+    margin: .9rem 0 .8rem;
+  }
+
+  .hero-copy{
+    color: var(--ink-soft);
+    font-size: 1.06rem;
+    max-width: 760px;
+  }
+
+  .hero-actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:.75rem;
+    margin-top: 1rem;
+  }
+
+  .info-bubbles{
+    margin-top: 1.25rem;
+    display:flex;
+    flex-wrap:wrap;
+    gap:.75rem;
+  }
+
+  .info-pill{
+    display:inline-flex;
+    align-items:center;
+    gap:.55rem;
+    background: rgba(255,255,255,.74);
+    border: 1px solid rgba(255,255,255,.86);
+    box-shadow: var(--shadow-sm);
+    color: var(--ink);
+    padding:.72rem .95rem;
+    border-radius: 18px;
+    min-height: 58px;
+  }
+
+  .info-pill i{
+    color: var(--brand);
+    font-size: 1.15rem;
+  }
+
+  .section-shell{
+    position:relative;
+    padding: 72px 0;
+  }
+
+  .section-shell > .container{
+    position:relative;
+    z-index:1;
+  }
+
+  .section-wave{
+    position:absolute;
+    inset: 10px 10px auto 10px;
+    height: calc(100% - 20px);
+    border-radius: 40px;
+    z-index:0;
+    opacity:.8;
+  }
+
+  .section-a .section-wave{
+    background:
+      radial-gradient(circle at top right, rgba(255,145,179,.08), transparent 18%),
+      linear-gradient(135deg, rgba(255,255,255,.28), rgba(89,201,245,.04));
+  }
+
+  .section-b .section-wave{
+    background:
+      radial-gradient(circle at left top, rgba(89,201,245,.09), transparent 18%),
+      linear-gradient(135deg, rgba(255,255,255,.28), rgba(127,227,212,.04));
+  }
+
+  .section-c .section-wave{
+    background:
+      radial-gradient(circle at right top, rgba(255,213,111,.10), transparent 18%),
+      linear-gradient(135deg, rgba(255,255,255,.28), rgba(255,145,179,.04));
+  }
+
+  .section-d .section-wave{
+    background:
+      radial-gradient(circle at left bottom, rgba(127,227,212,.10), transparent 18%),
+      linear-gradient(135deg, rgba(255,255,255,.28), rgba(89,201,245,.04));
+  }
+
+  .section-title{
+    color: var(--ink);
+    font-size: clamp(2rem, 4vw, 3.4rem);
+    line-height:1;
+    margin-bottom: .9rem;
+  }
+
+  .section-title-wrap{
+    margin-bottom: 1.2rem;
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:1rem;
+    flex-wrap:wrap;
+  }
+
+  .section-label{
+    display:inline-flex;
+    align-items:center;
+    gap:.45rem;
+    border-radius:999px;
+    padding:.42rem .82rem;
+    background: rgba(89,201,245,.10);
+    color: var(--brand);
+    font-weight:700;
+    font-size:.84rem;
+    border:1px solid rgba(89,201,245,.18);
+    margin-bottom:.7rem;
+  }
+
+  .section-intro{
+    color: var(--ink-soft);
+    max-width: 760px;
+    line-height: 1.8;
+  }
+
+  .chip{
+    display:inline-flex;
+    align-items:center;
+    gap:.4rem;
+    border-radius:999px;
+    padding:.36rem .78rem;
+    background: rgba(89,201,245,.10);
+    color: var(--brand);
+    border:1px solid rgba(89,201,245,.18);
+    font-size: .88rem;
+    font-weight: 600;
+  }
+
+  .frost-card{
+    border-radius: 28px;
+    overflow:hidden;
+  }
+
+  .frost-card .card-header{
+    background: rgba(255,255,255,.56);
+    color: var(--ink);
+    font-weight:700;
+    border-bottom:1px solid var(--line);
+  }
+
+  .feature-grid{
+    display:grid;
+    grid-template-columns: repeat(4, minmax(0,1fr));
+    gap:1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .feature-mini{
+    border-radius: 24px;
+    padding:1rem;
+    text-align:center;
+    transition:.22s ease;
+  }
+
+  .feature-mini:hover{
+    transform: translateY(-6px) rotate(-.4deg);
+  }
+
+  .feature-mini i{
+    font-size: 1.8rem;
+    margin-bottom:.45rem;
+    color: var(--brand);
+  }
+
+  .feature-mini p{
+    margin:0;
+    color: var(--ink-soft);
+    font-size:.92rem;
+  }
+
+  .feature-mini h6{
+    margin:.2rem 0 .2rem;
+    font-weight:700;
+    color: var(--ink);
+  }
+
+  .product-card{
+    height:100%;
+    transition:.22s ease;
+  }
+
+  .product-card:hover{
+    transform: translateY(-5px);
+  }
+
+  .product-card img{
+    width:100%;
+    height:230px;
+    object-fit:cover;
+  }
+
+  .product-card .card-body{
+    display:flex;
+    flex-direction:column;
+  }
+
+  .gallery-shell{
+    padding: 1.2rem;
+    border-radius: 30px;
+  }
+
+  .gallery-grid{
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px,1fr));
+    gap:1rem;
+  }
+
+  .gal-item{
+    position:relative;
+    border-radius:24px;
+    overflow:hidden;
+    background:#fff;
+    aspect-ratio: 4/3;
+    cursor:pointer;
+    box-shadow: var(--shadow-md);
+    transition:.22s ease;
+  }
+
+  .gal-item:hover{
+    transform: translateY(-6px) scale(1.01);
+  }
+
+  .gal-item img,
+  .gal-item video{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+  }
+
+  .gal-badge{
+    position:absolute;
+    top:.75rem;
+    left:.75rem;
+    border-radius:999px;
+    padding:.34rem .7rem;
+    font-size:.74rem;
+    font-weight:700;
+    background: rgba(255,255,255,.9);
+    color: var(--brand);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .review-card{
+    height:100%;
+  }
+
+  .review-card .card-body{
+    padding:1.25rem;
+  }
+
+  .contact-grid{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:1rem;
+  }
+
+  .ticker{
+    position: fixed;
+    left:0;
+    right:0;
+    bottom:0;
+    z-index:1001;
+    background: linear-gradient(135deg, rgba(89,201,245,.97), rgba(255,145,179,.97));
+    box-shadow: 0 -10px 24px rgba(89,201,245,.18);
+    color:#fff;
+  }
+
+  .ticker .carousel-item{
+    padding:.78rem 0;
+  }
+
+  .ticker-pill{
+    display:inline-flex;
+    align-items:center;
+    gap:.45rem;
+    border-radius:999px;
+    background: rgba(255,255,255,.18);
+    border:1px solid rgba(255,255,255,.28);
+    padding:.34rem .78rem;
+    font-weight:700;
+  }
+
+  .fab-wa{
+    position: fixed;
+    right:18px;
+    bottom:90px;
+    z-index:1002;
+    text-decoration:none;
+  }
+
+  .fab-wa .btn{
+    width:58px;
+    height:58px;
+    border-radius:999px;
+    padding:0;
+    font-size:1.35rem;
+  }
+
+  .modal{
+    z-index:1080 !important;
+  }
+
+  .modal-backdrop{
+    z-index:1070 !important;
+  }
+
+  #zoomModal .modal-dialog{
+    max-width: 74vw;
+  }
+
+  #zoomModal .modal-content{
+    border:none;
+    border-radius:26px;
+    overflow:hidden;
+    box-shadow: 0 24px 70px rgba(0,0,0,.24);
+    background: rgba(255,255,255,.98);
+  }
+
+  #zoomModal .btn-close-floating{
+    position:absolute;
+    top:16px;
+    right:16px;
+    z-index:5;
+    background:#fff;
+    border:none;
+    border-radius:999px;
+    width:42px;
+    height:42px;
+    box-shadow:0 10px 24px rgba(0,0,0,.12);
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    opacity:1;
+  }
+
+  #zoomedImage{
+    display:block;
+    width:100%;
+    max-height:80vh;
+    object-fit:contain;
+    background:#fff;
+  }
+
+  body.modal-open .ticker,
+  body.modal-open .fab-wa{
+    opacity:0;
+    pointer-events:none;
+  }
+
+  body.modal-open .site-nav{
+    pointer-events:none;
+  }
+
+  #map{
+    height: 320px;
+    border-radius: 22px;
+    overflow:hidden;
+    border:1px solid var(--line);
+    box-shadow: var(--shadow-md);
+  }
+
+  @media (max-width: 1100px){
+    .hero-layout{
+      grid-template-columns: 280px 1fr;
+    }
+  }
+
+  @media (max-width: 992px){
+    .hero-layout{
+      grid-template-columns: 1fr;
+    }
+
+    .feature-grid{
+      grid-template-columns: repeat(2, minmax(0,1fr));
+    }
+
+    .contact-grid{
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 768px){
+    .section-shell{
+      padding:56px 0;
+    }
+
+    .gallery-grid{
+      display:flex;
+      overflow-x:auto;
+      gap:1rem;
+      scroll-snap-type:x mandatory;
+      padding-bottom:.4rem;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .gal-item{
+      flex: 0 0 76vw;
+      scroll-snap-align:start;
+    }
+
+    #zoomModal .modal-dialog{
+      max-width: 94vw;
+    }
+  }
+
+  @media (max-width: 576px){
+    .hero-panel{
+      padding:18px;
+      border-radius:26px;
+    }
+
+    .feature-grid{
+      grid-template-columns: 1fr;
+    }
+
+    .btn-frost,
+    .btn-frost-primary,
+    .btn-frost-soft{
+      width:100%;
+    }
+
+    .hero-actions{
+      flex-direction:column;
+    }
+
+    .fab-wa{
+      right:14px;
+      bottom:92px;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<header class="hero-frost">
+  <div class="frost-blob one animate-float"></div>
+  <div class="frost-blob two animate-float-2"></div>
+  <div class="frost-blob three animate-float"></div>
+  <div class="cone-shape"></div>
+
+  <div class="container">
+    <div class="hero-panel glass-card animate-fade-up">
+      <div class="hero-layout">
+        <div class="brand-media">
+          {% if page.get('image') %}
+            <img class="hero-avatar animate-float" src="{{ url_for('uploaded_file', filename=page['image']) }}" alt="Logo/Imagen">
+          {% else %}
+            <div class="hero-avatar-placeholder animate-float">
+              <i class="bi bi-cone-striped"></i>
+            </div>
+          {% endif %}
+
+          {% if page.get('category') %}
+            <div class="float-badge animate-pop">
+              <i class="bi bi-snow2 me-1"></i> {{ page.get('category') }}
+            </div>
+          {% endif %}
+        </div>
+
+        <div>
+          <div class="section-label">
+            <i class="bi bi-stars"></i> Tema heladería
+          </div>
+
+          {% if page.get('business_name') %}
+            <h1 class="display-font hero-title">{{ page.get('business_name') }}</h1>
+          {% endif %}
+
+          {% if page.get('slogan') %}
+            <p class="hero-copy">{{ page.get('slogan') }}</p>
+          {% elif page.get('description') %}
+            <p class="hero-copy">{{ page.get('description')|truncate(180) }}</p>
+          {% endif %}
+
+          <div class="hero-actions">
+            {% if page.get('website') %}
+            <a class="btn btn-frost btn-frost-primary" href="{{ page['website'] }}" target="_blank" data-track="click_website">
+              <i class="bi bi-link-45deg"></i> Visitar sitio
+            </a>
+            {% endif %}
+
+            {% if page.get('phone') %}
+            <a class="btn btn-frost btn-frost-soft" href="tel:{{ page['phone'] }}" data-track="click_phone">
+              <i class="bi bi-telephone"></i> Llamar
+            </a>
+            {% endif %}
+
+            {% if page.get('whatsapp') %}
+            <a class="btn btn-frost btn-frost-soft" href="https://wa.me/{{ page.whatsapp | replace(' ','') }}" target="_blank" data-track="click_whatsapp_header">
+              <i class="bi bi-whatsapp"></i> WhatsApp
+            </a>
+            {% endif %}
+          </div>
+
+          <div class="info-bubbles">
+            {% if page.get('services') %}
+            <div class="info-pill">
+              <i class="bi bi-cup-hot"></i>
+              <div>
+                <div class="fw-semibold">Servicios</div>
+                <small style="color:var(--ink-soft);">{{ page.get('services') }}</small>
+              </div>
+            </div>
+            {% endif %}
+
+            {% if page.get('operating_hours') %}
+            <div class="info-pill">
+              <i class="bi bi-clock-history"></i>
+              <div>
+                <div class="fw-semibold">Horario</div>
+                <small style="color:var(--ink-soft);">{{ page.get('operating_hours') }}</small>
+              </div>
+            </div>
+            {% endif %}
+
+            {% if page.get('payment_methods') %}
+            <div class="info-pill">
+              <i class="bi bi-credit-card-2-front"></i>
+              <div>
+                <div class="fw-semibold">Pago</div>
+                <small style="color:var(--ink-soft);">{{ page.get('payment_methods') }}</small>
+              </div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section class="section-shell section-a" id="productos">
+  <div class="section-wave"></div>
+  <div class="container">
+    <div class="section-title-wrap">
+      <div>
+        <div class="section-label"><i class="bi bi-cone-striped"></i> Menú / catálogo</div>
+        <h2 class="display-font section-title">Productos y servicios</h2>
+        <p class="section-intro">Explora la oferta disponible del negocio.</p>
+      </div>
+    </div>
+
+    <div class="feature-grid">
+      {% if productos_fisicos and productos_fisicos|length > 0 %}
+        {% for item in productos_fisicos[:4] %}
+        <div class="feature-mini glass-card">
+          <i class="bi bi-cup-straw"></i>
+          <h6>{{ item.title }}</h6>
+          {% if item.description %}<p>{{ item.description|truncate(60) }}</p>{% endif %}
+        </div>
+        {% endfor %}
+      {% elif servicios and servicios|length > 0 %}
+        {% for item in servicios[:4] %}
+        <div class="feature-mini glass-card">
+          <i class="bi bi-stars"></i>
+          <h6>{{ item.title }}</h6>
+          {% if item.description %}<p>{{ item.description|truncate(60) }}</p>{% endif %}
+        </div>
+        {% endfor %}
+      {% endif %}
+    </div>
+
+    {% if (servicios and servicios|length>0) or (productos_fisicos and productos_fisicos|length>0) %}
+      <div class="card frost-card glass-card p-3 mb-3">
+        <div class="d-flex align-items-center gap-2">
+          <span class="chip"><i class="bi bi-info-circle"></i></span>
+          <div>
+            <strong>Solicita por WhatsApp:</strong> elige cantidades de productos o servicios y luego pulsa <em>Enviar pedido</em>.
+          </div>
+        </div>
+      </div>
+
+      <form id="form-cotizar" class="row g-3">
+        {% if productos_fisicos and productos_fisicos|length>0 %}
+          <div class="col-12">
+            <h3 class="h5 display-font d-flex align-items-center gap-2" style="color:var(--ink);">
+              <i class="bi bi-cone-striped" style="color:var(--brand);"></i> Productos
+            </h3>
+          </div>
+
+          {% for item in productos_fisicos %}
+          <div class="col-12 col-sm-6 col-md-4">
+            <div class="card product-card frost-card glass-card">
+              {% if item.image %}
+                <img
+                  src="{{ url_for('uploaded_file', filename=item.image) }}"
+                  alt="{{ item.title }}"
+                  class="card-img-top img-zoom-trigger"
+                  data-bs-toggle="modal"
+                  data-bs-target="#zoomModal"
+                  data-img-src="{{ url_for('uploaded_file', filename=item.image) }}"
+                  style="cursor: zoom-in;"
+                >
+              {% endif %}
+              <div class="card-body">
+                <div class="mb-2">
+                  <span class="chip">Producto</span>
+                </div>
+                <h6 class="display-font mb-1" style="color:var(--ink);">{{ item.title }}</h6>
+                {% if item.description %}<p class="small" style="color:var(--ink-soft);">{{ item.description }}</p>{% endif %}
+                {% if item.show_price %}
+                <div class="mb-2">
+                  <span class="chip">${{ "%.2f"|format(item.price) }}</span>
+                </div>
+                {% endif %}
+                <div class="mt-auto">
+                  <label class="form-label small">Cantidad</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value="0"
+                    class="form-control"
+                    name="prod_{{ item.title | replace(' ','_') }}"
+                    data-item-nombre="{{ item.title }}"
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        {% endif %}
+
+        {% if servicios and servicios|length>0 %}
+          <div class="col-12 mt-2">
+            <h3 class="h5 display-font d-flex align-items-center gap-2" style="color:var(--ink);">
+              <i class="bi bi-stars" style="color:var(--brand);"></i> Servicios
+            </h3>
+          </div>
+
+          {% for item in servicios %}
+          <div class="col-12 col-sm-6 col-md-4">
+            <div class="card product-card frost-card glass-card">
+              {% if item.image %}
+                <img
+                  src="{{ url_for('uploaded_file', filename=item.image) }}"
+                  alt="{{ item.title }}"
+                  class="card-img-top img-zoom-trigger"
+                  data-bs-toggle="modal"
+                  data-bs-target="#zoomModal"
+                  data-img-src="{{ url_for('uploaded_file', filename=item.image) }}"
+                  style="cursor: zoom-in;"
+                >
+              {% endif %}
+              <div class="card-body">
+                <div class="mb-2">
+                  <span class="chip">Servicio</span>
+                </div>
+                <h6 class="display-font mb-1" style="color:var(--ink);">{{ item.title }}</h6>
+                {% if item.description %}<p class="small" style="color:var(--ink-soft);">{{ item.description }}</p>{% endif %}
+                {% if item.show_price %}
+                <div class="mb-2">
+                  <span class="chip">${{ "%.2f"|format(item.price) }}</span>
+                </div>
+                {% endif %}
+                <div class="mt-auto">
+                  <label class="form-label small">Cantidad</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value="0"
+                    class="form-control"
+                    name="prod_{{ item.title | replace(' ','_') }}"
+                    data-item-nombre="{{ item.title }}"
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        {% endif %}
+
+        <div class="col-12 text-center">
+          <button type="submit" class="btn btn-frost btn-frost-primary px-4 py-2">
+            <i class="bi bi-whatsapp"></i> Enviar pedido
+          </button>
+        </div>
+      </form>
+    {% else %}
+      <div class="card frost-card glass-card p-3">No hay productos ni servicios disponibles.</div>
+    {% endif %}
+  </div>
+</section>
+
+{% if promos and promos|length > 0 %}
+<section class="section-shell section-b" id="promos">
+  <div class="section-wave"></div>
+  <div class="container">
+    <div class="section-label"><i class="bi bi-megaphone"></i> Ofertas</div>
+    <h2 class="display-font section-title">Promociones</h2>
+    <p class="section-intro">Aprovecha las promociones activas del negocio.</p>
+
+    <div class="row g-3">
+      {% for p in promos %}
+      <div class="col-md-6">
+        <div class="card frost-card glass-card h-100">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <span>{{ p.title }}</span>
+            {% if p.code %}<span class="chip">{{ p.code }}</span>{% endif %}
+          </div>
+          <div class="card-body">
+            {% if p.description %}<p class="mb-2">{{ p.description }}</p>{% endif %}
+            {% if p.discount_type in ['percent','fixed'] %}
+              <div class="chip">
+                <i class="bi bi-tag"></i>
+                {% if p.discount_type == 'percent' %}{{ p.value }}% OFF{% else %}${{ p.value }} OFF{% endif %}
+              </div>
+            {% else %}
+              <div class="chip"><i class="bi bi-stars"></i> Promoción</div>
+            {% endif %}
+            {% if p.ends_at %}
+            <div class="mt-2 small" style="color:var(--ink-soft);">
+              <i class="bi bi-clock"></i> Vigente hasta {{ p.ends_at.strftime('%d/%m/%Y') }}
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<section class="section-shell section-c" id="info">
+  <div class="section-wave"></div>
+  <div class="container">
+    <div class="section-label"><i class="bi bi-geo-alt"></i> Visítanos</div>
+    <h2 class="display-font section-title">Información del negocio</h2>
+    <p class="section-intro">Conoce la ubicación, horarios y datos importantes.</p>
+
+    <div class="row g-4">
+      <div class="col-md-6">
+        <div class="card frost-card glass-card h-100">
+          <div class="card-header">Quiénes somos</div>
+          <div class="card-body">
+            {% if page.get('description') %}
+              <p class="mb-3"><strong>Descripción:</strong><br>{{ page.get('description','') }}</p>
+            {% endif %}
+            <div class="d-flex flex-wrap gap-2">
+              {% if page.get('services') %}<span class="chip"><i class="bi bi-stars"></i> {{ page.services }}</span>{% endif %}
+              {% if page.get('payment_methods') %}<span class="chip"><i class="bi bi-credit-card-2-front"></i> {{ page.payment_methods }}</span>{% endif %}
+              {% if page.get('founding_date') %}<span class="chip"><i class="bi bi-calendar3"></i> {{ page.founding_date }}</span>{% endif %}
+              {% if page.get('delivery_available') %}<span class="chip"><i class="bi bi-truck"></i> Entrega disponible</span>{% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="card frost-card glass-card h-100">
+          <div class="card-header">Ubicación y horario</div>
+          <div class="card-body">
+            {% if page.get('address') %}
+              <p class="mb-2"><i class="bi bi-geo-alt-fill me-1"></i> <strong>Dirección:</strong> {{ page.get('address','') }}</p>
+            {% endif %}
+
+            <div class="row">
+              {% if page.get('postal_code') %}
+              <div class="col-6">
+                <small style="color:var(--ink-soft);"><i class="bi bi-pin-map"></i> CP</small>
+                <div>{{ page.get('postal_code','') }}</div>
+              </div>
+              {% endif %}
+              {% if page.get('city') %}
+              <div class="col-6">
+                <small style="color:var(--ink-soft);"><i class="bi bi-buildings"></i> Ciudad</small>
+                <div>{{ page.get('city','') }}</div>
+              </div>
+              {% endif %}
+            </div>
+
+            {% if page.get('state') %}
+            <div class="mt-2">
+              <small style="color:var(--ink-soft);"><i class="bi bi-flag"></i> Estado</small>
+              <div>{{ page.get('state','') }}</div>
+            </div>
+            {% endif %}
+
+            {% if page.get('operating_hours') %}
+            <div class="mt-2">
+              <small style="color:var(--ink-soft);"><i class="bi bi-clock-history"></i> Horario</small>
+              <div>{{ page.get('operating_hours','') }}</div>
+            </div>
+            {% endif %}
+
+            {% set lat_val = page.get('lat') %}
+            {% set lng_val = page.get('lng') %}
+            {% set has_coords = (lat_val is not none) and (lng_val is not none) and (lat_val|string|trim != '') and (lng_val|string|trim != '') %}
+
+            <div class="mt-3">
+              {% if has_coords %}
+                <div id="map" class="mb-3"></div>
+                <a class="btn btn-frost btn-frost-soft me-2" target="_blank"
+                  href="https://www.google.com/maps/dir/?api=1&destination={{ lat_val }},{{ lng_val }}"
+                  data-track="click_maps">
+                  <i class="bi bi-geo"></i> Cómo llegar
+                </a>
+              {% elif page.get('address') %}
+                <a class="btn btn-frost btn-frost-soft me-2" target="_blank"
+                  href="https://www.google.com/maps/search/?api=1&query={{ page.address | urlencode }}"
+                  data-track="click_maps">
+                  <i class="bi bi-search"></i> Buscar dirección
+                </a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section-shell section-d" id="galeria">
+  <div class="section-wave"></div>
+  <div class="container">
+    <div class="section-label"><i class="bi bi-images"></i> Visual</div>
+    <h2 class="display-font section-title">Galería</h2>
+    <p class="section-intro">Conoce el contenido visual del negocio.</p>
+
+    {% set tiene_portada = page.get('cover_image') %}
+    {% set tiene_media = page.get('media_gallery') and page.media_gallery|length > 0 %}
+    {% set tiene_galeria = galeria and galeria|length > 0 %}
+
+    {% if tiene_portada or tiene_media or tiene_galeria %}
+      <div class="gallery-shell glass-card">
+        <div class="gallery-grid">
+          {% if tiene_portada %}
+          <div class="gal-item" data-type="image" data-src="{{ url_for('uploaded_file', filename=page.cover_image) }}">
+            <img src="{{ url_for('uploaded_file', filename=page.cover_image) }}" alt="Portada">
+            <span class="gal-badge"><i class="bi bi-image me-1"></i> Portada</span>
+          </div>
+          {% endif %}
+
+          {% if tiene_media %}
+            {% for item in page.media_gallery %}
+              {% if item is string %}
+                <div class="gal-item" data-type="image" data-src="{{ url_for('uploaded_file', filename=item) }}">
+                  <img src="{{ url_for('uploaded_file', filename=item) }}" alt="Media">
+                  <span class="gal-badge"><i class="bi bi-grid me-1"></i> Media</span>
+                </div>
+              {% else %}
+                {% set fpath = item.path %}
+                {% set ftype = item.type or 'image' %}
+                {% if ftype == 'video' %}
+                  <div class="gal-item" data-type="video" data-src="{{ url_for('uploaded_file', filename=fpath) }}">
+                    <video src="{{ url_for('uploaded_file', filename=fpath) }}" muted playsinline></video>
+                    <span class="gal-badge"><i class="bi bi-camera-reels me-1"></i> Video</span>
+                  </div>
+                {% else %}
+                  <div class="gal-item" data-type="image" data-src="{{ url_for('uploaded_file', filename=fpath) }}">
+                    <img src="{{ url_for('uploaded_file', filename=fpath) }}" alt="Media">
+                    <span class="gal-badge"><i class="bi bi-grid me-1"></i> Media</span>
+                  </div>
+                {% endif %}
+              {% endif %}
+            {% endfor %}
+          {% endif %}
+
+          {% if tiene_galeria %}
+            {% for g in (galeria or [])[:12] %}
+            <div class="gal-item" data-type="image" data-src="{{ url_for('uploaded_file', filename=g) }}">
+              <img src="{{ url_for('uploaded_file', filename=g) }}" alt="Foto {{ loop.index }}">
+              <span class="gal-badge"><i class="bi bi-cone-striped me-1"></i> Galería</span>
+            </div>
+            {% endfor %}
+          {% endif %}
+        </div>
+      </div>
+    {% else %}
+      <div class="card frost-card glass-card p-3">Aún no hay imágenes. Sube una portada o envía <code>media_gallery</code>.</div>
+    {% endif %}
+  </div>
+</section>
+
+<section class="section-shell section-a" id="reseñas">
+  <div class="section-wave"></div>
+  <div class="container">
+    <div class="section-label"><i class="bi bi-chat-heart"></i> Opiniones</div>
+    <h2 class="display-font section-title">Reseñas</h2>
+    <p class="section-intro">Conoce la experiencia de otras personas que ya visitaron el negocio.</p>
+
+    <div class="card frost-card glass-card p-3 mb-4">
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          <div class="alert alert-info mb-3">
+            {% for m in messages %}<div>{{ m }}</div>{% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <form method="POST" class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Tu nombre</label>
+          <input type="text" name="nombre" class="form-control" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Calificación</label>
+          <div id="starRating">
+            {% for i in range(1,6) %}
+              <i class="bi bi-star-fill fs-3 me-1 text-secondary star-icon" data-value="{{ i }}"></i>
+            {% endfor %}
+          </div>
+          <input type="hidden" name="estrellas" id="estrellas" value="0" required>
+        </div>
+        <div class="col-12">
+          <label class="form-label">Comentario</label>
+          <textarea name="comentario" class="form-control" rows="3" required></textarea>
+        </div>
+        <div class="col-12">
+          <button class="btn btn-frost btn-frost-primary" type="submit">Enviar reseña</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="row g-3">
+      {% if reseñas and reseñas|length>0 %}
+        {% for r in reseñas %}
+        <div class="col-md-6">
+          <div class="card review-card frost-card glass-card h-100">
+            <div class="card-body">
+              <h5 class="display-font text-center" style="color:var(--ink);">{{ r.nombre }}</h5>
+              <div class="text-center mb-2">
+                {% for i in range(1,6) %}
+                  {% if i <= r.estrellas %}<i class="bi bi-star-fill text-warning"></i>{% else %}<i class="bi bi-star text-secondary"></i>{% endif %}
+                {% endfor %}
+              </div>
+              <p>{{ r.comentario }}</p>
+            </div>
+            <div class="card-footer bg-white">
+              <small style="color:var(--ink-soft);">{{ r.fecha.strftime('%d/%m/%Y') }}</small>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="col-12"><div class="card frost-card glass-card p-3">No hay reseñas aún.</div></div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<section class="section-shell section-b" id="publicaciones">
+  <div class="section-wave"></div>
+  <div class="container">
+    <div class="section-title-wrap">
+      <div>
+        <div class="section-label"><i class="bi bi-journal-text"></i> Novedades</div>
+        <h2 class="display-font section-title">Publicaciones</h2>
+        <p class="section-intro mb-0">Comparte novedades, historias o contenido relacionado con tu negocio.</p>
+      </div>
+
+      {% if posts and posts|length > 0 %}
+      <a class="btn btn-frost btn-frost-soft" href="{{ url_for('lista_blogs_negocio_slug', slug=site_slug) }}" data-track="click_blog_index">
+        <i class="bi bi-journal-text"></i> Ver todo el blog
+      </a>
+      {% endif %}
+    </div>
+
+    {% if posts and posts|length>0 %}
+      <div class="row g-4">
+        {% for post in posts %}
+        <div class="col-md-4">
+          <div class="card frost-card glass-card h-100">
+            {% if post.cabecera %}
+            <img src="{{ url_for('uploaded_file', filename=post.cabecera) }}" class="card-img-top" alt="Post" style="object-fit:cover; height:220px;">
+            {% endif %}
+            <div class="card-body d-flex flex-column">
+              <h5 class="display-font" style="color:var(--ink);">{{ post.title }}</h5>
+              <p style="color:var(--ink-soft);">{{ post.content[:110] }}{% if post.content and post.content|length > 110 %}...{% endif %}</p>
+              <a class="mt-auto btn btn-frost btn-frost-soft" href="{{ url_for('ver_post_slug', slug=site_slug, post_id=post._id) }}">
+                Leer más
+              </a>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="card frost-card glass-card p-3">Aún no hay publicaciones.</div>
+    {% endif %}
+  </div>
+</section>
+
+<section class="section-shell section-c" id="contacto">
+  <div class="section-wave"></div>
+  <div class="container">
+    <div class="section-label"><i class="bi bi-send-heart"></i> Contáctanos</div>
+    <h2 class="display-font section-title">Contacto y redes</h2>
+    <p class="section-intro">Aquí tienes las vías para preguntar, comprar o seguir el negocio.</p>
+
+    <div class="contact-grid">
+      <div class="card frost-card glass-card h-100">
+        <div class="card-header">Vías de contacto</div>
+        <div class="card-body">
+          {% if page.get('phone') %}<p><i class="bi bi-telephone-fill me-2"></i><strong>Teléfono:</strong> {{ page.phone }}</p>{% endif %}
+          {% if page.get('email') %}<p><i class="bi bi-envelope-fill me-2"></i><strong>Email:</strong> {{ page.email }}</p>{% endif %}
+          {% if page.get('website') %}<p><i class="bi bi-globe2 me-2"></i><strong>Web:</strong> <a href="{{ page.website }}" target="_blank" data-track="click_website">{{ page.website }}</a></p>{% endif %}
+        </div>
+      </div>
+
+      <div class="card frost-card glass-card h-100">
+        <div class="card-header">Redes</div>
+        <div class="card-body">
+          {% if page.get('facebook') %}<p><i class="bi bi-facebook me-2"></i><strong>Facebook:</strong> <a href="{{ page.facebook }}" target="_blank">Ir a Facebook</a></p>{% endif %}
+          {% if page.get('instagram') %}<p><i class="bi bi-instagram me-2"></i><strong>Instagram:</strong> <a href="{{ page.instagram }}" target="_blank">Ir a Instagram</a></p>{% endif %}
+          {% if page.get('tiktok') %}<p><i class="bi bi-tiktok me-2"></i><strong>TikTok:</strong> <a href="{{ page.tiktok }}" target="_blank">Ir a TikTok</a></p>{% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="ticker">
+  <div class="container">
+    <div id="noticiasCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="4500">
+      <div class="carousel-inner text-center">
+        {% if avisos and avisos|length>0 %}
+          {% for aviso in avisos %}
+            <div class="carousel-item {% if loop.first %}active{% endif %}">
+              <span class="ticker-pill"><i class="bi bi-megaphone-fill"></i> {{ aviso.title }}</span>
+              <span class="ms-2">{{ aviso.content }}</span>
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="carousel-item active">Gracias por visitarnos.</div>
+        {% endif %}
+      </div>
+      <button class="carousel-control-prev" type="button" data-bs-target="#noticiasCarousel" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon"></span>
+        <span class="visually-hidden">Anterior</span>
+      </button>
+      <button class="carousel-control-next" type="button" data-bs-target="#noticiasCarousel" data-bs-slide="next">
+        <span class="carousel-control-next-icon"></span>
+        <span class="visually-hidden">Siguiente</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+{% include "public/reservas.html" ignore missing %}
+
+{% if page.get('whatsapp') %}
+<a class="fab-wa" href="https://wa.me/{{ page.whatsapp | replace(' ','') }}" target="_blank" aria-label="WhatsApp" data-track="click_whatsapp_fab">
+  <span class="btn btn-frost btn-frost-primary animate-pop">
+    <i class="bi bi-whatsapp"></i>
+  </span>
+</a>
+{% endif %}
+
+<div class="modal fade" id="zoomModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content position-relative">
+      <button type="button" class="btn-close btn-close-floating" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      <img id="zoomedImage" src="" class="img-fluid" alt="Zoom">
+      <div class="p-3 text-end">
+        <button class="btn btn-frost btn-frost-soft" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="cotizarModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:560px;">
+    <div class="modal-content" style="border:none; border-radius:26px; overflow:hidden; background:#fff;">
+      <div class="modal-header" style="background:linear-gradient(135deg, var(--brand), var(--brand-2)); color:#fff;">
+        <h5 class="modal-title">Antes de enviar tu pedido 🍨</h5>
+        <button class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <p class="small" style="color:var(--ink-soft);">
+          Déjanos tu nombre para dirigirnos a ti cuando te contactemos por WhatsApp.
+        </p>
+
+        <div class="mb-3">
+          <label class="form-label">Tu nombre</label>
+          <input type="text" class="form-control" id="nombreClienteInput" placeholder="Ej. María López">
+          <div class="text-danger small mt-1 d-none" id="errorModalNombre">Por favor escribe tu nombre.</div>
+        </div>
+
+        <div>
+          <div class="form-label mb-1">Tu selección:</div>
+          <div id="resumenSeleccion" class="border rounded p-2 small" style="max-height:220px; overflow-y:auto; background:#f8fcff; border-color:rgba(89,201,245,.14)!important;"></div>
+        </div>
+      </div>
+      <div class="modal-footer justify-content-between">
+        <button class="btn btn-frost btn-frost-soft" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-frost btn-frost-primary" id="enviarCotizacionBtn">
+          <i class="bi bi-whatsapp me-1"></i> Enviar por WhatsApp
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+<script>
+(function () {
+  const el = document.getElementById('map');
+  if (!el) return;
+
+  const latRaw = "{{ page.get('lat','') }}";
+  const lngRaw = "{{ page.get('lng','') }}";
+
+  const lat = Number.parseFloat(latRaw);
+  const lng = Number.parseFloat(lngRaw);
+
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    el.innerHTML = `
+      <div class="alert alert-warning py-2 px-3">
+        No se pudo cargar el mapa porque las coordenadas no son válidas.
+      </div>`;
+    return;
+  }
+
+  const map = L.map('map', {
+    scrollWheelZoom: false,
+    dragging: !L.Browser.mobile,
+    tap: true
+  }).setView([lat, lng], 16);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap'
+  }).addTo(map);
+
+  const name = "{{ page.get('business_name','')|e }}";
+  const addr = "{{ page.get('address','')|e }}";
+  const popupHtml = `
+    <div style="min-width:180px">
+      <strong>${name || 'Ubicación'}</strong><br>
+      <span style="opacity:.8">${addr || ''}</span>
+    </div>
+  `;
+
+  const marker = L.marker([lat, lng]).addTo(map);
+  marker.bindPopup(popupHtml);
+
+  const fixSize = () => {
+    try { map.invalidateSize(true); } catch(e){}
+  };
+
+  setTimeout(fixSize, 120);
+  setTimeout(fixSize, 500);
+  window.addEventListener('resize', () => setTimeout(fixSize, 80));
+})();
+</script>
+
+<script>
+const SITE_SLUG = "{{ slug or page.get('slug','') }}";
+const BUSINESS_NAME = "{{ page.get('business_name','')|e }}";
+const BUSINESS_WA = "{{ (page.get('whatsapp','') or '')|replace(' ','') }}";
+
+function track(type, meta){
+  try{
+    if(!SITE_SLUG) return;
+    fetch("/api/track", {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({ slug: SITE_SLUG, type, meta: meta || {} })
+    }).catch(()=>{});
+  }catch(e){}
+}
+
+track("view", { path: location.pathname, ref: document.referrer || "" });
+
+document.addEventListener("click", (e)=>{
+  const el = e.target.closest("[data-track]");
+  if(!el) return;
+  const type = el.getAttribute("data-track");
+  const href = el.getAttribute("href") || "";
+  track(type, { href });
+});
+
+(function zoomModule(){
+  const zoomed = document.getElementById("zoomedImage");
+  const zoomModal = document.getElementById("zoomModal");
+  if(!zoomed || !zoomModal) return;
+
+  document.addEventListener("click", (e)=>{
+    const img = e.target.closest(".img-zoom-trigger");
+    if(!img) return;
+    const src = img.getAttribute("data-img-src") || img.getAttribute("src");
+    if(src) zoomed.src = src;
+    track("open_zoom", { src: src || "" });
+  });
+
+  zoomModal.addEventListener("hidden.bs.modal", ()=>{
+    zoomed.removeAttribute("src");
+  });
+})();
+
+(function starsModule(){
+  const stars = Array.from(document.querySelectorAll(".star-icon"));
+  const input = document.getElementById("estrellas");
+  if(!stars.length || !input) return;
+
+  function paint(v){
+    stars.forEach(s=>{
+      const n = parseInt(s.dataset.value || "0", 10);
+      if(n <= v){
+        s.classList.remove("text-secondary");
+        s.classList.add("text-warning");
+      }else{
+        s.classList.remove("text-warning");
+        s.classList.add("text-secondary");
+      }
+    });
+  }
+
+  stars.forEach(s=>{
+    s.style.cursor = "pointer";
+    s.addEventListener("click", ()=>{
+      const v = parseInt(s.dataset.value || "0", 10);
+      input.value = String(v);
+      paint(v);
+      track("rate_star_select", { value: v });
+    });
+  });
+})();
+
+(async function cotizarModule(){
+  const form = document.getElementById("form-cotizar");
+  const modalEl = document.getElementById("cotizarModal");
+  const resumenEl = document.getElementById("resumenSeleccion");
+  const nombreInput = document.getElementById("nombreClienteInput");
+  const errNombre = document.getElementById("errorModalNombre");
+  const enviarBtn = document.getElementById("enviarCotizacionBtn");
+
+  if(!form || !modalEl || !resumenEl || !nombreInput || !enviarBtn) return;
+
+  const bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+  let selectedItems = [];
+
+  function getSelectedItems(){
+    const inputs = Array.from(form.querySelectorAll('input[type="number"][data-item-nombre]'));
+    const items = [];
+    for(const inp of inputs){
+      const title = (inp.dataset.itemNombre || "").trim();
+      const qty = parseInt(inp.value || "0", 10);
+      if(title && Number.isFinite(qty) && qty > 0){
+        items.push({ title, qty });
+      }
+    }
+    return items;
+  }
+
+  function renderResumen(items){
+    if(!items.length){
+      resumenEl.innerHTML = `<div class="text-muted">No seleccionaste nada todavía.</div>`;
+      return;
+    }
+    resumenEl.innerHTML = items.map(it => `<div>• <strong>${escapeHtml(it.title)}</strong> × ${it.qty}</div>`).join("");
+  }
+
+  function escapeHtml(s){
+    return String(s)
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
+  }
+
+  form.addEventListener("submit", (e)=>{
+    e.preventDefault();
+    selectedItems = getSelectedItems();
+
+    if(!selectedItems.length){
+      track("pedido_empty", {});
+      resumenEl.innerHTML = `<div class="text-danger fw-bold">Selecciona al menos 1 producto/servicio con cantidad > 0.</div>`;
+      bsModal.show();
+      return;
+    }
+
+    track("pedido_open_modal", { items: selectedItems.length });
+    renderResumen(selectedItems);
+    errNombre.classList.add("d-none");
+    nombreInput.value = "";
+    bsModal.show();
+    setTimeout(()=> nombreInput.focus(), 150);
+  });
+
+  async function createLead(nombre, items){
+    try{
+      const r = await fetch("/api/leads", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({
+          slug: SITE_SLUG,
+          nombre,
+          items,
+          canal: "whatsapp"
+        })
+      });
+      return await r.json();
+    }catch(e){
+      return { ok:false, error:"network" };
+    }
+  }
+
+  function buildWhatsAppMessage(nombre, items){
+    const lines = [];
+    lines.push(`Hola, soy ${nombre}.`);
+    lines.push(`Quisiera hacer un pedido con ${BUSINESS_NAME}:`);
+    for(const it of items){
+      lines.push(`- ${it.title} x${it.qty}`);
+    }
+    lines.push(`Gracias.`);
+    return lines.join("\\n");
+  }
+
+  function openWhatsApp(text){
+    if(!BUSINESS_WA){
+      alert("Este negocio aún no tiene WhatsApp configurado.");
+      return;
+    }
+    const url = `https://wa.me/${BUSINESS_WA}?text=${encodeURIComponent(text)}`;
+    window.open(url, "_blank", "noopener");
+  }
+
+  enviarBtn.addEventListener("click", async ()=>{
+    const nombre = (nombreInput.value || "").trim();
+
+    if(!nombre){
+      errNombre.classList.remove("d-none");
+      track("pedido_missing_name", {});
+      nombreInput.focus();
+      return;
+    }
+
+    if(!selectedItems.length){
+      track("pedido_missing_items", {});
+      bsModal.hide();
+      return;
+    }
+
+    enviarBtn.disabled = true;
+    enviarBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Enviando...`;
+
+    track("pedido_send_click", { items: selectedItems.length });
+
+    const resp = await createLead(nombre, selectedItems);
+    const msg = buildWhatsAppMessage(nombre, selectedItems);
+    openWhatsApp(msg);
+
+    if(resp && resp.ok){
+      track("lead_saved", { lead_id: resp.lead_id || "" });
+    }else{
+      track("lead_save_failed", { error: (resp && resp.error) || "unknown" });
+    }
+
+    setTimeout(()=>{
+      enviarBtn.disabled = false;
+      enviarBtn.innerHTML = `<i class="bi bi-whatsapp me-1"></i> Enviar por WhatsApp`;
+      bsModal.hide();
+    }, 250);
+  });
+})();
+</script>
+{% endblock %}

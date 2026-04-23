@@ -1,0 +1,151 @@
+{% extends "themes/miscelanea_market/_base.html" %}
+
+{% set meta_title = (post.get('title') or 'Artículo') ~ ' | ' ~ (page.get('business_name') or negocio.get('business_name') or 'Mi Miscelánea') %}
+{% set meta_description = post.get('content','')|striptags|truncate(180) %}
+
+{% block extra_head %}
+<style>
+  .post-shell{
+    padding: 56px 0 64px;
+  }
+
+  .post-panel{
+    background: rgba(255,255,255,.92);
+    border: 1px solid rgba(63,163,77,.14);
+    border-radius: 28px;
+    box-shadow: var(--shadow-lg);
+    padding: 28px;
+  }
+
+  .meta-chip{
+    display:inline-flex;
+    align-items:center;
+    gap:.45rem;
+    border-radius:999px;
+    border:1px solid rgba(63,163,77,.18);
+    background: rgba(63,163,77,.08);
+    color: var(--brand);
+    padding: .35rem .78rem;
+    font-size: .88rem;
+    font-weight: 600;
+  }
+
+  .post-cover{
+    width:100%;
+    max-height: 520px;
+    object-fit: cover;
+    border-radius: 22px;
+    display:block;
+    border: 1px solid rgba(63,163,77,.14);
+  }
+
+  .article-body{
+    color: var(--text);
+    line-height: 1.9;
+    font-size: 1.04rem;
+  }
+
+  .article-body img{
+    max-width:100%;
+    border-radius:18px;
+    margin: 1rem 0;
+  }
+
+  .article-body iframe,
+  .article-body video{
+    max-width:100%;
+    border-radius:18px;
+  }
+
+  .post-card{
+    background: rgba(255,255,255,.92);
+    border: 1px solid rgba(63,163,77,.14);
+    border-radius: 24px;
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+    height:100%;
+  }
+
+  .post-card img{
+    width:100%;
+    height:220px;
+    object-fit:cover;
+    display:block;
+  }
+
+  .post-card .body{
+    padding: 1rem 1rem 1.1rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="post-shell">
+  <div class="container">
+    <div class="mb-4">
+      <a class="btn btn-market btn-market-soft" href="{{ url_for('lista_blogs_negocio_slug', slug=slug) }}">
+        <i class="bi bi-arrow-left me-1"></i> Volver al blog
+      </a>
+    </div>
+
+    {% set post_cover = post.get('cabecera') or page.get('cover_image') or page.get('image') %}
+
+    <article class="post-panel">
+      <div class="d-flex flex-wrap gap-2 mb-3">
+        <span class="meta-chip"><i class="bi bi-journal-text"></i> Artículo</span>
+        <span class="meta-chip"><i class="bi bi-calendar3"></i> {{ post.get('date').strftime('%d/%m/%Y') if post.get('date') else 'Sin fecha' }}</span>
+        {% if post.get('author') %}<span class="meta-chip"><i class="bi bi-person"></i> {{ post.get('author') }}</span>{% endif %}
+      </div>
+
+      <h1 class="display-font mb-3" style="font-size:clamp(2.2rem,4vw,4rem); color:var(--brand);">
+        {{ post.get('title','Sin título') }}
+      </h1>
+
+      {% if post_cover %}
+        <div class="mb-4">
+          <img class="post-cover" src="{{ url_for('uploaded_file', filename=post_cover) }}" alt="{{ post.get('title','Post') }}">
+        </div>
+      {% endif %}
+
+      <div class="article-body">
+        {{ post.get('content','')|safe }}
+      </div>
+    </article>
+
+    {% if related_posts and related_posts|length > 0 %}
+      <section class="mt-5">
+        <div class="d-flex justify-content-between align-items-end gap-3 mb-4">
+          <div>
+            <div class="meta-chip mb-2"><i class="bi bi-journal-richtext"></i> Más contenido</div>
+            <h2 class="h2 mb-0" style="color:var(--brand); font-family:'Fraunces', serif;">También podría interesarte</h2>
+          </div>
+        </div>
+
+        <div class="row g-4">
+          {% for item in related_posts %}
+            {% set item_cover = item.get('cabecera') or page.get('cover_image') or page.get('image') %}
+            <div class="col-md-6 col-xl-4">
+              <article class="post-card">
+                {% if item_cover %}
+                  <img src="{{ url_for('uploaded_file', filename=item_cover) }}" alt="{{ item.get('title','Post') }}">
+                {% endif %}
+                <div class="body d-flex flex-column h-100">
+                  <div class="meta-chip mb-3">
+                    <i class="bi bi-calendar3"></i>
+                    {{ item.get('date').strftime('%d/%m/%Y') if item.get('date') else 'Blog' }}
+                  </div>
+                  <h3 class="h5 mb-2" style="color:var(--text); font-weight:800;">{{ item.get('title','Sin título') }}</h3>
+                  <p style="color:var(--text-soft);">{{ item.get('content','')|striptags|truncate(110) }}</p>
+                  <a class="mt-auto btn btn-market btn-market-soft" href="{{ url_for('ver_post_slug', slug=slug, post_id=item['_id']) }}">
+                    Leer
+                  </a>
+                </div>
+              </article>
+            </div>
+          {% endfor %}
+        </div>
+      </section>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
