@@ -566,11 +566,18 @@
                 <div class="mt-auto">
                   <label class="form-label small">Cantidad / Nº de eventos</label>
                   <input
-                    type="number" min="0" value="0"
-                    class="form-control"
-                    name="prod_{{ item.title | replace(' ','_') }}"
-                    data-item-nombre="{{ item.title }}"
-                  >
+  type="number"
+  min="0"
+  value="0"
+  class="form-control"
+  style="border:3px solid var(--border)"
+  name="prod_{{ item.title | replace(' ','_') }}"
+  data-item-id="{{ item._id }}"
+  data-item-nombre="{{ item.title }}"
+  data-item-price="{{ item.price or 0 }}"
+  data-item-sku="{{ item.sku or '' }}"
+  data-item-barcode="{{ item.barcode or '' }}"
+>
                 </div>
               </div>
             </div>
@@ -612,11 +619,18 @@
                 <div class="mt-auto">
                   <label class="form-label small">Cantidad</label>
                   <input
-                    type="number" min="0" value="0"
-                    class="form-control"
-                    name="prod_{{ item.title | replace(' ','_') }}"
-                    data-item-nombre="{{ item.title }}"
-                  >
+  type="number"
+  min="0"
+  value="0"
+  class="form-control"
+  style="border:3px solid var(--border)"
+  name="prod_{{ item.title | replace(' ','_') }}"
+  data-item-id="{{ item._id }}"
+  data-item-nombre="{{ item.title }}"
+  data-item-price="{{ item.price or 0 }}"
+  data-item-sku="{{ item.sku or '' }}"
+  data-item-barcode="{{ item.barcode or '' }}"
+>
                 </div>
               </div>
             </div>

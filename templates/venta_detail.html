@@ -1,479 +1,788 @@
 {% extends "layout.html" %}
-{% block title %}Detalle de Venta{% endblock %}
+{% block title %}Detalle de Venta · GlobalPyMEs{% endblock %}
 
 {% block content %}
 {% set V = venta|default({}) %}
 {% set ITEMS = V.get('items', []) %}
+{% set SOURCE = (V.get('source') or 'pos')|lower %}
+{% set STATUS = (V.get('status') or 'paid')|lower %}
+{% set PM = (V.get('payment_method') or '')|lower %}
 
 <style>
-  .sale-detail-page {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 28px 0 36px;
+  :root{
+    --vd-bg:#0b1020;
+    --vd-card:#11182d;
+    --vd-card-2:#0f172a;
+    --vd-line:rgba(148,163,184,.16);
+    --vd-line-2:rgba(148,163,184,.24);
+    --vd-text:#e8eefc;
+    --vd-muted:#99a8c7;
+    --vd-brand:#5ea0ff;
+    --vd-brand-2:#7c3aed;
+    --vd-success:#22c55e;
+    --vd-warning:#f59e0b;
+    --vd-danger:#ef4444;
+    --vd-info:#06b6d4;
+    --vd-shadow:0 24px 54px rgba(2,6,23,.30);
   }
 
-  .sale-detail-topbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 18px;
-    flex-wrap: wrap;
-    margin-bottom: 22px;
+  .sale-detail-page{
+    max-width:1320px;
+    margin:0 auto;
+    padding:28px 0 90px;
   }
 
-  .sale-detail-heading {
-    flex: 1 1 460px;
+  .sale-hero{
+    position:relative;
+    overflow:hidden;
+    border-radius:28px;
+    padding:28px;
+    background:
+      radial-gradient(circle at top right, rgba(94,160,255,.22), transparent 28%),
+      radial-gradient(circle at bottom left, rgba(124,58,237,.16), transparent 24%),
+      linear-gradient(135deg, #0b1020, #121c35 56%, #0f172a);
+    border:1px solid rgba(255,255,255,.08);
+    box-shadow:var(--vd-shadow);
+    color:var(--vd-text);
+    margin-bottom:22px;
   }
 
-  .sale-detail-heading h2 {
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 2.05rem;
-    font-weight: 800;
-    color: #f8fbff;
-    letter-spacing: -0.02em;
+  .sale-hero__row{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:18px;
+    flex-wrap:wrap;
   }
 
-  .sale-detail-heading h2 i {
-    color: #5ea0ff;
+  .sale-hero__title{
+    flex:1 1 560px;
   }
 
-  .sale-detail-heading p {
-    margin: 10px 0 0;
-    color: rgba(221, 232, 255, 0.78);
-    font-size: 0.98rem;
-    line-height: 1.65;
-    max-width: 760px;
+  .sale-hero__title h2{
+    margin:0;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    font-size:clamp(1.8rem, 3vw, 2.5rem);
+    font-weight:900;
+    letter-spacing:-.03em;
   }
 
-  .sale-detail-actions {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
+  .sale-hero__title h2 i{
+    color:#8ec5ff;
   }
 
-  .btn-detail-back,
-  .btn-detail-ticket,
-  .btn-detail-list {
-    border-radius: 14px;
-    padding: 11px 18px;
-    font-weight: 700;
-    font-size: 0.95rem;
-    text-decoration: none;
-    transition: all 0.25s ease;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
+  .sale-hero__title p{
+    margin:10px 0 0;
+    color:var(--vd-muted);
+    max-width:780px;
+    line-height:1.68;
+    font-size:.98rem;
   }
 
-  .btn-detail-back {
-    color: #dbe9ff;
-    border: 1px solid rgba(135, 164, 255, 0.24);
-    background: rgba(255, 255, 255, 0.04);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+  .sale-hero__meta{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-top:14px;
+    align-items:center;
   }
 
-  .btn-detail-back:hover {
-    color: #ffffff;
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(135, 164, 255, 0.4);
-    transform: translateY(-1px);
+  .hero-date{
+    color:var(--vd-muted);
+    font-size:.92rem;
   }
 
-  .btn-detail-list {
-    color: #bfdbfe;
-    border: 1px solid rgba(96, 165, 250, 0.24);
-    background: rgba(37, 99, 235, 0.16);
-    box-shadow: 0 10px 22px rgba(37, 99, 235, 0.18);
+  .sale-detail-actions{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:center;
   }
 
-  .btn-detail-list:hover {
-    color: #fff;
-    background: rgba(37, 99, 235, 0.24);
+  .btn-detail{
+    border-radius:14px;
+    padding:11px 16px;
+    font-weight:800;
+    font-size:.93rem;
+    text-decoration:none;
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    transition:all .22s ease;
+    border:1px solid transparent;
   }
 
-  .btn-detail-ticket {
-    color: #fff;
-    border: 1px solid rgba(34, 197, 94, 0.48);
-    background: linear-gradient(135deg, #16a34a, #22c55e);
-    box-shadow: 0 12px 24px rgba(34, 197, 94, 0.20);
+  .btn-detail:hover{
+    transform:translateY(-1px);
   }
 
-  .btn-detail-ticket:hover {
-    color: #fff;
-    transform: translateY(-1px);
-    box-shadow: 0 16px 28px rgba(34, 197, 94, 0.28);
+  .btn-detail-pdf{
+    color:#fff;
+    border-color:rgba(34,197,94,.45);
+    background:linear-gradient(135deg, #16a34a, #22c55e);
+    box-shadow:0 14px 28px rgba(34,197,94,.20);
   }
 
-  .detail-grid {
-    display: grid;
-    grid-template-columns: 1.15fr 0.85fr;
-    gap: 22px;
+  .btn-detail-pdf:hover{
+    color:#fff;
+    box-shadow:0 18px 34px rgba(34,197,94,.28);
   }
 
-  .detail-card {
-    background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(247,249,255,0.97));
-    border: 1px solid rgba(223, 228, 237, 0.95);
-    border-radius: 24px;
-    padding: 22px;
-    box-shadow: 0 18px 42px rgba(15, 23, 42, 0.16);
-    position: relative;
-    overflow: hidden;
+  .btn-detail-thermal{
+    color:#fef3c7;
+    border-color:rgba(245,158,11,.28);
+    background:rgba(245,158,11,.14);
   }
 
-  .detail-card::before {
-    content: "";
-    position: absolute;
-    inset: 0 0 auto 0;
-    height: 4px;
-    background: linear-gradient(90deg, #0d6efd, #6f42c1, #8b5cf6);
+  .btn-detail-thermal:hover{
+    color:#fff7d6;
+    background:rgba(245,158,11,.20);
   }
 
-  .section-title {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 1.05rem;
-    font-weight: 800;
-    color: #111827;
-    margin: 0 0 16px;
+  .btn-detail-list{
+    color:#dbeafe;
+    border-color:rgba(96,165,250,.24);
+    background:rgba(37,99,235,.18);
   }
 
-  .section-title i {
-    color: #4f46e5;
+  .btn-detail-list:hover{
+    color:#fff;
+    background:rgba(37,99,235,.28);
   }
 
-  .info-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
+  .btn-detail-back{
+    color:#dbe9ff;
+    border-color:rgba(135,164,255,.20);
+    background:rgba(255,255,255,.05);
   }
 
-  .info-box {
-    padding: 14px 15px;
-    border-radius: 16px;
-    background: #fbfcff;
-    border: 1px solid #e4eaf3;
+  .btn-detail-back:hover{
+    color:#fff;
+    background:rgba(255,255,255,.09);
   }
 
-  .info-box .label {
-    display: block;
-    font-size: 0.73rem;
-    font-weight: 800;
-    color: #64748b;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 6px;
+  .pill{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:7px;
+    padding:8px 12px;
+    border-radius:999px;
+    font-size:.79rem;
+    font-weight:800;
+    border:1px solid transparent;
+    white-space:nowrap;
   }
 
-  .info-box .value {
-    color: #0f172a;
-    font-weight: 800;
-    font-size: 0.97rem;
-    line-height: 1.45;
-    word-break: break-word;
+  .pill-source-pos{
+    color:#fde68a;
+    background:rgba(245,158,11,.12);
+    border-color:rgba(245,158,11,.22);
   }
 
-  .items-table {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0 10px;
+  .pill-source-cotizacion{
+    color:#93c5fd;
+    background:rgba(94,160,255,.12);
+    border-color:rgba(94,160,255,.22);
   }
 
-  .items-table thead th {
-    font-size: 0.74rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    font-weight: 800;
-    color: #64748b;
-    padding: 0 12px 8px;
+  .pill-source-web{
+    color:#67e8f9;
+    background:rgba(6,182,212,.12);
+    border-color:rgba(6,182,212,.22);
   }
 
-  .items-table tbody tr {
-    background: #ffffff;
-    box-shadow: 0 10px 20px rgba(15, 23, 42, 0.05);
+  .pill-source-manual{
+    color:#cbd5e1;
+    background:rgba(148,163,184,.12);
+    border-color:rgba(148,163,184,.22);
   }
 
-  .items-table tbody td {
-    padding: 14px 12px;
-    vertical-align: middle;
-    color: #0f172a;
-    font-size: 0.92rem;
-    border-top: 1px solid #e9eef5;
-    border-bottom: 1px solid #e9eef5;
+  .pill-status-paid{
+    color:#86efac;
+    background:rgba(34,197,94,.12);
+    border-color:rgba(34,197,94,.22);
   }
 
-  .items-table tbody td:first-child {
-    border-left: 1px solid #e9eef5;
-    border-top-left-radius: 14px;
-    border-bottom-left-radius: 14px;
+  .pill-status-other{
+    color:#fde68a;
+    background:rgba(245,158,11,.12);
+    border-color:rgba(245,158,11,.22);
   }
 
-  .items-table tbody td:last-child {
-    border-right: 1px solid #e9eef5;
-    border-top-right-radius: 14px;
-    border-bottom-right-radius: 14px;
+  .pill-pay-cash{
+    color:#86efac;
+    background:rgba(34,197,94,.12);
+    border-color:rgba(34,197,94,.22);
   }
 
-  .item-title {
-    font-weight: 800;
-    color: #111827;
+  .pill-pay-digital{
+    color:#93c5fd;
+    background:rgba(59,130,246,.12);
+    border-color:rgba(59,130,246,.22);
   }
 
-  .item-sub {
-    margin-top: 4px;
-    font-size: 0.8rem;
-    color: #64748b;
+  .pill-pay-mixed{
+    color:#c4b5fd;
+    background:rgba(124,58,237,.12);
+    border-color:rgba(124,58,237,.22);
   }
 
-  .summary-box {
-    border-radius: 18px;
-    border: 1px solid #e4eaf3;
-    background: #fbfcff;
-    padding: 16px;
+  .detail-grid{
+    display:grid;
+    grid-template-columns:minmax(0,1.15fr) minmax(360px,.85fr);
+    gap:20px;
   }
 
-  .summary-line {
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 11px 0;
-    color: #475467;
-    font-size: 0.95rem;
-    border-bottom: 1px dashed #e5e7eb;
+  .detail-stack{
+    display:flex;
+    flex-direction:column;
+    gap:18px;
   }
 
-  .summary-line:last-child {
-    border-bottom: none;
+  .detail-card{
+    background:linear-gradient(180deg, rgba(17,24,45,.96), rgba(11,16,32,.96));
+    border:1px solid var(--vd-line);
+    border-radius:24px;
+    box-shadow:var(--vd-shadow);
+    color:var(--vd-text);
+    overflow:hidden;
   }
 
-  .summary-line strong {
-    color: #111827;
+  .detail-card__head{
+    padding:18px 20px;
+    border-bottom:1px solid var(--vd-line);
   }
 
-  .summary-total {
-    margin-top: 12px;
-    padding: 14px 16px;
-    border-radius: 16px;
-    background: linear-gradient(135deg, #ecfdf3, #f0fdf4);
-    border: 1px solid #bbf7d0;
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-    align-items: center;
+  .detail-card__head h3{
+    margin:0;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-size:1.05rem;
+    font-weight:800;
   }
 
-  .summary-total .label {
-    font-size: 0.88rem;
-    font-weight: 800;
-    color: #166534;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
+  .detail-card__head p{
+    margin:6px 0 0;
+    color:var(--vd-muted);
+    font-size:.92rem;
   }
 
-  .summary-total .value {
-    font-size: 1.28rem;
-    font-weight: 900;
-    color: #15803d;
+  .detail-card__body{
+    padding:18px 20px 20px;
   }
 
-  .notes-box {
-    margin-top: 14px;
-    padding: 14px 15px;
-    border-radius: 16px;
-    background: rgba(59, 130, 246, 0.06);
-    border: 1px dashed rgba(59, 130, 246, 0.22);
-    color: #334155;
-    line-height: 1.65;
-    font-size: 0.93rem;
+  .info-grid{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:12px;
   }
 
-  @media (max-width: 980px) {
-    .detail-grid {
-      grid-template-columns: 1fr;
+  .info-box{
+    border:1px solid var(--vd-line);
+    border-radius:18px;
+    background:rgba(255,255,255,.03);
+    padding:14px 14px 12px;
+  }
+
+  .info-box .label{
+    display:block;
+    color:var(--vd-muted);
+    margin-bottom:5px;
+    font-size:.8rem;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    font-weight:700;
+  }
+
+  .info-box .value{
+    color:#fff;
+    font-size:.97rem;
+    font-weight:800;
+    line-height:1.4;
+    word-break:break-word;
+  }
+
+  .quote-box{
+    margin-top:14px;
+    border:1px solid rgba(94,160,255,.22);
+    background:rgba(94,160,255,.08);
+    border-radius:18px;
+    padding:15px;
+  }
+
+  .quote-box__top{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+
+  .quote-box h4{
+    margin:0 0 5px;
+    font-size:.98rem;
+    font-weight:800;
+    color:#dbeafe;
+  }
+
+  .quote-box p{
+    margin:0;
+    color:#bfdbfe;
+    line-height:1.6;
+    font-size:.92rem;
+  }
+
+  .quote-box .btn{
+    border-radius:12px;
+    font-weight:700;
+  }
+
+  .items-table-wrap{
+    overflow-x:auto;
+  }
+
+  .items-table{
+    width:100%;
+    border-collapse:separate;
+    border-spacing:0 10px;
+    min-width:760px;
+  }
+
+  .items-table thead th{
+    color:var(--vd-muted);
+    font-size:.78rem;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    font-weight:800;
+    padding:0 12px 8px;
+    white-space:nowrap;
+  }
+
+  .items-table tbody tr{
+    background:rgba(255,255,255,.03);
+  }
+
+  .items-table tbody td{
+    padding:14px 12px;
+    border-top:1px solid var(--vd-line);
+    border-bottom:1px solid var(--vd-line);
+    vertical-align:middle;
+    color:var(--vd-text);
+  }
+
+  .items-table tbody td:first-child{
+    border-left:1px solid var(--vd-line);
+    border-top-left-radius:16px;
+    border-bottom-left-radius:16px;
+  }
+
+  .items-table tbody td:last-child{
+    border-right:1px solid var(--vd-line);
+    border-top-right-radius:16px;
+    border-bottom-right-radius:16px;
+  }
+
+  .item-title{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+  }
+
+  .item-title strong{
+    color:#fff;
+  }
+
+  .item-title span{
+    color:var(--vd-muted);
+    font-size:.84rem;
+  }
+
+  .empty-items{
+    text-align:center;
+    padding:30px 18px;
+    border:1px dashed var(--vd-line-2);
+    border-radius:18px;
+    color:var(--vd-muted);
+    background:rgba(255,255,255,.02);
+  }
+
+  .summary-box{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+
+  .summary-line{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+    padding:12px 14px;
+    border:1px solid var(--vd-line);
+    border-radius:16px;
+    background:rgba(255,255,255,.03);
+  }
+
+  .summary-line span{
+    color:var(--vd-muted);
+    font-weight:700;
+  }
+
+  .summary-line strong{
+    color:#fff;
+    font-size:1rem;
+  }
+
+  .summary-total{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+    padding:16px 16px;
+    border-radius:18px;
+    background:linear-gradient(135deg, rgba(34,197,94,.12), rgba(94,160,255,.12));
+    border:1px solid rgba(34,197,94,.18);
+  }
+
+  .summary-total .label{
+    color:#dcfce7;
+    font-size:.88rem;
+    font-weight:800;
+    text-transform:uppercase;
+    letter-spacing:.05em;
+  }
+
+  .summary-total .value{
+    color:#dcfce7;
+    font-size:1.35rem;
+    font-weight:900;
+    letter-spacing:-.03em;
+  }
+
+  .notes-box{
+    margin-top:14px;
+    padding:15px;
+    border-radius:18px;
+    background:rgba(59,130,246,.08);
+    border:1px dashed rgba(59,130,246,.22);
+    color:#dbeafe;
+    line-height:1.7;
+    font-size:.93rem;
+    white-space:pre-line;
+  }
+
+  .notes-box.is-empty{
+    color:var(--vd-muted);
+    background:rgba(255,255,255,.03);
+    border:1px dashed var(--vd-line-2);
+  }
+
+  @media (max-width: 1080px){
+    .detail-grid{
+      grid-template-columns:1fr;
     }
   }
 
-  @media (max-width: 768px) {
-    .sale-detail-page {
-      padding: 18px 0 24px;
+  @media (max-width: 768px){
+    .sale-detail-page{
+      padding:18px 0 24px;
     }
 
-    .sale-detail-heading h2 {
-      font-size: 1.7rem;
+    .sale-hero{
+      padding:20px 18px;
+      border-radius:22px;
     }
 
-    .sale-detail-actions {
-      width: 100%;
+    .sale-detail-actions{
+      width:100%;
     }
 
-    .btn-detail-back,
-    .btn-detail-ticket,
-    .btn-detail-list {
-      width: 100%;
-      justify-content: center;
+    .btn-detail{
+      width:100%;
+      justify-content:center;
     }
 
-    .info-grid {
-      grid-template-columns: 1fr;
+    .info-grid{
+      grid-template-columns:1fr;
     }
 
-    .detail-card {
-      padding: 18px;
-      border-radius: 18px;
+    .detail-card__body,
+    .detail-card__head{
+      padding-left:16px;
+      padding-right:16px;
     }
   }
 </style>
 
 <div class="sale-detail-page">
-  <div class="sale-detail-topbar">
-    <div class="sale-detail-heading">
-      <h2><i class="bi bi-file-earmark-text-fill"></i> Detalle de Venta</h2>
-      <p>
-        Consulta la información completa de la operación, productos vendidos,
-        importes y método de pago.
-      </p>
-    </div>
-
-    <div class="sale-detail-actions">
-      <a href="{{ url_for('venta_ticket_pdf', venta_id=V.get('_id')) }}" target="_blank" class="btn-detail-ticket">
-        <i class="bi bi-file-earmark-pdf"></i>
-        Ticket PDF
-      </a>
-
-      <a href="{{ url_for('list_ventas') }}" class="btn-detail-list">
-        <i class="bi bi-receipt-cutoff"></i>
-        Ver ventas
-      </a>
-
-      <a href="{{ url_for('dashboard') }}" class="btn-detail-back">
-        <i class="bi bi-arrow-left-circle"></i>
-        Regresar
-      </a>
-    </div>
-  </div>
-
-  <div class="detail-grid">
-    <div class="detail-card">
-      <div class="section-title">
-        <i class="bi bi-bag-check-fill"></i>
-        Productos vendidos
-      </div>
-
-      <table class="items-table">
-        <thead>
-          <tr>
-            <th>Producto</th>
-            <th>Cant.</th>
-            <th>P. Unitario</th>
-            <th>Importe</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for item in ITEMS %}
-            <tr>
-              <td>
-                <div class="item-title">{{ item.get('title', 'Producto') }}</div>
-                <div class="item-sub">
-                  SKU: {{ item.get('sku') or '—' }} · Código: {{ item.get('barcode') or '—' }}
-                </div>
-              </td>
-              <td>{{ item.get('qty', 0) }}</td>
-              <td>$ {{ '%.2f'|format(item.get('unit_price', 0)|float) }}</td>
-              <td><strong>$ {{ '%.2f'|format(item.get('subtotal', 0)|float) }}</strong></td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-
-      {% if V.get('notes') %}
-        <div class="section-title" style="margin-top:18px;">
-          <i class="bi bi-journal-text"></i>
-          Notas
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ 'warning' if category == 'message' else category }} mb-3">
+          {{ message }}
         </div>
-        <div class="notes-box">
-          {{ V.get('notes') }}
-        </div>
-      {% endif %}
-    </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
 
-    <div class="detail-card">
-      <div class="section-title">
-        <i class="bi bi-info-circle-fill"></i>
-        Información general
-      </div>
+  <section class="sale-hero">
+    <div class="sale-hero__row">
+      <div class="sale-hero__title">
+        <h2>
+          <i class="bi bi-receipt-cutoff"></i>
+          {{ V.get('folio', 'Venta') }}
+        </h2>
 
-      <div class="info-grid">
-        <div class="info-box">
-          <span class="label">Folio</span>
-          <span class="value">{{ V.get('folio', '—') }}</span>
-        </div>
+        <p>
+          Consulta el detalle completo de la operación, el origen comercial,
+          los productos vendidos, el desglose de cobro y los comprobantes disponibles.
+        </p>
 
-        <div class="info-box">
-          <span class="label">Tipo</span>
-          <span class="value">{{ V.get('tipo', 'mostrador')|capitalize }}</span>
-        </div>
+        <div class="sale-hero__meta">
+          <span class="pill
+            {% if SOURCE == 'pos' %}pill-source-pos
+            {% elif SOURCE == 'cotizacion' %}pill-source-cotizacion
+            {% elif SOURCE == 'web' %}pill-source-web
+            {% else %}pill-source-manual{% endif %}">
+            <i class="bi
+              {% if SOURCE == 'pos' %}bi-shop-window
+              {% elif SOURCE == 'cotizacion' %}bi-file-earmark-text
+              {% elif SOURCE == 'web' %}bi-globe2
+              {% else %}bi-pencil-square{% endif %}"></i>
+            {{ SOURCE|replace('_', ' ')|title }}
+          </span>
 
-        <div class="info-box">
-          <span class="label">Cliente</span>
-          <span class="value">{{ V.get('customer_name') or 'Mostrador' }}</span>
-        </div>
+          <span class="pill {% if STATUS == 'paid' %}pill-status-paid{% else %}pill-status-other{% endif %}">
+            <i class="bi {% if STATUS == 'paid' %}bi-check2-circle{% else %}bi-clock-history{% endif %}"></i>
+            {{ STATUS|replace('_', ' ')|title }}
+          </span>
 
-        <div class="info-box">
-          <span class="label">Teléfono</span>
-          <span class="value">{{ V.get('customer_phone') or 'Sin teléfono' }}</span>
-        </div>
+          <span class="pill
+            {% if PM == 'efectivo' %}pill-pay-cash
+            {% elif PM in ['transferencia', 'tarjeta', 'digital'] %}pill-pay-digital
+            {% else %}pill-pay-mixed{% endif %}">
+            <i class="bi
+              {% if PM == 'efectivo' %}bi-cash-coin
+              {% elif PM == 'tarjeta' %}bi-credit-card-2-front
+              {% elif PM == 'transferencia' %}bi-bank
+              {% elif PM == 'digital' %}bi-phone
+              {% else %}bi-shuffle{% endif %}"></i>
+            {{ PM|capitalize if PM else '—' }}
+          </span>
 
-        <div class="info-box">
-          <span class="label">Método de pago</span>
-          <span class="value">{{ V.get('payment_method', '—')|capitalize }}</span>
-        </div>
-
-        <div class="info-box">
-          <span class="label">Fecha</span>
-          <span class="value">
+          <span class="hero-date">
             {% if V.get('created_at') %}
               {{ V.get('created_at').strftime('%d/%m/%Y %I:%M %p') }}
             {% else %}
-              —
+              Sin fecha registrada
             {% endif %}
           </span>
         </div>
       </div>
 
-      <div class="section-title" style="margin-top:18px;">
-        <i class="bi bi-cash-stack"></i>
-        Resumen económico
+      <div class="sale-detail-actions">
+        <a href="{{ url_for('venta_ticket_pdf', venta_id=V.get('_id')) }}" target="_blank" class="btn-detail btn-detail-pdf">
+          <i class="bi bi-file-earmark-pdf"></i>
+          Ticket carta
+        </a>
+
+        <a href="{{ url_for('venta_ticket_pdf', venta_id=V.get('_id'), paper='thermal') }}" target="_blank" class="btn-detail btn-detail-thermal">
+          <i class="bi bi-printer"></i>
+          Ticket térmico
+        </a>
+
+        <a href="{{ url_for('list_ventas') }}" class="btn-detail btn-detail-list">
+          <i class="bi bi-receipt"></i>
+          Ver ventas
+        </a>
+
+        <a href="{{ url_for('dashboard') }}" class="btn-detail btn-detail-back">
+          <i class="bi bi-arrow-left-circle"></i>
+          Regresar
+        </a>
       </div>
+    </div>
+  </section>
 
-      <div class="summary-box">
-        <div class="summary-line">
-          <span>Subtotal</span>
-          <strong>$ {{ '%.2f'|format(V.get('subtotal', 0)|float) }}</strong>
+  <div class="detail-grid">
+    <div class="detail-stack">
+      <section class="detail-card">
+        <div class="detail-card__head">
+          <h3><i class="bi bi-info-circle-fill"></i> Información general</h3>
+          <p>Datos del cliente y contexto comercial de esta venta.</p>
         </div>
 
-        <div class="summary-line">
-          <span>Descuento</span>
-          <strong>$ {{ '%.2f'|format(V.get('discount', 0)|float) }}</strong>
+        <div class="detail-card__body">
+          <div class="info-grid">
+            <div class="info-box">
+              <span class="label">Folio</span>
+              <span class="value">{{ V.get('folio', '—') }}</span>
+            </div>
+
+            <div class="info-box">
+              <span class="label">Tipo</span>
+              <span class="value">{{ V.get('tipo', 'mostrador')|replace('_', ' ')|title }}</span>
+            </div>
+
+            <div class="info-box">
+              <span class="label">Cliente</span>
+              <span class="value">{{ V.get('customer_name') or 'Mostrador' }}</span>
+            </div>
+
+            <div class="info-box">
+              <span class="label">Teléfono</span>
+              <span class="value">{{ V.get('customer_phone') or 'Sin teléfono' }}</span>
+            </div>
+
+            <div class="info-box">
+              <span class="label">Correo</span>
+              <span class="value">{{ V.get('customer_email') or 'Sin correo' }}</span>
+            </div>
+
+            <div class="info-box">
+              <span class="label">Método de pago</span>
+              <span class="value">{{ PM|capitalize if PM else '—' }}</span>
+            </div>
+
+            <div class="info-box">
+              <span class="label">Origen</span>
+              <span class="value">{{ SOURCE|replace('_', ' ')|title }}</span>
+            </div>
+
+            <div class="info-box">
+              <span class="label">Estado</span>
+              <span class="value">{{ STATUS|replace('_', ' ')|title }}</span>
+            </div>
+          </div>
+
+          {% if V.get('quote_folio') or V.get('quote_id') %}
+            <div class="quote-box">
+              <div class="quote-box__top">
+                <div>
+                  <h4><i class="bi bi-link-45deg me-1"></i> Venta relacionada con cotización</h4>
+                  <p>
+                    {% if V.get('quote_folio') %}
+                      Folio origen: <strong>{{ V.get('quote_folio') }}</strong>
+                    {% else %}
+                      Esta venta conserva referencia a una cotización origen.
+                    {% endif %}
+                  </p>
+                </div>
+
+                {% if V.get('quote_id') %}
+                  <a href="{{ url_for('cotizacion_detail', quote_id=V.get('quote_id')) }}" class="btn btn-outline-light btn-sm">
+                    <i class="bi bi-eye me-1"></i> Ver cotización
+                  </a>
+                {% endif %}
+              </div>
+            </div>
+          {% endif %}
+        </div>
+      </section>
+
+      <section class="detail-card">
+        <div class="detail-card__head">
+          <h3><i class="bi bi-bag-check-fill"></i> Productos vendidos</h3>
+          <p>Detalle de cantidades, precios, descuentos y subtotales por renglón.</p>
         </div>
 
-        <div class="summary-line">
-          <span>Efectivo</span>
-          <strong>$ {{ '%.2f'|format(V.get('cash_amount', 0)|float) }}</strong>
+        <div class="detail-card__body">
+          {% if ITEMS and ITEMS|length > 0 %}
+            <div class="items-table-wrap">
+              <table class="items-table">
+                <thead>
+                  <tr>
+                    <th>Producto</th>
+                    <th>Cant.</th>
+                    <th>P. unitario</th>
+                    <th>Desc.</th>
+                    <th>Importe</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for item in ITEMS %}
+                    <tr>
+                      <td>
+                        <div class="item-title">
+                          <strong>{{ item.get('title') or 'Producto' }}</strong>
+                          <span>
+                            {% if item.get('sku') %}SKU: {{ item.get('sku') }}{% else %}Sin SKU{% endif %}
+                            {% if item.get('barcode') %} · Código: {{ item.get('barcode') }}{% endif %}
+                          </span>
+                        </div>
+                      </td>
+                      <td>{{ item.get('qty', 0) }}</td>
+                      <td>$ {{ '%.2f'|format(item.get('unit_price', 0)|float) }}</td>
+                      <td>$ {{ '%.2f'|format(item.get('discount', 0)|float) }}</td>
+                      <td><strong>$ {{ '%.2f'|format(item.get('subtotal', 0)|float) }}</strong></td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="empty-items">
+              <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+              Esta venta no tiene productos cargados.
+            </div>
+          {% endif %}
+        </div>
+      </section>
+    </div>
+
+    <div class="detail-stack">
+      <section class="detail-card">
+        <div class="detail-card__head">
+          <h3><i class="bi bi-cash-stack"></i> Resumen económico</h3>
+          <p>Desglose de subtotal, descuento y monto final de la operación.</p>
         </div>
 
-        <div class="summary-line">
-          <span>Digital</span>
-          <strong>$ {{ '%.2f'|format(V.get('digital_amount', 0)|float) }}</strong>
+        <div class="detail-card__body">
+          <div class="summary-box">
+            <div class="summary-line">
+              <span>Subtotal</span>
+              <strong>$ {{ '%.2f'|format(V.get('subtotal', 0)|float) }}</strong>
+            </div>
+
+            <div class="summary-line">
+              <span>Descuento</span>
+              <strong>$ {{ '%.2f'|format(V.get('discount', 0)|float) }}</strong>
+            </div>
+
+            <div class="summary-line">
+              <span>Efectivo</span>
+              <strong>$ {{ '%.2f'|format(V.get('cash_amount', 0)|float) }}</strong>
+            </div>
+
+            <div class="summary-line">
+              <span>Digital</span>
+              <strong>$ {{ '%.2f'|format(V.get('digital_amount', 0)|float) }}</strong>
+            </div>
+
+            <div class="summary-total">
+              <div class="label">Total</div>
+              <div class="value">$ {{ '%.2f'|format(V.get('total', 0)|float) }}</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="detail-card">
+        <div class="detail-card__head">
+          <h3><i class="bi bi-journal-text"></i> Notas</h3>
+          <p>Observaciones internas, referencia de cobro o contexto adicional.</p>
         </div>
 
-        <div class="summary-total">
-          <div class="label">Total</div>
-          <div class="value">$ {{ '%.2f'|format(V.get('total', 0)|float) }}</div>
+        <div class="detail-card__body">
+          <div class="notes-box {% if not V.get('notes') %}is-empty{% endif %}">
+            {{ V.get('notes') or 'Sin notas registradas para esta venta.' }}
+          </div>
         </div>
-      </div>
+      </section>
     </div>
   </div>
 </div>

@@ -1,0 +1,838 @@
+{% extends "layout.html" %}
+
+{% block title %}Cotizaciones · GlobalPyMEs{% endblock %}
+
+{% block content %}
+{% set ITEMS = cotizaciones|default([]) %}
+{% set ACTIVE_STATUS = current_status|default('') %}
+
+<style>
+  :root{
+    --q-bg:#081120;
+    --q-card:#10192d;
+    --q-card-2:#0d1527;
+    --q-line:rgba(148,163,184,.16);
+    --q-line-2:rgba(148,163,184,.25);
+    --q-text:#e6eefc;
+    --q-muted:#98a9c8;
+    --q-brand:#5ea0ff;
+    --q-brand-2:#7c3aed;
+    --q-success:#22c55e;
+    --q-warning:#f59e0b;
+    --q-danger:#ef4444;
+    --q-info:#06b6d4;
+    --q-shadow:0 24px 54px rgba(2,6,23,.30);
+  }
+
+  .quotes-page{
+    max-width:1320px;
+    margin:0 auto;
+    padding:28px 0 90px;
+  }
+
+  .quotes-hero{
+    position:relative;
+    overflow:hidden;
+    border-radius:28px;
+    padding:28px;
+    background:
+      radial-gradient(circle at top right, rgba(94,160,255,.22), transparent 28%),
+      radial-gradient(circle at bottom left, rgba(124,58,237,.16), transparent 24%),
+      linear-gradient(135deg, #0b1020, #121c35 56%, #0f172a);
+    border:1px solid rgba(255,255,255,.08);
+    box-shadow:var(--q-shadow);
+    color:var(--q-text);
+    margin-bottom:22px;
+  }
+
+  .quotes-hero__row{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:18px;
+    flex-wrap:wrap;
+  }
+
+  .quotes-hero__title{
+    flex:1 1 560px;
+  }
+
+  .quotes-hero__title h2{
+    margin:0;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    font-size:clamp(1.8rem, 3vw, 2.5rem);
+    font-weight:900;
+    letter-spacing:-.03em;
+  }
+
+  .quotes-hero__title p{
+    margin:10px 0 0;
+    color:var(--q-muted);
+    max-width:780px;
+    line-height:1.68;
+    font-size:.98rem;
+  }
+
+  .quotes-actions-top{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+
+  .btn-quote{
+    border-radius:14px;
+    padding:11px 17px;
+    font-weight:800;
+    font-size:.94rem;
+    text-decoration:none;
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    transition:all .22s ease;
+    border:1px solid transparent;
+  }
+
+  .btn-quote:hover{
+    transform:translateY(-1px);
+  }
+
+  .btn-quote-dashboard{
+    color:#dbe9ff;
+    border-color:rgba(135,164,255,.24);
+    background:rgba(255,255,255,.05);
+  }
+
+  .btn-quote-dashboard:hover{
+    color:#fff;
+    background:rgba(255,255,255,.09);
+  }
+
+  .btn-quote-sales{
+    color:#fff;
+    border-color:rgba(34,197,94,.45);
+    background:linear-gradient(135deg, #16a34a, #22c55e);
+    box-shadow:0 14px 28px rgba(34,197,94,.20);
+  }
+
+  .btn-quote-sales:hover{
+    color:#fff;
+    box-shadow:0 18px 34px rgba(34,197,94,.28);
+  }
+
+  .btn-quote-pos{
+    color:#dbeafe;
+    border-color:rgba(96,165,250,.24);
+    background:rgba(37,99,235,.18);
+  }
+
+  .btn-quote-pos:hover{
+    color:#fff;
+    background:rgba(37,99,235,.28);
+  }
+
+  .stats-grid{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:16px;
+    margin-bottom:20px;
+  }
+
+  .stat-card{
+    background:linear-gradient(180deg, rgba(17,24,45,.96), rgba(11,16,32,.96));
+    border:1px solid var(--q-line);
+    border-radius:22px;
+    padding:18px 18px 16px;
+    box-shadow:var(--q-shadow);
+    color:var(--q-text);
+    min-height:118px;
+  }
+
+  .stat-card__label{
+    color:var(--q-muted);
+    font-size:.9rem;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:10px;
+  }
+
+  .stat-card__value{
+    font-size:2rem;
+    font-weight:900;
+    line-height:1;
+    letter-spacing:-.03em;
+  }
+
+  .stat-card__sub{
+    margin-top:10px;
+    color:var(--q-muted);
+    font-size:.84rem;
+  }
+
+  .quotes-panel{
+    background:linear-gradient(180deg, rgba(17,24,45,.96), rgba(11,16,32,.96));
+    border:1px solid var(--q-line);
+    border-radius:24px;
+    box-shadow:var(--q-shadow);
+    color:var(--q-text);
+    overflow:hidden;
+  }
+
+  .quotes-panel__head{
+    padding:18px 20px;
+    border-bottom:1px solid var(--q-line);
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:14px;
+    flex-wrap:wrap;
+  }
+
+  .quotes-panel__head h3{
+    margin:0;
+    font-size:1.06rem;
+    font-weight:800;
+  }
+
+  .quotes-panel__head p{
+    margin:6px 0 0;
+    color:var(--q-muted);
+    font-size:.92rem;
+  }
+
+  .quotes-filters{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:center;
+  }
+
+  .filter-chip{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    padding:10px 14px;
+    border-radius:999px;
+    text-decoration:none;
+    font-size:.86rem;
+    font-weight:800;
+    color:#dbe9ff;
+    border:1px solid rgba(255,255,255,.10);
+    background:rgba(255,255,255,.05);
+    transition:all .18s ease;
+  }
+
+  .filter-chip:hover{
+    color:#fff;
+    background:rgba(255,255,255,.08);
+    transform:translateY(-1px);
+  }
+
+  .filter-chip.is-active{
+    color:#07111f;
+    border-color:rgba(94,160,255,.34);
+    background:linear-gradient(135deg, #8ec5ff, #5ea0ff);
+    box-shadow:0 14px 24px rgba(94,160,255,.20);
+  }
+
+  .table-wrap{
+    padding:8px 14px 16px;
+    overflow-x:auto;
+  }
+
+  .quotes-table{
+    width:100%;
+    border-collapse:separate;
+    border-spacing:0 12px;
+    min-width:1180px;
+  }
+
+  .quotes-table thead th{
+    font-size:.76rem;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    font-weight:800;
+    color:var(--q-muted);
+    padding:0 14px 10px;
+    border:0;
+    white-space:nowrap;
+  }
+
+  .quotes-table tbody tr{
+    background:rgba(255,255,255,.03);
+    transition:transform .16s ease, background .16s ease;
+  }
+
+  .quotes-table tbody tr:hover{
+    transform:translateY(-1px);
+    background:rgba(255,255,255,.05);
+  }
+
+  .quotes-table tbody td{
+    padding:16px 14px;
+    vertical-align:middle;
+    border-top:1px solid var(--q-line);
+    border-bottom:1px solid var(--q-line);
+    color:var(--q-text);
+    font-size:.93rem;
+  }
+
+  .quotes-table tbody td:first-child{
+    border-left:1px solid var(--q-line);
+    border-top-left-radius:16px;
+    border-bottom-left-radius:16px;
+  }
+
+  .quotes-table tbody td:last-child{
+    border-right:1px solid var(--q-line);
+    border-top-right-radius:16px;
+    border-bottom-right-radius:16px;
+  }
+
+  .folio-stack{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+
+  .folio-main{
+    font-weight:900;
+    color:#fff;
+    letter-spacing:-.02em;
+  }
+
+  .subtle{
+    color:var(--q-muted);
+    font-size:.82rem;
+  }
+
+  .customer-name{
+    font-weight:800;
+    color:#fff;
+  }
+
+  .pill{
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    padding:8px 12px;
+    border-radius:999px;
+    font-size:.79rem;
+    font-weight:800;
+    border:1px solid transparent;
+    white-space:nowrap;
+  }
+
+  .pill-origin-public{
+    color:#67e8f9;
+    background:rgba(6,182,212,.12);
+    border-color:rgba(6,182,212,.22);
+  }
+
+  .pill-origin-manual{
+    color:#cbd5e1;
+    background:rgba(148,163,184,.12);
+    border-color:rgba(148,163,184,.22);
+  }
+
+  .pill-via-wa{
+    color:#86efac;
+    background:rgba(34,197,94,.12);
+    border-color:rgba(34,197,94,.22);
+  }
+
+  .pill-via-admin{
+    color:#c4b5fd;
+    background:rgba(124,58,237,.12);
+    border-color:rgba(124,58,237,.22);
+  }
+
+  .pill-status-draft{
+    color:#cbd5e1;
+    background:rgba(148,163,184,.12);
+    border-color:rgba(148,163,184,.18);
+  }
+
+  .pill-status-sent{
+    color:#67e8f9;
+    background:rgba(6,182,212,.12);
+    border-color:rgba(6,182,212,.22);
+  }
+
+  .pill-status-approved{
+    color:#86efac;
+    background:rgba(34,197,94,.12);
+    border-color:rgba(34,197,94,.22);
+  }
+
+  .pill-status-rejected,
+  .pill-status-cancelled,
+  .pill-status-expired{
+    color:#fca5a5;
+    background:rgba(239,68,68,.12);
+    border-color:rgba(239,68,68,.22);
+  }
+
+  .pill-status-converted{
+    color:#93c5fd;
+    background:rgba(94,160,255,.12);
+    border-color:rgba(94,160,255,.22);
+  }
+
+  .quote-total{
+    font-size:1rem;
+    font-weight:900;
+    color:#86efac;
+    white-space:nowrap;
+  }
+
+  .table-actions{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+
+  .btn-row{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:7px;
+    border-radius:12px;
+    padding:9px 12px;
+    font-weight:800;
+    text-decoration:none;
+    font-size:.86rem;
+    transition:all .18s ease;
+    border:1px solid transparent;
+    white-space:nowrap;
+  }
+
+  .btn-view{
+    color:#93c5fd;
+    background:rgba(59,130,246,.12);
+    border-color:rgba(59,130,246,.22);
+  }
+
+  .btn-view:hover{
+    color:#dbeafe;
+    background:rgba(59,130,246,.18);
+  }
+
+  .btn-print{
+    color:#fcd34d;
+    background:rgba(245,158,11,.12);
+    border-color:rgba(245,158,11,.22);
+  }
+
+  .btn-print:hover{
+    color:#fef3c7;
+    background:rgba(245,158,11,.18);
+  }
+
+  .btn-sale{
+    color:#86efac;
+    background:rgba(34,197,94,.12);
+    border-color:rgba(34,197,94,.22);
+  }
+
+  .btn-sale:hover{
+    color:#dcfce7;
+    background:rgba(34,197,94,.18);
+  }
+
+  .mobile-quotes{
+    display:none;
+    padding:14px;
+  }
+
+  .mobile-quote-card{
+    background:rgba(255,255,255,.03);
+    border:1px solid var(--q-line);
+    border-radius:18px;
+    padding:16px;
+    margin-bottom:12px;
+  }
+
+  .mobile-quote-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:12px;
+    margin-bottom:12px;
+  }
+
+  .mobile-quote-meta{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:10px;
+    margin-bottom:14px;
+  }
+
+  .mobile-box{
+    border:1px solid var(--q-line);
+    border-radius:14px;
+    background:rgba(255,255,255,.02);
+    padding:10px 12px;
+  }
+
+  .mobile-box small{
+    display:block;
+    color:var(--q-muted);
+    margin-bottom:4px;
+  }
+
+  .mobile-box strong{
+    color:#fff;
+    word-break:break-word;
+  }
+
+  .mobile-actions{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+
+  .empty-quotes{
+    padding:54px 24px;
+    text-align:center;
+    border-radius:22px;
+    background:linear-gradient(180deg, rgba(17,24,45,.96), rgba(11,16,32,.96));
+    border:1px solid var(--q-line);
+    box-shadow:var(--q-shadow);
+    color:var(--q-text);
+  }
+
+  .empty-quotes h3{
+    margin:0 0 10px;
+    font-weight:900;
+    color:#fff;
+  }
+
+  .empty-quotes p{
+    margin:0 0 18px;
+    color:var(--q-muted);
+    line-height:1.7;
+  }
+
+  @media (max-width:1100px){
+    .stats-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .quotes-table{display:none;}
+    .mobile-quotes{display:block;}
+  }
+
+  @media (max-width:768px){
+    .quotes-page{padding:18px 0 24px;}
+    .quotes-hero{padding:20px 18px;border-radius:22px;}
+    .quotes-actions-top{width:100%;}
+    .btn-quote{width:100%;justify-content:center;}
+    .stats-grid{grid-template-columns:1fr;}
+    .mobile-quote-meta{grid-template-columns:1fr;}
+    .quotes-filters{width:100%;}
+    .filter-chip{width:100%;justify-content:center;}
+  }
+</style>
+
+<div class="quotes-page">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ 'warning' if category == 'message' else category }} mb-3">
+          {{ message }}
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <section class="quotes-hero">
+    <div class="quotes-hero__row">
+      <div class="quotes-hero__title">
+        <h2><i class="bi bi-file-earmark-text"></i> Cotizaciones</h2>
+        <p>
+          Aquí administras propuestas comerciales. Puedes revisarlas, imprimirlas,
+          aprobarlas, rechazarlas o convertirlas manualmente a una venta real.
+        </p>
+      </div>
+
+      <div class="quotes-actions-top">
+        <a href="{{ url_for('list_ventas') }}" class="btn-quote btn-quote-sales">
+          <i class="bi bi-receipt-cutoff"></i> Ver ventas
+        </a>
+
+        <a href="{{ url_for('pos') }}" class="btn-quote btn-quote-pos">
+          <i class="bi bi-shop-window"></i> Abrir POS
+        </a>
+
+        <a href="{{ url_for('dashboard') }}" class="btn-quote btn-quote-dashboard">
+          <i class="bi bi-arrow-left-circle"></i> Regresar
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="stats-grid">
+    <article class="stat-card">
+      <div class="stat-card__label">
+        <i class="bi bi-collection"></i> Registros cargados
+      </div>
+      <div class="stat-card__value">{{ ITEMS|length }}</div>
+      <div class="stat-card__sub">Cotizaciones en esta vista</div>
+    </article>
+
+    <article class="stat-card">
+      <div class="stat-card__label">
+        <i class="bi bi-hourglass-split"></i> Abiertas
+      </div>
+      <div class="stat-card__value">{{ abiertas|default(0) }}</div>
+      <div class="stat-card__sub">Draft, enviadas o aprobadas</div>
+    </article>
+
+    <article class="stat-card">
+      <div class="stat-card__label">
+        <i class="bi bi-check2-circle"></i> Convertidas
+      </div>
+      <div class="stat-card__value">{{ convertidas|default(0) }}</div>
+      <div class="stat-card__sub">Ya pasaron a venta real</div>
+    </article>
+
+    <article class="stat-card">
+      <div class="stat-card__label">
+        <i class="bi bi-x-circle"></i> Rechazadas
+      </div>
+      <div class="stat-card__value">{{ rechazadas|default(0) }}</div>
+      <div class="stat-card__sub">No avanzaron comercialmente</div>
+    </article>
+  </section>
+
+  <section class="quotes-panel">
+    <div class="quotes-panel__head">
+      <div>
+        <h3>Propuestas registradas</h3>
+        <p>Filtra por estado y entra al detalle para operarlas mejor.</p>
+      </div>
+
+      <div class="quotes-filters">
+        <a href="{{ url_for('list_cotizaciones') }}" class="filter-chip {% if not ACTIVE_STATUS %}is-active{% endif %}">
+          <i class="bi bi-grid"></i> Todas
+        </a>
+
+        <a href="{{ url_for('list_cotizaciones', status='draft') }}" class="filter-chip {% if ACTIVE_STATUS == 'draft' %}is-active{% endif %}">
+          <i class="bi bi-pencil-square"></i> Draft
+        </a>
+
+        <a href="{{ url_for('list_cotizaciones', status='sent') }}" class="filter-chip {% if ACTIVE_STATUS == 'sent' %}is-active{% endif %}">
+          <i class="bi bi-send"></i> Enviadas
+        </a>
+
+        <a href="{{ url_for('list_cotizaciones', status='approved') }}" class="filter-chip {% if ACTIVE_STATUS == 'approved' %}is-active{% endif %}">
+          <i class="bi bi-check2-circle"></i> Aprobadas
+        </a>
+
+        <a href="{{ url_for('list_cotizaciones', status='converted') }}" class="filter-chip {% if ACTIVE_STATUS == 'converted' %}is-active{% endif %}">
+          <i class="bi bi-receipt"></i> Convertidas
+        </a>
+
+        <a href="{{ url_for('list_cotizaciones', status='rejected') }}" class="filter-chip {% if ACTIVE_STATUS == 'rejected' %}is-active{% endif %}">
+          <i class="bi bi-x-circle"></i> Rechazadas
+        </a>
+      </div>
+    </div>
+
+    {% if ITEMS %}
+      <div class="table-wrap">
+        <table class="quotes-table">
+          <thead>
+            <tr>
+              <th>Folio</th>
+              <th>Fecha</th>
+              <th>Cliente</th>
+              <th>Origen</th>
+              <th>Canal</th>
+              <th>Estado</th>
+              <th>Items</th>
+              <th>Total</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for q in ITEMS %}
+              {% set status = (q.get('status') or 'draft')|lower %}
+              {% set origin = (q.get('origin') or 'manual')|lower %}
+              {% set created_via = (q.get('created_via') or 'dashboard')|lower %}
+              {% set q_items = q.get('items', []) %}
+              <tr>
+                <td>
+                  <div class="folio-stack">
+                    <div class="folio-main">{{ q.get('folio', '—') }}</div>
+                    {% if q.get('converted_folio') %}
+                      <div class="subtle">Venta: {{ q.get('converted_folio') }}</div>
+                    {% else %}
+                      <div class="subtle">Propuesta comercial</div>
+                    {% endif %}
+                  </div>
+                </td>
+
+                <td>
+                  {% if q.get('created_at') %}
+                    {{ q.get('created_at').strftime('%d/%m/%Y') }}
+                    <div class="subtle">{{ q.get('created_at').strftime('%I:%M %p') }}</div>
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+
+                <td>
+                  <div class="customer-name">{{ q.get('customer_name') or 'Sin nombre' }}</div>
+                  <div class="subtle">{{ q.get('customer_phone') or q.get('customer_email') or 'Sin contacto adicional' }}</div>
+                </td>
+
+                <td>
+                  <span class="pill {% if origin == 'public_quote' %}pill-origin-public{% else %}pill-origin-manual{% endif %}">
+                    <i class="bi {% if origin == 'public_quote' %}bi-globe2{% else %}bi-pencil-square{% endif %}"></i>
+                    {{ origin|replace('_', ' ')|title }}
+                  </span>
+                </td>
+
+                <td>
+                  <span class="pill {% if 'whatsapp' in created_via %}pill-via-wa{% else %}pill-via-admin{% endif %}">
+                    <i class="bi {% if 'whatsapp' in created_via %}bi-whatsapp{% else %}bi-window-sidebar{% endif %}"></i>
+                    {{ created_via|replace('_', ' ')|title }}
+                  </span>
+                </td>
+
+                <td>
+                  <span class="pill
+                    {% if status == 'draft' %}pill-status-draft
+                    {% elif status == 'sent' %}pill-status-sent
+                    {% elif status == 'approved' %}pill-status-approved
+                    {% elif status == 'converted' %}pill-status-converted
+                    {% else %}pill-status-rejected{% endif %}">
+                    <i class="bi
+                      {% if status == 'draft' %}bi-pencil-square
+                      {% elif status == 'sent' %}bi-send
+                      {% elif status == 'approved' %}bi-check2-circle
+                      {% elif status == 'converted' %}bi-receipt
+                      {% else %}bi-x-circle{% endif %}"></i>
+                    {{ status|replace('_', ' ')|title }}
+                  </span>
+                </td>
+
+                <td>{{ q_items|length }}</td>
+
+                <td>
+                  <div class="quote-total">${{ '%.2f'|format(q.get('total') or 0) }}</div>
+                </td>
+
+                <td>
+                  <div class="table-actions">
+                    <a href="{{ url_for('cotizacion_detail', quote_id=q.get('_id')) }}" class="btn-row btn-view">
+                      <i class="bi bi-eye"></i> Ver
+                    </a>
+
+                    <a href="{{ url_for('cotizacion_print', quote_id=q.get('_id')) }}" target="_blank" class="btn-row btn-print">
+                      <i class="bi bi-printer"></i> Imprimir
+                    </a>
+
+                    {% if q.get('status') == 'converted' and q.get('converted_sale_id') %}
+                      <a href="{{ url_for('venta_detail', venta_id=q.get('converted_sale_id')) }}" class="btn-row btn-sale">
+                        <i class="bi bi-receipt-cutoff"></i> Venta
+                      </a>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        <div class="mobile-quotes">
+          {% for q in ITEMS %}
+            {% set status = (q.get('status') or 'draft')|lower %}
+            {% set origin = (q.get('origin') or 'manual')|lower %}
+            {% set created_via = (q.get('created_via') or 'dashboard')|lower %}
+            {% set q_items = q.get('items', []) %}
+            <article class="mobile-quote-card">
+              <div class="mobile-quote-top">
+                <div>
+                  <div class="folio-main">{{ q.get('folio', '—') }}</div>
+                  <div class="subtle mt-1">
+                    {% if q.get('created_at') %}
+                      {{ q.get('created_at').strftime('%d/%m/%Y %I:%M %p') }}
+                    {% else %}
+                      Sin fecha
+                    {% endif %}
+                  </div>
+                </div>
+
+                <div class="quote-total">${{ '%.2f'|format(q.get('total') or 0) }}</div>
+              </div>
+
+              <div class="mobile-quote-meta">
+                <div class="mobile-box">
+                  <small>Cliente</small>
+                  <strong>{{ q.get('customer_name') or 'Sin nombre' }}</strong>
+                </div>
+
+                <div class="mobile-box">
+                  <small>Contacto</small>
+                  <strong>{{ q.get('customer_phone') or q.get('customer_email') or 'Sin contacto adicional' }}</strong>
+                </div>
+
+                <div class="mobile-box">
+                  <small>Origen</small>
+                  <strong>{{ origin|replace('_', ' ')|title }}</strong>
+                </div>
+
+                <div class="mobile-box">
+                  <small>Canal</small>
+                  <strong>{{ created_via|replace('_', ' ')|title }}</strong>
+                </div>
+
+                <div class="mobile-box">
+                  <small>Estado</small>
+                  <strong>{{ status|replace('_', ' ')|title }}</strong>
+                </div>
+
+                <div class="mobile-box">
+                  <small>Items</small>
+                  <strong>{{ q_items|length }}</strong>
+                </div>
+              </div>
+
+              <div class="mobile-actions">
+                <a href="{{ url_for('cotizacion_detail', quote_id=q.get('_id')) }}" class="btn-row btn-view">
+                  <i class="bi bi-eye"></i> Ver
+                </a>
+
+                <a href="{{ url_for('cotizacion_print', quote_id=q.get('_id')) }}" target="_blank" class="btn-row btn-print">
+                  <i class="bi bi-printer"></i> Imprimir
+                </a>
+
+                {% if q.get('status') == 'converted' and q.get('converted_sale_id') %}
+                  <a href="{{ url_for('venta_detail', venta_id=q.get('converted_sale_id')) }}" class="btn-row btn-sale">
+                    <i class="bi bi-receipt-cutoff"></i> Venta
+                  </a>
+                {% endif %}
+              </div>
+            </article>
+          {% endfor %}
+        </div>
+      </div>
+    {% else %}
+      <div class="empty-quotes">
+        <h3>Aún no hay cotizaciones registradas</h3>
+        <p>
+          Cuando un cliente solicite una propuesta desde la web o captures una cotización manualmente,
+          aparecerá aquí para darle seguimiento y convertirla en venta si se cierra.
+        </p>
+        <a href="{{ url_for('dashboard') }}" class="btn-quote btn-quote-dashboard">
+          <i class="bi bi-grid"></i> Ir al dashboard
+        </a>
+      </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

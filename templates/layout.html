@@ -785,5 +785,28 @@
       }
     });
   </script>
+  <script>
+  window.addEventListener('message', (e) => {
+    const msg = e.data || {};
+    if(msg.type !== 'admin-preview-update') return;
+
+    const payload = msg.payload || {};
+
+    if(payload.color){
+      document.documentElement.style.setProperty('--brand', payload.color);
+    }
+
+    const titleEl = document.querySelector('[data-role="title"], .page-title, h1');
+    const sloganEl = document.querySelector('[data-role="slogan"], .subtitle, .slogan');
+
+    if(titleEl && payload.business_name){
+      titleEl.textContent = payload.business_name;
+    }
+
+    if(sloganEl){
+      sloganEl.textContent = payload.slogan || '';
+    }
+  });
+</script>
 </body>
 </html>

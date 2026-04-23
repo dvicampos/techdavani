@@ -146,7 +146,7 @@
       box-shadow: var(--shadow-xs);
     }
     .btn-brand{ background: var(--brand); color:#fff; }
-    .btn-brand:hover{ filter: saturate(1.1) brightness(1.03); color:var(--brand); }
+    .btn-brand:hover{ filter: saturate(1.1) brightness(1.03); color:#fff; }
     .btn-ghost{ background:#fff; }
     .btn-ghost:hover{ background:#f4f4f4; }
 
@@ -268,6 +268,7 @@
 <body>
   {% set site_slug = slug or page.get('slug','') %}
   {% set site_name = page.get('business_name','Negocio') %}
+
   <!-- NAV -->
   <nav class="navbar navbar-expand-lg nb">
     <div class="container">
@@ -353,35 +354,35 @@
   </header>
 
   {% if promos and promos|length > 0 %}
-<section class="container my-4" id="promos">
-  <h2 class="section-title brand-font">Promos activas</h2>
-  <div class="row g-3">
-    {% for p in promos %}
-      <div class="col-md-6">
-        <div class="card card-brutal h-100">
-          <div class="card-header d-flex justify-content-between align-items-center">
-            <span>{{ p.title }}</span>
-            {% if p.code %}<span class="badge-pill" style="background:#111;border-color:#fff;">{{ p.code }}</span>{% endif %}
-          </div>
-          <div class="card-body">
-            {% if p.description %}<p class="mb-2">{{ p.description }}</p>{% endif %}
-            {% if p.discount_type in ['percent','fixed'] %}
-              <div class="chip"><i class="bi bi-tag"></i>
-                {% if p.discount_type=='percent' %}{{ p.value }}% OFF{% else %}${{ p.value }} OFF{% endif %}
-              </div>
-            {% else %}
-              <div class="chip"><i class="bi bi-info-circle"></i> Promoción</div>
-            {% endif %}
-            {% if p.ends_at %}
-              <div class="mt-2 text-muted-2 small"><i class="bi bi-clock"></i> Vigente hasta {{ p.ends_at.strftime('%d/%m/%Y') }}</div>
-            {% endif %}
+  <section class="container my-4" id="promos">
+    <h2 class="section-title brand-font">Promos activas</h2>
+    <div class="row g-3">
+      {% for p in promos %}
+        <div class="col-md-6">
+          <div class="card card-brutal h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <span>{{ p.title }}</span>
+              {% if p.code %}<span class="badge-pill" style="background:#111;border-color:#fff;">{{ p.code }}</span>{% endif %}
+            </div>
+            <div class="card-body">
+              {% if p.description %}<p class="mb-2">{{ p.description }}</p>{% endif %}
+              {% if p.discount_type in ['percent','fixed'] %}
+                <div class="chip"><i class="bi bi-tag"></i>
+                  {% if p.discount_type=='percent' %}{{ p.value }}% OFF{% else %}${{ p.value }} OFF{% endif %}
+                </div>
+              {% else %}
+                <div class="chip"><i class="bi bi-info-circle"></i> Promoción</div>
+              {% endif %}
+              {% if p.ends_at %}
+                <div class="mt-2 text-muted-2 small"><i class="bi bi-clock"></i> Vigente hasta {{ p.ends_at.strftime('%d/%m/%Y') }}</div>
+              {% endif %}
+            </div>
           </div>
         </div>
-      </div>
-    {% endfor %}
-  </div>
-</section>
-{% endif %}
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
 
   <!-- INFO -->
   <section class="container my-5" id="info">
@@ -528,58 +529,58 @@
   </section>
 
   <!-- POSTS -->
-<section class="container my-5" id="publicaciones">
-  <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
-    <h2 class="section-title brand-font mb-0">Publicaciones recientes</h2>
+  <section class="container my-5" id="publicaciones">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+      <h2 class="section-title brand-font mb-0">Publicaciones recientes</h2>
+
+      {% if posts and posts|length > 0 %}
+        <a
+          class="btn btn-brutal btn-ghost hover-raise"
+          href="{{ url_for('lista_blogs_negocio_slug', slug=site_slug) }}"
+          data-track="click_blog_index"
+        >
+          <i class="bi bi-journal-text me-1"></i> Ver todo el blog
+        </a>
+      {% endif %}
+    </div>
 
     {% if posts and posts|length > 0 %}
-      <a
-        class="btn btn-brutal btn-ghost hover-raise"
-        href="{{ url_for('lista_blogs_negocio_slug', slug=site_slug) }}"
-        data-track="click_blog_index"
-      >
-        <i class="bi bi-journal-text me-1"></i> Ver todo el blog
-      </a>
-    {% endif %}
-  </div>
+      <div class="row g-4">
+        {% for post in posts %}
+          <div class="col-md-4">
+            <div class="card card-brutal h-100">
+              {% if post.cabecera %}
+                <img
+                  src="{{ url_for('uploaded_file', filename=post.cabecera) }}"
+                  class="card-img-top"
+                  alt="Post"
+                  style="object-fit:cover; height:220px;"
+                >
+              {% endif %}
 
-  {% if posts and posts|length > 0 %}
-    <div class="row g-4">
-      {% for post in posts %}
-        <div class="col-md-4">
-          <div class="card card-brutal h-100">
-            {% if post.cabecera %}
-              <img
-                src="{{ url_for('uploaded_file', filename=post.cabecera) }}"
-                class="card-img-top"
-                alt="Post"
-                style="object-fit:cover; height:220px;"
-              >
-            {% endif %}
+              <div class="card-body d-flex flex-column">
+                <h5 class="brand-font">{{ post.title }}</h5>
 
-            <div class="card-body d-flex flex-column">
-              <h5 class="brand-font">{{ post.title }}</h5>
+                <p class="text-muted-2">
+                  {{ post.content[:110] }}{% if post.content and post.content|length > 110 %}...{% endif %}
+                </p>
 
-              <p class="text-muted-2">
-                {{ post.content[:110] }}{% if post.content and post.content|length > 110 %}...{% endif %}
-              </p>
-
-              <a
-                class="mt-auto btn btn-brutal btn-ghost hover-raise"
-                href="{{ url_for('ver_post_slug', slug=site_slug, post_id=post._id) }}"
-                data-track="click_post"
-              >
-                Leer más
-              </a>
+                <a
+                  class="mt-auto btn btn-brutal btn-ghost hover-raise"
+                  href="{{ url_for('ver_post_slug', slug=site_slug, post_id=post._id) }}"
+                  data-track="click_post"
+                >
+                  Leer más
+                </a>
+              </div>
             </div>
           </div>
-        </div>
-      {% endfor %}
-    </div>
-  {% else %}
-    <div class="card card-brutal p-3">Aún no hay publicaciones.</div>
-  {% endif %}
-</section>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="card card-brutal p-3">Aún no hay publicaciones.</div>
+    {% endif %}
+  </section>
 
   <!-- PRODUCTOS / SERVICIOS / COTIZAR -->
   <section class="container my-5" id="productos">
@@ -592,12 +593,12 @@
           <span class="pill-invert"><i class="bi bi-info-circle"></i></span>
           <div>
             <strong>Cotiza fácil:</strong> elige cantidades de servicios o productos, luego pulsa <em>Cotizar</em>.
-            Te pediremos tu nombre y abriremos WhatsApp con todo listo.
+            Te pediremos tu nombre y teléfono, guardaremos un <strong>lead</strong> para medir el interés y también intentaremos guardar la <strong>cotización real</strong>. Después abriremos WhatsApp con todo listo.
           </div>
         </div>
       </div>
 
-      <form id="form-cotizar" class="row g-3">
+      <form id="form-cotizar" class="row g-3" method="post" action="javascript:void(0);">
 
         <!-- SERVICIOS -->
         {% if servicios and servicios|length>0 %}
@@ -636,10 +637,17 @@
                 <div class="mt-auto">
                   <label class="form-label small">Cantidad / Nº de citas</label>
                   <input
-                    type="number" min="0" value="0"
-                    class="form-control" style="border:3px solid var(--border)"
+                    type="number"
+                    min="0"
+                    value="0"
+                    class="form-control"
+                    style="border:3px solid var(--border)"
                     name="prod_{{ item.title | replace(' ','_') }}"
+                    data-item-id="{{ item._id }}"
                     data-item-nombre="{{ item.title }}"
+                    data-item-price="{{ item.price or 0 }}"
+                    data-item-sku="{{ item.sku or '' }}"
+                    data-item-barcode="{{ item.barcode or '' }}"
                   >
                 </div>
               </div>
@@ -685,10 +693,17 @@
                 <div class="mt-auto">
                   <label class="form-label small">Cantidad</label>
                   <input
-                    type="number" min="0" value="0"
-                    class="form-control" style="border:3px solid var(--border)"
+                    type="number"
+                    min="0"
+                    value="0"
+                    class="form-control"
+                    style="border:3px solid var(--border)"
                     name="prod_{{ item.title | replace(' ','_') }}"
+                    data-item-id="{{ item._id }}"
                     data-item-nombre="{{ item.title }}"
+                    data-item-price="{{ item.price or 0 }}"
+                    data-item-sku="{{ item.sku or '' }}"
+                    data-item-barcode="{{ item.barcode or '' }}"
                   >
                 </div>
               </div>
@@ -726,7 +741,7 @@
             </div>
             <div class="modal-body">
               <p class="small text-muted">
-                Déjanos tu nombre para dirigirnos a ti cuando te contactemos por WhatsApp.
+                Déjanos tus datos para generar la cotización y abrir WhatsApp con el mensaje listo.
               </p>
 
               <div class="mb-3">
@@ -735,14 +750,30 @@
                 <div class="text-danger small mt-1 d-none" id="errorModalNombre">Por favor escribe tu nombre 🙏</div>
               </div>
 
+              <div class="mb-3">
+                <label class="form-label">Teléfono</label>
+                <input type="text" class="form-control" id="telefonoClienteInput" placeholder="Ej. 5512345678" style="border:3px solid var(--border);">
+                <div class="text-danger small mt-1 d-none" id="errorModalTelefono">Por favor escribe tu teléfono 🙏</div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Correo electrónico <span class="text-muted">(opcional)</span></label>
+                <input type="email" class="form-control" id="emailClienteInput" placeholder="Ej. cliente@correo.com" style="border:3px solid var(--border);">
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Notas <span class="text-muted">(opcional)</span></label>
+                <textarea class="form-control" id="notasClienteInput" rows="3" placeholder="Detalles extra, medidas, colores, etc." style="border:3px solid var(--border);"></textarea>
+              </div>
+
               <div>
                 <div class="form-label mb-1">Tu selección:</div>
-                <div id="resumenSeleccion" class="bg-light border rounded p-2 small" style="max-height: 220px; overflow-y:auto; border:3px solid var(--border);"></div>
+                <div id="resumenSeleccion" class="bg-light border rounded p-2 small" style="max-height:220px; overflow-y:auto; border:3px solid var(--border);"></div>
               </div>
             </div>
             <div class="modal-footer justify-content-between">
-              <button class="btn btn-brutal btn-ghost" data-bs-dismiss="modal">Cancelar</button>
-              <button class="btn btn-brutal btn-brand" id="enviarCotizacionBtn">
+              <button class="btn btn-brutal btn-ghost" data-bs-dismiss="modal" type="button">Cancelar</button>
+              <button class="btn btn-brutal btn-brand" id="enviarCotizacionBtn" type="button">
                 <i class="bi bi-whatsapp me-1"></i> Enviar por WhatsApp
               </button>
             </div>
@@ -845,15 +876,16 @@
     </div>
   </div>
 
-  <!-- Reservas  -->
+  <!-- Reservas -->
   {% include "public/reservas.html" %}
 
   <!-- FAB WhatsApp -->
   {% if page.get('whatsapp') %}
   <a class="fab-wa"
-   href="https://wa.me/{{ page.whatsapp | replace(' ','') }}"
-   target="_blank" aria-label="WhatsApp"
-   data-track="click_whatsapp_fab" data-track="click_whatsapp_fab">
+    href="https://wa.me/{{ page.whatsapp | replace(' ','') }}"
+    target="_blank"
+    aria-label="WhatsApp"
+    data-track="click_whatsapp_fab">
     <span class="btn btn-brutal btn-brand px-3 py-2 hover-raise">
       <i class="bi bi-whatsapp"></i>
     </span>
@@ -864,7 +896,7 @@
   <footer class="ft">
     <div class="container d-flex flex-column flex-md-row align-items-center justify-content-between">
       <div class="mb-2 mb-md-0">
-        <strong class="brand-font">{{ page.get('business_name','Negocio') }}</strong> · &copy; 2025
+        <strong class="brand-font">{{ page.get('business_name','Negocio') }}</strong> · &copy; {{ current_year or 2026 }}
       </div>
       <div class="d-flex align-items-center gap-3">
         {% if page.get('facebook') %}<a href="{{ page.facebook }}" target="_blank" class="text-dark" aria-label="Facebook"><i class="bi bi-facebook fs-4"></i></a>{% endif %}
@@ -880,14 +912,9 @@
   <script>
   // ===== MAPA (Leaflet) — robusto =====
   (function () {
-    // 1) Si no existe el div, no hacemos nada (evita errores)
     const el = document.getElementById('map');
-    if (!el) {
-      // console.info('[map] No #map element (no coords or not rendered)');
-      return;
-    }
+    if (!el) return;
 
-    // 2) Parse seguro de lat/lng desde Jinja
     const latRaw = "{{ page.get('lat','') }}";
     const lngRaw = "{{ page.get('lng','') }}";
 
@@ -903,22 +930,18 @@
       return;
     }
 
-    // 3) Crear mapa
     const map = L.map('map', {
       scrollWheelZoom: false,
       dragging: !L.Browser.mobile,
       tap: true
     }).setView([lat, lng], 16);
 
-    // 4) Tiles (OSM) con fallback
     const tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '&copy; OpenStreetMap'
     });
 
-    tiles.on('tileerror', function (err) {
-      console.warn('[map] tile error', err);
-      // fallback a otro proveedor (a veces OSM bloquea por rate)
+    tiles.on('tileerror', function () {
       L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
         maxZoom: 19,
         attribution: '&copy; OpenStreetMap &copy; CARTO'
@@ -927,7 +950,6 @@
 
     tiles.addTo(map);
 
-    // 5) Marker + popup
     const name = "{{ page.get('business_name','')|e }}";
     const addr = "{{ page.get('address','')|e }}";
     const popupHtml = `
@@ -940,515 +962,375 @@
     const marker = L.marker([lat, lng]).addTo(map);
     marker.bindPopup(popupHtml);
 
-    // 6) Asegurar que Leaflet calcule tamaño (por fonts/hero/animaciones)
     const fixSize = () => {
       try { map.invalidateSize(true); } catch(e){}
     };
 
-    // primera corrección
     setTimeout(fixSize, 120);
-    // segunda corrección (por si el layout tarda)
     setTimeout(fixSize, 500);
-
-    // Si el usuario cambia el tamaño / rota
     window.addEventListener('resize', () => setTimeout(fixSize, 80));
 
-    // Abre popup solo en desktop (en móvil luego estorba)
     if (!L.Browser.mobile) {
       setTimeout(() => marker.openPopup(), 250);
     }
   })();
-</script>
-<script>
-/**
- * =========================================================
- *  PUBLIC MODULE: Analytics + Cotizar (Lead) + UX helpers
- *  Requiere endpoints:
- *   - POST /api/track
- *   - POST /api/leads
- *  Requiere que backend pase `slug` o que page.slug exista:
- *   ctx incluye: slug=slug
- * =========================================================
- */
+  </script>
 
-const SITE_SLUG = "{{ slug or page.get('slug','') }}";
-const BUSINESS_NAME = "{{ page.get('business_name','')|e }}";
-const BUSINESS_WA = "{{ (page.get('whatsapp','') or '')|replace(' ','') }}";
+  <script>
+  const SITE_SLUG = "{{ slug or page.get('slug','') }}";
+  const BUSINESS_NAME = "{{ page.get('business_name','')|e }}";
+  const BUSINESS_WA = "{{ (page.get('whatsapp','') or '')|replace(' ','') }}";
 
-/* -----------------------------
-   Analytics: track() helper
------------------------------- */
-function track(type, meta){
-  try{
-    if(!SITE_SLUG) return;
-    fetch("/api/track", {
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({ slug: SITE_SLUG, type, meta: meta || {} })
-    }).catch(()=>{});
-  }catch(e){}
-}
-
-// View event (al cargar)
-track("view", { path: location.pathname, ref: document.referrer || "" });
-
-/* Track clicks en cualquier elemento con data-track */
-document.addEventListener("click", (e)=>{
-  const el = e.target.closest("[data-track]");
-  if(!el) return;
-  const type = el.getAttribute("data-track");
-  const href = el.getAttribute("href") || "";
-  track(type, { href });
-});
-
-/* -----------------------------
-   Zoom Modal (imágenes)
------------------------------- */
-(function zoomModule(){
-  const zoomed = document.getElementById("zoomedImage");
-  if(!zoomed) return;
-
-  document.addEventListener("click", (e)=>{
-    const img = e.target.closest(".img-zoom-trigger");
-    if(!img) return;
-    const src = img.getAttribute("data-img-src") || img.getAttribute("src");
-    if(src) zoomed.src = src;
-    track("open_zoom", { src: src || "" });
-  });
-})();
-
-/* -----------------------------
-   Star rating (reseñas)
------------------------------- */
-(function starsModule(){
-  const stars = Array.from(document.querySelectorAll(".star-icon"));
-  const input = document.getElementById("estrellas");
-  if(!stars.length || !input) return;
-
-  function paint(v){
-    stars.forEach(s=>{
-      const n = parseInt(s.dataset.value || "0", 10);
-      if(n <= v){
-        s.classList.remove("text-secondary");
-        s.classList.add("text-warning");
-      }else{
-        s.classList.remove("text-warning");
-        s.classList.add("text-secondary");
-      }
-    });
-  }
-
-  stars.forEach(s=>{
-    s.style.cursor = "pointer";
-    s.addEventListener("click", ()=>{
-      const v = parseInt(s.dataset.value || "0", 10);
-      input.value = String(v);
-      paint(v);
-      track("rate_star_select", { value: v });
-    });
-  });
-})();
-
-/* -----------------------------
-   Cotizar -> Modal -> WhatsApp
-   + Save lead server-side
------------------------------- */
-(async function cotizarModule(){
-  const form = document.getElementById("form-cotizar");
-  const modalEl = document.getElementById("cotizarModal");
-  const resumenEl = document.getElementById("resumenSeleccion");
-  const nombreInput = document.getElementById("nombreClienteInput");
-  const errNombre = document.getElementById("errorModalNombre");
-  const enviarBtn = document.getElementById("enviarCotizacionBtn");
-
-  if(!form || !modalEl || !resumenEl || !nombreInput || !enviarBtn) return;
-
-  // Bootstrap modal instance
-  const bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
-
-  let selectedItems = []; // [{title, qty}]
-
-  function getSelectedItems(){
-    const inputs = Array.from(form.querySelectorAll('input[type="number"][data-item-nombre]'));
-    const items = [];
-    for(const inp of inputs){
-      const title = (inp.dataset.itemNombre || "").trim();
-      const qty = parseInt(inp.value || "0", 10);
-      if(title && Number.isFinite(qty) && qty > 0){
-        items.push({ title, qty });
-      }
-    }
-    return items;
-  }
-
-  function renderResumen(items){
-    if(!items.length){
-      resumenEl.innerHTML = `<div class="text-muted">No seleccionaste nada todavía.</div>`;
-      return;
-    }
-    resumenEl.innerHTML = items.map(it => {
-      return `<div>• <strong>${escapeHtml(it.title)}</strong> × ${it.qty}</div>`;
-    }).join("");
-  }
-
-  function escapeHtml(s){
-    return String(s)
-      .replaceAll("&","&amp;")
-      .replaceAll("<","&lt;")
-      .replaceAll(">","&gt;")
-      .replaceAll('"',"&quot;")
-      .replaceAll("'","&#039;");
-  }
-
-  form.addEventListener("submit", (e)=>{
-    e.preventDefault();
-    selectedItems = getSelectedItems();
-
-    if(!selectedItems.length){
-      track("cotizar_empty", {});
-      // feedback simple sin alert fea
-      resumenEl.innerHTML = `<div class="text-danger fw-bold">Selecciona al menos 1 producto/servicio con cantidad > 0.</div>`;
-      bsModal.show();
-      return;
-    }
-
-    track("cotizar_open_modal", { items: selectedItems.length });
-    renderResumen(selectedItems);
-    errNombre.classList.add("d-none");
-    nombreInput.value = "";
-    bsModal.show();
-    setTimeout(()=> nombreInput.focus(), 150);
-  });
-
-  async function createLead(nombre, items){
+  function track(type, meta){
     try{
-      const r = await fetch("/api/leads", {
+      if(!SITE_SLUG) return;
+      fetch("/api/track", {
         method:"POST",
         headers:{ "Content-Type":"application/json" },
-        body: JSON.stringify({
-          slug: SITE_SLUG,
-          nombre,
-          items,
-          canal: "whatsapp"
-        })
-      });
-      return await r.json();
-    }catch(e){
-      return { ok:false, error:"network" };
-    }
+        body: JSON.stringify({ slug: SITE_SLUG, type, meta: meta || {} })
+      }).catch(()=>{});
+    }catch(e){}
   }
 
-  function buildWhatsAppMessage(nombre, items){
-    const lines = [];
-    lines.push(`Hola, soy ${nombre}.`);
-    lines.push(`Quisiera cotizar con ${BUSINESS_NAME}:`);
-    for(const it of items){
-      lines.push(`- ${it.title} x${it.qty}`);
-    }
-    lines.push(`Gracias.`);
-    return lines.join("\n");
-  }
-
-  function openWhatsApp(text){
-    if(!BUSINESS_WA){
-      // fallback: no whatsapp definido
-      alert("Este negocio aún no tiene WhatsApp configurado.");
-      return;
-    }
-    const url = `https://wa.me/${BUSINESS_WA}?text=${encodeURIComponent(text)}`;
-    window.open(url, "_blank", "noopener");
-  }
-
-  enviarBtn.addEventListener("click", async ()=>{
-    const nombre = (nombreInput.value || "").trim();
-
-    if(!nombre){
-      errNombre.classList.remove("d-none");
-      track("cotizar_missing_name", {});
-      nombreInput.focus();
-      return;
-    }
-
-    if(!selectedItems.length){
-      track("cotizar_missing_items", {});
-      bsModal.hide();
-      return;
-    }
-
-    enviarBtn.disabled = true;
-    enviarBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Enviando...`;
-
-    track("cotizar_send_click", { items: selectedItems.length });
-
-    // 1) Guardar lead en servidor
-    const resp = await createLead(nombre, selectedItems);
-
-    // 2) Abrir WhatsApp SIEMPRE (no romper UX)
-    const msg = buildWhatsAppMessage(nombre, selectedItems);
-    openWhatsApp(msg);
-
-    // 3) Track resultado lead
-    if(resp && resp.ok){
-      track("lead_saved", { lead_id: resp.lead_id || "" });
-    }else{
-      track("lead_save_failed", { error: (resp && resp.error) || "unknown" });
-    }
-
-    // reset UI
-    setTimeout(()=>{
-      enviarBtn.disabled = false;
-      enviarBtn.innerHTML = `<i class="bi bi-whatsapp me-1"></i> Enviar por WhatsApp`;
-      bsModal.hide();
-    }, 250);
-  });
-
-})();
-</script>
-<script>
-/**
- * =========================================================
- *  PUBLIC MODULE: Analytics + Cotizar (Lead) + UX helpers
- *  Requiere endpoints:
- *   - POST /api/track
- *   - POST /api/leads
- *  Requiere que backend pase `slug` o que page.slug exista:
- *   ctx incluye: slug=slug
- * =========================================================
- */
-
-const SITE_SLUG = "{{ slug or page.get('slug','') }}";
-const BUSINESS_NAME = "{{ page.get('business_name','')|e }}";
-const BUSINESS_WA = "{{ (page.get('whatsapp','') or '')|replace(' ','') }}";
-
-/* -----------------------------
-   Analytics: track() helper
------------------------------- */
-function track(type, meta){
-  try{
-    if(!SITE_SLUG) return;
-    fetch("/api/track", {
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({ slug: SITE_SLUG, type, meta: meta || {} })
-    }).catch(()=>{});
-  }catch(e){}
-}
-
-// View event (al cargar)
-track("view", { path: location.pathname, ref: document.referrer || "" });
-
-/* Track clicks en cualquier elemento con data-track */
-document.addEventListener("click", (e)=>{
-  const el = e.target.closest("[data-track]");
-  if(!el) return;
-  const type = el.getAttribute("data-track");
-  const href = el.getAttribute("href") || "";
-  track(type, { href });
-});
-
-/* -----------------------------
-   Zoom Modal (imágenes)
------------------------------- */
-(function zoomModule(){
-  const zoomed = document.getElementById("zoomedImage");
-  if(!zoomed) return;
+  track("view", { path: location.pathname, ref: document.referrer || "" });
 
   document.addEventListener("click", (e)=>{
-    const img = e.target.closest(".img-zoom-trigger");
-    if(!img) return;
-    const src = img.getAttribute("data-img-src") || img.getAttribute("src");
-    if(src) zoomed.src = src;
-    track("open_zoom", { src: src || "" });
+    const el = e.target.closest("[data-track]");
+    if(!el) return;
+    const type = el.getAttribute("data-track");
+    const href = el.getAttribute("href") || "";
+    track(type, { href });
   });
-})();
 
-/* -----------------------------
-   Star rating (reseñas)
------------------------------- */
-(function starsModule(){
-  const stars = Array.from(document.querySelectorAll(".star-icon"));
-  const input = document.getElementById("estrellas");
-  if(!stars.length || !input) return;
+  /* Zoom imágenes */
+  (function zoomModule(){
+    const zoomed = document.getElementById("zoomedImage");
+    if(!zoomed) return;
 
-  function paint(v){
+    document.addEventListener("click", (e)=>{
+      const img = e.target.closest(".img-zoom-trigger");
+      if(!img) return;
+      const src = img.getAttribute("data-img-src") || img.getAttribute("src");
+      if(src) zoomed.src = src;
+      track("open_zoom", { src: src || "" });
+    });
+  })();
+
+  /* Stars reseñas */
+  (function starsModule(){
+    const stars = Array.from(document.querySelectorAll(".star-icon"));
+    const input = document.getElementById("estrellas");
+    if(!stars.length || !input) return;
+
+    function paint(v){
+      stars.forEach(s=>{
+        const n = parseInt(s.dataset.value || "0", 10);
+        if(n <= v){
+          s.classList.remove("text-secondary");
+          s.classList.add("text-warning");
+        }else{
+          s.classList.remove("text-warning");
+          s.classList.add("text-secondary");
+        }
+      });
+    }
+
     stars.forEach(s=>{
-      const n = parseInt(s.dataset.value || "0", 10);
-      if(n <= v){
-        s.classList.remove("text-secondary");
-        s.classList.add("text-warning");
-      }else{
-        s.classList.remove("text-warning");
-        s.classList.add("text-secondary");
-      }
+      s.style.cursor = "pointer";
+      s.addEventListener("click", ()=>{
+        const v = parseInt(s.dataset.value || "0", 10);
+        input.value = String(v);
+        paint(v);
+        track("rate_star_select", { value: v });
+      });
     });
-  }
+  })();
 
-  stars.forEach(s=>{
-    s.style.cursor = "pointer";
-    s.addEventListener("click", ()=>{
-      const v = parseInt(s.dataset.value || "0", 10);
-      input.value = String(v);
-      paint(v);
-      track("rate_star_select", { value: v });
-    });
-  });
-})();
+  /* Cotizar -> Lead + Cotización + WhatsApp */
+  (function cotizarModule(){
+    const form = document.getElementById("form-cotizar");
+    const modalEl = document.getElementById("cotizarModal");
+    const resumenEl = document.getElementById("resumenSeleccion");
+    const nombreInput = document.getElementById("nombreClienteInput");
+    const telefonoInput = document.getElementById("telefonoClienteInput");
+    const emailInput = document.getElementById("emailClienteInput");
+    const notasInput = document.getElementById("notasClienteInput");
+    const errNombre = document.getElementById("errorModalNombre");
+    const errTelefono = document.getElementById("errorModalTelefono");
+    const enviarBtn = document.getElementById("enviarCotizacionBtn");
 
-/* -----------------------------
-   Cotizar -> Modal -> WhatsApp
-   + Save lead server-side
------------------------------- */
-(async function cotizarModule(){
-  const form = document.getElementById("form-cotizar");
-  const modalEl = document.getElementById("cotizarModal");
-  const resumenEl = document.getElementById("resumenSeleccion");
-  const nombreInput = document.getElementById("nombreClienteInput");
-  const errNombre = document.getElementById("errorModalNombre");
-  const enviarBtn = document.getElementById("enviarCotizacionBtn");
+    if(!form || !modalEl || !resumenEl || !nombreInput || !telefonoInput || !enviarBtn) return;
 
-  if(!form || !modalEl || !resumenEl || !nombreInput || !enviarBtn) return;
+    const bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    let selectedItems = [];
 
-  // Bootstrap modal instance
-  const bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    function escapeHtml(s){
+      return String(s)
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
 
-  let selectedItems = []; // [{title, qty}]
+    function getSelectedItems(){
+      const inputs = Array.from(form.querySelectorAll('input[type="number"][data-item-id]'));
+      const items = [];
 
-  function getSelectedItems(){
-    const inputs = Array.from(form.querySelectorAll('input[type="number"][data-item-nombre]'));
-    const items = [];
-    for(const inp of inputs){
-      const title = (inp.dataset.itemNombre || "").trim();
-      const qty = parseInt(inp.value || "0", 10);
-      if(title && Number.isFinite(qty) && qty > 0){
-        items.push({ title, qty });
+      for(const inp of inputs){
+        const producto_id = (inp.dataset.itemId || "").trim();
+        const title = (inp.dataset.itemNombre || "").trim();
+        const qty = parseInt(inp.value || "0", 10);
+        const unit_price = parseFloat(inp.dataset.itemPrice || "0");
+        const sku = (inp.dataset.itemSku || "").trim();
+        const barcode = (inp.dataset.itemBarcode || "").trim();
+
+        if(producto_id && title && Number.isFinite(qty) && qty > 0){
+          items.push({
+            producto_id,
+            title,
+            qty,
+            unit_price: Number.isFinite(unit_price) ? unit_price : 0,
+            sku,
+            barcode
+          });
+        }
       }
+
+      return items;
     }
-    return items;
-  }
 
-  function renderResumen(items){
-    if(!items.length){
-      resumenEl.innerHTML = `<div class="text-muted">No seleccionaste nada todavía.</div>`;
-      return;
+    function renderResumen(items){
+      if(!items.length){
+        resumenEl.innerHTML = `<div class="text-muted">No seleccionaste nada todavía.</div>`;
+        return;
+      }
+
+      resumenEl.innerHTML = items.map(it => {
+        const total = ((Number(it.unit_price || 0)) * (Number(it.qty || 0))).toFixed(2);
+        return `
+          <div class="d-flex justify-content-between align-items-start gap-2 py-1 border-bottom">
+            <div>
+              • <strong>${escapeHtml(it.title)}</strong><br>
+              <small class="text-muted">Cantidad: ${it.qty}</small>
+            </div>
+            <div class="fw-bold">$${total}</div>
+          </div>
+        `;
+      }).join("");
     }
-    resumenEl.innerHTML = items.map(it => {
-      return `<div>• <strong>${escapeHtml(it.title)}</strong> × ${it.qty}</div>`;
-    }).join("");
-  }
 
-  function escapeHtml(s){
-    return String(s)
-      .replaceAll("&","&amp;")
-      .replaceAll("<","&lt;")
-      .replaceAll(">","&gt;")
-      .replaceAll('"',"&quot;")
-      .replaceAll("'","&#039;");
-  }
+    form.addEventListener("submit", (e)=>{
+      e.preventDefault();
+      e.stopPropagation();
 
-  form.addEventListener("submit", (e)=>{
-    e.preventDefault();
-    selectedItems = getSelectedItems();
+      selectedItems = getSelectedItems();
 
-    if(!selectedItems.length){
-      track("cotizar_empty", {});
-      // feedback simple sin alert fea
-      resumenEl.innerHTML = `<div class="text-danger fw-bold">Selecciona al menos 1 producto/servicio con cantidad > 0.</div>`;
+      if(!selectedItems.length){
+        track("cotizar_empty", {});
+        resumenEl.innerHTML = `<div class="text-danger fw-bold">Selecciona al menos 1 producto o servicio con cantidad mayor a 0.</div>`;
+        bsModal.show();
+        return false;
+      }
+
+      track("cotizar_open_modal", { items: selectedItems.length });
+      renderResumen(selectedItems);
+
+      errNombre.classList.add("d-none");
+      errTelefono.classList.add("d-none");
+
+      nombreInput.value = "";
+      telefonoInput.value = "";
+      if (emailInput) emailInput.value = "";
+      if (notasInput) notasInput.value = "";
+
       bsModal.show();
-      return;
-    }
+      setTimeout(()=> nombreInput.focus(), 150);
+      return false;
+    });
 
-    track("cotizar_open_modal", { items: selectedItems.length });
-    renderResumen(selectedItems);
-    errNombre.classList.add("d-none");
-    nombreInput.value = "";
-    bsModal.show();
-    setTimeout(()=> nombreInput.focus(), 150);
-  });
-
-  async function createLead(nombre, items){
-    try{
-      const r = await fetch("/api/leads", {
-        method:"POST",
-        headers:{ "Content-Type":"application/json" },
-        body: JSON.stringify({
+    async function createLead(nombre, telefono, email, notes, items){
+      try{
+        const payload = {
           slug: SITE_SLUG,
           nombre,
-          items,
-          canal: "whatsapp"
-        })
-      });
-      return await r.json();
-    }catch(e){
-      return { ok:false, error:"network" };
-    }
-  }
+          telefono,
+          email,
+          notes,
+          canal: "whatsapp",
+          items: items.map(it => ({
+            title: it.title,
+            qty: it.qty
+          }))
+        };
 
-  function buildWhatsAppMessage(nombre, items){
-    const lines = [];
-    lines.push(`Hola, soy ${nombre}.`);
-    lines.push(`Quisiera cotizar con ${BUSINESS_NAME}:`);
-    for(const it of items){
-      lines.push(`- ${it.title} x${it.qty}`);
-    }
-    lines.push(`Gracias.`);
-    return lines.join("\n");
-  }
+        const r = await fetch("/api/leads", {
+          method:"POST",
+          headers:{ "Content-Type":"application/json" },
+          body: JSON.stringify(payload)
+        });
 
-  function openWhatsApp(text){
-    if(!BUSINESS_WA){
-      // fallback: no whatsapp definido
-      alert("Este negocio aún no tiene WhatsApp configurado.");
-      return;
-    }
-    const url = `https://wa.me/${BUSINESS_WA}?text=${encodeURIComponent(text)}`;
-    window.open(url, "_blank", "noopener");
-  }
-
-  enviarBtn.addEventListener("click", async ()=>{
-    const nombre = (nombreInput.value || "").trim();
-
-    if(!nombre){
-      errNombre.classList.remove("d-none");
-      track("cotizar_missing_name", {});
-      nombreInput.focus();
-      return;
+        return await r.json();
+      }catch(e){
+        return { ok:false, error:"network" };
+      }
     }
 
-    if(!selectedItems.length){
-      track("cotizar_missing_items", {});
-      bsModal.hide();
-      return;
+    async function createCotizacion(payload){
+      try{
+        const r = await fetch("/api/cotizaciones/public", {
+          method:"POST",
+          headers:{ "Content-Type":"application/json" },
+          body: JSON.stringify(payload)
+        });
+        return await r.json();
+      }catch(e){
+        return { ok:false, error:"network" };
+      }
     }
 
-    enviarBtn.disabled = true;
-    enviarBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Enviando...`;
+    function buildWhatsAppMessage(nombre, telefono, email, notes, items, folio){
+      const lines = [];
+      lines.push(`Hola, soy ${nombre}.`);
+      lines.push(`Quisiera cotizar con ${BUSINESS_NAME}:`);
+      lines.push("");
 
-    track("cotizar_send_click", { items: selectedItems.length });
+      for(const it of items){
+        lines.push(`- ${it.title} x${it.qty}`);
+      }
 
-    // 1) Guardar lead en servidor
-    const resp = await createLead(nombre, selectedItems);
+      if(telefono){
+        lines.push("");
+        lines.push(`Teléfono: ${telefono}`);
+      }
 
-    // 2) Abrir WhatsApp SIEMPRE (no romper UX)
-    const msg = buildWhatsAppMessage(nombre, selectedItems);
-    openWhatsApp(msg);
+      if(email){
+        lines.push(`Correo: ${email}`);
+      }
 
-    // 3) Track resultado lead
-    if(resp && resp.ok){
-      track("lead_saved", { lead_id: resp.lead_id || "" });
-    }else{
-      track("lead_save_failed", { error: (resp && resp.error) || "unknown" });
+      if(notes){
+        lines.push(`Notas: ${notes}`);
+      }
+
+      if(folio){
+        lines.push("");
+        lines.push(`Folio de cotización: ${folio}`);
+      }
+
+      lines.push("");
+      lines.push("Gracias.");
+      return lines.join("\n");
     }
 
-    // reset UI
-    setTimeout(()=>{
-      enviarBtn.disabled = false;
-      enviarBtn.innerHTML = `<i class="bi bi-whatsapp me-1"></i> Enviar por WhatsApp`;
-      bsModal.hide();
-    }, 250);
-  });
+    function openWhatsApp(text){
+      if(!BUSINESS_WA){
+        alert("Este negocio aún no tiene WhatsApp configurado.");
+        return false;
+      }
 
-})();
-</script>
+      const url = `https://wa.me/${BUSINESS_WA}?text=${encodeURIComponent(text)}`;
+      window.open(url, "_blank", "noopener");
+      return true;
+    }
 
+    enviarBtn.addEventListener("click", async ()=>{
+      const nombre = (nombreInput.value || "").trim();
+      const telefono = (telefonoInput.value || "").trim();
+      const email = (emailInput?.value || "").trim();
+      const notes = (notasInput?.value || "").trim();
+
+      errNombre.classList.add("d-none");
+      errTelefono.classList.add("d-none");
+
+      if(!nombre){
+        errNombre.classList.remove("d-none");
+        track("cotizar_missing_name", {});
+        nombreInput.focus();
+        return;
+      }
+
+      if(!telefono){
+        errTelefono.classList.remove("d-none");
+        track("cotizar_missing_phone", {});
+        telefonoInput.focus();
+        return;
+      }
+
+      if(!selectedItems.length){
+        track("cotizar_missing_items", {});
+        bsModal.hide();
+        return;
+      }
+
+      enviarBtn.disabled = true;
+      enviarBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Enviando...`;
+
+      track("cotizar_send_click", { items: selectedItems.length });
+
+      const quotePayload = {
+        slug: SITE_SLUG,
+        customer_name: nombre,
+        customer_phone: telefono,
+        customer_email: email,
+        notes,
+        items: selectedItems,
+        canal: "whatsapp"
+      };
+
+      const [leadResp, quoteResp] = await Promise.allSettled([
+        createLead(nombre, telefono, email, notes, selectedItems),
+        createCotizacion(quotePayload)
+      ]);
+
+      const leadData = leadResp.status === "fulfilled" ? leadResp.value : { ok:false, error:"lead_promise_failed" };
+      const quoteData = quoteResp.status === "fulfilled" ? quoteResp.value : { ok:false, error:"quote_promise_failed" };
+
+      const msg = buildWhatsAppMessage(
+        nombre,
+        telefono,
+        email,
+        notes,
+        selectedItems,
+        quoteData && quoteData.ok ? (quoteData.folio || "") : ""
+      );
+
+      openWhatsApp(msg);
+
+      if(leadData && leadData.ok){
+        track("lead_saved", { lead_id: leadData.lead_id || "" });
+      }else{
+        track("lead_save_failed", { error: (leadData && leadData.error) || "unknown" });
+      }
+
+      if(quoteData && quoteData.ok){
+        track("quote_saved", {
+          quote_id: quoteData.quote_id || "",
+          folio: quoteData.folio || ""
+        });
+
+        resumenEl.innerHTML = `
+          <div class="alert alert-success mb-0">
+            ¡Listo! Guardamos tu lead y tu cotización${quoteData.folio ? ` <strong>(${escapeHtml(quoteData.folio)})</strong>` : ""}.
+            Ahora te abrimos WhatsApp para continuar.
+          </div>
+        `;
+      }else{
+        track("quote_save_failed", { error: (quoteData && quoteData.error) || "unknown" });
+
+        resumenEl.innerHTML = `
+          <div class="alert alert-warning mb-0">
+            Guardamos el interés del cliente y te abrimos WhatsApp, pero la cotización no se pudo guardar en sistema.
+          </div>
+        `;
+      }
+
+      setTimeout(()=>{
+        enviarBtn.disabled = false;
+        enviarBtn.innerHTML = `<i class="bi bi-whatsapp me-1"></i> Enviar por WhatsApp`;
+        bsModal.hide();
+      }, 850);
+    });
+  })();
+  </script>
 </body>
 </html>

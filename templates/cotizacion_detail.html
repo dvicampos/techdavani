@@ -1,0 +1,860 @@
+{% extends "layout.html" %}
+
+{% block title %}Detalle de Cotización · GlobalPyMEs{% endblock %}
+
+{% block content %}
+<style>
+  :root{
+    --bg:#0b1020;
+    --card:#11182d;
+    --card-2:#0f172a;
+    --line:rgba(148,163,184,.16);
+    --line-2:rgba(148,163,184,.24);
+    --text:#e5eefc;
+    --muted:#9fb0cc;
+    --brand:#5ea0ff;
+    --brand-2:#7c3aed;
+    --success:#22c55e;
+    --warning:#f59e0b;
+    --danger:#ef4444;
+    --shadow:0 18px 48px rgba(2,6,23,.28);
+  }
+
+  .quote-detail-page{
+    max-width:1320px;
+    margin:0 auto;
+    padding:28px 0 90px;
+  }
+
+  .hero{
+    position:relative;
+    overflow:hidden;
+    border-radius:28px;
+    padding:26px 26px 24px;
+    background:
+      radial-gradient(circle at top right, rgba(94,160,255,.22), transparent 28%),
+      radial-gradient(circle at bottom left, rgba(124,58,237,.18), transparent 24%),
+      linear-gradient(135deg, #0b1020, #121c35 55%, #0f172a);
+    border:1px solid rgba(255,255,255,.08);
+    box-shadow:var(--shadow);
+    margin-bottom:22px;
+    color:var(--text);
+  }
+
+  .hero__row{
+    display:flex;
+    justify-content:space-between;
+    gap:18px;
+    flex-wrap:wrap;
+    align-items:flex-start;
+  }
+
+  .hero h1{
+    margin:0;
+    font-size:clamp(1.7rem, 3vw, 2.35rem);
+    font-weight:900;
+    letter-spacing:-.03em;
+  }
+
+  .hero .sub{
+    margin-top:8px;
+    color:var(--muted);
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:center;
+  }
+
+  .hero-actions{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+
+  .btn-soft{
+    border:1px solid rgba(255,255,255,.14);
+    color:#fff;
+    background:rgba(255,255,255,.06);
+    backdrop-filter:blur(8px);
+    border-radius:14px;
+    padding:10px 16px;
+    font-weight:700;
+    text-decoration:none;
+  }
+
+  .btn-soft:hover{
+    color:#fff;
+    background:rgba(255,255,255,.11);
+  }
+
+  .btn-soft-print{
+    border:1px solid rgba(245,158,11,.24);
+    background:rgba(245,158,11,.14);
+    color:#fff7d6;
+  }
+
+  .btn-soft-print:hover{
+    background:rgba(245,158,11,.22);
+    color:#fff;
+  }
+
+  .quote-badge{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    padding:9px 14px;
+    border-radius:999px;
+    font-size:.8rem;
+    font-weight:800;
+    border:1px solid transparent;
+  }
+
+  .quote-badge--draft{
+    background:rgba(148,163,184,.12);
+    color:#cbd5e1;
+    border-color:rgba(148,163,184,.18);
+  }
+
+  .quote-badge--sent{
+    background:rgba(6,182,212,.12);
+    color:#67e8f9;
+    border-color:rgba(6,182,212,.22);
+  }
+
+  .quote-badge--approved{
+    background:rgba(34,197,94,.12);
+    color:#86efac;
+    border-color:rgba(34,197,94,.22);
+  }
+
+  .quote-badge--rejected,
+  .quote-badge--cancelled,
+  .quote-badge--expired{
+    background:rgba(239,68,68,.12);
+    color:#fca5a5;
+    border-color:rgba(239,68,68,.22);
+  }
+
+  .quote-badge--converted{
+    background:rgba(94,160,255,.12);
+    color:#93c5fd;
+    border-color:rgba(94,160,255,.22);
+  }
+
+  .layout-grid{
+    display:grid;
+    grid-template-columns:minmax(0, 1.35fr) minmax(360px, .8fr);
+    gap:18px;
+  }
+
+  .panel{
+    background:linear-gradient(180deg, rgba(17,24,45,.96), rgba(11,16,32,.96));
+    border:1px solid var(--line);
+    border-radius:24px;
+    box-shadow:var(--shadow);
+    color:var(--text);
+  }
+
+  .panel-head{
+    padding:18px 20px;
+    border-bottom:1px solid var(--line);
+  }
+
+  .panel-head h2{
+    margin:0;
+    font-size:1.05rem;
+    font-weight:800;
+  }
+
+  .panel-head p{
+    margin:6px 0 0;
+    color:var(--muted);
+    font-size:.92rem;
+  }
+
+  .panel-body{
+    padding:18px 20px 20px;
+  }
+
+  .info-grid{
+    display:grid;
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+    gap:12px;
+  }
+
+  .info-card{
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:14px 14px 12px;
+    background:rgba(255,255,255,.03);
+  }
+
+  .info-card small{
+    display:block;
+    color:var(--muted);
+    margin-bottom:5px;
+    font-size:.8rem;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    font-weight:700;
+  }
+
+  .info-card strong{
+    color:#fff;
+    font-size:.97rem;
+    line-height:1.35;
+    word-break:break-word;
+  }
+
+  .meta-strip{
+    margin-top:14px;
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+
+  .mini-pill{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    padding:8px 12px;
+    border-radius:999px;
+    font-size:.8rem;
+    font-weight:800;
+    border:1px solid var(--line);
+    background:rgba(255,255,255,.04);
+    color:#dbe7ff;
+  }
+
+  .notes-box{
+    margin-top:14px;
+    border:1px solid var(--line);
+    border-radius:18px;
+    background:rgba(255,255,255,.03);
+    padding:14px;
+  }
+
+  .notes-box h3{
+    margin:0 0 8px;
+    font-size:.92rem;
+    font-weight:800;
+    color:#fff;
+  }
+
+  .notes-box p{
+    margin:0;
+    color:var(--muted);
+    white-space:pre-line;
+  }
+
+  .items-table{
+    width:100%;
+    border-collapse:separate;
+    border-spacing:0 10px;
+  }
+
+  .items-table thead th{
+    color:var(--muted);
+    font-size:.8rem;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    font-weight:800;
+    padding:0 12px 8px;
+  }
+
+  .items-table tbody tr{
+    background:rgba(255,255,255,.03);
+  }
+
+  .items-table tbody td{
+    padding:14px 12px;
+    border-top:1px solid var(--line);
+    border-bottom:1px solid var(--line);
+    vertical-align:middle;
+  }
+
+  .items-table tbody td:first-child{
+    border-left:1px solid var(--line);
+    border-top-left-radius:16px;
+    border-bottom-left-radius:16px;
+  }
+
+  .items-table tbody td:last-child{
+    border-right:1px solid var(--line);
+    border-top-right-radius:16px;
+    border-bottom-right-radius:16px;
+  }
+
+  .item-title{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+  }
+
+  .item-title strong{
+    color:#fff;
+  }
+
+  .item-title span{
+    color:var(--muted);
+    font-size:.84rem;
+  }
+
+  .totals{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+
+  .total-row{
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    align-items:center;
+    padding:12px 14px;
+    border-radius:16px;
+    border:1px solid var(--line);
+    background:rgba(255,255,255,.03);
+  }
+
+  .total-row span{
+    color:var(--muted);
+    font-weight:700;
+  }
+
+  .total-row strong{
+    color:#fff;
+    font-size:1rem;
+  }
+
+  .total-row--grand{
+    background:linear-gradient(135deg, rgba(94,160,255,.14), rgba(124,58,237,.12));
+    border-color:rgba(94,160,255,.24);
+  }
+
+  .total-row--grand strong{
+    font-size:1.22rem;
+    font-weight:900;
+    letter-spacing:-.03em;
+  }
+
+  .action-stack{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+
+  .action-card{
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:16px;
+    background:rgba(255,255,255,.03);
+  }
+
+  .action-card h3{
+    margin:0 0 6px;
+    font-size:.98rem;
+    color:#fff;
+    font-weight:800;
+  }
+
+  .action-card p{
+    margin:0 0 14px;
+    color:var(--muted);
+    font-size:.92rem;
+  }
+
+  .btn-wide{
+    width:100%;
+    min-height:46px;
+    border-radius:14px;
+    font-weight:800;
+  }
+
+  .form-control,
+  .form-select{
+    background:#0d152a !important;
+    color:var(--text) !important;
+    border:1px solid var(--line-2) !important;
+    border-radius:14px;
+    min-height:46px;
+  }
+
+  .form-control::placeholder{
+    color:#8da0bf;
+  }
+
+  .form-label{
+    color:#dbe7ff;
+    font-weight:700;
+    margin-bottom:7px;
+  }
+
+  .helper{
+    margin-top:8px;
+    color:var(--muted);
+    font-size:.84rem;
+  }
+
+  .sale-box{
+    border:1px solid rgba(34,197,94,.22);
+    background:rgba(34,197,94,.08);
+    border-radius:18px;
+    padding:16px;
+  }
+
+  .sale-box h3{
+    margin:0 0 6px;
+    font-size:1rem;
+    font-weight:800;
+    color:#dcfce7;
+  }
+
+  .sale-box p{
+    margin:0;
+    color:#bbf7d0;
+  }
+
+  .sale-box .actions{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-top:14px;
+  }
+
+  .sale-box .actions .btn{
+    border-radius:12px;
+    font-weight:700;
+  }
+
+  .status-note{
+    margin-top:14px;
+    padding:14px;
+    border-radius:16px;
+    border:1px solid var(--line);
+    background:rgba(255,255,255,.03);
+    color:var(--muted);
+  }
+
+  @media print{
+    .hero-actions,
+    .action-stack,
+    .btn,
+    .btn-soft,
+    .modal,
+    .navbar,
+    .sidebar,
+    footer{
+      display:none !important;
+    }
+
+    body{
+      background:#fff !important;
+    }
+
+    .quote-detail-page{
+      padding:0 !important;
+      max-width:100% !important;
+    }
+
+    .hero,
+    .panel{
+      box-shadow:none !important;
+      border:1px solid #ddd !important;
+      background:#fff !important;
+      color:#111 !important;
+    }
+
+    .panel-head h2,
+    .action-card h3,
+    .notes-box h3,
+    .item-title strong,
+    .info-card strong,
+    .total-row strong{
+      color:#111 !important;
+    }
+
+    .layout-grid{
+      grid-template-columns:1fr !important;
+    }
+  }
+
+  @media (max-width:1100px){
+    .layout-grid{
+      grid-template-columns:1fr;
+    }
+  }
+
+  @media (max-width:575.98px){
+    .quote-detail-page{
+      padding:18px 0 80px;
+    }
+
+    .hero{
+      padding:20px 18px;
+      border-radius:22px;
+    }
+
+    .info-grid{
+      grid-template-columns:1fr;
+    }
+
+    .items-table{
+      display:block;
+      overflow-x:auto;
+      white-space:nowrap;
+    }
+  }
+</style>
+
+{% set status = (quote.status or 'draft')|lower %}
+
+<div class="quote-detail-page">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ 'warning' if category == 'message' else category }} mb-3">
+          {{ message }}
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <section class="hero">
+    <div class="hero__row">
+      <div>
+        <h1>
+          <i class="bi bi-file-earmark-richtext me-2"></i>
+          {{ quote.folio or 'Cotización' }}
+        </h1>
+
+        <div class="sub">
+          <span class="quote-badge quote-badge--{{ status }}">
+            {% if status == 'converted' %}
+              <i class="bi bi-check2-all"></i>
+            {% elif status == 'approved' %}
+              <i class="bi bi-check2-circle"></i>
+            {% elif status == 'rejected' %}
+              <i class="bi bi-x-circle"></i>
+            {% elif status == 'sent' %}
+              <i class="bi bi-send"></i>
+            {% elif status == 'draft' %}
+              <i class="bi bi-pencil-square"></i>
+            {% else %}
+              <i class="bi bi-dot"></i>
+            {% endif %}
+            {{ status|replace('_', ' ')|title }}
+          </span>
+
+          <span>
+            {% if quote.created_at %}
+              Creada el {{ quote.created_at.strftime('%d/%m/%Y %H:%M') }}
+            {% else %}
+              Sin fecha registrada
+            {% endif %}
+          </span>
+        </div>
+      </div>
+
+      <div class="hero-actions">
+        <a href="{{ url_for('list_cotizaciones') }}" class="btn-soft">
+          <i class="bi bi-arrow-left me-1"></i> Volver
+        </a>
+
+        <a href="{{ url_for('list_ventas') }}" class="btn-soft">
+          <i class="bi bi-receipt me-1"></i> Ventas
+        </a>
+
+        <a href="{{ url_for('dashboard') }}" class="btn-soft">
+          <i class="bi bi-grid me-1"></i> Dashboard
+        </a>
+
+        <button type="button" onclick="window.print()" class="btn-soft btn-soft-print">
+          <i class="bi bi-printer me-1"></i> Imprimir
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <div class="layout-grid">
+    <div class="left-col d-flex flex-column gap-3">
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Información general</h2>
+          <p>Datos del cliente, contexto comercial y referencia de la cotización.</p>
+        </div>
+
+        <div class="panel-body">
+          <div class="info-grid">
+            <div class="info-card">
+              <small>Cliente</small>
+              <strong>{{ quote.customer_name or 'No capturado' }}</strong>
+            </div>
+
+            <div class="info-card">
+              <small>Teléfono</small>
+              <strong>{{ quote.customer_phone or 'No capturado' }}</strong>
+            </div>
+
+            <div class="info-card">
+              <small>Correo</small>
+              <strong>{{ quote.customer_email or 'No capturado' }}</strong>
+            </div>
+
+            <div class="info-card">
+              <small>Origen</small>
+              <strong>{{ quote.origin or 'manual' }}</strong>
+            </div>
+
+            <div class="info-card">
+              <small>Canal / vía</small>
+              <strong>{{ quote.created_via or 'dashboard' }}</strong>
+            </div>
+
+            <div class="info-card">
+              <small>Items</small>
+              <strong>{{ quote.get('items', [])|length if quote.get('items', []) else 0 }}</strong>
+            </div>
+          </div>
+
+          <div class="meta-strip">
+            {% if quote.approved_at %}
+              <span class="mini-pill">
+                <i class="bi bi-check2-circle"></i>
+                Aprobada: {{ quote.approved_at.strftime('%d/%m/%Y %H:%M') }}
+              </span>
+            {% endif %}
+
+            {% if quote.rejected_at %}
+              <span class="mini-pill">
+                <i class="bi bi-x-circle"></i>
+                Rechazada: {{ quote.rejected_at.strftime('%d/%m/%Y %H:%M') }}
+              </span>
+            {% endif %}
+
+            {% if quote.converted_at %}
+              <span class="mini-pill">
+                <i class="bi bi-receipt-cutoff"></i>
+                Convertida: {{ quote.converted_at.strftime('%d/%m/%Y %H:%M') }}
+              </span>
+            {% endif %}
+          </div>
+
+          <div class="notes-box">
+            <h3>Notas</h3>
+            <p>{{ quote.notes or 'Sin notas adicionales.' }}</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Productos / conceptos</h2>
+          <p>Snapshot de la cotización para revisar exactamente lo cotizado.</p>
+        </div>
+
+        <div class="panel-body">
+          {% if quote.get('items', []) and quote.get('items', [])|length > 0 %}
+            <table class="items-table">
+              <thead>
+                <tr>
+                  <th>Concepto</th>
+                  <th>Cantidad</th>
+                  <th>Precio unitario</th>
+                  <th>Descuento</th>
+                  <th>Subtotal</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in quote.get('items', []) %}
+                  <tr>
+                    <td>
+                      <div class="item-title">
+                        <strong>{{ item.title or 'Producto' }}</strong>
+                        <span>
+                          {% if item.sku %}SKU: {{ item.sku }}{% else %}Sin SKU{% endif %}
+                          {% if item.barcode %} · Código: {{ item.barcode }}{% endif %}
+                        </span>
+                      </div>
+                    </td>
+                    <td>{{ item.qty or 0 }}</td>
+                    <td>${{ '%.2f'|format(item.unit_price or 0) }}</td>
+                    <td>${{ '%.2f'|format(item.discount or 0) }}</td>
+                    <td><strong>${{ '%.2f'|format(item.subtotal or 0) }}</strong></td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          {% else %}
+            <div class="status-note">
+              Esta cotización no tiene items registrados.
+            </div>
+          {% endif %}
+        </div>
+      </section>
+    </div>
+
+    <div class="right-col d-flex flex-column gap-3">
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Resumen económico</h2>
+          <p>Montos base que se usarán si conviertes a venta.</p>
+        </div>
+
+        <div class="panel-body">
+          <div class="totals">
+            <div class="total-row">
+              <span>Subtotal</span>
+              <strong>${{ '%.2f'|format(quote.subtotal or 0) }}</strong>
+            </div>
+
+            <div class="total-row">
+              <span>Descuento</span>
+              <strong>${{ '%.2f'|format(quote.discount or 0) }}</strong>
+            </div>
+
+            <div class="total-row total-row--grand">
+              <span>Total cotizado</span>
+              <strong>${{ '%.2f'|format(quote.total or 0) }}</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {% if venta %}
+        <section class="panel">
+          <div class="panel-body">
+            <div class="sale-box">
+              <h3><i class="bi bi-check2-circle me-2"></i>Ya convertida a venta</h3>
+              <p>
+                Esta cotización ya generó una venta real con folio
+                <strong>{{ venta.folio or quote.converted_folio or 'N/D' }}</strong>.
+              </p>
+
+              <div class="actions">
+                <a href="{{ url_for('venta_detail', venta_id=venta._id) }}" class="btn btn-outline-light btn-sm">
+                  <i class="bi bi-eye me-1"></i> Ver venta
+                </a>
+
+                <a href="{{ url_for('venta_ticket_pdf', venta_id=venta._id) }}" class="btn btn-success btn-sm" target="_blank">
+                  <i class="bi bi-file-earmark-pdf me-1"></i> Ticket carta
+                </a>
+
+                <a href="{{ url_for('venta_ticket_pdf', venta_id=venta._id, paper='thermal') }}" class="btn btn-warning btn-sm" target="_blank">
+                  <i class="bi bi-printer me-1"></i> Térmico
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
+      {% endif %}
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Acciones comerciales</h2>
+          <p>Aprueba, rechaza o conviértela en una venta real.</p>
+        </div>
+
+        <div class="panel-body">
+          <div class="action-stack">
+            {% if status not in ['converted', 'rejected', 'cancelled', 'expired'] %}
+              <div class="action-card">
+                <h3>Aprobar cotización</h3>
+                <p>Marca la propuesta como lista para cerrarse comercialmente.</p>
+
+                <form method="POST" action="{{ url_for('cotizacion_action', quote_id=quote._id, action='approve') }}">
+                  <button type="submit" class="btn btn-success btn-wide">
+                    <i class="bi bi-check2-circle me-1"></i> Aprobar
+                  </button>
+                </form>
+              </div>
+
+              <div class="action-card">
+                <h3>Rechazar cotización</h3>
+                <p>Úsalo cuando el cliente ya no continúe o la propuesta quede descartada.</p>
+
+                <form method="POST" action="{{ url_for('cotizacion_action', quote_id=quote._id, action='reject') }}">
+                  <button type="submit" class="btn btn-outline-danger btn-wide">
+                    <i class="bi bi-x-circle me-1"></i> Rechazar
+                  </button>
+                </form>
+              </div>
+            {% else %}
+              <div class="status-note">
+                {% if status == 'converted' %}
+                  Esta cotización ya se convirtió a venta y ya no requiere aprobación adicional.
+                {% elif status == 'rejected' %}
+                  Esta cotización fue rechazada.
+                {% else %}
+                  Esta cotización ya está cerrada.
+                {% endif %}
+              </div>
+            {% endif %}
+
+            {% if status in ['draft', 'sent', 'approved'] and not venta %}
+              <div class="action-card">
+                <h3>Convertir a venta</h3>
+                <p>
+                  Esto registrará una venta real en tu sistema, descontará inventario
+                  y la cotización quedará marcada como convertida.
+                </p>
+
+                <form method="POST" action="{{ url_for('cotizacion_convertir_a_venta', quote_id=quote._id) }}">
+                  <div class="mb-3">
+                    <label class="form-label">Método de pago</label>
+                    <select name="payment_method" id="payment_method" class="form-select" onchange="toggleMixedPayment()">
+                      <option value="efectivo">Efectivo</option>
+                      <option value="transferencia">Transferencia</option>
+                      <option value="tarjeta">Tarjeta</option>
+                      <option value="digital">Digital</option>
+                      <option value="mixto">Mixto</option>
+                    </select>
+                  </div>
+
+                  <div id="mixedPaymentFields" style="display:none;">
+                    <div class="mb-3">
+                      <label class="form-label">Monto en efectivo</label>
+                      <input type="number" step="0.01" min="0" name="cash_amount" class="form-control" placeholder="0.00">
+                    </div>
+
+                    <div class="mb-3">
+                      <label class="form-label">Monto digital</label>
+                      <input type="number" step="0.01" min="0" name="digital_amount" class="form-control" placeholder="0.00">
+                    </div>
+
+                    <div class="helper">
+                      En pago mixto, la suma de ambos montos debe ser exactamente
+                      <strong>${{ '%.2f'|format(quote.total or 0) }}</strong>.
+                    </div>
+                  </div>
+
+                  <div class="mb-3 mt-3">
+                    <label class="form-label">Notas de cierre</label>
+                    <textarea name="notes" rows="3" class="form-control" placeholder="Referencia de pago, observaciones, etc."></textarea>
+                  </div>
+
+                  <button type="submit" class="btn btn-primary btn-wide mt-2">
+                    <i class="bi bi-receipt-cutoff me-1"></i> Convertir a venta
+                  </button>
+                </form>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+  function toggleMixedPayment() {
+    const method = document.getElementById('payment_method');
+    const box = document.getElementById('mixedPaymentFields');
+    if (!method || !box) return;
+    box.style.display = method.value === 'mixto' ? 'block' : 'none';
+  }
+
+  document.addEventListener('DOMContentLoaded', toggleMixedPayment);
+</script>
+{% endblock %}

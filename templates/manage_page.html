@@ -5,171 +5,441 @@
 {% block content %}
 <style>
   :root{
-    /* Paleta tipo Shopify/Xiaomi: neutros + acento configurable */
-    --brand: {{ data.color if data and data.color else '#0ea5e9' }}; /* cyan/sky moderno */
-    --ink-900:#0f172a; --ink-700:#334155; --ink-500:#64748b;
-    --line:#e5e7eb; --line-strong:#d1d5db;
-    --bg:#fafafa; --card:#ffffff;
-    --radius:14px; --shadow:0 12px 32px rgba(2,6,23,.06);
-    --ring: 0 0 0 .2rem rgba(14,165,233,.15);
+    --brand: {{ data.color if data and data.color else '#0ea5e9' }};
+    --ink-900:#0f172a;
+    --ink-700:#334155;
+    --ink-500:#64748b;
+    --line:#e5e7eb;
+    --line-strong:#d1d5db;
+    --bg:#fafafa;
+    --card:#ffffff;
+    --radius:14px;
+    --shadow:0 12px 32px rgba(2,6,23,.06);
+    --ring:0 0 0 .2rem rgba(14,165,233,.15);
   }
 
-  /* Lienzo / encabezado */
   .admin-hero{
-    background: linear-gradient(180deg, #f6f7fb 0%, #fff 60%);
+    background:linear-gradient(180deg, #f6f7fb 0%, #fff 60%);
     border:1px solid var(--line);
-    border-radius: 16px;
-    padding: 18px 20px;
-    box-shadow: var(--shadow);
+    border-radius:16px;
+    padding:18px 20px;
+    box-shadow:var(--shadow);
   }
-  .hero-title{ font-weight:800; color: var(--ink-900); letter-spacing:.2px; }
-  .brand-pill{ width:96px; height:10px; border-radius:999px; background: var(--brand); box-shadow: inset 0 0 0 2px rgba(0,0,0,.04); }
-  .avatar-preview{ width:72px; height:72px; border-radius:12px; object-fit:cover; border:1px solid var(--line); background:#fff; }
 
-  /* Tarjeta principal */
-  .admin-card{ background: var(--card); border:1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+  .hero-title{
+    font-weight:800;
+    color:var(--ink-900);
+    letter-spacing:.2px;
+  }
 
-  /* Tabs estilo settings Shopify */
+  .brand-pill{
+    width:96px;
+    height:10px;
+    border-radius:999px;
+    background:var(--brand);
+    box-shadow:inset 0 0 0 2px rgba(0,0,0,.04);
+  }
+
+  .avatar-preview{
+    width:72px;
+    height:72px;
+    border-radius:12px;
+    object-fit:cover;
+    border:1px solid var(--line);
+    background:#fff;
+  }
+
+  .admin-card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+  }
+
   .settings-tabs .nav-link{
-    border:1px solid var(--line); border-radius: 10px; color: var(--ink-700); background:#fff; font-weight:700;
+    border:1px solid var(--line);
+    border-radius:10px;
+    color:var(--ink-700);
+    background:#fff;
+    font-weight:700;
   }
-  .settings-tabs .nav-link:hover{ border-color: var(--line-strong); }
+
+  .settings-tabs .nav-link:hover{
+    border-color:var(--line-strong);
+  }
+
   .settings-tabs .nav-link.active{
-    color: var(--ink-900); border-color: var(--brand); box-shadow: var(--ring); background: #f8fdff;
+    color:var(--ink-900);
+    border-color:var(--brand);
+    box-shadow:var(--ring);
+    background:#f8fdff;
   }
 
-  /* Forms */
-  .form-label{ color: var(--ink-700); font-weight:700; }
-  .form-control, .form-select, .form-control-color{
-    background:#fff !important; color: var(--ink-900) !important; border:1px solid var(--line) !important; border-radius:10px; min-height: 42px;
+  .form-label{
+    color:var(--ink-700);
+    font-weight:700;
   }
-  .form-control::placeholder{ color:#94a3b8; }
-  .form-control:focus, .form-select:focus{ border-color: var(--brand) !important; box-shadow: var(--ring); }
-  .hint{ color: var(--ink-500); font-size:.9rem; }
 
-  .section-note{ color: var(--ink-500); border-top:1px dashed var(--line); padding-top:.6rem; margin-top:.2rem; }
+  .form-control,
+  .form-select,
+  .form-control-color{
+    background:#fff !important;
+    color:var(--ink-900) !important;
+    border:1px solid var(--line) !important;
+    border-radius:10px;
+    min-height:42px;
+  }
 
-  /* Template grid */
-  .tpl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;}
+  .form-control::placeholder{
+    color:#94a3b8;
+  }
+
+  .form-control:focus,
+  .form-select:focus{
+    border-color:var(--brand) !important;
+    box-shadow:var(--ring);
+  }
+
+  .hint{
+    color:var(--ink-500);
+    font-size:.9rem;
+  }
+
+  .section-note{
+    color:var(--ink-500);
+    border-top:1px dashed var(--line);
+    padding-top:.6rem;
+    margin-top:.2rem;
+  }
+
+  .btn-outline-secondary{
+    border-color:var(--line);
+  }
+
+  .btn-outline-secondary:hover{
+    background:#f4f6f8;
+  }
+
+  .btn-success{
+    background:var(--brand);
+    border-color:var(--brand);
+    box-shadow:0 8px 18px rgba(14,165,233,.25);
+  }
+
+  .btn-success:hover{
+    filter:brightness(.96);
+  }
+
+  #map{
+    height:340px;
+    border-radius:12px;
+    border:1px solid var(--line);
+    overflow:hidden;
+  }
+
+  .media-grid video{
+    pointer-events:none;
+  }
+
+  .bottom-space{
+    height:20px;
+  }
+
+  .template-head{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:16px;
+    flex-wrap:wrap;
+    margin-bottom:18px;
+  }
+
+  .template-head__copy h5{
+    margin:0 0 6px;
+    color:var(--ink-900);
+    font-weight:800;
+  }
+
+  .template-head__copy p{
+    margin:0;
+    color:var(--ink-500);
+  }
+
+  .template-toolbar{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+
+  .tpl-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));
+    gap:18px;
+  }
+
   .tpl-card{
-    position:relative; background:#fff; border:1px solid var(--line); border-radius:12px; padding:14px;
-    transition: box-shadow .12s ease, transform .12s ease, border-color .12s ease; cursor:pointer;
+    position:relative;
+    display:block;
+    border:1px solid var(--line);
+    border-radius:16px;
+    background:#fff;
+    overflow:hidden;
+    transition:transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+    cursor:pointer;
   }
-  .tpl-card:hover{ transform: translateY(-2px); box-shadow: 0 16px 28px rgba(2,6,23,.08); border-color: var(--line-strong); }
-  .tpl-card input{ position:absolute; inset:0; opacity:0; cursor:pointer; }
-  .tpl-card .dot{
-    position:absolute; right:12px; top:12px; width:16px; height:16px; border-radius:999px; border:2px solid var(--line-strong); background:#fff;
+
+  .tpl-card:hover{
+    transform:translateY(-3px);
+    box-shadow:0 18px 36px rgba(2,6,23,.08);
+    border-color:var(--line-strong);
   }
-  .tpl-card input:checked ~ .dot{ border-color: var(--brand); background: radial-gradient(var(--brand) 55%, #fff 56%); }
 
-  /* Mini preview “screenshot” */
-  .tpl-preview{
-    border:1px solid var(--line); border-radius:10px; overflow:hidden;
-    background:#fff; height:170px; display:flex; flex-direction:column;
+  .tpl-card.is-selected{
+    border-color:var(--brand);
+    box-shadow:0 0 0 4px rgba(14,165,233,.10), 0 18px 36px rgba(2,6,23,.08);
   }
-  .tpl-preview .ph-hero{
-    padding:10px 12px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:8px;
-    background: linear-gradient(180deg, rgba(0,0,0,.02), rgba(0,0,0,0));
+
+  .tpl-card input[type="radio"]{
+    position:absolute;
+    inset:0;
+    opacity:0;
+    pointer-events:none;
   }
-  .tpl-preview .pill{ width:70px; height:8px; border-radius:999px; background: var(--brand); }
-  .tpl-preview .title{ font-weight:800; font-size:13px; color:#111827; }
-  .tpl-preview .slogan{ font-size:11px; color:#6b7280; }
-  .tpl-preview .body{ padding:10px 12px; display:grid; grid-template-columns:1fr; gap:8px; }
-  .tpl-preview .chip{ display:inline-block; font-size:10px; border:1px solid var(--line); border-radius:999px; padding:2px 8px; color:#334155; background:#fff; }
-  .tpl-preview .btn{ display:inline-block; padding:6px 10px; font-size:11px; border-radius:8px; background:var(--brand); color:#fff; text-decoration:none; }
 
-  /* Variantes por estilo */
-  /* classico */
-  .tpl--classico .ph-hero{ background: linear-gradient(180deg, rgba(0,0,0,.02), transparent), #fff; }
-  /* brutal */
-  .tpl--brutal{ border-width:2px; }
-  .tpl--brutal .ph-hero{ border-bottom:2px solid #111827; background:#fff; }
-  .tpl--brutal .title{ font-size:14px; text-transform:uppercase; letter-spacing:.5px; }
-  .tpl--brutal .chip{ border:2px solid #111827; border-radius:6px; }
-  .tpl--brutal .btn{ border:2px solid #111827; color:#111827; background:transparent; }
-  /* dark (preview interna) */
-  .tpl--dark{ background:#0f141b; border-color:#1f2937; }
-  .tpl--dark .ph-hero{ background:#0b1117; border-bottom-color:#1f2937; }
-  .tpl--dark .title{ color:#e5e7eb; }
-  .tpl--dark .slogan{ color:#94a3b8; }
-  .tpl--dark .chip{ background:#0f141b; color:#cbd5e1; border-color:#233044; }
-  .tpl--dark .btn{ background: var(--brand); color:#0b1117; }
+  .tpl-card__top{
+    padding:16px 16px 12px;
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:12px;
+  }
 
-  /* Botones */
-  .btn-outline-secondary{ border-color: var(--line); }
-  .btn-outline-secondary:hover{ background:#f4f6f8; }
-  .btn-success{ background: var(--brand); border-color: var(--brand); box-shadow: 0 8px 18px rgba(14,165,233,.25); }
-  .btn-success:hover{ filter: brightness(.96); }
+  .tpl-card__title{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+  }
 
-  /* Mapa */
-  #map{ height: 340px; border-radius:12px; border:1px solid var(--line); overflow:hidden; }
+  .tpl-card__title strong{
+    color:var(--ink-900);
+    font-size:1rem;
+    font-weight:800;
+    line-height:1.2;
+  }
 
-  .bottom-space{ height: 20px; }
+  .tpl-card__title span{
+    color:var(--ink-500);
+    font-size:.9rem;
+    line-height:1.35;
+  }
 
-  /* ===== DARK MODE ===== */
+  .tpl-badges{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+
+  .tpl-badge{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    padding:6px 10px;
+    border-radius:999px;
+    font-size:.78rem;
+    font-weight:700;
+    border:1px solid var(--line);
+    color:var(--ink-700);
+    background:#fff;
+    white-space:nowrap;
+  }
+
+  .tpl-badge--active{
+    border-color:rgba(14,165,233,.22);
+    background:rgba(14,165,233,.08);
+    color:#0369a1;
+  }
+
+  .tpl-device{
+    position:relative;
+    margin:0 16px;
+    border:1px solid var(--line);
+    border-radius:14px;
+    overflow:hidden;
+    background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0)), #f8fafc;
+    aspect-ratio:16/10;
+    min-height:240px;
+  }
+
+  .tpl-device__toolbar{
+    height:40px;
+    display:flex;
+    align-items:center;
+    gap:6px;
+    padding:0 12px;
+    border-bottom:1px solid var(--line);
+    background:#fff;
+  }
+
+  .tpl-device__dot{
+    width:9px;
+    height:9px;
+    border-radius:999px;
+    background:#d1d5db;
+  }
+
+  .tpl-iframe-wrap{
+    position:relative;
+    width:100%;
+    height:calc(100% - 40px);
+    background:#fff;
+  }
+
+  .tpl-iframe{
+    width:100%;
+    height:100%;
+    border:0;
+    display:block;
+    pointer-events:none;
+    background:#fff;
+  }
+
+  .tpl-loading{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-direction:column;
+    gap:10px;
+    background:linear-gradient(180deg, rgba(255,255,255,.88), rgba(248,250,252,.95));
+    z-index:2;
+    color:var(--ink-500);
+    font-size:.9rem;
+    transition:opacity .2s ease, visibility .2s ease;
+  }
+
+  .tpl-loading.hidden{
+    opacity:0;
+    visibility:hidden;
+    pointer-events:none;
+  }
+
+  .tpl-loading__spinner{
+    width:28px;
+    height:28px;
+    border-radius:999px;
+    border:3px solid #dbeafe;
+    border-top-color:var(--brand);
+    animation:tplSpin .8s linear infinite;
+  }
+
+  @keyframes tplSpin{
+    to{ transform:rotate(360deg); }
+  }
+
+  .tpl-empty{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:24px;
+    color:var(--ink-500);
+    font-size:.95rem;
+    background:linear-gradient(180deg, #fff, #f8fafc);
+  }
+
+  .tpl-card__actions{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    padding:14px 16px 16px;
+  }
+
+  .tpl-card__actions .btn{
+    border-radius:10px;
+  }
+
   :root[data-theme="dark"]{
-    --ink-900:#e5e7eb; --ink-700:#cbd5e1; --ink-500:#94a3b8;
-    --bg:#0b0f14; --card:#0f141b;
-    --line:#1f2937; --line-strong:#334155;
-    --ring: 0 0 0 .2rem rgba(14,165,233,.25);
+    --ink-900:#e5e7eb;
+    --ink-700:#cbd5e1;
+    --ink-500:#94a3b8;
+    --bg:#0b0f14;
+    --card:#0f141b;
+    --line:#1f2937;
+    --line-strong:#334155;
+    --ring:0 0 0 .2rem rgba(14,165,233,.25);
   }
-  :root[data-theme="dark"] .admin-hero{ background: linear-gradient(180deg, #0d1117 0%, #0f141b 60%); }
-  :root[data-theme="dark"] .settings-tabs .nav-link{ background:#0f141b; color:var(--ink-700); }
-  :root[data-theme="dark"] .settings-tabs .nav-link.active{ background:#0b1720; color:var(--ink-900); }
+
+  :root[data-theme="dark"] .admin-hero{
+    background:linear-gradient(180deg, #0d1117 0%, #0f141b 60%);
+  }
+
+  :root[data-theme="dark"] .settings-tabs .nav-link{
+    background:#0f141b;
+    color:var(--ink-700);
+  }
+
+  :root[data-theme="dark"] .settings-tabs .nav-link.active{
+    background:#0b1720;
+    color:var(--ink-900);
+  }
+
   :root[data-theme="dark"] .form-control,
   :root[data-theme="dark"] .form-select,
   :root[data-theme="dark"] .form-control-color{
-    background:#0b1117 !important; color:#e5e7eb !important; border-color: var(--line) !important;
+    background:#0b1117 !important;
+    color:#e5e7eb !important;
+    border-color:var(--line) !important;
   }
-  :root[data-theme="dark"] .tpl-card{ background:#0f141b; }
-  :root[data-theme="dark"] .btn-outline-secondary:hover{ background:#111827; }
-  /* Reemplaza tu .tpl-grid actual por esto */
-.tpl-grid{
-  display:grid;
-  grid-template-columns: 1fr;        /* móvil: 1 columna (100%) */
-  gap:16px;
-}
 
-/* >= 992px (desktop): 2 columnas (50% cada una) */
-@media (min-width: 992px){
-  .tpl-grid{
-    grid-template-columns: 1fr 1fr;
-    gap:20px;
+  :root[data-theme="dark"] .btn-outline-secondary:hover{
+    background:#111827;
   }
-}
-/* Tarjeta */
-.tpl-card{
-  position:relative; background:#fff; border:1px solid var(--line);
-  border-radius:12px; padding:14px; transition:.12s; cursor:pointer;
-}
 
-/* Contenedor del iframe: ancho siempre 100%, alto adaptable */
-.tpl-preview{
-  position:relative;
-  width:100%;
-  border:1px solid var(--line);
-  border-radius:10px; overflow:hidden; background:#fff;
-  /* alto: mínimo 220px, ideal 34vw (mitad del viewport en 2 cols), máximo 420px */
-  height: clamp(220px, 34vw, 420px);
-}
-
-/* En móviles (1 columna), subimos un poco el alto ideal para que se luzca más */
-@media (max-width: 991.98px){
-  .tpl-preview{
-    height: clamp(260px, 56vw, 520px);
+  :root[data-theme="dark"] .tpl-card{
+    background:#0f141b;
   }
-}
 
-/* Iframe ocupa todo el contenedor */
-.tpl-iframe{
-  width:100%; height:100%; border:0;
-  pointer-events:none; /* evita clicks dentro de la miniatura */
-}
-.media-grid video {
-  pointer-events: none;
-}
+  :root[data-theme="dark"] .tpl-device{
+    background:#0b1117;
+    border-color:#1f2937;
+  }
 
+  :root[data-theme="dark"] .tpl-device__toolbar{
+    background:#0f141b;
+    border-bottom-color:#1f2937;
+  }
 
+  :root[data-theme="dark"] .tpl-empty{
+    background:linear-gradient(180deg, #0b1117, #0f141b);
+  }
+
+  :root[data-theme="dark"] .tpl-loading{
+    background:linear-gradient(180deg, rgba(11,17,23,.90), rgba(15,20,27,.94));
+  }
+
+  @media (max-width: 991.98px){
+    .tpl-grid{
+      grid-template-columns:1fr;
+    }
+
+    .tpl-device{
+      min-height:260px;
+    }
+  }
+
+  @media (max-width: 767.98px){
+    .tpl-card__actions{
+      flex-direction:column;
+    }
+
+    .tpl-card__actions .btn{
+      width:100%;
+    }
+  }
 </style>
 
 <div class="admin-hero mb-4">
@@ -387,152 +657,223 @@
       </div>
     </div>
 
-    <!-- BRANDING -->
-    <div class="tab-pane fade" id="pane-brand" role="tabpanel" aria-labelledby="tab-brand">
-      <div class="row g-3">
-        <div class="col-md-4">
-          <label class="form-label">Color principal</label>
-          <div class="d-flex align-items-center gap-3">
-            <input type="color" id="brandColor" name="color" class="form-control form-control-color p-0" value="{{ data.color if data else '#0ea5e9' }}">
-            <div class="brand-pill flex-grow-1" style="height:10px;"></div>
-          </div>
-          <div class="hint mt-1">Afecta acentos, bordes activos y botón guardar.</div>
-        </div>
-
-        <div class="col-md-8">
-          <label class="form-label">Imagen principal (logo/portada)</label>
-          <input type="file" id="imageInput" name="image" class="form-control">
-          <div class="d-flex align-items-center gap-3 mt-2">
-            {% if data and data.image %}
-              <img id="imagePreview" src="{{ url_for('uploaded_file', filename=data.image) }}" class="rounded border" style="width:140px; height:140px; object-fit:cover;">
-            {% else %}
-              <img id="imagePreview" src="{{ url_for('static', filename='images/default_image.png') }}" class="rounded border" style="width:140px; height:140px; object-fit:cover;">
-            {% endif %}
-            <span class="hint">Vista previa</span>
-          </div>
-        </div>
+<!-- BRANDING -->
+<div class="tab-pane fade" id="pane-brand" role="tabpanel" aria-labelledby="tab-brand">
+  <div class="row g-3">
+    <div class="col-md-4">
+      <label class="form-label">Color principal</label>
+      <div class="d-flex align-items-center gap-3">
+        <input type="color" id="brandColor" name="color" class="form-control form-control-color p-0" value="{{ data.color if data else '#0ea5e9' }}">
+        <div class="brand-pill flex-grow-1" style="height:10px;"></div>
       </div>
-      <!-- Portada -->
-<div class="mb-3">
-  <label class="form-label">Imagen de portada</label>
-  <input type="file" name="cover_image" class="form-control" accept="image/*">
-  {% if data.cover_image %}
-    <div class="mt-2">
-      <img src="{{ url_for('uploaded_file', filename=data.cover_image) }}" style="max-height:100px;">
-    </div>
-  {% endif %}
-</div>
-
-<!-- Galería mixta (imágenes y/o videos) -->
-<div class="mb-3">
-  <label class="form-label">Galería del lugar (imágenes y videos)</label>
-  <input type="file" name="media_gallery[]" class="form-control" multiple>
-  <small class="text-muted">Puedes subir JPG, PNG y también MP4 / WEBM.</small>
-
-  <!-- Galería del lugar (imágenes y videos) -->
-<div class="mb-3">
-  <label class="form-label">Galería del lugar (imágenes y videos)</label>
-  <input type="file" name="media_gallery[]" class="form-control" multiple>
-  <small class="text-muted">Puedes subir JPG, PNG y también MP4 / WEBM.</small>
-
-  {% if data and data.media_gallery and data.media_gallery|length > 0 %}
-  <div class="mt-3">
-    <div class="d-flex justify-content-between align-items-center mb-2">
-      <h6 class="mb-0">📸 Archivos actuales</h6>
-      <span class="text-muted small">{{ data.media_gallery|length }} archivo(s)</span>
+      <div class="hint mt-1">Afecta acentos, bordes activos y botón guardar.</div>
     </div>
 
-    <div class="media-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;">
-      {% for item in data.media_gallery %}
-      <div class="position-relative rounded-3 overflow-hidden"
-           style="background:#0f172a;min-height:120px;">
-
-        {# IMAGEN #}
-        {% if item.type != 'video' %}
-          <img src="{{ url_for('uploaded_file', filename=item.path) }}"
-               alt="Imagen del lugar"
-               style="width:100%;height:100%;object-fit:cover;display:block;">
+    <div class="col-md-8">
+      <label class="form-label">Imagen principal (logo/portada)</label>
+      <input type="file" id="imageInput" name="image" class="form-control">
+      <div class="d-flex align-items-center gap-3 mt-2">
+        {% if data and data.image %}
+          <img id="imagePreview" src="{{ url_for('uploaded_file', filename=data.image) }}" class="rounded border" style="width:140px; height:140px; object-fit:cover;" alt="Vista previa logo">
         {% else %}
-        {# VIDEO #}
-          <video src="{{ url_for('uploaded_file', filename=item.path) }}"
-                 muted
-                 playsinline
-                 style="width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;">
-          </video>
-          <span class="badge bg-dark position-absolute top-0 start-0 m-1 d-flex align-items-center gap-1"
-                style="z-index:12;">
-            <i class="bi bi-play-fill"></i> Video
-          </span>
+          <img id="imagePreview" src="{{ url_for('static', filename='images/default_image.png') }}" class="rounded border" style="width:140px; height:140px; object-fit:cover;" alt="Vista previa logo">
         {% endif %}
-
-        {# 👇 ESTE ES EL BOTÓN DE BORRAR (sin form anidado) #}
-        <button type="submit"
-                formaction="{{ url_for('borrar_media', nombre=data.business_name) }}"
-                formmethod="POST"
-                name="path"
-                value="{{ item.path }}"
-                class="btn btn-sm btn-danger d-grid place-items-center position-absolute"
-                style="top:6px;right:6px;z-index:20;width:30px;height:30px;border-radius:999px;">
-          <i class="bi bi-trash" style="font-size:.7rem;"></i>
-        </button>
-
-        {# si quieres mandar también el type, puedes poner un input hidden extra #}
-        <input type="hidden" name="type" value="{{ item.type }}">
+        <span class="hint">Vista previa</span>
       </div>
-      {% endfor %}
+    </div>
+
+    <div class="col-12">
+      <label class="form-label">Imagen de portada</label>
+      <input type="file" name="cover_image" class="form-control" accept="image/*">
+      {% if data and data.cover_image %}
+        <div class="mt-2">
+          <img src="{{ url_for('uploaded_file', filename=data.cover_image) }}" alt="Portada actual" class="rounded border" style="max-height:100px;">
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="col-12">
+      <label class="form-label">Galería del lugar (imágenes y videos)</label>
+      <input type="file" name="media_gallery[]" class="form-control" multiple>
+      <small class="text-muted">Puedes subir JPG, PNG y también MP4 / WEBM.</small>
+
+      {% if data and data.media_gallery and data.media_gallery|length > 0 %}
+        <div class="mt-3">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="mb-0">📸 Archivos actuales</h6>
+            <span class="text-muted small">{{ data.media_gallery|length }} archivo(s)</span>
+          </div>
+
+          <div class="media-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;">
+            {% for item in data.media_gallery %}
+              <div class="position-relative rounded-3 overflow-hidden" style="background:#0f172a;min-height:120px;">
+
+                {% if item.type != 'video' %}
+                  <img
+                    src="{{ url_for('uploaded_file', filename=item.path) }}"
+                    alt="Imagen del lugar"
+                    style="width:100%;height:100%;object-fit:cover;display:block;"
+                  >
+                {% else %}
+                  <video
+                    src="{{ url_for('uploaded_file', filename=item.path) }}"
+                    muted
+                    playsinline
+                    style="width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;"
+                  ></video>
+
+                  <span
+                    class="badge bg-dark position-absolute top-0 start-0 m-1 d-flex align-items-center gap-1"
+                    style="z-index:12;"
+                  >
+                    <i class="bi bi-play-fill"></i> Video
+                  </span>
+                {% endif %}
+
+                <button
+                  type="submit"
+                  formaction="{{ url_for('borrar_media', nombre=data.business_name) }}"
+                  formmethod="POST"
+                  name="path"
+                  value="{{ item.path }}"
+                  class="btn btn-sm btn-danger d-grid place-items-center position-absolute"
+                  style="top:6px;right:6px;z-index:20;width:30px;height:30px;border-radius:999px;"
+                >
+                  <i class="bi bi-trash" style="font-size:.7rem;"></i>
+                </button>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      {% else %}
+        <p class="text-muted small mt-2">No hay archivos en la galería todavía.</p>
+      {% endif %}
     </div>
   </div>
-  {% else %}
-    <p class="text-muted small mt-2">No hay archivos en la galería todavía.</p>
-  {% endif %}
 </div>
 
-</div>
-
+<!-- TEMPLATE -->
+<div class="tab-pane fade" id="pane-template" role="tabpanel" aria-labelledby="tab-template">
+  <div class="template-head">
+    <div class="template-head__copy">
+      <h5>Elige la apariencia de tu página pública</h5>
+      <p>
+        Selecciona un estilo visual para tu negocio. Puedes previsualizar cada template
+        y dejar uno como predeterminado.
+      </p>
     </div>
 
-    <!-- TEMPLATE -->
-    <div class="tab-pane fade" id="pane-template" role="tabpanel" aria-labelledby="tab-template">
-      <div class="mb-2 fw-bold" style="color:var(--ink-900)">HTML por defecto (estilo)</div>
-      <p class="hint mb-3">Elige la apariencia pública. Se guardará como tu plantilla por defecto.</p>
-
-      <div class="tpl-grid">
-        {% for key, file in default_html_whitelist.items() %}
-  {% set nice = 'Clásico' if key=='classico' else 'Neo-Brutalista' if key=='brutal' else 'Dark' if key=='dark' else key|capitalize %}
-  <label class="tpl-card" data-key="{{ key }}">
-    <input type="radio" name="default_html" value="{{ key }}" {% if default_html_key == key %}checked{% endif %}>
-    <div class="dot"></div>
-
-    <div class="d-flex align-items-center justify-content-between mb-2">
-      <div class="fw-bold" style="color:var(--ink-900)">{{ nice }}</div>
-    </div>
-
-    <!-- Mini preview (iframe real) -->
-    <div class="tpl-preview" style="position:relative; overflow:hidden;">
-      <iframe class="tpl-iframe"
-              title="Preview {{ nice }}"
-              loading="lazy"
-              referrerpolicy="no-referrer"
-              sandbox="allow-scripts allow-same-origin"
-              style="width:100%; height:100%; border:0; pointer-events:none; transform:scale(1); transform-origin:top left;"
-              data-src="{{ url_for('detalle_negocio', nombre=data.business_name) }}?tpl={{ key }}&preview=1">
-      </iframe>
-    </div>
-
-    <div class="d-flex gap-2 mt-2">
-      <button type="button" class="btn btn-outline-secondary btn-sm js-reload"><i class="bi bi-arrow-clockwise"></i> Recargar</button>
-      <button type="button" class="btn btn-success btn-sm" onclick="this.closest('.tpl-card').querySelector('input[type=radio]').checked = true;">
-        <i class="bi bi-check2-circle"></i> Usar
+    <div class="template-toolbar">
+      <button type="button" class="btn btn-outline-secondary btn-sm" id="reloadAllTpls">
+        <i class="bi bi-arrow-clockwise me-1"></i> Recargar vistas
       </button>
     </div>
-  </label>
-{% endfor %}
-
-      </div>
-
-      <small class="hint d-block mt-2">Tip: prueba temporalmente con <code>?tpl=brutal</code> en la URL.</small>
-    </div>
   </div>
+
+  {% if not data or not data.business_name %}
+    <div class="alert alert-warning admin-card p-3 mb-3">
+      <i class="bi bi-exclamation-triangle me-2"></i>
+      Guarda primero el nombre del negocio para habilitar la previsualización real de los templates.
+    </div>
+  {% endif %}
+
+  <div class="tpl-grid">
+    {% for key, file in default_html_whitelist.items() %}
+      {% if key == 'classico' %}
+        {% set nice = 'Clásico' %}
+        {% set desc = 'Limpio, elegante y fácil de adaptar a cualquier giro.' %}
+        {% set tag = 'Profesional' %}
+      {% elif key == 'brutal' %}
+        {% set nice = 'Neo-Brutalista' %}
+        {% set desc = 'Más fuerte, llamativo y moderno para negocios con personalidad.' %}
+        {% set tag = 'Impactante' %}
+      {% elif key == 'dark' %}
+        {% set nice = 'Dark' %}
+        {% set desc = 'Sobrio, premium y visualmente más intenso.' %}
+        {% set tag = 'Premium' %}
+      {% else %}
+        {% set nice = key|capitalize %}
+        {% set desc = 'Template disponible para tu negocio.' %}
+        {% set tag = 'Disponible' %}
+      {% endif %}
+
+      {% set is_selected = (default_html_key == key) %}
+      {% set preview_url = (url_for('detalle_negocio', nombre=data.business_name) ~ '?tpl=' ~ key ~ '&preview=1') if data and data.business_name else '' %}
+
+      <label class="tpl-card {% if is_selected %}is-selected{% endif %}" data-key="{{ key }}">
+        <input
+          type="radio"
+          name="default_html"
+          value="{{ key }}"
+          {% if is_selected %}checked{% endif %}
+        >
+
+        <div class="tpl-card__top">
+          <div class="tpl-card__title">
+            <strong>{{ nice }}</strong>
+            <span>{{ desc }}</span>
+          </div>
+
+          <div class="tpl-badges">
+            <span class="tpl-badge">{{ tag }}</span>
+            {% if is_selected %}
+              <span class="tpl-badge tpl-badge--active">
+                <i class="bi bi-check-circle-fill"></i> Actual
+              </span>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="tpl-device">
+          <div class="tpl-device__toolbar">
+            <span class="tpl-device__dot"></span>
+            <span class="tpl-device__dot"></span>
+            <span class="tpl-device__dot"></span>
+          </div>
+
+          <div class="tpl-iframe-wrap">
+            {% if preview_url %}
+              <div class="tpl-loading">
+                <div class="tpl-loading__spinner"></div>
+                <span>Cargando preview…</span>
+              </div>
+
+              <iframe
+                class="tpl-iframe"
+                title="Preview {{ nice }}"
+                loading="lazy"
+                referrerpolicy="no-referrer"
+                sandbox="allow-scripts allow-same-origin"
+                data-src="{{ preview_url }}"
+              ></iframe>
+            {% else %}
+              <div class="tpl-empty">
+                <div>
+                  <i class="bi bi-layout-text-window-reverse fs-4 d-block mb-2"></i>
+                  Guarda primero la información general del negocio para ver el template en vivo.
+                </div>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="tpl-card__actions">
+          <button type="button" class="btn btn-outline-secondary btn-sm js-reload">
+            <i class="bi bi-arrow-clockwise me-1"></i> Recargar
+          </button>
+
+          <button type="button" class="btn btn-success btn-sm js-select-template">
+            <i class="bi bi-check2-circle me-1"></i> Usar este template
+          </button>
+        </div>
+      </label>
+    {% endfor %}
+  </div>
+
+  <small class="hint d-block mt-3">
+    Consejo: puedes cambiar color, nombre o slogan y luego recargar la vista previa para revisar el resultado.
+  </small>
+</div>  </div>
 
   <div class="d-flex justify-content-end gap-2 mt-4">
     <a href="{{ url_for('dashboard')}}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left-circle"></i> Regresar</a>
@@ -541,154 +882,65 @@
 </form>
 
 <div class="bottom-space"></div>
+
 <script>
-  // --- Recolecta datos actuales del formulario
-  function formPreviewData(){
-    const read = n => {
-      const el = document.querySelector(`[name="${n}"]`);
+  function getTemplatePreviewPayload(){
+    const read = (name) => {
+      const el = document.querySelector(`[name="${name}"]`);
       if(!el) return '';
-      return el.type==='checkbox' ? (el.checked ? 'sí' : 'no') : (el.value||'');
+      return el.type === 'checkbox' ? (el.checked ? '1' : '0') : (el.value || '');
     };
-    const list = n => (read(n)||'').split(/[,|\n]/g).map(s=>s.trim()).filter(Boolean);
+
+    const list = (name) =>
+      (read(name) || '')
+        .split(/[,|\n]/g)
+        .map(v => v.trim())
+        .filter(Boolean);
 
     return {
-      name:   read('business_name') || 'Mi Negocio',
-      slogan: read('slogan') || '',
-      color:  read('color') || '#0ea5e9',
-      services: list('services').slice(0,6),
-      whatsapp: read('whatsapp')
+      business_name: read('business_name'),
+      slogan: read('slogan'),
+      description: read('description'),
+      services: list('services'),
+      whatsapp: read('whatsapp'),
+      color: read('color') || '#0ea5e9',
+      theme: document.documentElement.getAttribute('data-theme') || 'light'
     };
   }
 
-  // --- Lazy-load de iframes (cuando entran al viewport)
-  (function lazyLoadTplIframes(){
-    const iframes = document.querySelectorAll('.tpl-iframe');
-    if(!iframes.length) return;
-
-    const io = new IntersectionObserver((entries)=>{
-      entries.forEach(entry=>{
-        if(entry.isIntersecting){
-          const ifr = entry.target;
-          if(!ifr.src){
-            ifr.src = ifr.getAttribute('data-src') + '&ts=' + Date.now(); // cache-bust
-            ifr.onload = () => sendPreviewDataToIframe(ifr, formPreviewData());
-          }
-        }
-      });
-    }, {rootMargin:'200px 0px'});
-
-    iframes.forEach(ifr => io.observe(ifr));
-  })();
-
-  // --- Envía datos al iframe por postMessage
-  function sendPreviewDataToIframe(ifr, payload){
-    try{
-      if(!ifr || !ifr.contentWindow) return;
-      ifr.contentWindow.postMessage({
-        type: 'admin-preview-update',
-        payload
-      }, '*'); // mismo origen -> podrías poner tu origen exacto
-    }catch(e){}
+  function debounce(fn, delay){
+    let t;
+    return (...args) => {
+      clearTimeout(t);
+      t = setTimeout(() => fn(...args), delay);
+    };
   }
 
-  // --- Debounce para no spamear mensajes
-  function debounce(fn, ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
-  const broadcast = debounce(()=>{
-    const data = formPreviewData();
-    document.querySelectorAll('.tpl-iframe').forEach(ifr=>{
-      if (ifr.src) sendPreviewDataToIframe(ifr, data);
-    });
-  }, 200);
-
-  // --- Re-envía al cambiar campos relevantes
-  ['business_name','slogan','services','whatsapp','color']
-    .forEach(n=>{
-      const el = document.querySelector(`[name="${n}"]`);
-      if(!el) return;
-      const ev = (el.tagName==='SELECT' || el.type==='checkbox') ? 'change' : 'input';
-      el.addEventListener(ev, broadcast);
-    });
-
-  // --- Botón "Recargar" por tarjeta (re-pinta el iframe)
-  document.querySelectorAll('.tpl-card .js-reload').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      const card = btn.closest('.tpl-card');
-      const ifr  = card.querySelector('.tpl-iframe');
-      if(!ifr) return;
-      const base = ifr.getAttribute('data-src');
-      ifr.src = base + '&ts=' + Date.now();
-      ifr.onload = () => sendPreviewDataToIframe(ifr, formPreviewData());
-    });
-  });
-</script>
-<script>
-(function(){
-  // Solo activar en modo preview
-  const isPreview = /[?&]preview=1\b/.test(location.search);
-  if(!isPreview) return;
-
-  // Hook para actualizar UI en vivo desde el admin
-  window.addEventListener('message', (e)=>{
-    const msg = e.data || {};
-    if(msg.type !== 'admin-preview-update') return;
-    const { name, slogan, color, services, whatsapp } = msg.payload || {};
-
-    // 1) Color/acento (usa tu variable CSS si la tienes)
-    try{
-      document.documentElement.style.setProperty('--brand', color || '#0ea5e9');
-    }catch(_){}
-
-    // 2) Título y slogan (ajusta selectores a tu markup real)
-    const titleEl  = document.querySelector('[data-role="title"], h1, .page-title');
-    const sloganEl = document.querySelector('[data-role="slogan"], .slogan, .subtitle');
-    if(titleEl && name)  titleEl.textContent  = name;
-    if(sloganEl) sloganEl.textContent = slogan ? '“'+slogan+'”' : '';
-
-    // 3) Servicios (si tienes un contenedor)
-    const svcWrap = document.querySelector('[data-role="services"], .services, .services-list');
-    if(svcWrap){
-      svcWrap.innerHTML = '';
-      (services || []).forEach(s=>{
-        const chip = document.createElement('span');
-        chip.className = 'chip';
-        chip.textContent = s;
-        svcWrap.appendChild(chip);
-      });
-    }
-
-    // 4) CTA WhatsApp (si existe)
-    const wa = document.querySelector('[data-role="cta-whatsapp"], a[href^="https://wa.me"]');
-    if(wa && whatsapp){
-      wa.setAttribute('href', 'https://wa.me/' + (whatsapp||'').replace(/\s/g,''));
-    }
-  });
-})();
-</script>
-
-<script>
-  // Actualiza acento en vivo
+  // Preview color en vivo
   (function(){
     const input = document.getElementById('brandColor');
-    if(!input) return;
     const root = document.documentElement;
-    input.addEventListener('input', e=>{
+    if(!input) return;
+
+    input.addEventListener('input', (e) => {
       root.style.setProperty('--brand', e.target.value || '#0ea5e9');
-      renderAllTplPreviews(); // refresca miniaturas
     });
   })();
 
-  // Preview imagen
+  // Preview imagen principal
   (function(){
     const file = document.getElementById('imageInput');
     const img  = document.getElementById('imagePreview');
     if(!file || !img) return;
-    file.addEventListener('change', ()=>{
-      const f = file.files?.[0]; if(!f) return;
+
+    file.addEventListener('change', () => {
+      const f = file.files?.[0];
+      if(!f) return;
       img.src = URL.createObjectURL(f);
     });
   })();
 
-  // MAPA (Leaflet básico)
+  // Mapa Leaflet
   document.addEventListener('DOMContentLoaded', function () {
     const latInput = document.getElementById('lat');
     const lngInput = document.getElementById('lng');
@@ -698,11 +950,16 @@
     const defaultZoom = (latInput?.value && lngInput?.value) ? 14 : 5;
 
     const mapEl = document.getElementById('map');
-    if(!mapEl) return;
+    if(!mapEl || typeof L === 'undefined') return;
+
     const map = L.map('map').setView([defaultLat, defaultLng], defaultZoom);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution:'&copy; OpenStreetMap' }).addTo(map);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution:'&copy; OpenStreetMap'
+    }).addTo(map);
 
     let marker = null;
+
     function placeMarker(lat, lng) {
       if (!marker) {
         marker = L.marker([lat, lng], { draggable: true }).addTo(map);
@@ -714,92 +971,179 @@
       } else {
         marker.setLatLng([lat, lng]);
       }
+
       if(latInput) latInput.value = lat.toFixed(6);
       if(lngInput) lngInput.value = lng.toFixed(6);
     }
 
-    if (latInput?.value && lngInput?.value) placeMarker(parseFloat(latInput.value), parseFloat(lngInput.value));
-    map.on('click', function(e) { placeMarker(e.latlng.lat, e.latlng.lng); });
+    if (latInput?.value && lngInput?.value) {
+      placeMarker(parseFloat(latInput.value), parseFloat(lngInput.value));
+    }
+
+    map.on('click', function(e) {
+      placeMarker(e.latlng.lat, e.latlng.lng);
+    });
   });
 
-  // ===== Tema (claro/oscuro) con persistencia =====
+  // Tema claro/oscuro
   (function(){
     const root = document.documentElement;
     const btn  = document.getElementById('themeToggle');
     const saved = localStorage.getItem('admin_theme') || 'light';
-    if(saved === 'dark'){ root.setAttribute('data-theme','dark'); root.style.setProperty('--invert','1'); }
-    btn?.addEventListener('click', ()=>{
+
+    if(saved === 'dark'){
+      root.setAttribute('data-theme','dark');
+      root.style.setProperty('--invert','1');
+    }
+
+    btn?.addEventListener('click', () => {
       const nowDark = root.getAttribute('data-theme') !== 'dark';
       root.setAttribute('data-theme', nowDark ? 'dark' : 'light');
       root.style.setProperty('--invert', nowDark ? '1' : '0');
       localStorage.setItem('admin_theme', nowDark ? 'dark' : 'light');
-      renderAllTplPreviews(); // miniaturas respetan tema
+
+      setTimeout(() => {
+        document.querySelectorAll('.tpl-iframe').forEach((iframe) => {
+          if(iframe.src && iframe.contentWindow){
+            iframe.contentWindow.postMessage({
+              type: 'admin-preview-update',
+              payload: getTemplatePreviewPayload()
+            }, '*');
+          }
+        });
+      }, 120);
     });
   })();
 
-  // ===== MINI PREVIEW DE TEMPLATES EN TARJETAS =====
-  function readVal(name){
-    const el = document.querySelector(`[name="${name}"]`);
-    return el ? (el.type==='checkbox' ? el.checked : (el.value||'')).toString().trim() : '';
-  }
-  function readList(name){
-    return (readVal(name)||'').split(/[,|\n]/g).map(s=>s.trim()).filter(Boolean);
-  }
+  // Templates
+  (function initTemplateCards(){
+    const cards = Array.from(document.querySelectorAll('.tpl-card'));
+    if(!cards.length) return;
 
-  function renderTplPreview(card){
-    const key = card.getAttribute('data-key'); // classico | brutal | dark | ...
-    const preview = card.querySelector('.tpl-preview'); if(!preview) return;
+    const iframes = Array.from(document.querySelectorAll('.tpl-iframe[data-src]'));
 
-    // datos actuales
-    const name   = readVal('business_name') || 'Mi Negocio';
-    const slogan = readVal('slogan');
-    const services = readList('services');
-    const wapp   = readVal('whatsapp');
+    function setSelectedState(){
+      cards.forEach(card => {
+        const radio = card.querySelector('input[type="radio"]');
+        card.classList.toggle('is-selected', !!radio?.checked);
 
-    // aplica nombre/slogan
-    preview.classList.toggle('tpl--dark', key==='dark');
-    preview.querySelector('[data-role="title"]').textContent = name;
-    preview.querySelector('[data-role="slogan"]').textContent = slogan ? `“${slogan}”` : ' ';
+        const badgeWrap = card.querySelector('.tpl-badges');
+        const activeBadge = card.querySelector('.tpl-badge--active');
 
-    // chips
-    const body = preview.querySelector('.body');
-    const chipsWrap = document.createElement('div');
-    chipsWrap.innerHTML = (services.slice(0,2).map(s=>`<span class="chip">${s}</span>`).join('')) || `
-      <span class="chip">Servicio 1</span> <span class="chip">Servicio 2</span>
-    `;
+        if(radio?.checked && !activeBadge && badgeWrap){
+          const badge = document.createElement('span');
+          badge.className = 'tpl-badge tpl-badge--active';
+          badge.innerHTML = '<i class="bi bi-check-circle-fill"></i> Actual';
+          badgeWrap.appendChild(badge);
+        } else if(!radio?.checked && activeBadge){
+          activeBadge.remove();
+        }
+      });
+    }
 
-    // CTA
-    const cta = document.createElement('a');
-    cta.className = 'btn';
-    cta.href = wapp ? `https://wa.me/${wapp.replace(/\s/g,'')}` : '#';
-    cta.target = '_blank';
-    cta.textContent = wapp ? 'WhatsApp' : 'Ver más';
+    function sendPayloadToIframe(iframe){
+      try{
+        if(!iframe?.contentWindow) return;
+        iframe.contentWindow.postMessage({
+          type: 'admin-preview-update',
+          payload: getTemplatePreviewPayload()
+        }, '*');
+      }catch(e){}
+    }
 
-    // reset body
-    body.innerHTML = '';
-    body.appendChild(chipsWrap);
-    body.appendChild(cta);
+    function loadIframe(iframe, force = false){
+      const src = iframe.getAttribute('data-src');
+      if(!src) return;
 
-    // estilos específicos por key
-    preview.classList.remove('tpl--classico','tpl--brutal','tpl--dark');
-    preview.classList.add(`tpl--${key}`);
-  }
+      const loading = iframe.closest('.tpl-iframe-wrap')?.querySelector('.tpl-loading');
 
-  function renderAllTplPreviews(){
-    document.querySelectorAll('.tpl-card').forEach(renderTplPreview);
-  }
+      if(force || !iframe.src){
+        if(loading) loading.classList.remove('hidden');
 
-  // Render inicial
-  document.addEventListener('DOMContentLoaded', renderAllTplPreviews);
+        iframe.onload = () => {
+          if(loading) loading.classList.add('hidden');
+          sendPayloadToIframe(iframe);
+        };
 
-  // Re-render al escribir/cambiar
-  ['business_name','slogan','services','whatsapp','color','delivery_available']
-    .forEach(n=>{
-      const el = document.querySelector(`[name="${n}"]`);
-      if(!el) return;
-      const ev = (el.tagName==='SELECT' || el.type==='checkbox') ? 'change':'input';
-      el.addEventListener(ev, renderAllTplPreviews);
+        iframe.src = src + '&ts=' + Date.now();
+      } else {
+        sendPayloadToIframe(iframe);
+      }
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if(entry.isIntersecting){
+          loadIframe(entry.target);
+          observer.unobserve(entry.target);
+        }
+      });
+    }, {
+      rootMargin: '200px 0px'
     });
 
+    iframes.forEach(iframe => observer.observe(iframe));
+
+    cards.forEach(card => {
+      const radio = card.querySelector('input[type="radio"]');
+      const selectBtn = card.querySelector('.js-select-template');
+      const reloadBtn = card.querySelector('.js-reload');
+      const iframe = card.querySelector('.tpl-iframe');
+
+      card.addEventListener('click', (e) => {
+        if(e.target.closest('.js-reload') || e.target.closest('.js-select-template')) return;
+        if(radio){
+          radio.checked = true;
+          setSelectedState();
+        }
+      });
+
+      radio?.addEventListener('change', setSelectedState);
+
+      selectBtn?.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if(radio){
+          radio.checked = true;
+          setSelectedState();
+        }
+      });
+
+      reloadBtn?.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if(iframe) loadIframe(iframe, true);
+      });
+    });
+
+    document.getElementById('reloadAllTpls')?.addEventListener('click', () => {
+      iframes.forEach(iframe => loadIframe(iframe, true));
+    });
+
+    const broadcastChanges = debounce(() => {
+      iframes.forEach(iframe => {
+        if(iframe.src) sendPayloadToIframe(iframe);
+      });
+    }, 250);
+
+    [
+      'business_name',
+      'slogan',
+      'description',
+      'services',
+      'whatsapp',
+      'color'
+    ].forEach(name => {
+      const el = document.querySelector(`[name="${name}"]`);
+      if(!el) return;
+
+      const eventName =
+        (el.tagName === 'SELECT' || el.type === 'checkbox') ? 'change' : 'input';
+
+      el.addEventListener(eventName, broadcastChanges);
+    });
+
+    setSelectedState();
+  })();
 </script>
 {% endblock %}
