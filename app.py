@@ -6197,6 +6197,505 @@ def cotizacion_print(quote_id):
         page=page
     )
 
+from datetime import datetime, timezone, timedelta, time
+from collections import defaultdict
+from bson import ObjectId
+
+def utc_now():
+    return datetime.now(timezone.utc)
+
+def money2(value):
+    try:
+        return round(float(value or 0), 2)
+    except Exception:
+        return 0.0
+
+def pct_change(current, previous):
+    current = money2(current)
+    previous = money2(previous)
+    if previous == 0:
+        return 100.0 if current > 0 else 0.0
+    return round(((current - previous) / previous) * 100, 2)
+
+def as_object_id(value):
+    if isinstance(value, ObjectId):
+        return value
+    return ObjectId(str(value))
+
+def parse_date_safe(value):
+    try:
+        return datetime.strptime(value, "%Y-%m-%d").date()
+    except Exception:
+        return None
+
+def resolve_dashboard_dates(range_key, start_str=None, end_str=None):
+    today = utc_now().date()
+
+    if range_key == "7d":
+        start_date = today - timedelta(days=6)
+        end_date = today
+    elif range_key == "30d":
+        start_date = today - timedelta(days=29)
+        end_date = today
+    elif range_key == "90d":
+        start_date = today - timedelta(days=89)
+        end_date = today
+    elif range_key == "mtd":
+        start_date = today.replace(day=1)
+        end_date = today
+    elif range_key == "custom":
+        start_date = parse_date_safe(start_str) or (today - timedelta(days=29))
+        end_date = parse_date_safe(end_str) or today
+        if end_date < start_date:
+            end_date = start_date
+    else:
+        start_date = today - timedelta(days=29)
+        end_date = today
+        range_key = "30d"
+
+    start_dt = datetime.combine(start_date, time.min, tzinfo=timezone.utc)
+    end_dt = datetime.combine(end_date + timedelta(days=1), time.min, tzinfo=timezone.utc)
+    return range_key, start_date, end_date, start_dt, end_dt
+
+def aggregate_one(collection, pipeline):
+    rows = list(collection.aggregate(pipeline))
+    return rows[0] if rows else {}
+
+def fill_daily_series(rows, start_date, end_date):
+    lookup = {row["_id"]: row for row in rows}
+    labels, totals, tickets = [], [], []
+
+    d = start_date
+    while d <= end_date:
+        key = d.isoformat()
+        row = lookup.get(key, {})
+        labels.append(d.strftime("%d %b"))
+        totals.append(money2(row.get("total", 0)))
+        tickets.append(int(row.get("tickets", 0)))
+        d += timedelta(days=1)
+
+    return labels, totals, tickets
+
+def build_hourly_series(rows):
+    lookup = {int(r["_id"]): r for r in rows}
+    labels, totals, tickets = [], [], []
+
+    for hour in range(24):
+        row = lookup.get(hour, {})
+        labels.append(f"{hour:02d}:00")
+        totals.append(money2(row.get("total", 0)))
+        tickets.append(int(row.get("tickets", 0)))
+
+    return labels, totals, tickets
+
+def build_cuts_series(rows):
+    labels, total_vals, cash_vals, digital_vals = [], [], [], []
+    table_rows = []
+
+    for row in rows:
+        raw_date = row["_id"]
+        labels.append(raw_date[8:10] + "/" + raw_date[5:7])
+        total_vals.append(money2(row.get("total", 0)))
+        cash_vals.append(money2(row.get("cash", 0)))
+        digital_vals.append(money2(row.get("digital", 0)))
+
+        table_rows.append({
+            "date_key": raw_date,
+            "date_label": f"{raw_date[8:10]}/{raw_date[5:7]}/{raw_date[0:4]}",
+            "tickets": int(row.get("tickets", 0)),
+            "total": money2(row.get("total", 0)),
+            "cash": money2(row.get("cash", 0)),
+            "digital": money2(row.get("digital", 0)),
+            "avg_ticket": money2((row.get("total", 0) / row.get("tickets", 1)) if row.get("tickets", 0) else 0),
+        })
+
+    table_rows = sorted(table_rows, key=lambda x: x["date_key"], reverse=True)
+    return labels, total_vals, cash_vals, digital_vals, table_rows
+
+def build_fake_ai_insights(summary, compare, top_products, hourly_tickets, hourly_labels, funnel, old_open_quotes):
+    insights = []
+
+    sales_total = summary.get("sales_total", 0)
+    tickets = summary.get("tickets", 0)
+    avg_ticket = summary.get("avg_ticket", 0)
+    sales_delta = compare.get("sales_pct", 0)
+
+    if sales_delta > 0:
+        insights.append({
+            "title": "Ventas en crecimiento",
+            "icon": "bi-graph-up-arrow",
+            "tone": "success",
+            "text": f"El periodo va {sales_delta:.1f}% arriba contra el anterior. Mantén el empuje en las categorías que mejor convierten."
+        })
+    elif sales_delta < 0:
+        insights.append({
+            "title": "Caída contra periodo anterior",
+            "icon": "bi-graph-down-arrow",
+            "tone": "danger",
+            "text": f"Las ventas van {abs(sales_delta):.1f}% abajo. Conviene activar seguimiento de cotizaciones abiertas y promos en productos de alta rotación."
+        })
+    else:
+        insights.append({
+            "title": "Comportamiento estable",
+            "icon": "bi-activity",
+            "tone": "info",
+            "text": "El volumen se mantiene estable. Puedes empujar ticket promedio con bundles o venta cruzada."
+        })
+
+    if top_products:
+        top_1 = top_products[0]
+        top_share = round((top_1["revenue"] / sales_total) * 100, 1) if sales_total > 0 else 0
+        if top_share >= 40:
+            insights.append({
+                "title": "Alta dependencia en un producto",
+                "icon": "bi-stars",
+                "tone": "warning",
+                "text": f"{top_1['title']} concentra {top_share}% del ingreso del periodo. Sería bueno impulsar el segundo y tercer producto del ranking."
+            })
+        else:
+            insights.append({
+                "title": "Mix de ventas sano",
+                "icon": "bi-boxes",
+                "tone": "success",
+                "text": f"El producto líder es {top_1['title']}, pero sin sobreconcentrar el ingreso. Buen equilibrio comercial."
+            })
+
+    if hourly_tickets:
+        peak_idx = max(range(len(hourly_tickets)), key=lambda i: hourly_tickets[i])
+        peak_hour = hourly_labels[peak_idx]
+        peak_tickets = hourly_tickets[peak_idx]
+        if peak_tickets > 0:
+            insights.append({
+                "title": "Hora pico detectada",
+                "icon": "bi-clock-history",
+                "tone": "info",
+                "text": f"Tu hora más fuerte fue {peak_hour} con {peak_tickets} ticket(s). Puedes reforzar personal, inventario o mensajes de cierre en esa franja."
+            })
+
+    quote_conversion = funnel.get("quote_to_sale_rate", 0)
+    if funnel.get("quotes_total", 0) >= 3 and quote_conversion < 35:
+        insights.append({
+            "title": "Conversión de cotizaciones baja",
+            "icon": "bi-file-earmark-x",
+            "tone": "warning",
+            "text": f"La conversión cotización → venta está en {quote_conversion:.1f}%. Conviene dar seguimiento manual a cotizaciones aprobadas y abiertas."
+        })
+    elif funnel.get("quotes_total", 0) > 0:
+        insights.append({
+            "title": "Conversión comercial saludable",
+            "icon": "bi-check2-circle",
+            "tone": "success",
+            "text": f"La conversión cotización → venta va en {quote_conversion:.1f}%. Buen cierre del flujo comercial."
+        })
+
+    if old_open_quotes > 0:
+        insights.append({
+            "title": "Cotizaciones abiertas con antigüedad",
+            "icon": "bi-bell",
+            "tone": "warning",
+            "text": f"Tienes {old_open_quotes} cotización(es) abiertas de más de 7 días. Son buenas candidatas para seguimiento inmediato."
+        })
+
+    cash = summary.get("cash_total", 0)
+    digital = summary.get("digital_total", 0)
+    if cash > digital:
+        insights.append({
+            "title": "Predomina el efectivo",
+            "icon": "bi-cash-coin",
+            "tone": "info",
+            "text": "La mayor parte del cobro del periodo entró por efectivo. Revisa tus cortes diarios y flujo de caja físico."
+        })
+    elif digital > cash:
+        insights.append({
+            "title": "Predominan pagos digitales",
+            "icon": "bi-phone",
+            "tone": "success",
+            "text": "La mayor parte del cobro fue digital. Buen indicador para conciliación y menos manejo de efectivo."
+        })
+
+    if not insights:
+        insights.append({
+            "title": "Sin hallazgos relevantes",
+            "icon": "bi-robot",
+            "tone": "info",
+            "text": "Todavía no hay suficiente movimiento para generar observaciones más interesantes."
+        })
+
+    return insights[:6]
+
+
+@app.route("/dashboard/analytics")
+@require_active_subscription
+@current_site(required=True)
+@login_required
+def dashboard_analytics():
+    page_id = as_object_id(get_current_page_id())
+
+    range_key = (request.args.get("range") or "30d").strip().lower()
+    source_filter = (request.args.get("source") or "").strip().lower()
+    start_str = (request.args.get("start_date") or "").strip()
+    end_str = (request.args.get("end_date") or "").strip()
+
+    if source_filter not in {"", "pos", "cotizacion"}:
+        source_filter = ""
+
+    range_key, start_date, end_date, start_dt, end_dt = resolve_dashboard_dates(
+        range_key=range_key,
+        start_str=start_str,
+        end_str=end_str
+    )
+
+    previous_duration = end_dt - start_dt
+    prev_start_dt = start_dt - previous_duration
+    prev_end_dt = start_dt
+    prev_start_date = prev_start_dt.date()
+    prev_end_date = (prev_end_dt - timedelta(days=1)).date()
+
+    sales_match = {
+        "page_id": page_id,
+        "created_at": {"$gte": start_dt, "$lt": end_dt}
+    }
+    prev_sales_match = {
+        "page_id": page_id,
+        "created_at": {"$gte": prev_start_dt, "$lt": prev_end_dt}
+    }
+
+    if source_filter:
+        sales_match["source"] = source_filter
+        prev_sales_match["source"] = source_filter
+
+    sales_summary = aggregate_one(mongo.db.ventas, [
+        {"$match": sales_match},
+        {"$group": {
+            "_id": None,
+            "sales_total": {"$sum": {"$ifNull": ["$total", 0]}},
+            "subtotal_total": {"$sum": {"$ifNull": ["$subtotal", 0]}},
+            "discount_total": {"$sum": {"$ifNull": ["$discount", 0]}},
+            "tickets": {"$sum": 1},
+            "cash_total": {"$sum": {"$ifNull": ["$cash_amount", 0]}},
+            "digital_total": {"$sum": {"$ifNull": ["$digital_amount", 0]}}
+        }}
+    ])
+
+    prev_sales_summary = aggregate_one(mongo.db.ventas, [
+        {"$match": prev_sales_match},
+        {"$group": {
+            "_id": None,
+            "sales_total": {"$sum": {"$ifNull": ["$total", 0]}},
+            "tickets": {"$sum": 1}
+        }}
+    ])
+
+    sales_total = money2(sales_summary.get("sales_total", 0))
+    subtotal_total = money2(sales_summary.get("subtotal_total", 0))
+    discount_total = money2(sales_summary.get("discount_total", 0))
+    tickets = int(sales_summary.get("tickets", 0))
+    cash_total = money2(sales_summary.get("cash_total", 0))
+    digital_total = money2(sales_summary.get("digital_total", 0))
+    avg_ticket = money2(sales_total / tickets) if tickets else 0
+
+    prev_sales_total = money2(prev_sales_summary.get("sales_total", 0))
+    prev_tickets = int(prev_sales_summary.get("tickets", 0))
+
+    daily_rows = list(mongo.db.ventas.aggregate([
+        {"$match": sales_match},
+        {"$group": {
+            "_id": {"$dateToString": {"format": "%Y-%m-%d", "date": "$created_at"}},
+            "total": {"$sum": {"$ifNull": ["$total", 0]}},
+            "tickets": {"$sum": 1}
+        }},
+        {"$sort": {"_id": 1}}
+    ]))
+    daily_labels, daily_values, daily_tickets = fill_daily_series(daily_rows, start_date, end_date)
+
+    payment_rows = list(mongo.db.ventas.aggregate([
+        {"$match": sales_match},
+        {"$group": {
+            "_id": {"$ifNull": ["$payment_method", "sin_metodo"]},
+            "total": {"$sum": {"$ifNull": ["$total", 0]}},
+            "count": {"$sum": 1}
+        }},
+        {"$sort": {"total": -1}}
+    ]))
+    payment_labels = [str(r["_id"]).replace("_", " ").title() for r in payment_rows]
+    payment_values = [money2(r.get("total", 0)) for r in payment_rows]
+
+    top_products_raw = list(mongo.db.ventas.aggregate([
+        {"$match": sales_match},
+        {"$unwind": "$items"},
+        {"$group": {
+            "_id": {
+                "product_id": "$items.producto_id",
+                "title": {"$ifNull": ["$items.title", "Producto"]}
+            },
+            "qty": {"$sum": {"$ifNull": ["$items.qty", 0]}},
+            "revenue": {"$sum": {"$ifNull": ["$items.subtotal", 0]}},
+            "orders": {"$sum": 1}
+        }},
+        {"$sort": {"qty": -1, "revenue": -1}},
+        {"$limit": 10}
+    ]))
+    top_products = [
+        {
+            "title": row["_id"].get("title") or "Producto",
+            "qty": int(row.get("qty", 0)),
+            "revenue": money2(row.get("revenue", 0)),
+            "orders": int(row.get("orders", 0))
+        }
+        for row in top_products_raw
+    ]
+
+    top_product_labels = [row["title"] for row in top_products]
+    top_product_qty = [row["qty"] for row in top_products]
+    top_product_revenue = [row["revenue"] for row in top_products]
+
+    hourly_rows = list(mongo.db.ventas.aggregate([
+        {"$match": sales_match},
+        {"$group": {
+            "_id": {"$hour": "$created_at"},
+            "total": {"$sum": {"$ifNull": ["$total", 0]}},
+            "tickets": {"$sum": 1}
+        }},
+        {"$sort": {"_id": 1}}
+    ]))
+    hourly_labels, hourly_values, hourly_tickets = build_hourly_series(hourly_rows)
+
+    cuts_rows = list(mongo.db.ventas.aggregate([
+        {"$match": sales_match},
+        {"$group": {
+            "_id": {"$dateToString": {"format": "%Y-%m-%d", "date": "$created_at"}},
+            "total": {"$sum": {"$ifNull": ["$total", 0]}},
+            "cash": {"$sum": {"$ifNull": ["$cash_amount", 0]}},
+            "digital": {"$sum": {"$ifNull": ["$digital_amount", 0]}},
+            "tickets": {"$sum": 1}
+        }},
+        {"$sort": {"_id": 1}}
+    ]))
+    cut_labels, cut_total_values, cut_cash_values, cut_digital_values, cuts_table = build_cuts_series(cuts_rows)
+
+    leads_total = mongo.db.leads.count_documents({
+        "page_id": page_id,
+        "created_at": {"$gte": start_dt, "$lt": end_dt}
+    })
+
+    quotes_total = mongo.db.cotizaciones.count_documents({
+        "page_id": page_id,
+        "created_at": {"$gte": start_dt, "$lt": end_dt}
+    })
+
+    quotes_open = mongo.db.cotizaciones.count_documents({
+        "page_id": page_id,
+        "created_at": {"$gte": start_dt, "$lt": end_dt},
+        "status": {"$in": ["draft", "sent", "approved"]}
+    })
+
+    quotes_approved = mongo.db.cotizaciones.count_documents({
+        "page_id": page_id,
+        "created_at": {"$gte": start_dt, "$lt": end_dt},
+        "status": "approved"
+    })
+
+    quotes_converted = mongo.db.cotizaciones.count_documents({
+        "page_id": page_id,
+        "created_at": {"$gte": start_dt, "$lt": end_dt},
+        "status": "converted"
+    })
+
+    quotes_rejected = mongo.db.cotizaciones.count_documents({
+        "page_id": page_id,
+        "created_at": {"$gte": start_dt, "$lt": end_dt},
+        "status": "rejected"
+    })
+
+    old_open_quotes = mongo.db.cotizaciones.count_documents({
+        "page_id": page_id,
+        "status": {"$in": ["draft", "sent", "approved"]},
+        "created_at": {"$lt": utc_now() - timedelta(days=7)}
+    })
+
+    sales_from_quotes = mongo.db.ventas.count_documents({
+        "page_id": page_id,
+        "created_at": {"$gte": start_dt, "$lt": end_dt},
+        "source": "cotizacion"
+    })
+
+    funnel = {
+        "leads_total": int(leads_total),
+        "quotes_total": int(quotes_total),
+        "quotes_approved": int(quotes_approved),
+        "quotes_converted": int(quotes_converted),
+        "sales_from_quotes": int(sales_from_quotes),
+        "lead_to_quote_rate": round((quotes_total / leads_total) * 100, 2) if leads_total else 0,
+        "quote_to_sale_rate": round((quotes_converted / quotes_total) * 100, 2) if quotes_total else 0,
+    }
+
+    summary = {
+        "sales_total": sales_total,
+        "subtotal_total": subtotal_total,
+        "discount_total": discount_total,
+        "tickets": tickets,
+        "avg_ticket": avg_ticket,
+        "cash_total": cash_total,
+        "digital_total": digital_total,
+        "cash_ratio": round((cash_total / sales_total) * 100, 2) if sales_total else 0,
+        "digital_ratio": round((digital_total / sales_total) * 100, 2) if sales_total else 0,
+        "leads_total": int(leads_total),
+        "quotes_total": int(quotes_total),
+        "quotes_open": int(quotes_open),
+        "quotes_approved": int(quotes_approved),
+        "quotes_converted": int(quotes_converted),
+        "quotes_rejected": int(quotes_rejected),
+        "old_open_quotes": int(old_open_quotes),
+    }
+
+    compare = {
+        "sales_total_prev": prev_sales_total,
+        "tickets_prev": prev_tickets,
+        "sales_pct": pct_change(sales_total, prev_sales_total),
+        "tickets_pct": pct_change(tickets, prev_tickets),
+        "prev_start_label": prev_start_date.strftime("%d/%m/%Y"),
+        "prev_end_label": prev_end_date.strftime("%d/%m/%Y"),
+    }
+
+    insights = build_fake_ai_insights(
+        summary=summary,
+        compare=compare,
+        top_products=top_products,
+        hourly_tickets=hourly_tickets,
+        hourly_labels=hourly_labels,
+        funnel=funnel,
+        old_open_quotes=old_open_quotes
+    )
+
+    return render_template(
+        "dashboard_analytics.html",
+        range_key=range_key,
+        source_filter=source_filter,
+        start_date_str=start_date.isoformat(),
+        end_date_str=end_date.isoformat(),
+        summary=summary,
+        compare=compare,
+        funnel=funnel,
+        insights=insights,
+        top_products=top_products,
+        cuts_table=cuts_table[:10],
+        daily_labels=daily_labels,
+        daily_values=daily_values,
+        daily_tickets=daily_tickets,
+        payment_labels=payment_labels,
+        payment_values=payment_values,
+        top_product_labels=top_product_labels,
+        top_product_qty=top_product_qty,
+        top_product_revenue=top_product_revenue,
+        hourly_labels=hourly_labels,
+        hourly_values=hourly_values,
+        hourly_tickets=hourly_tickets,
+        cut_labels=cut_labels,
+        cut_total_values=cut_total_values,
+        cut_cash_values=cut_cash_values,
+        cut_digital_values=cut_digital_values
+    )
+
 @app.route('/gracias')
 def gracias():
     return render_template('gracias.html')
