@@ -1,379 +1,449 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-bs-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <title>{% block title %}Global PYMES{% endblock %}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="dark light" />
+  <meta name="theme-color" content="#0b1220" id="themeColorMeta" />
   <link rel="icon" href="{{ url_for('static', filename='images/logo.jpg') }}" type="image/png" />
 
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400..700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 
   <link rel="stylesheet" href="{{ url_for('static', filename='style/style.css') }}">
 
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous"></script>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
-  <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
-
   <style>
     :root {
-      --bg: #070b18;
-      --card: #0b1226;
-      --card-2: rgba(11, 18, 38, .82);
-      --ink: #e8eefc;
-      --muted: rgba(232, 238, 252, .58);
+      --radius-xs: 12px;
+      --radius-sm: 16px;
+      --radius-md: 22px;
+      --radius-lg: 28px;
+      --shadow-sm: 0 10px 30px rgba(2, 8, 23, .10);
+      --shadow-md: 0 18px 48px rgba(2, 8, 23, .18);
+      --shadow-lg: 0 28px 90px rgba(2, 8, 23, .24);
+      --container-max: 1400px;
+      --ring: 0 0 0 .24rem rgba(59, 130, 246, .18);
+      --ease: all .24s ease;
+    }
 
-      --brand: #2563eb;
+    html[data-bs-theme="dark"] {
+      color-scheme: dark;
+      --app-bg: #07111f;
+      --app-bg-2: #0b1730;
+      --surface: rgba(10, 18, 36, .82);
+      --surface-2: rgba(12, 22, 42, .94);
+      --surface-3: #0f1c35;
+      --surface-soft: rgba(148, 163, 184, .06);
+      --ink: #edf4ff;
+      --ink-soft: rgba(237, 244, 255, .74);
+      --ink-muted: rgba(237, 244, 255, .52);
+      --border-soft: rgba(148, 163, 184, .14);
+      --border-strong: rgba(96, 165, 250, .18);
+      --brand: #3b82f6;
       --brand-2: #60a5fa;
-      --accent: #38bdf8;
-
+      --brand-3: #bfdbfe;
       --success: #22c55e;
       --warning: #f59e0b;
       --danger: #ef4444;
-
-      --radius: 16px;
-      --radius-sm: 12px;
-      --shadow-1: 0 10px 28px rgba(0, 0, 0, .35);
-      --shadow-2: 0 18px 44px rgba(0, 0, 0, .45);
-      --ring: 0 0 0 .25rem rgba(37, 99, 235, .22);
-
-      --glass: rgba(7, 11, 24, .76);
-      --glass-border: rgba(148, 163, 184, .14);
-      --line: rgba(148, 163, 184, .12);
+      --navbar-bg: rgba(7, 13, 26, .80);
+      --context-bg: rgba(10, 18, 34, .62);
+      --footer-bg: rgba(9, 15, 29, .92);
+      --input-bg: rgba(15, 23, 42, .52);
     }
 
-    @media (prefers-color-scheme: light) {
-      :root {
-        --bg: #f8fafc;
-        --card: #ffffff;
-        --card-2: rgba(255, 255, 255, .92);
-        --ink: #0f172a;
-        --muted: #64748b;
-        --brand: #2563eb;
-        --brand-2: #3b82f6;
-        --accent: #0ea5e9;
-        --shadow-1: 0 8px 24px rgba(0, 0, 0, .06);
-        --shadow-2: 0 16px 40px rgba(0, 0, 0, .12);
-        --glass: rgba(255, 255, 255, .85);
-        --glass-border: rgba(148, 163, 184, .22);
-        --line: rgba(148, 163, 184, .18);
-      }
+    html[data-bs-theme="light"] {
+      color-scheme: light;
+      --app-bg: #f4f7fb;
+      --app-bg-2: #eef3f9;
+      --surface: rgba(255, 255, 255, .86);
+      --surface-2: rgba(255, 255, 255, .97);
+      --surface-3: #ffffff;
+      --surface-soft: rgba(37, 99, 235, .045);
+      --ink: #0f172a;
+      --ink-soft: rgba(15, 23, 42, .76);
+      --ink-muted: #64748b;
+      --border-soft: rgba(148, 163, 184, .22);
+      --border-strong: rgba(59, 130, 246, .18);
+      --brand: #2563eb;
+      --brand-2: #3b82f6;
+      --brand-3: #1d4ed8;
+      --success: #16a34a;
+      --warning: #d97706;
+      --danger: #dc2626;
+      --navbar-bg: rgba(255, 255, 255, .90);
+      --context-bg: rgba(255, 255, 255, .80);
+      --footer-bg: rgba(255, 255, 255, .96);
+      --input-bg: rgba(248, 250, 252, .92);
+      --shadow-sm: 0 10px 26px rgba(15, 23, 42, .06);
+      --shadow-md: 0 18px 42px rgba(15, 23, 42, .10);
+      --shadow-lg: 0 28px 70px rgba(15, 23, 42, .12);
+      --ring: 0 0 0 .24rem rgba(37, 99, 235, .16);
     }
 
-    html, body { height: 100%; }
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; }
 
     body {
-      background:
-        radial-gradient(circle at 10% 10%, rgba(37,99,235,.16), transparent 30%),
-        radial-gradient(circle at 90% 0%, rgba(56,189,248,.12), transparent 28%),
-        var(--bg);
+      margin: 0;
       color: var(--ink);
-      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       -webkit-font-smoothing: antialiased;
       text-rendering: optimizeLegibility;
       display: flex;
       flex-direction: column;
       min-height: 100vh;
+      background:
+        radial-gradient(circle at top left, rgba(59, 130, 246, .16), transparent 24%),
+        radial-gradient(circle at top right, rgba(14, 165, 233, .12), transparent 20%),
+        linear-gradient(180deg, var(--app-bg) 0%, var(--app-bg-2) 100%);
+      overflow-x: hidden;
     }
 
-    h1, h2, h3, .brand-font, .navbar-brand {
+    h1, h2, h3, h4, h5, .navbar-brand, .brand-font {
       font-family: 'Space Grotesk', 'Inter', sans-serif;
       color: var(--ink);
+      letter-spacing: -.02em;
     }
 
-    .text-muted { color: var(--muted) !important; }
+    a { color: inherit; }
+    .text-muted { color: var(--ink-muted) !important; }
+    .container { max-width: var(--container-max); }
+
+    .app-shell {
+      position: relative;
+      isolation: isolate;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
 
     .navbar-neo {
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      background: var(--glass);
-      border-bottom: 1px solid var(--glass-border);
+      background: var(--navbar-bg);
+      border-bottom: 1px solid var(--border-soft);
+      backdrop-filter: saturate(180%) blur(18px);
+      -webkit-backdrop-filter: saturate(180%) blur(18px);
+      box-shadow: 0 10px 30px rgba(2, 8, 23, .06);
       padding: .85rem 0;
     }
 
-    .navbar-neo .navbar-brand {
-      color: var(--ink);
+    .navbar-brand {
+      display: inline-flex;
+      align-items: center;
+      gap: .85rem;
       font-weight: 800;
-      letter-spacing: .4px;
-      font-size: 1.15rem;
-      gap: .7rem;
+      font-size: 1.12rem;
+      text-decoration: none;
+      color: var(--ink);
+      min-width: 0;
     }
 
+    .navbar-brand:hover { color: var(--ink); }
+
     .brand-logo {
-      width: 36px;
-      height: 36px;
+      width: 42px;
+      height: 42px;
       object-fit: cover;
-      border-radius: 11px;
-      box-shadow: var(--shadow-1);
+      border-radius: 14px;
+      box-shadow: var(--shadow-sm);
       flex-shrink: 0;
+      border: 1px solid var(--border-soft);
     }
 
     .brand-stack {
       display: flex;
       flex-direction: column;
-      line-height: 1.08;
+      min-width: 0;
+      line-height: 1.05;
     }
+
+    .brand-stack span { white-space: nowrap; }
 
     .brand-stack small {
+      margin-top: .18rem;
       font-family: 'Inter', sans-serif;
-      font-size: .68rem;
-      color: var(--muted);
-      font-weight: 600;
-      letter-spacing: .02em;
+      color: var(--ink-muted);
+      font-size: .74rem;
+      font-weight: 700;
+      letter-spacing: .01em;
     }
 
-    .navbar-toggler {
-      border: 1px solid var(--glass-border);
-      padding: .35rem .55rem;
-      border-radius: 10px;
+    .desktop-nav {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex: 1;
+      min-width: 0;
+      margin-left: 1.25rem;
     }
 
-    .navbar-toggler:focus { box-shadow: var(--ring); }
-    .navbar-toggler-icon { filter: invert(var(--icon-invert, 1)); }
-    @media (prefers-color-scheme: light) {
-      .navbar-toggler-icon { --icon-invert: 0; }
+    .desktop-nav .navbar-nav {
+      gap: .35rem;
+      flex-wrap: wrap;
     }
 
     .navbar-neo .nav-link {
-      color: var(--muted);
+      color: var(--ink-soft);
       font-weight: 700;
-      font-size: .9rem;
-      padding: .58rem .85rem;
-      border-radius: 10px;
-      transition: all .2s ease;
+      font-size: .92rem;
+      padding: .65rem .9rem;
+      border-radius: 999px;
       display: inline-flex;
       align-items: center;
-      gap: .45rem;
+      gap: .5rem;
+      transition: var(--ease);
     }
 
     .navbar-neo .nav-link:hover,
     .navbar-neo .nav-link:focus,
     .navbar-neo .nav-link.active {
       color: var(--ink);
-      background: rgba(148, 163, 184, .08);
+      background: rgba(59, 130, 246, .08);
+      box-shadow: inset 0 0 0 1px var(--border-strong);
     }
 
-    .nav-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: .45rem;
-      padding: .52rem .82rem;
-      border-radius: 999px;
-      border: 1px solid var(--glass-border);
-      background: rgba(15, 23, 42, .26);
-      color: var(--ink);
-      text-decoration: none;
-      font-size: .82rem;
-      font-weight: 700;
-      transition: all .2s ease;
-      white-space: nowrap;
-    }
-
-    .nav-chip:hover {
-      color: #fff;
-      transform: translateY(-1px);
-      border-color: rgba(96, 165, 250, .26);
-      background: rgba(37, 99, 235, .18);
-    }
-
-    .nav-chip.primary {
-      background: rgba(37, 99, 235, .18);
-      color: #dbeafe;
-      border-color: rgba(96, 165, 250, .26);
-    }
-
-    .nav-chip.success {
-      background: rgba(34, 197, 94, .14);
-      color: #bbf7d0;
-      border-color: rgba(34, 197, 94, .26);
-    }
-
-    .nav-chip.warning {
-      background: rgba(245, 158, 11, .12);
-      color: #fde68a;
-      border-color: rgba(245, 158, 11, .22);
-    }
-
-    .nav-chip.danger {
-      background: rgba(239, 68, 68, .10);
-      color: #fecaca;
-      border-color: rgba(239, 68, 68, .2);
-    }
-
-    .nav-toolbar {
+    .desktop-toolbar,
+    .mobile-toolbar {
       display: flex;
       align-items: center;
       gap: .65rem;
-      flex-wrap: wrap;
-      margin-left: 1rem;
+      flex-shrink: 0;
     }
 
-    .site-pill {
+    .toolbar-btn,
+    .btn-brand-soft,
+    .btn-ghost-soft,
+    .logout-btn {
+      height: 42px;
+      border-radius: 999px;
+      padding: 0 .95rem;
+      border: 1px solid var(--border-soft);
       display: inline-flex;
       align-items: center;
-      gap: .45rem;
-      padding: .5rem .85rem;
-      border-radius: 999px;
-      border: 1px solid var(--glass-border);
-      background: rgba(37,99,235,.12);
-      color: #dbeafe;
-      font-size: .8rem;
-      font-weight: 800;
-      max-width: 240px;
-    }
-
-    .site-pill span {
-      overflow: hidden;
-      text-overflow: ellipsis;
+      gap: .5rem;
+      font-weight: 700;
+      font-size: .88rem;
+      text-decoration: none;
+      transition: var(--ease);
       white-space: nowrap;
     }
 
-    .dropdown-menu {
-      background: var(--card-2);
-      border: 1px solid var(--glass-border);
-      border-radius: 16px;
-      box-shadow: var(--shadow-2);
-      backdrop-filter: blur(12px);
-      padding: .6rem;
-      margin-top: .6rem;
+    .toolbar-btn,
+    .btn-ghost-soft {
+      background: var(--surface-soft);
+      color: var(--ink);
     }
 
-    .dropdown-header {
-      color: var(--muted);
-      font-size: .72rem;
+    .toolbar-btn:hover,
+    .btn-ghost-soft:hover {
+      color: var(--ink);
+      background: rgba(59, 130, 246, .08);
+      border-color: var(--border-strong);
+      transform: translateY(-1px);
+    }
+
+    .btn-brand-soft {
+      background: linear-gradient(135deg, rgba(37, 99, 235, .18), rgba(59, 130, 246, .10));
+      color: var(--brand-3);
+      border-color: rgba(59, 130, 246, .22);
+    }
+
+    .btn-brand-soft:hover {
+      color: var(--brand-3);
+      background: linear-gradient(135deg, rgba(37, 99, 235, .24), rgba(59, 130, 246, .14));
+      transform: translateY(-1px);
+    }
+
+    .logout-btn {
+      background: rgba(239, 68, 68, .08);
+      color: var(--danger);
+      border-color: rgba(239, 68, 68, .18);
+    }
+
+    .logout-btn:hover {
+      color: #fff;
+      background: var(--danger);
+      border-color: var(--danger);
+    }
+
+    .theme-toggle { min-width: 44px; justify-content: center; }
+
+    .dropdown-menu,
+    .app-dropdown {
+      background: var(--surface-2);
+      border: 1px solid var(--border-soft);
+      border-radius: 20px;
+      box-shadow: var(--shadow-md);
+      backdrop-filter: saturate(160%) blur(16px);
+      -webkit-backdrop-filter: saturate(160%) blur(16px);
+      padding: .65rem;
+      overflow: hidden;
+    }
+
+    .dropdown-header,
+    .section-label {
+      color: var(--ink-muted);
+      font-size: .74rem;
       font-weight: 800;
       text-transform: uppercase;
-      letter-spacing: .06em;
-      padding: .45rem .8rem .35rem;
+      letter-spacing: .08em;
+      padding: .4rem .8rem;
     }
 
     .dropdown-item {
       color: var(--ink);
-      border-radius: 10px;
-      font-size: .9rem;
-      font-weight: 600;
-      padding: .6rem .9rem;
-      transition: all .2s ease;
+      border-radius: 14px;
+      padding: .72rem .9rem;
+      font-size: .92rem;
+      font-weight: 700;
       display: flex;
       align-items: center;
-      gap: .65rem;
+      gap: .7rem;
+      transition: var(--ease);
     }
 
     .dropdown-item:hover,
     .dropdown-item:focus {
-      background: rgba(37, 99, 235, 0.1);
-      color: var(--brand-2);
+      background: rgba(59, 130, 246, .08);
+      color: var(--ink);
     }
 
     .dropdown-divider {
-      border-top-color: var(--line);
-      margin: .45rem 0;
+      border-top-color: var(--border-soft);
+      margin: .5rem 0;
     }
 
-    .site-switcher {
-      min-width: 360px;
-      max-width: 380px;
+    .site-switcher { min-width: 380px; max-width: 410px; }
+    .site-trigger { max-width: 240px; }
+
+    .title-clip {
+      display: inline-block;
+      max-width: 160px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      vertical-align: middle;
     }
 
     .site-list {
-      max-height: 50vh;
+      max-height: 52vh;
       overflow-y: auto;
-      border-radius: 10px;
+      border-radius: 14px;
     }
 
-    .site-list::-webkit-scrollbar { width: 6px; }
-    .site-list::-webkit-scrollbar-track { background: transparent; }
-    .site-list::-webkit-scrollbar-thumb { background: rgba(148,163,184,.28); border-radius: 12px; }
+    .site-list::-webkit-scrollbar { width: 8px; }
+    .site-list::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, .28);
+      border-radius: 999px;
+    }
 
-    .site-switcher .list-group-item {
+    .site-switcher .list-group-item,
+    .mobile-sites .list-group-item {
       background: transparent;
       color: var(--ink);
       border: none;
-      border-bottom: 1px solid var(--line);
-      border-radius: 0;
-      padding: .8rem;
-      transition: background .2s ease;
+      border-bottom: 1px solid var(--border-soft);
+      padding: .88rem .9rem;
+      transition: var(--ease);
     }
 
-    .site-switcher .list-group-item:last-child { border-bottom: none; }
-    .site-switcher .list-group-item:hover { background: rgba(148,163,184,.06); }
+    .site-switcher .list-group-item:last-child,
+    .mobile-sites .list-group-item:last-child {
+      border-bottom: none;
+    }
 
-    .site-switcher .list-group-item.active {
-      background: rgba(37,99,235,.12);
-      border-left: 3px solid var(--brand);
+    .site-switcher .list-group-item:hover,
+    .mobile-sites .list-group-item:hover {
+      background: rgba(59, 130, 246, .06);
+    }
+
+    .site-switcher .list-group-item.active,
+    .mobile-sites .list-group-item.active {
+      background: rgba(59, 130, 246, .10);
+      box-shadow: inset 3px 0 0 var(--brand);
       color: var(--ink);
     }
 
-    .btn-brand {
-      background: var(--brand);
-      border: 1px solid rgba(96, 165, 250, 0.3);
-      color: #fff;
-      border-radius: 10px;
-      font-weight: 700;
-      transition: all .2s ease;
+    .input-group-text,
+    .form-control,
+    .form-select {
+      border-radius: 14px;
+      border: 1px solid var(--border-soft);
+      background: var(--input-bg);
+      color: var(--ink) !important;
+      box-shadow: none;
     }
 
-    .btn-brand:hover {
-      background: var(--brand-2);
-      color: #fff;
-      transform: translateY(-1px);
+    .input-group-text {
+      color: var(--ink-muted);
+      background: var(--input-bg);
     }
 
-    .btn-ghost {
-      background: rgba(15, 23, 42, 0.2);
-      border: 1px solid var(--glass-border);
-      color: var(--ink);
-      border-radius: 10px;
-      font-weight: 700;
-      transition: all .2s ease;
+    .form-control,
+    .form-select,
+    textarea.form-control,
+    input.form-control {
+      color-scheme: inherit;
+      caret-color: var(--ink);
+      -webkit-text-fill-color: var(--ink);
     }
 
-    .btn-ghost:hover {
-      background: rgba(148, 163, 184, 0.1);
-      color: var(--ink);
-    }
-
-    .form-control, .form-select {
-      border-radius: 10px;
-      border: 1px solid var(--glass-border);
-      background-color: rgba(15, 23, 42, 0.3);
-      color: var(--ink);
-      padding: .6rem 1rem;
-    }
-
-    @media (prefers-color-scheme: light) {
-      .form-control, .form-select {
-        background-color: #fff;
-      }
-    }
-
-    .form-control:focus, .form-select:focus {
-      background-color: var(--card);
+    .form-control:focus,
+    .form-select:focus {
       border-color: var(--brand-2);
       box-shadow: var(--ring);
-      color: var(--ink);
+      color: var(--ink) !important;
+      background: var(--surface-3);
+      caret-color: var(--ink);
+      -webkit-text-fill-color: var(--ink);
     }
 
-    .form-control::placeholder { color: var(--muted); }
-
-    .alert {
-      border: 1px solid var(--glass-border);
-      border-radius: 14px;
-      background: var(--card);
-      color: var(--ink);
-      box-shadow: var(--shadow-1);
-      backdrop-filter: blur(10px);
+    .form-control::placeholder,
+    textarea.form-control::placeholder {
+      color: var(--ink-muted);
+      opacity: 1;
+      -webkit-text-fill-color: var(--ink-muted);
     }
 
-    .top-subnav {
-      border-bottom: 1px solid var(--line);
-      background: rgba(255,255,255,.02);
+    .form-control:-webkit-autofill,
+    .form-control:-webkit-autofill:hover,
+    .form-control:-webkit-autofill:focus,
+    .form-control:-webkit-autofill:active,
+    textarea.form-control:-webkit-autofill,
+    textarea.form-control:-webkit-autofill:hover,
+    textarea.form-control:-webkit-autofill:focus,
+    .form-select:-webkit-autofill {
+      -webkit-text-fill-color: var(--ink) !important;
+      caret-color: var(--ink);
+      border-color: var(--border-soft);
+      -webkit-box-shadow: 0 0 0 1000px var(--surface-3) inset !important;
+      box-shadow: 0 0 0 1000px var(--surface-3) inset !important;
+      transition: background-color 9999s ease-out 0s;
     }
 
-    .top-subnav-inner {
+    html[data-bs-theme="light"] .form-control,
+    html[data-bs-theme="light"] .form-select,
+    html[data-bs-theme="light"] .input-group-text {
+      background: #ffffff;
+    }
+
+    html[data-bs-theme="dark"] .form-control,
+    html[data-bs-theme="dark"] .form-select,
+    html[data-bs-theme="dark"] .input-group-text {
+      background: rgba(15, 23, 42, .58);
+    }
+
+    .context-bar {
+      border-bottom: 1px solid var(--border-soft);
+      background: var(--context-bg);
+      backdrop-filter: saturate(160%) blur(14px);
+      -webkit-backdrop-filter: saturate(160%) blur(14px);
+    }
+
+    .context-inner {
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -382,100 +452,298 @@
       padding: .9rem 0;
     }
 
-    .subnav-left,
-    .subnav-right {
+    .context-left,
+    .context-right {
       display: flex;
       align-items: center;
-      gap: .6rem;
+      gap: .7rem;
       flex-wrap: wrap;
+      min-width: 0;
     }
 
-    .subnav-label {
+    .context-title {
       font-size: .76rem;
       font-weight: 800;
       text-transform: uppercase;
-      letter-spacing: .06em;
-      color: var(--muted);
+      letter-spacing: .08em;
+      color: var(--ink-muted);
+    }
+
+    .site-badge,
+    .quick-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: .55rem;
+      min-height: 44px;
+      border-radius: 999px;
+      border: 1px solid var(--border-soft);
+      padding: .68rem 1rem;
+      text-decoration: none;
+      transition: var(--ease);
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .site-badge {
+      max-width: 280px;
+      background: rgba(59, 130, 246, .10);
+      color: var(--ink);
+    }
+
+    .site-badge.secondary {
+      background: var(--surface-soft);
+      color: var(--ink-soft);
+    }
+
+    .site-badge.warning {
+      background: rgba(245, 158, 11, .10);
+      color: var(--warning);
+      border-color: rgba(245, 158, 11, .22);
+    }
+
+    .site-badge span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .quick-pill { background: var(--surface-soft); color: var(--ink); }
+    .quick-pill:hover {
+      color: var(--ink);
+      transform: translateY(-1px);
+      border-color: var(--border-strong);
+      background: rgba(59, 130, 246, .08);
+    }
+
+    .quick-pill.primary {
+      background: rgba(37, 99, 235, .12);
+      color: var(--brand-3);
+      border-color: rgba(37, 99, 235, .18);
+    }
+
+    .quick-pill.success {
+      background: rgba(34, 197, 94, .12);
+      color: var(--success);
+      border-color: rgba(34, 197, 94, .18);
+    }
+
+    .quick-pill.warning {
+      background: rgba(245, 158, 11, .12);
+      color: var(--warning);
+      border-color: rgba(245, 158, 11, .18);
+    }
+
+    .mobile-strip {
+      border-bottom: 1px solid var(--border-soft);
+      background: linear-gradient(180deg, rgba(59, 130, 246, .04), transparent 100%), var(--context-bg);
+      padding: .85rem 0 .95rem;
+    }
+
+    .mobile-strip .mobile-site {
+      display: inline-flex;
+      align-items: center;
+      gap: .55rem;
+      width: 100%;
+      padding: .85rem 1rem;
+      border-radius: 18px;
+      border: 1px solid var(--border-soft);
+      background: var(--surface);
+      box-shadow: var(--shadow-sm);
+      margin-bottom: .8rem;
+      color: var(--ink);
+      font-weight: 700;
+    }
+
+    .mobile-strip .mobile-site small {
+      display: block;
+      color: var(--ink-muted);
+      font-size: .76rem;
+      font-weight: 700;
+    }
+
+    .mobile-quick-scroll {
+      display: flex;
+      gap: .75rem;
+      overflow-x: auto;
+      padding-bottom: .2rem;
+      scrollbar-width: none;
+    }
+    .mobile-quick-scroll::-webkit-scrollbar { display: none; }
+
+    .mobile-quick-pill {
+      min-width: 136px;
+      justify-content: center;
+    }
+
+    .app-offcanvas {
+      background: var(--surface-2);
+      color: var(--ink);
+      border-left: 1px solid var(--border-soft);
+    }
+
+    .app-offcanvas .offcanvas-header {
+      border-bottom: 1px solid var(--border-soft);
+      padding: 1rem 1rem .9rem;
+    }
+
+    .app-offcanvas .offcanvas-body { padding: 1rem; }
+
+    .offcanvas-card {
+      border: 1px solid var(--border-soft);
+      background: var(--surface);
+      border-radius: 22px;
+      padding: 1rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .mobile-quick-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: .75rem;
+    }
+
+    .mobile-quick-grid .quick-pill {
+      justify-content: center;
+      min-width: 0;
+      width: 100%;
+    }
+
+    .mobile-accordion .accordion-item {
+      border: 1px solid var(--border-soft);
+      background: var(--surface);
+      border-radius: 18px !important;
+      overflow: hidden;
+      margin-bottom: .8rem;
+      box-shadow: none;
+    }
+
+    .mobile-accordion .accordion-button {
+      background: transparent;
+      color: var(--ink);
+      font-weight: 800;
+      box-shadow: none;
+      padding: .95rem 1rem;
+    }
+
+    .mobile-accordion .accordion-button:not(.collapsed) {
+      background: rgba(59, 130, 246, .06);
+      color: var(--ink);
+    }
+
+    .mobile-accordion .accordion-body {
+      padding: .35rem .65rem .75rem;
+      background: transparent;
+    }
+
+    .mobile-menu-link {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      width: 100%;
+      padding: .85rem .95rem;
+      border-radius: 14px;
+      text-decoration: none;
+      font-weight: 700;
+      color: var(--ink);
+      transition: var(--ease);
+    }
+
+    .mobile-menu-link:hover,
+    .mobile-menu-link:focus {
+      background: rgba(59, 130, 246, .08);
+      color: var(--ink);
     }
 
     main.container {
       flex: 1;
-      padding-top: 1.6rem;
-      padding-bottom: 2.8rem;
+      padding-top: clamp(1rem, 1.4vw, 1.5rem);
+      padding-bottom: clamp(2rem, 4vw, 3rem);
     }
 
+    .alert {
+      border: 1px solid var(--border-soft);
+      border-radius: 18px;
+      background: var(--surface-2);
+      color: var(--ink);
+      box-shadow: var(--shadow-sm);
+      backdrop-filter: saturate(150%) blur(10px);
+    }
+
+    .btn-close { filter: none; }
+
     footer.footer {
-      background: var(--card);
-      border-top: 1px solid var(--glass-border);
-      padding: 1.5rem 0;
       margin-top: auto;
+      border-top: 1px solid var(--border-soft);
+      background: var(--footer-bg);
+      backdrop-filter: saturate(160%) blur(12px);
+      -webkit-backdrop-filter: saturate(160%) blur(12px);
+      padding: 1.5rem 0;
     }
 
     footer.footer a {
       color: var(--brand-2);
       text-decoration: none;
+      transition: var(--ease);
     }
 
-    footer.footer a:hover { text-decoration: underline; }
-
-    .title-clip {
-      max-width: 165px;
-      display: inline-block;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      vertical-align: middle;
+    footer.footer a:hover {
+      color: var(--brand);
+      text-decoration: underline;
     }
 
-    .hover-primary {
-      transition: color .2s ease, transform .2s ease;
+    .social-link {
+      width: 42px;
+      height: 42px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--border-soft);
+      background: var(--surface-soft);
+      color: var(--ink-soft);
+      transition: var(--ease);
     }
 
-    .hover-primary:hover {
-      color: var(--brand-2) !important;
+    .social-link:hover {
+      color: var(--brand);
       transform: translateY(-1px);
+      background: rgba(59, 130, 246, .08);
+    }
+
+    @media (max-width: 1199.98px) {
+      .desktop-nav { margin-left: .85rem; }
+      .site-trigger { max-width: 200px; }
     }
 
     @media (max-width: 991.98px) {
-      .nav-toolbar {
-        margin-left: 0;
-        padding-top: .8rem;
-        width: 100%;
-      }
-
-      .site-switcher {
-        min-width: 100%;
-        max-width: 100%;
-      }
-
-      .top-subnav-inner {
-        align-items: flex-start;
-      }
-
-      .subnav-left,
-      .subnav-right {
-        width: 100%;
-      }
-
-      .subnav-right {
-        justify-content: flex-start;
-      }
-
-      .nav-chip {
-        width: 100%;
-        justify-content: center;
-      }
+      .navbar-neo { padding: .8rem 0; }
+      .brand-logo { width: 40px; height: 40px; }
+      .desktop-nav, .desktop-toolbar { display: none !important; }
+      .mobile-toolbar { display: flex !important; }
+      main.container { width: min(100%, calc(100% - 1rem)); }
     }
 
-    @media (max-width: 768px) {
-      .brand-stack small {
-        display: none;
-      }
+    @media (min-width: 992px) {
+      .mobile-toolbar, .mobile-strip { display: none !important; }
+    }
 
-      main.container {
-        padding-top: 1rem;
-        padding-bottom: 2rem;
+    @media (max-width: 767.98px) {
+      .brand-stack small { display: none; }
+      .navbar-brand { font-size: 1.03rem; gap: .7rem; }
+      .toolbar-btn, .theme-toggle { height: 40px; }
+      .mobile-quick-grid { grid-template-columns: 1fr 1fr; }
+      .context-inner { align-items: flex-start; }
+      footer.footer .container { text-align: center; }
+    }
+
+    @media (max-width: 430px) {
+      .brand-stack span {
+        max-width: 145px;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
+      .mobile-quick-pill { min-width: 128px; }
+      .app-offcanvas { width: min(92vw, 380px); }
     }
   </style>
 </head>
@@ -494,138 +762,428 @@
     {% endfor %}
   {% endif %}
 
-  <header>
-    <nav class="navbar navbar-expand-lg sticky-top navbar-neo">
-      <div class="container">
-        <a class="navbar-brand d-flex align-items-center" href="{{ url_for('dashboard') if current_user.is_authenticated else url_for('index') }}">
-          <img src="{{ url_for('static', filename='images/logo.jpg') }}" alt="logo" class="brand-logo">
-          <span class="brand-stack">
-            <span>Global PYMES</span>
-            <small>Panel administrativo</small>
-          </span>
-        </a>
-
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Abrir navegación">
-          <span class="navbar-toggler-icon"></span>
-        </button>
-
-        <div class="collapse navbar-collapse" id="navbarNavDropdown">
-          <ul class="navbar-nav ms-auto align-items-lg-center gap-1">
+  <div class="app-shell">
+    <header>
+      <nav class="navbar sticky-top navbar-neo">
+        <div class="container">
+          <div class="d-flex align-items-center justify-content-between w-100 gap-3">
+            <a class="navbar-brand" href="{{ url_for('dashboard') if current_user.is_authenticated else url_for('index') }}">
+              <img src="{{ url_for('static', filename='images/logo.jpg') }}" alt="logo" class="brand-logo">
+              <span class="brand-stack">
+                <span>Global PYMES</span>
+                <small>Panel administrativo</small>
+              </span>
+            </a>
 
             {% if current_user.is_authenticated %}
-              <li class="nav-item">
-                <a class="nav-link {% if EP in ['dashboard', 'dashboard_slug'] %}active{% endif %}" href="{{ url_for('dashboard') }}">
-                  <i class="bi bi-speedometer2"></i> Dashboard
-                </a>
-                <a href="{{ url_for('dashboard_analytics') }}" class="nav-link">
-                  <i class="bi bi-graph-up-arrow me-1"></i> Analytics
-                </a>
-              </li>
+              <div class="desktop-nav d-none d-lg-flex">
+                <ul class="navbar-nav flex-row align-items-center">
+                  <li class="nav-item">
+                    <a class="nav-link {% if EP in ['dashboard', 'dashboard_slug'] %}active{% endif %}" href="{{ url_for('dashboard') }}">
+                      <i class="bi bi-speedometer2"></i> Dashboard
+                    </a>
+                  </li>
 
-              <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle {% if EP in ['list_post','crear_post_negocio','list_avisos','create_aviso','edit_aviso','list_productos','create_producto','admin_reseñas'] %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                  <i class="bi bi-collection"></i> Contenido
-                </a>
-                <ul class="dropdown-menu">
-                  <li class="dropdown-header">Publicación y catálogo</li>
-                  <li><a class="dropdown-item" href="{{ url_for('list_post') }}"><i class="bi bi-file-earmark-text"></i> Posts</a></li>
-                  <li><a class="dropdown-item" href="{{ url_for('list_avisos') }}"><i class="bi bi-bell"></i> Avisos</a></li>
-                  <li><a class="dropdown-item" href="{{ url_for('list_productos') }}"><i class="bi bi-box-seam"></i> Productos</a></li>
-                  <li><a class="dropdown-item" href="{{ url_for('admin_reseñas') }}"><i class="bi bi-star"></i> Reseñas</a></li>
+                  <li class="nav-item">
+                    <a class="nav-link {% if EP == 'dashboard_analytics' %}active{% endif %}" href="{{ url_for('dashboard_analytics') }}">
+                      <i class="bi bi-graph-up-arrow"></i> Analytics
+                    </a>
+                  </li>
+
+                  <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle {% if EP in ['list_post','crear_post_negocio','list_avisos','create_aviso','edit_aviso','list_productos','create_producto','admin_reseñas'] %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                      <i class="bi bi-collection"></i> Contenido
+                    </a>
+                    <ul class="dropdown-menu">
+                      <li class="dropdown-header">Publicación y catálogo</li>
+                      <li><a class="dropdown-item" href="{{ url_for('list_post') }}"><i class="bi bi-file-earmark-text"></i> Posts</a></li>
+                      <li><a class="dropdown-item" href="{{ url_for('list_avisos') }}"><i class="bi bi-bell"></i> Avisos</a></li>
+                      <li><a class="dropdown-item" href="{{ url_for('list_productos') }}"><i class="bi bi-box-seam"></i> Productos</a></li>
+                      <li><a class="dropdown-item" href="{{ url_for('admin_reseñas') }}"><i class="bi bi-star"></i> Reseñas</a></li>
+                    </ul>
+                  </li>
+
+                  <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle {% if EP in ['pos','list_ventas','venta_detail','corte_caja'] %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                      <i class="bi bi-shop-window"></i> Operación
+                    </a>
+                    <ul class="dropdown-menu">
+                      <li class="dropdown-header">Caja y mostrador</li>
+                      <li><a class="dropdown-item" href="{{ url_for('pos') }}"><i class="bi bi-shop-window"></i> Punto de venta</a></li>
+                      <li><a class="dropdown-item" href="{{ url_for('list_ventas') }}"><i class="bi bi-receipt-cutoff"></i> Ventas</a></li>
+                      <li><a class="dropdown-item" href="{{ url_for('corte_caja') }}"><i class="bi bi-cash-stack"></i> Corte de caja</a></li>
+                    </ul>
+                  </li>
+
+                  <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle {% if EP in ['admin_appointments','admin_calendar','admin_appointments_new','admin_booking_settings','admin_booking_exceptions'] %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                      <i class="bi bi-calendar-event"></i> Agenda
+                    </a>
+                    <ul class="dropdown-menu">
+                      <li class="dropdown-header">Reservas</li>
+                      <li><a class="dropdown-item" href="{{ url_for_site('admin_appointments') }}"><i class="bi bi-list-ul"></i> Lista de reservas</a></li>
+                      <li><a class="dropdown-item" href="{{ url_for_site('admin_calendar') }}"><i class="bi bi-calendar-grid-3x3"></i> Calendario</a></li>
+                      <li><hr class="dropdown-divider"></li>
+                      <li><a class="dropdown-item" href="{{ url_for_site('admin_appointments_new') }}"><i class="bi bi-plus-circle"></i> Nueva reserva</a></li>
+                      <li><a class="dropdown-item" href="{{ url_for_site('admin_booking_settings') }}"><i class="bi bi-sliders"></i> Configuración</a></li>
+                      <li><a class="dropdown-item" href="{{ url_for_site('admin_booking_exceptions') }}"><i class="bi bi-calendar-x"></i> Excepciones</a></li>
+                    </ul>
+                  </li>
+
+                  <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle {% if EP in ['admin_leads','admin_promos'] %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                      <i class="bi bi-megaphone"></i> Marketing
+                    </a>
+                    <ul class="dropdown-menu">
+                      <li class="dropdown-header">Conversión</li>
+                      <li><a class="dropdown-item" href="{{ url_for('admin_leads') }}"><i class="bi bi-lightning-charge"></i> Leads</a></li>
+                      <li><a class="dropdown-item" href="{{ url_for('admin_promos') }}"><i class="bi bi-ticket-detailed"></i> Promos</a></li>
+                    </ul>
+                  </li>
+
+                  <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle {% if EP in ['billing_portal','manage_page_slug','manage_page_compat','sites','create_page','manage_users'] %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                      <i class="bi bi-gear"></i> Sitio
+                    </a>
+                    <ul class="dropdown-menu">
+                      <li class="dropdown-header">Administración</li>
+
+                      {% if CUR_SLUG %}
+                        <li>
+                          <a class="dropdown-item" target="_blank" href="{{ url_for('negocio_por_slug', slug=CUR_SLUG) }}">
+                            <i class="bi bi-box-arrow-up-right"></i> Ver sitio público
+                          </a>
+                        </li>
+                        {% if current_user.role == 'admin' %}
+                          <li>
+                            <a class="dropdown-item" href="{{ url_for('manage_page_slug', slug=CUR_SLUG) }}">
+                              <i class="bi bi-sliders"></i> Editar sitio
+                            </a>
+                          </li>
+                        {% endif %}
+                      {% endif %}
+
+                      <li><a class="dropdown-item" href="{{ url_for('billing_portal') }}"><i class="bi bi-credit-card"></i> Pagos / plan</a></li>
+                      <li><a class="dropdown-item" href="{{ url_for('sites') }}"><i class="bi bi-grid-1x2"></i> Mis sitios</a></li>
+                      <li><a class="dropdown-item" href="{{ url_for('create_page') }}"><i class="bi bi-plus-circle"></i> Crear nuevo sitio</a></li>
+
+                      {% if current_user.role == 'admin' %}
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{{ url_for('manage_users') }}"><i class="bi bi-people"></i> Usuarios</a></li>
+                      {% endif %}
+                    </ul>
+                  </li>
                 </ul>
-              </li>
+              </div>
 
-              <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle {% if EP in ['pos','list_ventas','venta_detail','corte_caja'] %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                  <i class="bi bi-shop-window"></i> Operación
-                </a>
-                <ul class="dropdown-menu">
-                  <li class="dropdown-header">Caja y mostrador</li>
-                  <li><a class="dropdown-item" href="{{ url_for('pos') }}"><i class="bi bi-shop-window"></i> Punto de venta</a></li>
-                  <li><a class="dropdown-item" href="{{ url_for('list_ventas') }}"><i class="bi bi-receipt-cutoff"></i> Ventas</a></li>
-                  <li><a class="dropdown-item" href="{{ url_for('corte_caja') }}"><i class="bi bi-cash-stack"></i> Corte de caja</a></li>
-                </ul>
-              </li>
+              <div class="desktop-toolbar d-none d-lg-flex">
+                {% if pages is defined and pages %}
+                  <div class="dropdown">
+                    <a class="toolbar-btn btn-ghost-soft site-trigger dropdown-toggle" href="#" id="siteDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                      <i class="bi bi-building text-primary"></i>
+                      <span class="title-clip fw-bold">
+                        {{ ns.current_site.business_name if ns.current_site else 'Seleccionar sitio' }}
+                      </span>
+                    </a>
 
-              <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle {% if EP in ['admin_appointments','admin_calendar','admin_appointments_new','admin_booking_settings','admin_booking_exceptions'] %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                  <i class="bi bi-calendar-event"></i> Agenda
-                </a>
-                <ul class="dropdown-menu">
-                  <li class="dropdown-header">Reservas</li>
-                  <li><a class="dropdown-item" href="{{ url_for_site('admin_appointments') }}"><i class="bi bi-list-ul"></i> Lista de reservas</a></li>
-                  <li><a class="dropdown-item" href="{{ url_for_site('admin_calendar') }}"><i class="bi bi-calendar-grid-3x3"></i> Calendario</a></li>
-                  <li><hr class="dropdown-divider"></li>
-                  <li><a class="dropdown-item" href="{{ url_for_site('admin_appointments_new') }}"><i class="bi bi-plus-circle"></i> Nueva reserva</a></li>
-                  <li><a class="dropdown-item" href="{{ url_for_site('admin_booking_settings') }}"><i class="bi bi-sliders"></i> Configuración</a></li>
-                  <li><a class="dropdown-item" href="{{ url_for_site('admin_booking_exceptions') }}"><i class="bi bi-calendar-x"></i> Excepciones</a></li>
-                </ul>
-              </li>
+                    <div class="dropdown-menu dropdown-menu-end site-switcher" aria-labelledby="siteDropdown">
+                      <div class="mb-2 px-1">
+                        <div class="input-group input-group-sm">
+                          <span class="input-group-text border-end-0">
+                            <i class="bi bi-search"></i>
+                          </span>
+                          <input id="siteSearch" type="search" class="form-control border-start-0 ps-0" placeholder="Buscar sitio...">
+                        </div>
+                      </div>
 
-              <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle {% if EP in ['admin_leads','admin_promos'] %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                  <i class="bi bi-megaphone"></i> Marketing
-                </a>
-                <ul class="dropdown-menu">
-                  <li class="dropdown-header">Conversión</li>
-                  <li><a class="dropdown-item" href="{{ url_for('admin_leads') }}"><i class="bi bi-lightning-charge"></i> Leads</a></li>
-                  <li><a class="dropdown-item" href="{{ url_for('admin_promos') }}"><i class="bi bi-ticket-detailed"></i> Promos</a></li>
-                </ul>
-              </li>
+                      <div id="siteList" class="list-group list-group-flush site-list">
+                        {% for p in pages %}
+                          {% set _slug = p.slug or (p.business_name or '')|lower|replace(' ', '-') %}
+                          {% set _is_active = current and p._id|string == current|string %}
 
-              <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle {% if EP in ['billing_portal','manage_page_slug','manage_page_compat','sites','create_page','manage_users'] %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                  <i class="bi bi-gear"></i> Sitio
-                </a>
-                <ul class="dropdown-menu">
-                  <li class="dropdown-header">Administración</li>
+                          <a href="{{ url_for('switch_site_slug', slug=_slug) }}"
+                             class="list-group-item list-group-item-action d-flex justify-content-between align-items-center {% if _is_active %}active{% endif %}"
+                             data-name="{{ (p.business_name or '')|lower }}"
+                             data-city="{{ (p.city or '')|lower }}"
+                             data-state="{{ (p.state or '')|lower }}">
+                            <div class="me-3 overflow-hidden">
+                              <div class="fw-semibold text-truncate" style="max-width: 220px;">{{ p.business_name }}</div>
+                              <small class="text-muted d-block text-truncate">
+                                {{ p.category or 'Sin categoría' }}{% if p.city %} • {{ p.city }}{% endif %}
+                              </small>
+                            </div>
+                            {% if _is_active %}
+                              <span class="badge bg-primary rounded-pill"><i class="bi bi-check2"></i></span>
+                            {% endif %}
+                          </a>
+                        {% endfor %}
+                      </div>
 
-                  {% if CUR_SLUG %}
-                    <li>
-                      <a class="dropdown-item" target="_blank" href="{{ url_for('negocio_por_slug', slug=CUR_SLUG) }}">
-                        <i class="bi bi-box-arrow-up-right"></i> Ver sitio público
+                      <div class="dropdown-divider my-2"></div>
+                      <a class="dropdown-item text-primary fw-semibold" href="{{ url_for('create_page') }}">
+                        <i class="bi bi-plus-circle"></i> Crear nuevo sitio
                       </a>
-                    </li>
+                      <a class="dropdown-item" href="{{ url_for('sites') }}">
+                        <i class="bi bi-grid-1x2"></i> Administrar mis sitios
+                      </a>
+                    </div>
+                  </div>
+                {% endif %}
+
+                <button type="button" class="toolbar-btn theme-toggle" data-theme-toggle aria-label="Cambiar tema">
+                  <i class="bi bi-moon-stars-fill"></i>
+                </button>
+
+                <a class="logout-btn" href="{{ url_for('logout') }}" title="Cerrar sesión">
+                  <i class="bi bi-power"></i> Salir
+                </a>
+              </div>
+
+              <div class="mobile-toolbar d-flex d-lg-none">
+                <button type="button" class="toolbar-btn theme-toggle" data-theme-toggle aria-label="Cambiar tema">
+                  <i class="bi bi-moon-stars-fill"></i>
+                </button>
+
+                <button class="toolbar-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileMenu" aria-controls="mobileMenu" aria-label="Abrir menú">
+                  <i class="bi bi-list fs-5"></i>
+                </button>
+              </div>
+            {% else %}
+              <div class="mobile-toolbar d-flex">
+                <button type="button" class="toolbar-btn theme-toggle" data-theme-toggle aria-label="Cambiar tema">
+                  <i class="bi bi-moon-stars-fill"></i>
+                </button>
+                <a class="btn-brand-soft" href="{{ url_for('login') }}">
+                  <i class="bi bi-box-arrow-in-right"></i> Iniciar sesión
+                </a>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </nav>
+
+      {% if current_user.is_authenticated %}
+        <div class="context-bar d-none d-md-block">
+          <div class="container">
+            <div class="context-inner">
+              <div class="context-left">
+                <span class="context-title">Sitio activo</span>
+
+                {% if ns.current_site %}
+                  <div class="site-badge">
+                    <i class="bi bi-building"></i>
+                    <span>{{ ns.current_site.business_name }}</span>
+                  </div>
+
+                  {% if ns.current_site.category or ns.current_site.city %}
+                    <div class="site-badge secondary">
+                      <i class="bi bi-geo-alt"></i>
+                      <span>{{ ns.current_site.category or 'Negocio' }}{% if ns.current_site.city %} · {{ ns.current_site.city }}{% endif %}</span>
+                    </div>
+                  {% endif %}
+                {% else %}
+                  <div class="site-badge warning">
+                    <i class="bi bi-exclamation-circle"></i>
+                    <span>Sin sitio seleccionado</span>
+                  </div>
+                {% endif %}
+              </div>
+
+              <div class="context-right">
+                <a class="quick-pill primary" href="{{ url_for('dashboard') }}">
+                  <i class="bi bi-house-door"></i> Inicio
+                </a>
+                <a class="quick-pill" href="{{ url_for('dashboard_analytics') }}">
+                  <i class="bi bi-graph-up-arrow"></i> Analytics
+                </a>
+                <a class="quick-pill success" href="{{ url_for('pos') }}">
+                  <i class="bi bi-shop-window"></i> POS
+                </a>
+                <a class="quick-pill" href="{{ url_for('list_ventas') }}">
+                  <i class="bi bi-receipt-cutoff"></i> Ventas
+                </a>
+                <a class="quick-pill warning" href="{{ url_for('corte_caja') }}">
+                  <i class="bi bi-cash-stack"></i> Corte
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mobile-strip d-md-none">
+          <div class="container">
+            {% if ns.current_site %}
+              <div class="mobile-site">
+                <i class="bi bi-building"></i>
+                <div class="flex-grow-1 min-w-0">
+                  <div class="fw-bold text-truncate">{{ ns.current_site.business_name }}</div>
+                  <small>{{ ns.current_site.category or 'Negocio' }}{% if ns.current_site.city %} · {{ ns.current_site.city }}{% endif %}</small>
+                </div>
+              </div>
+            {% endif %}
+
+            <div class="mobile-quick-scroll">
+              <a class="quick-pill primary mobile-quick-pill" href="{{ url_for('dashboard') }}">
+                <i class="bi bi-house-door"></i> Inicio
+              </a>
+              <a class="quick-pill mobile-quick-pill" href="{{ url_for('dashboard_analytics') }}">
+                <i class="bi bi-graph-up-arrow"></i> Analytics
+              </a>
+              <a class="quick-pill success mobile-quick-pill" href="{{ url_for('pos') }}">
+                <i class="bi bi-shop-window"></i> POS
+              </a>
+              <a class="quick-pill mobile-quick-pill" href="{{ url_for('list_ventas') }}">
+                <i class="bi bi-receipt-cutoff"></i> Ventas
+              </a>
+              <a class="quick-pill warning mobile-quick-pill" href="{{ url_for('corte_caja') }}">
+                <i class="bi bi-cash-stack"></i> Corte
+              </a>
+            </div>
+          </div>
+        </div>
+      {% endif %}
+    </header>
+
+    {% if current_user.is_authenticated %}
+      <div class="offcanvas offcanvas-end app-offcanvas" tabindex="-1" id="mobileMenu" aria-labelledby="mobileMenuLabel">
+        <div class="offcanvas-header">
+          <div class="d-flex align-items-center gap-3 min-w-0">
+            <img src="{{ url_for('static', filename='images/logo.jpg') }}" alt="logo" class="brand-logo">
+            <div class="min-w-0">
+              <h5 class="offcanvas-title mb-0" id="mobileMenuLabel">Global PYMES</h5>
+              <small class="text-muted">Menú administrativo</small>
+            </div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button>
+        </div>
+
+        <div class="offcanvas-body">
+          <div class="offcanvas-card mb-3">
+            <div class="section-label px-0 pt-0">Sitio activo</div>
+            {% if ns.current_site %}
+              <div class="fw-bold mb-1">{{ ns.current_site.business_name }}</div>
+              <div class="text-muted small">{{ ns.current_site.category or 'Negocio' }}{% if ns.current_site.city %} · {{ ns.current_site.city }}{% endif %}</div>
+            {% else %}
+              <div class="text-muted small">Sin sitio seleccionado</div>
+            {% endif %}
+          </div>
+
+          <div class="offcanvas-card mb-3">
+            <div class="section-label px-0 pt-0">Accesos rápidos</div>
+            <div class="mobile-quick-grid">
+              <a class="quick-pill primary" href="{{ url_for('dashboard') }}"><i class="bi bi-house-door"></i> Inicio</a>
+              <a class="quick-pill" href="{{ url_for('dashboard_analytics') }}"><i class="bi bi-graph-up-arrow"></i> Analytics</a>
+              <a class="quick-pill success" href="{{ url_for('pos') }}"><i class="bi bi-shop-window"></i> POS</a>
+              <a class="quick-pill" href="{{ url_for('list_ventas') }}"><i class="bi bi-receipt-cutoff"></i> Ventas</a>
+              <a class="quick-pill warning" href="{{ url_for('corte_caja') }}"><i class="bi bi-cash-stack"></i> Corte</a>
+              <a class="quick-pill" href="{{ url_for('billing_portal') }}"><i class="bi bi-credit-card"></i> Plan</a>
+            </div>
+          </div>
+
+          <div class="accordion mobile-accordion" id="mobileMenuAccordion">
+            <div class="accordion-item">
+              <h2 class="accordion-header">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#mobileNavGeneral" aria-expanded="true" aria-controls="mobileNavGeneral">
+                  Navegación
+                </button>
+              </h2>
+              <div id="mobileNavGeneral" class="accordion-collapse collapse show" data-bs-parent="#mobileMenuAccordion">
+                <div class="accordion-body">
+                  <a class="mobile-menu-link" href="{{ url_for('dashboard') }}"><i class="bi bi-speedometer2"></i> Dashboard</a>
+                  <a class="mobile-menu-link" href="{{ url_for('dashboard_analytics') }}"><i class="bi bi-graph-up-arrow"></i> Analytics</a>
+                  <a class="mobile-menu-link" href="{{ url_for('list_post') }}"><i class="bi bi-file-earmark-text"></i> Posts</a>
+                  <a class="mobile-menu-link" href="{{ url_for('list_avisos') }}"><i class="bi bi-bell"></i> Avisos</a>
+                  <a class="mobile-menu-link" href="{{ url_for('list_productos') }}"><i class="bi bi-box-seam"></i> Productos</a>
+                  <a class="mobile-menu-link" href="{{ url_for('admin_reseñas') }}"><i class="bi bi-star"></i> Reseñas</a>
+                  <a class="mobile-menu-link" href="{{ url_for('admin_leads') }}"><i class="bi bi-lightning-charge"></i> Leads</a>
+                  <a class="mobile-menu-link" href="{{ url_for('admin_promos') }}"><i class="bi bi-ticket-detailed"></i> Promos</a>
+                </div>
+              </div>
+            </div>
+
+            <div class="accordion-item">
+              <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#mobileNavOperation" aria-expanded="false" aria-controls="mobileNavOperation">
+                  Operación
+                </button>
+              </h2>
+              <div id="mobileNavOperation" class="accordion-collapse collapse" data-bs-parent="#mobileMenuAccordion">
+                <div class="accordion-body">
+                  <a class="mobile-menu-link" href="{{ url_for('pos') }}"><i class="bi bi-shop-window"></i> Punto de venta</a>
+                  <a class="mobile-menu-link" href="{{ url_for('list_ventas') }}"><i class="bi bi-receipt-cutoff"></i> Ventas</a>
+                  <a class="mobile-menu-link" href="{{ url_for('corte_caja') }}"><i class="bi bi-cash-stack"></i> Corte de caja</a>
+                </div>
+              </div>
+            </div>
+
+            <div class="accordion-item">
+              <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#mobileNavAgenda" aria-expanded="false" aria-controls="mobileNavAgenda">
+                  Agenda
+                </button>
+              </h2>
+              <div id="mobileNavAgenda" class="accordion-collapse collapse" data-bs-parent="#mobileMenuAccordion">
+                <div class="accordion-body">
+                  <a class="mobile-menu-link" href="{{ url_for_site('admin_appointments') }}"><i class="bi bi-list-ul"></i> Lista de reservas</a>
+                  <a class="mobile-menu-link" href="{{ url_for_site('admin_calendar') }}"><i class="bi bi-calendar-grid-3x3"></i> Calendario</a>
+                  <a class="mobile-menu-link" href="{{ url_for_site('admin_appointments_new') }}"><i class="bi bi-plus-circle"></i> Nueva reserva</a>
+                  <a class="mobile-menu-link" href="{{ url_for_site('admin_booking_settings') }}"><i class="bi bi-sliders"></i> Configuración</a>
+                  <a class="mobile-menu-link" href="{{ url_for_site('admin_booking_exceptions') }}"><i class="bi bi-calendar-x"></i> Excepciones</a>
+                </div>
+              </div>
+            </div>
+
+            <div class="accordion-item">
+              <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#mobileNavSite" aria-expanded="false" aria-controls="mobileNavSite">
+                  Sitio y cuenta
+                </button>
+              </h2>
+              <div id="mobileNavSite" class="accordion-collapse collapse" data-bs-parent="#mobileMenuAccordion">
+                <div class="accordion-body">
+                  {% if CUR_SLUG %}
+                    <a class="mobile-menu-link" target="_blank" href="{{ url_for('negocio_por_slug', slug=CUR_SLUG) }}">
+                      <i class="bi bi-box-arrow-up-right"></i> Ver sitio público
+                    </a>
                     {% if current_user.role == 'admin' %}
-                      <li>
-                        <a class="dropdown-item" href="{{ url_for('manage_page_slug', slug=CUR_SLUG) }}">
-                          <i class="bi bi-sliders"></i> Editar sitio
-                        </a>
-                      </li>
+                      <a class="mobile-menu-link" href="{{ url_for('manage_page_slug', slug=CUR_SLUG) }}">
+                        <i class="bi bi-sliders"></i> Editar sitio
+                      </a>
                     {% endif %}
                   {% endif %}
 
-                  <li><a class="dropdown-item" href="{{ url_for('billing_portal') }}"><i class="bi bi-credit-card"></i> Pagos / plan</a></li>
-                  <li><a class="dropdown-item" href="{{ url_for('sites') }}"><i class="bi bi-grid-1x2"></i> Mis sitios</a></li>
-                  <li><a class="dropdown-item" href="{{ url_for('create_page') }}"><i class="bi bi-plus-circle"></i> Crear nuevo sitio</a></li>
+                  <a class="mobile-menu-link" href="{{ url_for('billing_portal') }}"><i class="bi bi-credit-card"></i> Pagos / plan</a>
+                  <a class="mobile-menu-link" href="{{ url_for('sites') }}"><i class="bi bi-grid-1x2"></i> Mis sitios</a>
+                  <a class="mobile-menu-link" href="{{ url_for('create_page') }}"><i class="bi bi-plus-circle"></i> Crear nuevo sitio</a>
 
                   {% if current_user.role == 'admin' %}
-                    <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item" href="{{ url_for('manage_users') }}"><i class="bi bi-people"></i> Usuarios</a></li>
+                    <a class="mobile-menu-link" href="{{ url_for('manage_users') }}"><i class="bi bi-people"></i> Usuarios</a>
                   {% endif %}
-                </ul>
-              </li>
 
-              {% if pages is defined and pages %}
-                <li class="nav-item dropdown ms-lg-2">
-                  <a class="btn btn-ghost btn-sm dropdown-toggle d-flex align-items-center" href="#" id="siteDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="bi bi-building text-primary"></i>
-                    <span class="title-clip fw-bold">
-                      {{ ns.current_site.business_name if ns.current_site else 'Seleccionar sitio' }}
-                    </span>
-                  </a>
+                  <a class="mobile-menu-link text-danger" href="{{ url_for('logout') }}"><i class="bi bi-power"></i> Cerrar sesión</a>
+                </div>
+              </div>
+            </div>
 
-                  <div class="dropdown-menu dropdown-menu-end site-switcher shadow-lg" aria-labelledby="siteDropdown">
-                    <div class="mb-2 px-1">
+            {% if pages is defined and pages %}
+              <div class="accordion-item">
+                <h2 class="accordion-header">
+                  <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#mobileSitesCollapse" aria-expanded="false" aria-controls="mobileSitesCollapse">
+                    Cambiar sitio
+                  </button>
+                </h2>
+                <div id="mobileSitesCollapse" class="accordion-collapse collapse" data-bs-parent="#mobileMenuAccordion">
+                  <div class="accordion-body">
+                    <div class="mb-2">
                       <div class="input-group input-group-sm">
-                        <span class="input-group-text bg-transparent border-end-0">
-                          <i class="bi bi-search text-muted"></i>
+                        <span class="input-group-text border-end-0">
+                          <i class="bi bi-search"></i>
                         </span>
-                        <input id="siteSearch" type="search" class="form-control border-start-0 ps-0" placeholder="Buscar sitio...">
+                        <input id="mobileSiteSearch" type="search" class="form-control border-start-0 ps-0" placeholder="Buscar sitio...">
                       </div>
                     </div>
 
-                    <div id="siteList" class="list-group list-group-flush site-list">
+                    <div id="mobileSiteList" class="list-group list-group-flush site-list mobile-sites">
                       {% for p in pages %}
                         {% set _slug = p.slug or (p.business_name or '')|lower|replace(' ', '-') %}
                         {% set _is_active = current and p._id|string == current|string %}
@@ -647,169 +1205,167 @@
                         </a>
                       {% endfor %}
                     </div>
-
-                    <div class="dropdown-divider my-2"></div>
-                    <a class="dropdown-item text-primary fw-semibold" href="{{ url_for('create_page') }}">
-                      <i class="bi bi-plus-circle"></i> Crear nuevo sitio
-                    </a>
-                    <a class="dropdown-item" href="{{ url_for('sites') }}">
-                      <i class="bi bi-grid-1x2"></i> Administrar mis sitios
-                    </a>
                   </div>
-                </li>
-              {% endif %}
-
-              <li class="nav-item ms-lg-2 mt-2 mt-lg-0">
-                <a class="btn btn-outline-danger btn-sm w-100" href="{{ url_for('logout') }}" title="Cerrar sesión">
-                  <i class="bi bi-power"></i> <span class="d-lg-none ms-1">Salir</span>
-                </a>
-              </li>
-
-            {% else %}
-              <li class="nav-item">
-                <a class="btn btn-brand btn-sm px-3" href="{{ url_for('login') }}">
-                  <i class="bi bi-box-arrow-in-right me-1"></i> Iniciar sesión
-                </a>
-              </li>
+                </div>
+              </div>
             {% endif %}
-
-          </ul>
-        </div>
-      </div>
-    </nav>
-
-    {% if current_user.is_authenticated %}
-      <div class="top-subnav">
-        <div class="container">
-          <div class="top-subnav-inner">
-            <div class="subnav-left">
-              <span class="subnav-label">Sitio activo</span>
-
-              {% if ns.current_site %}
-                <div class="site-pill">
-                  <i class="bi bi-building"></i>
-                  <span>{{ ns.current_site.business_name }}</span>
-                </div>
-
-                {% if ns.current_site.category or ns.current_site.city %}
-                  <div class="site-pill" style="background:rgba(148,163,184,.08); color:var(--ink);">
-                    <i class="bi bi-geo-alt"></i>
-                    <span>
-                      {{ ns.current_site.category or 'Negocio' }}{% if ns.current_site.city %} · {{ ns.current_site.city }}{% endif %}
-                    </span>
-                  </div>
-                {% endif %}
-              {% else %}
-                <div class="site-pill" style="background:rgba(245,158,11,.12); color:#fde68a; border-color:rgba(245,158,11,.22);">
-                  <i class="bi bi-exclamation-circle"></i>
-                  <span>Sin sitio seleccionado</span>
-                </div>
-              {% endif %}
-            </div>
-
-            <div class="subnav-right">
-              <a class="nav-chip primary" href="{{ url_for('dashboard') }}">
-                <i class="bi bi-house-door"></i> Inicio
-              </a>
-              <a class="nav-chip success" href="{{ url_for('pos') }}">
-                <i class="bi bi-shop-window"></i> POS
-              </a>
-              <a class="nav-chip" href="{{ url_for('list_ventas') }}">
-                <i class="bi bi-receipt-cutoff"></i> Ventas
-              </a>
-              <a class="nav-chip warning" href="{{ url_for('corte_caja') }}">
-                <i class="bi bi-cash-stack"></i> Corte
-              </a>
-            </div>
           </div>
         </div>
       </div>
     {% endif %}
-  </header>
 
-  <main class="container">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        <div class="mt-2 mb-4">
-          {% for category, message in messages %}
-            <div class="alert alert-{{ category if category != 'message' else 'info' }} alert-dismissible fade show d-flex align-items-center" role="alert">
-              <i class="bi bi-info-circle-fill me-2 fs-5"></i>
-              <div>{{ message }}</div>
-              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
-            </div>
-          {% endfor %}
+    <main class="container">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="mt-2 mb-4">
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category if category != 'message' else 'info' }} alert-dismissible fade show d-flex align-items-center" role="alert">
+                <i class="bi bi-info-circle-fill me-2 fs-5"></i>
+                <div>{{ message }}</div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+      <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+        <div class="text-center text-md-start">
+          <p class="mb-0 fw-medium">&copy; 2026 <strong>Global PYMES</strong>.</p>
+          <small class="text-muted">Desarrollado por <a href="https://davanitechnology.com/" target="_blank" class="fw-semibold">DavaniTechnology</a></small>
         </div>
-      {% endif %}
-    {% endwith %}
 
-    {% block content %}{% endblock %}
-  </main>
-
-  <footer class="footer">
-    <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
-      <div class="text-center text-md-start">
-        <p class="mb-0 fw-medium">&copy; 2026 <strong>Global PYMES</strong>.</p>
-        <small class="text-muted">Desarrollado por <a href="https://davanitechnology.com/" target="_blank" class="fw-semibold">DavaniTechnology</a></small>
+        <div class="d-flex gap-2">
+          <a href="https://www.facebook.com/profile.php?id=61561619890202" target="_blank" class="social-link" aria-label="Facebook">
+            <i class="bi bi-facebook"></i>
+          </a>
+          <a href="https://www.tiktok.com/@technologydavani" target="_blank" class="social-link" aria-label="TikTok">
+            <i class="bi bi-tiktok"></i>
+          </a>
+        </div>
       </div>
-      <div class="d-flex gap-3">
-        <a href="https://www.facebook.com/profile.php?id=61561619890202" target="_blank" class="text-muted fs-5" aria-label="Facebook"><i class="bi bi-facebook hover-primary"></i></a>
-        <a href="https://www.tiktok.com/@technologydavani" target="_blank" class="text-muted fs-5" aria-label="TikTok"><i class="bi bi-tiktok hover-primary"></i></a>
-      </div>
-    </div>
-  </footer>
+    </footer>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
   <script>
     document.addEventListener("DOMContentLoaded", () => {
-      const searchInput = document.getElementById('siteSearch');
-      const siteList = document.getElementById('siteList');
+      const themeKey = "gp-theme";
+      const root = document.documentElement;
+      const metaTheme = document.getElementById("themeColorMeta");
+      const themeButtons = document.querySelectorAll("[data-theme-toggle]");
+      const mediaDark = window.matchMedia("(prefers-color-scheme: dark)");
 
-      if (searchInput && siteList) {
-        searchInput.addEventListener('input', function () {
+      function resolveInitialTheme() {
+        const saved = localStorage.getItem(themeKey);
+        if (saved === "dark" || saved === "light") return saved;
+        return mediaDark.matches ? "dark" : "light";
+      }
+
+      function themeColor(theme) {
+        return theme === "dark" ? "#0b1220" : "#f4f7fb";
+      }
+
+      function syncThemeButtonUI(theme) {
+        themeButtons.forEach((btn) => {
+          btn.innerHTML = theme === "dark"
+            ? '<i class="bi bi-sun-fill"></i>'
+            : '<i class="bi bi-moon-stars-fill"></i>';
+          btn.setAttribute(
+            "aria-label",
+            theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"
+          );
+          btn.setAttribute(
+            "title",
+            theme === "dark" ? "Modo claro" : "Modo oscuro"
+          );
+        });
+      }
+
+      function applyTheme(theme, persist = false) {
+        root.setAttribute("data-bs-theme", theme);
+        if (metaTheme) metaTheme.setAttribute("content", themeColor(theme));
+        syncThemeButtonUI(theme);
+        if (persist) localStorage.setItem(themeKey, theme);
+      }
+
+      const initialTheme = resolveInitialTheme();
+      applyTheme(initialTheme, false);
+
+      themeButtons.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const next = root.getAttribute("data-bs-theme") === "dark" ? "light" : "dark";
+          applyTheme(next, true);
+        });
+      });
+
+      mediaDark.addEventListener("change", (e) => {
+        const saved = localStorage.getItem(themeKey);
+        if (!saved) {
+          applyTheme(e.matches ? "dark" : "light", false);
+        }
+      });
+
+      function bindSiteFilter(inputId, listId) {
+        const searchInput = document.getElementById(inputId);
+        const siteList = document.getElementById(listId);
+        if (!searchInput || !siteList) return;
+
+        searchInput.addEventListener("input", function () {
           const query = this.value.trim().toLowerCase();
-          const items = Array.from(siteList.querySelectorAll('.list-group-item'));
+          const items = Array.from(siteList.querySelectorAll(".list-group-item"));
 
-          items.forEach(item => {
-            const searchableText = `${item.dataset.name} ${item.dataset.city} ${item.dataset.state}`.toLowerCase();
-            if (searchableText.includes(query)) {
-              item.style.setProperty('display', 'flex', 'important');
-            } else {
-              item.style.setProperty('display', 'none', 'important');
-            }
+          items.forEach((item) => {
+            const searchableText = `${item.dataset.name || ""} ${item.dataset.city || ""} ${item.dataset.state || ""}`.toLowerCase();
+            item.style.setProperty(
+              "display",
+              searchableText.includes(query) ? "flex" : "none",
+              "important"
+            );
           });
         });
+      }
 
-        const siteDropdown = document.getElementById('siteDropdown');
-        if (siteDropdown) {
-          siteDropdown.addEventListener('shown.bs.dropdown', () => {
-            searchInput.focus();
-          });
-        }
+      bindSiteFilter("siteSearch", "siteList");
+      bindSiteFilter("mobileSiteSearch", "mobileSiteList");
+
+      const siteDropdown = document.getElementById("siteDropdown");
+      if (siteDropdown) {
+        siteDropdown.addEventListener("shown.bs.dropdown", () => {
+          const desktopSearch = document.getElementById("siteSearch");
+          if (desktopSearch) desktopSearch.focus();
+        });
       }
     });
   </script>
+
   <script>
-  window.addEventListener('message', (e) => {
-    const msg = e.data || {};
-    if(msg.type !== 'admin-preview-update') return;
+    window.addEventListener("message", (e) => {
+      const msg = e.data || {};
+      if (msg.type !== "admin-preview-update") return;
 
-    const payload = msg.payload || {};
+      const payload = msg.payload || {};
 
-    if(payload.color){
-      document.documentElement.style.setProperty('--brand', payload.color);
-    }
+      if (payload.color) {
+        document.documentElement.style.setProperty("--brand", payload.color);
+      }
 
-    const titleEl = document.querySelector('[data-role="title"], .page-title, h1');
-    const sloganEl = document.querySelector('[data-role="slogan"], .subtitle, .slogan');
+      const titleEl = document.querySelector('[data-role="title"], .page-title, h1');
+      const sloganEl = document.querySelector('[data-role="slogan"], .subtitle, .slogan');
 
-    if(titleEl && payload.business_name){
-      titleEl.textContent = payload.business_name;
-    }
+      if (titleEl && payload.business_name) {
+        titleEl.textContent = payload.business_name;
+      }
 
-    if(sloganEl){
-      sloganEl.textContent = payload.slogan || '';
-    }
-  });
-</script>
+      if (sloganEl) {
+        sloganEl.textContent = payload.slogan || '';
+      }
+    });
+  </script>
 </body>
 </html>
