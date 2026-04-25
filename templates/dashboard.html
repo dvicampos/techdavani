@@ -824,6 +824,10 @@
           Hoy es {{ now().strftime('%d/%m/%Y') }} · Gestionando: {{ PAGE.get('business_name','Tu sitio') if PAGE else 'Tu sitio' }}
         </small>
       {% endif %}
+      <button id="installPwaBtn" class="toolbar-btn d-none" type="button">
+        <i class="bi bi-phone"></i>
+        Instalar app
+      </button>
     </div>
 
     <div class="header-meta">
@@ -1110,4 +1114,34 @@
     </div>
   </div>
 </div>
+<script>
+  let deferredPrompt = null;
+  const installBtn = document.getElementById("installPwaBtn");
+
+  window.addEventListener("beforeinstallprompt", (event) => {
+    event.preventDefault();
+    deferredPrompt = event;
+
+    if (installBtn) {
+      installBtn.classList.remove("d-none");
+    }
+  });
+
+  if (installBtn) {
+    installBtn.addEventListener("click", async () => {
+      if (!deferredPrompt) return;
+
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+
+      deferredPrompt = null;
+      installBtn.classList.add("d-none");
+    });
+  }
+
+  window.addEventListener("appinstalled", () => {
+    console.log("Global PYMES instalada como PWA");
+    if (installBtn) installBtn.classList.add("d-none");
+  });
+</script>
 {% endblock %}

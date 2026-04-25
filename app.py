@@ -6716,5 +6716,25 @@ def gracias():
 def ads():
     return send_from_directory(os.path.abspath(os.path.dirname(__file__)), 'ads.txt')
 
+@app.route("/sw.js")
+def service_worker():
+    response = send_from_directory(
+        os.path.join(app.root_path, "static"),
+        "sw.js"
+    )
+    response.headers["Content-Type"] = "application/javascript"
+    response.headers["Service-Worker-Allowed"] = "/"
+    response.headers["Cache-Control"] = "no-cache"
+    return response
+
+@app.route("/manifest.webmanifest")
+def manifest():
+    response = send_from_directory(
+        os.path.join(app.root_path, "static"),
+        "manifest.webmanifest"
+    )
+    response.headers["Content-Type"] = "application/manifest+json"
+    return response
+
 if __name__ == '__main__':
   app.run(host="0.0.0.0", port=5000, debug=True)
