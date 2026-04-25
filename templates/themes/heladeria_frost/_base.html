@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  {% set site_title = meta_title
+      or page.get('business_name')
+      or negocio.get('business_name')
+      or 'Mi negocio' %}
+  {% set site_desc = meta_description
+      or page.get('slogan')
+      or page.get('description')
+      or negocio.get('slogan')
+      or negocio.get('description')
+      or 'Sitio web del negocio' %}
+
+  {% set cover = page.get('cover_image') or page.get('image') or negocio.get('cover_image') or negocio.get('image') %}
+  {% if cover and not (cover.startswith('http://') or cover.startswith('https://')) %}
+    {% set cover = url_for('uploaded_file', filename=cover, _external=True) %}
+  {% endif %}
+
+  <title>{{ site_title }}</title>
+  <meta name="description" content="{{ site_desc|striptags|truncate(180) }}">
+  <meta name="author" content="{{ page.get('business_name') or negocio.get('business_name') or '' }}">
+
+  <meta property="og:title" content="{{ site_title }}">
+  <meta property="og:description" content="{{ site_desc|striptags|truncate(200) }}">
+  <meta property="og:image" content="{{ cover or url_for('static', filename='images/default.png', _external=True) }}">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="{{ request.url }}">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    :root{
+      --brand: {{ page.get('color') or negocio.get('color') or '#5cc8ff' }};
+      --brand-2: #7dd3fc;
+      --frost-mint: #9ff7dc;
+      --frost-pink: #ffd1e8;
+      --frost-lavender: #d9ccff;
+      --frost-cream: #fff7df;
+      --frost-vanilla: #fffaf0;
+      --frost-blue: #e7f8ff;
+      --bg: #f5fbff;
+      --card: rgba(255,255,255,.86);
+      --ink: #17314a;
+      --muted: #64748b;
+      --border: #17405c;
+      --radius: 24px;
+      --shadow: 0 22px 55px rgba(72, 158, 203, .18);
+      --shadow-sm: 0 14px 30px rgba(72, 158, 203, .14);
+      --shadow-xs: 0 8px 18px rgba(72, 158, 203, .10);
+      --ring: 0 0 0 .22rem rgba(92, 200, 255, .23);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    html, body { min-height: 100%; background: var(--bg); color: var(--ink); }
+
+    body {
+      font-family: Inter, system-ui, -apple-system, Segoe UI, sans-serif;
+      background:
+        radial-gradient(circle at 8% 4%, rgba(255, 209, 232, .45) 0 180px, transparent 260px),
+        radial-gradient(circle at 92% 10%, rgba(159, 247, 220, .42) 0 190px, transparent 280px),
+        radial-gradient(circle at 20% 88%, rgba(217, 204, 255, .36) 0 220px, transparent 330px),
+        linear-gradient(180deg, #f8fdff 0%, #effaff 42%, #fffaf3 100%);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content:"";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: -1;
+      opacity: .58;
+      background-image:
+        radial-gradient(circle, rgba(23,64,92,.10) 1.3px, transparent 1.8px),
+        radial-gradient(circle, rgba(255,177,213,.24) 1.4px, transparent 2px),
+        linear-gradient(135deg, rgba(92,200,255,.10), transparent 55%);
+      background-size: 34px 34px, 48px 48px, auto;
+      background-position: 0 0, 16px 12px, center;
+    }
+
+    .brand-font { font-family: "Space Grotesk", Inter, system-ui, sans-serif; }
+
+    .site-nav {
+      position: sticky;
+      top: 0;
+      z-index: 1030;
+      background: rgba(255,255,255,.78);
+      backdrop-filter: blur(18px) saturate(145%);
+      border-bottom: 1px solid rgba(23, 64, 92, .14);
+      box-shadow: 0 12px 34px rgba(80, 160, 210, .12);
+    }
+
+    .site-nav .navbar-brand {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: .55rem;
+      font-weight: 900;
+      letter-spacing: -.045em;
+      color: var(--ink);
+      padding: .5rem .8rem;
+      border-radius: 999px;
+      background: linear-gradient(135deg, rgba(255,255,255,.88), rgba(231,248,255,.8));
+      border: 1px solid rgba(23,64,92,.15);
+    }
+
+    .site-nav .navbar-brand::before { content:"🍦"; filter: drop-shadow(0 4px 8px rgba(255,145,190,.22)); }
+
+    .nav-chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: .45rem;
+      padding: .65rem 1rem;
+      border: 1px solid rgba(23, 64, 92, .18);
+      border-radius: 999px;
+      background: rgba(255,255,255,.76);
+      color: var(--ink);
+      text-decoration: none;
+      font-weight: 800;
+      transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
+      box-shadow: var(--shadow-xs);
+      white-space: nowrap;
+    }
+
+    .nav-chip:hover,
+    .nav-chip:focus-visible {
+      transform: translateY(-2px);
+      background: linear-gradient(135deg, #ffffff, var(--frost-blue));
+      box-shadow: var(--shadow-sm);
+      color: var(--ink);
+      outline: none;
+    }
+
+    .btn-brand,
+    .btn-ghost {
+      border: 1px solid rgba(23,64,92,.18);
+      font-weight: 900;
+      border-radius: 999px;
+      min-height: 46px;
+      box-shadow: var(--shadow-xs);
+      transition: transform .2s ease, box-shadow .2s ease, filter .2s ease, background .2s ease;
+    }
+
+    .btn-brand {
+      background: linear-gradient(135deg, var(--brand), #9ff7dc 56%, #ffd1e8);
+      color: #10263a;
+    }
+
+    .btn-brand:hover,
+    .btn-brand:focus-visible {
+      color: #10263a;
+      transform: translateY(-2px) scale(1.01);
+      box-shadow: var(--shadow-sm), 0 0 28px rgba(92,200,255,.24);
+      filter: saturate(1.05);
+      outline: none;
+    }
+
+    .btn-ghost {
+      background: rgba(255,255,255,.86);
+      color: var(--ink);
+    }
+
+    .btn-ghost:hover,
+    .btn-ghost:focus-visible {
+      color: var(--ink);
+      transform: translateY(-2px);
+      background: #fff;
+      box-shadow: var(--shadow-sm);
+      outline: none;
+    }
+
+    .section-shell { padding: 36px 0 80px; }
+
+    .card-neo,
+    .card-neo-sm {
+      position: relative;
+      background: var(--card);
+      border: 1px solid rgba(23,64,92,.16);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(16px) saturate(130%);
+      overflow: hidden;
+    }
+
+    .card-neo::before,
+    .card-neo-sm::before {
+      content:"";
+      position:absolute;
+      inset:0 0 auto 0;
+      height: 5px;
+      background: linear-gradient(90deg, var(--brand), var(--frost-mint), var(--frost-pink), var(--frost-lavender));
+      opacity:.88;
+    }
+
+    .card-neo { border-radius: 28px; }
+    .card-neo-sm { border-radius: 22px; box-shadow: var(--shadow-sm); }
+    .card-neo:hover { transform: translateY(-3px); transition: .25s ease; }
+
+    .muted { color: var(--muted); }
+
+    .hero-mini {
+      position: relative;
+      padding: 50px 0 26px;
+      animation: frostReveal .55s ease both;
+    }
+
+    .hero-mini::after {
+      content:"❄️  🍧  ✨";
+      position: absolute;
+      right: 0;
+      top: 22px;
+      font-size: clamp(1.8rem, 6vw, 4rem);
+      opacity: .30;
+      animation: floaty 5s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    .hero-mini h1 {
+      font-size: clamp(2.05rem, 5vw, 3.8rem);
+      line-height: .96;
+      letter-spacing: -.065em;
+      margin: 0;
+      color: var(--ink);
+      max-width: 980px;
+    }
+
+    .hero-mini p {
+      font-size: 1.08rem;
+      margin: 16px 0 0;
+      color: var(--muted);
+      max-width: 780px;
+    }
+
+    .cover-box,
+    .post-cover {
+      width: 100%;
+      object-fit: cover;
+      border: 1px solid rgba(23,64,92,.16);
+      background: linear-gradient(135deg, #e7f8ff, #fff7df);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .cover-box { aspect-ratio: 16/7; border-radius: 26px; }
+    .post-cover { aspect-ratio: 16/9; border-radius: 24px; }
+
+    .post-card-title {
+      font-size: 1.14rem;
+      line-height: 1.12;
+      letter-spacing: -.035em;
+      margin: 0;
+      color: var(--ink);
+    }
+
+    .badge-soft {
+      display: inline-flex;
+      align-items: center;
+      gap: .45rem;
+      padding: .5rem .85rem;
+      border: 1px solid rgba(23,64,92,.16);
+      border-radius: 999px;
+      background: rgba(255,255,255,.82);
+      color: var(--ink);
+      font-weight: 800;
+      box-shadow: var(--shadow-xs);
+    }
+
+    .badge-soft i { color: #269ed4; }
+
+    .search-box .form-control {
+      border: 1px solid rgba(23,64,92,.18);
+      border-radius: 999px;
+      min-height: 54px;
+      padding-inline: 1.1rem;
+      box-shadow: var(--shadow-xs);
+      background: rgba(255,255,255,.92);
+      color: var(--ink);
+    }
+
+    .search-box .form-control:focus {
+      border-color: rgba(92,200,255,.65);
+      box-shadow: var(--ring);
+    }
+
+    .search-box .btn { min-height: 54px; border-radius: 999px; }
+
+    .article-body { font-size: 1.06rem; line-height: 1.85; color: #23425d; }
+    .article-body h1, .article-body h2, .article-body h3 { color: var(--ink); letter-spacing: -.035em; }
+    .article-body a { color: #0b83bd; font-weight: 800; }
+
+    .article-body img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 24px;
+      border: 1px solid rgba(23,64,92,.16);
+      box-shadow: var(--shadow-sm);
+      margin: 1rem 0;
+    }
+
+    .article-body iframe,
+    .article-body video {
+      max-width: 100%;
+      border-radius: 24px;
+    }
+
+    .footer-box {
+      position: relative;
+      margin-top: 56px;
+      border-top: 1px solid rgba(23,64,92,.14);
+      background: rgba(255,255,255,.78);
+      backdrop-filter: blur(14px);
+      box-shadow: 0 -16px 45px rgba(80,160,210,.10);
+    }
+
+    .footer-box::before {
+      content:"";
+      position:absolute;
+      inset:0 0 auto 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--brand), var(--frost-mint), var(--frost-pink), var(--frost-lavender));
+    }
+
+    .footer-link {
+      color: var(--ink);
+      text-decoration: none;
+      font-weight: 800;
+    }
+
+    .footer-link:hover { color: #0b83bd; text-decoration: underline; }
+
+    .text-dark { color: var(--ink) !important; }
+    .page-link { border-color: rgba(23,64,92,.18) !important; box-shadow: var(--shadow-xs); }
+
+    @keyframes floaty { 0%,100%{transform:translateY(0) rotate(-2deg)} 50%{transform:translateY(-10px) rotate(2deg)} }
+    @keyframes frostReveal { from{opacity:0; transform:translateY(16px)} to{opacity:1; transform:translateY(0)} }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+    }
+
+    @media (max-width: 767.98px) {
+      .section-shell { padding: 24px 0 60px; }
+      .hero-mini { padding: 30px 0 20px; }
+      .hero-mini::after { position: static; display: block; margin-top: .9rem; }
+      .nav-chip { width: 100%; justify-content: flex-start; }
+      .cover-box { aspect-ratio: 4/3; }
+    }
+  </style>
+
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  {% set site_slug = slug or page.get('slug') or negocio.get('slug') %}
+  {% set site_name = page.get('business_name') or negocio.get('business_name') or 'Mi negocio' %}
+  {% set wa = page.get('whatsapp') or negocio.get('whatsapp') %}
+  {% set ig = page.get('instagram') or negocio.get('instagram') %}
+  {% set fb = page.get('facebook') or negocio.get('facebook') %}
+  {% set tk = page.get('tiktok') or negocio.get('tiktok') %}
+
+  <nav class="navbar navbar-expand-lg site-nav">
+    <div class="container py-2">
+      <a class="navbar-brand brand-font" href="{{ url_for('negocio_por_slug', slug=site_slug) }}">
+        {{ site_name }}
+      </a>
+
+      <button class="navbar-toggler border-2" type="button" data-bs-toggle="collapse" data-bs-target="#topNav" aria-controls="topNav" aria-expanded="false" aria-label="Abrir menú">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div id="topNav" class="collapse navbar-collapse">
+        <div class="ms-auto d-flex flex-column flex-lg-row gap-2 gap-lg-3 mt-3 mt-lg-0">
+          <a class="nav-chip" href="{{ url_for('negocio_por_slug', slug=site_slug) }}">
+            <i class="bi bi-house-heart"></i> Inicio
+          </a>
+          <a class="nav-chip" href="{{ url_for('lista_blogs_negocio_slug', slug=site_slug) }}">
+            <i class="bi bi-journal-richtext"></i> Blog frost
+          </a>
+          {% if wa %}
+          <a class="nav-chip" href="https://wa.me/{{ wa|replace(' ','') }}" target="_blank" rel="noopener">
+            <i class="bi bi-whatsapp"></i> Pedir por WhatsApp
+          </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  {% block content %}{% endblock %}
+
+  <footer class="footer-box">
+    <div class="container py-4 py-lg-5">
+      <div class="row g-4 align-items-start">
+        <div class="col-lg-6">
+          <h3 class="brand-font fw-bold mb-2">{{ site_name }}</h3>
+          <p class="muted mb-0">
+            {{ page.get('slogan') or negocio.get('slogan') or page.get('description') or negocio.get('description') or 'Gracias por visitar nuestro rincón frost.' }}
+          </p>
+        </div>
+
+        <div class="col-lg-3">
+          <div class="fw-bold mb-2">Explorar sabores</div>
+          <div class="d-flex flex-column gap-2">
+            <a class="footer-link" href="{{ url_for('negocio_por_slug', slug=site_slug) }}">Inicio</a>
+            <a class="footer-link" href="{{ url_for('lista_blogs_negocio_slug', slug=site_slug) }}">Blog</a>
+          </div>
+        </div>
+
+        <div class="col-lg-3">
+          <div class="fw-bold mb-2">Comunidad dulce</div>
+          <div class="d-flex gap-3 fs-4">
+            {% if ig %}<a href="{{ ig }}" target="_blank" rel="noopener" class="text-dark"><i class="bi bi-instagram"></i></a>{% endif %}
+            {% if fb %}<a href="{{ fb }}" target="_blank" rel="noopener" class="text-dark"><i class="bi bi-facebook"></i></a>{% endif %}
+            {% if tk %}<a href="{{ tk }}" target="_blank" rel="noopener" class="text-dark"><i class="bi bi-tiktok"></i></a>{% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-4 mt-4 border-top">
+        <small class="muted">© {{ current_year or 2026 }} {{ site_name }}. Todos los derechos reservados. Hecho con vibra frost.</small>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  {% set site_title = meta_title
+      or page.get('business_name')
+      or negocio.get('business_name')
+      or 'Mi negocio' %}
+  {% set site_desc = meta_description
+      or page.get('slogan')
+      or page.get('description')
+      or negocio.get('slogan')
+      or negocio.get('description')
+      or 'Sitio web del negocio' %}
+
+  {% set cover = page.get('cover_image') or page.get('image') or negocio.get('cover_image') or negocio.get('image') %}
+  {% if cover and not (cover.startswith('http://') or cover.startswith('https://')) %}
+    {% set cover = url_for('uploaded_file', filename=cover, _external=True) %}
+  {% endif %}
+
+  <title>{{ site_title }}</title>
+  <meta name="description" content="{{ site_desc|striptags|truncate(180) }}">
+  <meta name="author" content="{{ page.get('business_name') or negocio.get('business_name') or '' }}">
+
+  <meta property="og:title" content="{{ site_title }}">
+  <meta property="og:description" content="{{ site_desc|striptags|truncate(200) }}">
+  <meta property="og:image" content="{{ cover or url_for('static', filename='images/default.png', _external=True) }}">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="{{ request.url }}">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    :root{
+      --brand: {{ page.get('color') or negocio.get('color') or '#0f9f8f' }};
+      --pharma-green: #0f9f8f;
+      --pharma-green-2: #14b8a6;
+      --pharma-blue: #2563eb;
+      --pharma-aqua: #67e8f9;
+      --pharma-soft: #e8fff8;
+      --pharma-soft-2: #eef7ff;
+      --bg: #f4fbf9;
+      --card: rgba(255,255,255,.92);
+      --ink: #0f172a;
+      --muted: #64748b;
+      --border: rgba(15, 159, 143, .22);
+      --border-strong: rgba(15, 23, 42, .14);
+      --radius: 24px;
+      --shadow: 0 22px 70px rgba(15, 118, 110, .13);
+      --shadow-sm: 0 12px 32px rgba(15, 118, 110, .12);
+      --shadow-xs: 0 8px 18px rgba(15, 118, 110, .10);
+      --ring: 0 0 0 .22rem rgba(20,184,166,.18);
+    }
+
+    * { box-sizing: border-box; }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    html, body {
+      background:
+        radial-gradient(circle at 12% 8%, rgba(103,232,249,.28), transparent 30%),
+        radial-gradient(circle at 88% 14%, rgba(20,184,166,.16), transparent 28%),
+        linear-gradient(180deg, #f8fffd 0%, var(--bg) 48%, #ffffff 100%);
+      color: var(--ink);
+      min-height: 100%;
+    }
+
+    body {
+      font-family: Inter, system-ui, -apple-system, Segoe UI, sans-serif;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: -1;
+      opacity: .58;
+      background-image:
+        linear-gradient(45deg, rgba(15,159,143,.08) 25%, transparent 25%),
+        linear-gradient(-45deg, rgba(37,99,235,.055) 25%, transparent 25%);
+      background-size: 34px 34px;
+      mask-image: linear-gradient(180deg, rgba(0,0,0,.95), transparent 78%);
+    }
+
+    .brand-font {
+      font-family: "Space Grotesk", Inter, system-ui, sans-serif;
+    }
+
+    .site-nav {
+      position: sticky;
+      top: 0;
+      z-index: 1030;
+      background: rgba(255,255,255,.84);
+      backdrop-filter: blur(18px) saturate(1.35);
+      -webkit-backdrop-filter: blur(18px) saturate(1.35);
+      border-bottom: 1px solid var(--border);
+      box-shadow: 0 10px 35px rgba(15,118,110,.08);
+    }
+
+    .site-nav .navbar-brand {
+      display: inline-flex;
+      align-items: center;
+      gap: .55rem;
+      font-weight: 900;
+      letter-spacing: -.04em;
+      color: var(--ink);
+      line-height: 1;
+    }
+
+    .site-nav .navbar-brand::before {
+      content: "✚";
+      width: 2rem;
+      height: 2rem;
+      border-radius: .8rem;
+      display: inline-grid;
+      place-items: center;
+      color: #fff;
+      background: linear-gradient(135deg, var(--brand), var(--pharma-green-2));
+      box-shadow: 0 10px 24px rgba(20,184,166,.23);
+      font-size: 1rem;
+      animation: healthPulse 2.8s ease-in-out infinite;
+    }
+
+    .navbar-toggler {
+      border: 1px solid var(--border) !important;
+      border-radius: 14px;
+      background: #fff;
+      box-shadow: var(--shadow-xs);
+    }
+
+    .nav-chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: .45rem;
+      padding: .68rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: rgba(255,255,255,.92);
+      color: var(--ink);
+      text-decoration: none;
+      font-weight: 800;
+      transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease;
+      box-shadow: var(--shadow-xs);
+      min-height: 44px;
+    }
+
+    .nav-chip:hover,
+    .nav-chip:focus-visible {
+      transform: translateY(-2px);
+      border-color: rgba(20,184,166,.42);
+      background: linear-gradient(180deg, #fff, var(--pharma-soft));
+      box-shadow: var(--shadow-sm);
+      color: var(--ink);
+      outline: none;
+    }
+
+    .btn-brand,
+    .btn-ghost {
+      border: 1px solid var(--border-strong);
+      font-weight: 900;
+      border-radius: 16px;
+      min-height: 44px;
+      transition: transform .2s ease, box-shadow .2s ease, filter .2s ease, background .2s ease;
+    }
+
+    .btn-brand {
+      background: linear-gradient(135deg, var(--brand), var(--pharma-green-2));
+      color: #fff;
+      box-shadow: 0 14px 30px rgba(15,159,143,.22);
+    }
+
+    .btn-brand:hover,
+    .btn-brand:focus-visible {
+      color: #fff;
+      transform: translateY(-2px);
+      filter: saturate(1.08) brightness(1.02);
+      box-shadow: 0 18px 42px rgba(15,159,143,.28);
+      outline: none;
+    }
+
+    .btn-ghost {
+      background: rgba(255,255,255,.95);
+      color: var(--ink);
+      box-shadow: var(--shadow-xs);
+    }
+
+    .btn-ghost:hover,
+    .btn-ghost:focus-visible {
+      color: var(--ink);
+      transform: translateY(-2px);
+      background: var(--pharma-soft);
+      box-shadow: var(--shadow-sm);
+      outline: none;
+    }
+
+    .section-shell {
+      padding: 38px 0 78px;
+    }
+
+    .card-neo,
+    .card-neo-sm {
+      position: relative;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+    }
+
+    .card-neo::before,
+    .card-neo-sm::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--brand), var(--pharma-aqua), var(--pharma-blue));
+      opacity: .9;
+    }
+
+    .card-neo:hover,
+    .card-neo-sm:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 24px 80px rgba(15,118,110,.17);
+      border-color: rgba(20,184,166,.38);
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .hero-mini {
+      position: relative;
+      padding: 52px 0 28px;
+    }
+
+    .hero-mini::before,
+    .hero-mini::after {
+      content: "";
+      position: absolute;
+      border-radius: 999px;
+      pointer-events: none;
+      filter: blur(.1px);
+      animation: floatCare 7s ease-in-out infinite;
+    }
+
+    .hero-mini::before {
+      width: 76px;
+      height: 28px;
+      right: 8%;
+      top: 28px;
+      background: linear-gradient(90deg, #fff 0 49%, var(--pharma-aqua) 50% 100%);
+      border: 1px solid rgba(15,159,143,.18);
+      box-shadow: var(--shadow-xs);
+      transform: rotate(-18deg);
+    }
+
+    .hero-mini::after {
+      content: "✚";
+      right: 2%;
+      bottom: 18px;
+      width: 46px;
+      height: 46px;
+      display: grid;
+      place-items: center;
+      color: var(--pharma-green);
+      background: rgba(255,255,255,.78);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-xs);
+      animation-delay: -2s;
+    }
+
+    .hero-mini h1 {
+      font-size: clamp(2.05rem, 4vw, 3.45rem);
+      line-height: .98;
+      letter-spacing: -.055em;
+      margin: 0;
+      max-width: 920px;
+    }
+
+    .hero-mini p {
+      font-size: 1.06rem;
+      margin: 16px 0 0;
+      color: var(--muted);
+      max-width: 760px;
+    }
+
+    .cover-box {
+      width: 100%;
+      aspect-ratio: 16/7;
+      object-fit: cover;
+      border-radius: 24px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      background: linear-gradient(135deg, var(--pharma-soft), #e5e7eb);
+    }
+
+    .post-cover {
+      width: calc(100% - 1rem);
+      margin: .5rem;
+      aspect-ratio: 16/9;
+      object-fit: cover;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-xs);
+      background: linear-gradient(135deg, var(--pharma-soft), #e5e7eb);
+    }
+
+    .post-card-title {
+      font-size: 1.12rem;
+      line-height: 1.16;
+      letter-spacing: -.035em;
+      margin: 0;
+    }
+
+    .badge-soft {
+      display: inline-flex;
+      align-items: center;
+      gap: .45rem;
+      padding: .48rem .82rem;
+      border: 1px solid rgba(15,159,143,.24);
+      border-radius: 999px;
+      background: linear-gradient(180deg, #fff, var(--pharma-soft));
+      color: #0f766e;
+      font-weight: 850;
+      box-shadow: var(--shadow-xs);
+    }
+
+    .search-box .form-control {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      min-height: 54px;
+      box-shadow: var(--shadow-xs);
+      color: var(--ink);
+      background: rgba(255,255,255,.94);
+    }
+
+    .search-box .form-control::placeholder {
+      color: #94a3b8;
+    }
+
+    .search-box .form-control:focus {
+      border-color: rgba(20,184,166,.58);
+      box-shadow: var(--ring);
+    }
+
+    .search-box .btn {
+      min-height: 54px;
+      border-radius: 16px;
+    }
+
+    .article-body {
+      font-size: 1.06rem;
+      line-height: 1.82;
+      color: #172033;
+    }
+
+    .article-body h1,
+    .article-body h2,
+    .article-body h3 {
+      font-family: "Space Grotesk", Inter, system-ui, sans-serif;
+      letter-spacing: -.035em;
+    }
+
+    .article-body img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-xs);
+      margin: 1rem 0;
+    }
+
+    .article-body iframe,
+    .article-body video {
+      max-width: 100%;
+      border-radius: 20px;
+    }
+
+    .footer-box {
+      position: relative;
+      margin-top: 56px;
+      border-top: 1px solid var(--border);
+      background:
+        radial-gradient(circle at 15% 0%, rgba(103,232,249,.22), transparent 32%),
+        linear-gradient(180deg, rgba(255,255,255,.86), #ffffff);
+    }
+
+    .footer-box::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 5px;
+      background: linear-gradient(90deg, var(--brand), var(--pharma-aqua), var(--pharma-blue));
+    }
+
+    .footer-link {
+      color: var(--ink);
+      text-decoration: none;
+      font-weight: 800;
+    }
+
+    .footer-link:hover,
+    .footer-link:focus-visible {
+      color: #0f766e;
+      text-decoration: underline;
+      outline: none;
+    }
+
+    .text-dark { color: var(--ink) !important; }
+
+    @keyframes healthPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.06); }
+    }
+
+    @keyframes floatCare {
+      0%, 100% { transform: translateY(0) rotate(-18deg); }
+      50% { transform: translateY(-10px) rotate(-13deg); }
+    }
+
+    @media (max-width: 767.98px) {
+      .section-shell { padding: 24px 0 62px; }
+      .hero-mini { padding: 34px 0 20px; }
+      .hero-mini::before { right: 0; top: 8px; opacity: .6; }
+      .hero-mini::after { display: none; }
+      .nav-chip { width: 100%; justify-content: flex-start; }
+      .cover-box { aspect-ratio: 16/10; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
+      }
+    }
+  </style>
+
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  {% set site_slug = slug or page.get('slug') or negocio.get('slug') %}
+  {% set site_name = page.get('business_name') or negocio.get('business_name') or 'Mi negocio' %}
+  {% set wa = page.get('whatsapp') or negocio.get('whatsapp') %}
+  {% set ig = page.get('instagram') or negocio.get('instagram') %}
+  {% set fb = page.get('facebook') or negocio.get('facebook') %}
+  {% set tk = page.get('tiktok') or negocio.get('tiktok') %}
+
+  <nav class="navbar navbar-expand-lg site-nav">
+    <div class="container py-2">
+      <a class="navbar-brand brand-font" href="{{ url_for('negocio_por_slug', slug=site_slug) }}">
+        {{ site_name }}
+      </a>
+
+      <button class="navbar-toggler border-2" type="button" data-bs-toggle="collapse" data-bs-target="#topNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div id="topNav" class="collapse navbar-collapse">
+        <div class="ms-auto d-flex flex-column flex-lg-row gap-2 gap-lg-3 mt-3 mt-lg-0">
+          <a class="nav-chip" href="{{ url_for('negocio_por_slug', slug=site_slug) }}">
+            <i class="bi bi-house-heart"></i> Inicio
+          </a>
+          <a class="nav-chip" href="{{ url_for('lista_blogs_negocio_slug', slug=site_slug) }}">
+            <i class="bi bi-journal-medical"></i> Blog
+          </a>
+          {% if wa %}
+          <a class="nav-chip" href="https://wa.me/{{ wa|replace(' ','') }}" target="_blank" rel="noopener">
+            <i class="bi bi-whatsapp"></i> Atención
+          </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  {% block content %}{% endblock %}
+
+  <footer class="footer-box">
+    <div class="container py-4 py-lg-5">
+      <div class="row g-4 align-items-start">
+        <div class="col-lg-6">
+          <h3 class="brand-font fw-bold mb-2">{{ site_name }}</h3>
+          <p class="muted mb-0">
+            {{ page.get('slogan') or negocio.get('slogan') or page.get('description') or negocio.get('description') or 'Gracias por visitar nuestro espacio de salud.' }}
+          </p>
+        </div>
+
+        <div class="col-lg-3">
+          <div class="fw-bold mb-2">Explorar</div>
+          <div class="d-flex flex-column gap-2">
+            <a class="footer-link" href="{{ url_for('negocio_por_slug', slug=site_slug) }}">Inicio</a>
+            <a class="footer-link" href="{{ url_for('lista_blogs_negocio_slug', slug=site_slug) }}">Blog</a>
+          </div>
+        </div>
+
+        <div class="col-lg-3">
+          <div class="fw-bold mb-2">Redes</div>
+          <div class="d-flex gap-3 fs-4">
+            {% if ig %}<a href="{{ ig }}" target="_blank" rel="noopener" class="text-dark"><i class="bi bi-instagram"></i></a>{% endif %}
+            {% if fb %}<a href="{{ fb }}" target="_blank" rel="noopener" class="text-dark"><i class="bi bi-facebook"></i></a>{% endif %}
+            {% if tk %}<a href="{{ tk }}" target="_blank" rel="noopener" class="text-dark"><i class="bi bi-tiktok"></i></a>{% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-4 mt-4 border-top">
+        <small class="muted">© {{ current_year or 2026 }} {{ site_name }}. Todos los derechos reservados.</small>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

@@ -3842,6 +3842,8 @@ DEFAULT_HTML_TEMPLATES = {
     "reposteria_sweet": "themes/reposteria_sweet/site.html",
     "cafeteria_brew": "themes/cafeteria_brew/site.html",
     "heladeria_frost": "themes/heladeria_frost/site.html",
+    "soporte_tecnico": "themes/soporte_tecnico/site.html",
+    "gaming": "themes/gaming/site.html",
 }
 
 # =========================================================
@@ -3920,6 +3922,16 @@ THEME_VIEWS = {
         "site": "themes/heladeria_frost/site.html",
         "blog_index": "themes/heladeria_frost/blog_index.html",
         "blog_post": "themes/heladeria_frost/blog_post.html",
+    },
+    "soporte_tecnico": {
+        "site": "themes/soporte_tecnico/site.html",
+        "blog_index": "themes/soporte_tecnico/blog_index.html",
+        "blog_post": "themes/soporte_tecnico/blog_post.html",
+    },
+    "gaming": {
+        "site": "themes/gaming/site.html",
+        "blog_index": "themes/gaming/blog_index.html",
+        "blog_post": "themes/gaming/blog_post.html",
     },
 }
 

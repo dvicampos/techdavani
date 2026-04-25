@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  {% set site_title = meta_title
+      or page.get('business_name')
+      or negocio.get('business_name')
+      or 'Mi negocio' %}
+  {% set site_desc = meta_description
+      or page.get('slogan')
+      or page.get('description')
+      or negocio.get('slogan')
+      or negocio.get('description')
+      or 'Sitio web artesanal del negocio' %}
+
+  {% set cover = page.get('cover_image') or page.get('image') or negocio.get('cover_image') or negocio.get('image') %}
+  {% if cover and not (cover.startswith('http://') or cover.startswith('https://')) %}
+    {% set cover = url_for('uploaded_file', filename=cover, _external=True) %}
+  {% endif %}
+
+  <title>{{ site_title }}</title>
+  <meta name="description" content="{{ site_desc|striptags|truncate(180) }}">
+  <meta name="author" content="{{ page.get('business_name') or negocio.get('business_name') or '' }}">
+
+  <meta property="og:title" content="{{ site_title }}">
+  <meta property="og:description" content="{{ site_desc|striptags|truncate(200) }}">
+  <meta property="og:image" content="{{ cover or url_for('static', filename='images/default.png', _external=True) }}">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="{{ request.url }}">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    :root{
+      --brand: {{ page.get('color') or negocio.get('color') or '#a24f2b' }};
+      --brand-2: #5f6f3b;
+      --terracotta: #a24f2b;
+      --mustard: #d6a13d;
+      --olive: #5f6f3b;
+      --wine: #7b263d;
+      --cream: #fff8ec;
+      --sand: #f3dfbf;
+      --bg: #fbf1df;
+      --card: rgba(255,250,240,.96);
+      --ink: #321f16;
+      --muted: #7b6658;
+      --border: #3b261a;
+      --radius: 22px;
+      --shadow: 8px 8px 0 #3b261a;
+      --shadow-sm: 5px 5px 0 #3b261a;
+      --shadow-xs: 3px 3px 0 #3b261a;
+      --focus: 0 0 0 .22rem rgba(162,79,43,.2);
+    }
+
+    *{ box-sizing:border-box; }
+    html{ scroll-behavior:smooth; }
+    html, body {
+      background: var(--bg);
+      color: var(--ink);
+    }
+    body {
+      position:relative;
+      min-height:100vh;
+      overflow-x:hidden;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, sans-serif;
+      background:
+        radial-gradient(circle at 12% 8%, rgba(214,161,61,.22) 0 120px, transparent 121px),
+        radial-gradient(circle at 88% 12%, rgba(123,38,61,.11) 0 120px, transparent 121px),
+        repeating-linear-gradient(45deg, rgba(162,79,43,.055) 0 1px, transparent 1px 18px),
+        var(--bg);
+    }
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      z-index:-1;
+      pointer-events:none;
+      background-image:
+        radial-gradient(circle, rgba(59,38,26,.12) 1px, transparent 1.5px),
+        radial-gradient(circle, rgba(95,111,59,.11) 1px, transparent 1.5px);
+      background-size: 28px 28px, 44px 44px;
+      opacity:.38;
+    }
+    @keyframes stitchMove{ from{background-position:0 0;} to{background-position:56px 0;} }
+    @keyframes softPop{ from{opacity:0;transform:translateY(12px) scale(.98);} to{opacity:1;transform:translateY(0) scale(1);} }
+
+    .brand-font { font-family: "Space Grotesk", Inter, system-ui, sans-serif; }
+    a{ color:var(--terracotta); }
+    a:hover{ color:var(--wine); }
+    ::selection{ background: rgba(214,161,61,.45); color:var(--ink); }
+
+    .site-nav {
+      position: sticky;
+      top: 0;
+      z-index: 1030;
+      background: rgba(255,248,236,.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 3px solid var(--border);
+      box-shadow: var(--shadow-xs);
+    }
+    .site-nav::after{
+      content:"";
+      display:block;
+      height:7px;
+      background: repeating-linear-gradient(90deg, var(--terracotta) 0 18px, var(--mustard) 18px 36px, var(--olive) 36px 54px, var(--wine) 54px 72px);
+      border-top:2px solid var(--border);
+      animation: stitchMove 12s linear infinite;
+    }
+    .site-nav .navbar-brand {
+      max-width:min(70vw,460px);
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      font-weight: 900;
+      letter-spacing: -.04em;
+      color: #fff8ec;
+      border:3px solid var(--border);
+      border-radius:999px;
+      background: linear-gradient(135deg, var(--brand), var(--wine));
+      padding:.45rem .85rem;
+      box-shadow:var(--shadow-xs);
+    }
+    .site-nav .navbar-brand::before{ content:"✦ "; }
+    .navbar-toggler{
+      border:3px solid var(--border)!important;
+      border-radius:16px;
+      background:var(--cream);
+      box-shadow:var(--shadow-xs);
+    }
+
+    .nav-chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content:center;
+      gap: .45rem;
+      padding: .68rem 1rem;
+      border: 3px solid var(--border);
+      border-radius: 999px;
+      background: #fffaf0;
+      color: var(--ink);
+      text-decoration: none;
+      font-weight: 900;
+      transition: .2s ease;
+      box-shadow: var(--shadow-xs);
+    }
+    .nav-chip:hover,
+    .nav-chip:focus-visible {
+      transform: translate(-2px, -2px);
+      box-shadow: var(--shadow-sm);
+      color: var(--wine);
+      background: #f6e3c3;
+      outline:none;
+    }
+
+    .btn-brand {
+      border: 3px solid var(--border);
+      background: linear-gradient(135deg, var(--brand), #c96f3a);
+      color: #fff8ec;
+      font-weight: 900;
+      border-radius: 999px;
+      box-shadow: var(--shadow-xs);
+      transition:.2s ease;
+    }
+    .btn-brand:hover,
+    .btn-brand:focus-visible {
+      color: #fff8ec;
+      transform: translate(-2px, -2px);
+      box-shadow: var(--shadow-sm);
+      outline:none;
+    }
+    .btn-ghost {
+      border: 3px solid var(--border);
+      background: #fffaf0;
+      color: var(--ink);
+      font-weight: 900;
+      border-radius: 999px;
+      box-shadow: var(--shadow-xs);
+      transition:.2s ease;
+    }
+    .btn-ghost:hover,
+    .btn-ghost:focus-visible {
+      color: var(--ink);
+      background:#f6e3c3;
+      transform: translate(-2px, -2px);
+      box-shadow: var(--shadow-sm);
+      outline:none;
+    }
+
+    .section-shell { padding: 34px 0 74px; }
+    .card-neo {
+      position:relative;
+      background: var(--card);
+      border: 3px solid var(--border);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      animation: softPop .45s ease both;
+    }
+    .card-neo::before{
+      content:"";
+      position:absolute;left:0;right:0;top:0;height:7px;
+      background: repeating-linear-gradient(90deg, var(--terracotta) 0 18px, var(--mustard) 18px 36px, var(--olive) 36px 54px, var(--wine) 54px 72px);
+      pointer-events:none;
+    }
+    .card-neo-sm {
+      background: var(--card);
+      border: 3px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow-sm);
+    }
+    .muted { color: var(--muted); }
+
+    .hero-mini {
+      padding: 48px 0 24px;
+      position:relative;
+    }
+    .hero-mini::after{
+      content:"🧵 🪡 🏺 🌿 ✨";
+      display:inline-flex;
+      margin-top:1rem;
+      padding:.4rem .75rem;
+      border:3px solid var(--border);
+      border-radius:999px;
+      background:#fffaf0;
+      box-shadow:var(--shadow-xs);
+      letter-spacing:.18rem;
+    }
+    .hero-mini h1 {
+      font-size: clamp(2rem, 4vw, 3.5rem);
+      line-height: .98;
+      letter-spacing: -.055em;
+      margin: 0;
+      color:var(--ink);
+    }
+    .hero-mini p {
+      font-size: 1.06rem;
+      margin: 14px 0 0;
+      color: var(--muted);
+      max-width: 780px;
+    }
+
+    .cover-box {
+      width: 100%;
+      aspect-ratio: 16/7;
+      object-fit: cover;
+      border-radius: 24px;
+      border: 3px solid var(--border);
+      box-shadow: var(--shadow);
+      background: var(--sand);
+    }
+    .post-cover {
+      width: calc(100% - 1rem);
+      margin:.5rem;
+      aspect-ratio: 16/9;
+      object-fit: cover;
+      border-radius: 18px;
+      border: 3px solid var(--border);
+      box-shadow: var(--shadow-xs);
+      background: var(--sand);
+      transition:.35s ease;
+    }
+    .card-neo:hover .post-cover{ transform: scale(1.02) rotate(-.25deg); }
+    .post-card-title {
+      font-size: 1.12rem;
+      line-height: 1.15;
+      letter-spacing: -.035em;
+      margin: 0;
+    }
+    .badge-soft {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      padding: .48rem .8rem;
+      border: 3px solid var(--border);
+      border-radius: 999px;
+      background: #fffaf0;
+      font-weight: 900;
+      box-shadow: var(--shadow-xs);
+      color:var(--ink);
+    }
+    .badge-soft i{ color:var(--terracotta); }
+
+    .search-box .form-control {
+      border: 3px solid var(--border);
+      border-radius: 16px;
+      min-height: 54px;
+      color:var(--ink);
+      background:#fffaf0;
+      box-shadow: var(--shadow-xs);
+    }
+    .search-box .form-control::placeholder{ color:rgba(50,31,22,.5); }
+    .search-box .form-control:focus {
+      border-color: var(--border);
+      box-shadow: var(--focus), var(--shadow-xs);
+    }
+    .search-box .btn { min-height: 54px; border-radius: 16px; }
+
+    .article-body {
+      font-size: 1.06rem;
+      line-height: 1.82;
+      color: #432c20;
+    }
+    .article-body img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 20px;
+      border: 3px solid var(--border);
+      box-shadow: var(--shadow-xs);
+      margin: 1rem 0;
+    }
+    .article-body iframe,
+    .article-body video {
+      max-width: 100%;
+      border-radius: 20px;
+      border:3px solid var(--border);
+      box-shadow:var(--shadow-xs);
+    }
+    .border-top{ border-color: rgba(59,38,26,.28)!important; }
+
+    .footer-box {
+      margin-top: 48px;
+      border-top: 3px solid var(--border);
+      background: linear-gradient(180deg, rgba(255,248,236,.97), rgba(246,227,195,.97));
+      position:relative;
+    }
+    .footer-box::before{
+      content:"";
+      position:absolute;left:0;right:0;top:-9px;height:8px;
+      background: repeating-linear-gradient(90deg, var(--terracotta) 0 18px, var(--mustard) 18px 36px, var(--olive) 36px 54px, var(--wine) 54px 72px);
+      border-top:2px solid var(--border);
+    }
+    .footer-link {
+      color: var(--ink);
+      text-decoration: none;
+      font-weight: 900;
+    }
+    .footer-link:hover { color:var(--wine); text-decoration: underline; }
+    .text-dark{ color:var(--ink)!important; }
+
+    @media (max-width: 991.98px){
+      .nav-chip{ width:100%; }
+    }
+    @media (max-width: 767.98px) {
+      .section-shell { padding: 24px 0 58px; }
+      .hero-mini { padding: 30px 0 20px; }
+      .hero-mini::after{ font-size:.9rem; letter-spacing:.08rem; }
+      .cover-box{ aspect-ratio: 4/3; }
+    }
+    @media (prefers-reduced-motion: reduce){
+      *,*::before,*::after{ animation-duration:.001ms!important; animation-iteration-count:1!important; scroll-behavior:auto!important; transition:none!important; }
+    }
+  </style>
+
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  {% set site_slug = slug or page.get('slug') or negocio.get('slug') %}
+  {% set site_name = page.get('business_name') or negocio.get('business_name') or 'Mi negocio' %}
+  {% set wa = page.get('whatsapp') or negocio.get('whatsapp') %}
+  {% set ig = page.get('instagram') or negocio.get('instagram') %}
+  {% set fb = page.get('facebook') or negocio.get('facebook') %}
+  {% set tk = page.get('tiktok') or negocio.get('tiktok') %}
+
+  <nav class="navbar navbar-expand-lg site-nav">
+    <div class="container py-2">
+      <a class="navbar-brand brand-font" href="{{ url_for('negocio_por_slug', slug=site_slug) }}">
+        {{ site_name }}
+      </a>
+
+      <button class="navbar-toggler border-2" type="button" data-bs-toggle="collapse" data-bs-target="#topNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div id="topNav" class="collapse navbar-collapse">
+        <div class="ms-auto d-flex flex-column flex-lg-row gap-2 gap-lg-3 mt-3 mt-lg-0">
+          <a class="nav-chip" href="{{ url_for('negocio_por_slug', slug=site_slug) }}">
+            <i class="bi bi-house-door"></i> Inicio
+          </a>
+          <a class="nav-chip" href="{{ url_for('lista_blogs_negocio_slug', slug=site_slug) }}">
+            <i class="bi bi-journal-richtext"></i> Historias
+          </a>
+          {% if wa %}
+          <a class="nav-chip" href="https://wa.me/{{ wa|replace(' ','') }}" target="_blank" rel="noopener">
+            <i class="bi bi-whatsapp"></i> WhatsApp
+          </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  {% block content %}{% endblock %}
+
+  <footer class="footer-box">
+    <div class="container py-4 py-lg-5">
+      <div class="row g-4 align-items-start">
+        <div class="col-lg-6">
+          <h3 class="brand-font fw-bold mb-2">{{ site_name }}</h3>
+          <p class="muted mb-0">
+            {{ page.get('slogan') or negocio.get('slogan') or page.get('description') or negocio.get('description') or 'Gracias por visitar este espacio artesanal.' }}
+          </p>
+        </div>
+
+        <div class="col-lg-3">
+          <div class="fw-bold mb-2">Explorar taller</div>
+          <div class="d-flex flex-column gap-2">
+            <a class="footer-link" href="{{ url_for('negocio_por_slug', slug=site_slug) }}">Inicio</a>
+            <a class="footer-link" href="{{ url_for('lista_blogs_negocio_slug', slug=site_slug) }}">Historias</a>
+          </div>
+        </div>
+
+        <div class="col-lg-3">
+          <div class="fw-bold mb-2">Redes del taller</div>
+          <div class="d-flex gap-3 fs-4">
+            {% if ig %}<a href="{{ ig }}" target="_blank" rel="noopener" class="text-dark"><i class="bi bi-instagram"></i></a>{% endif %}
+            {% if fb %}<a href="{{ fb }}" target="_blank" rel="noopener" class="text-dark"><i class="bi bi-facebook"></i></a>{% endif %}
+            {% if tk %}<a href="{{ tk }}" target="_blank" rel="noopener" class="text-dark"><i class="bi bi-tiktok"></i></a>{% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-4 mt-4 border-top">
+        <small class="muted">© {{ current_year or 2026 }} {{ site_name }}. Todos los derechos reservados.</small>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

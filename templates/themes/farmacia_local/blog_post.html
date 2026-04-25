@@ -1,0 +1,127 @@
+{% extends "themes/classico/_base.html" %}
+
+{% set meta_title = (post.get('title') or 'Artículo') ~ " | " ~ (page.get('business_name') or negocio.get('business_name') or 'Mi negocio') %}
+{% set meta_description = post.get('content','')|striptags|truncate(180) %}
+
+{% block content %}
+<section class="section-shell">
+  <div class="container">
+    {% set site_slug = slug or page.get('slug') or negocio.get('slug') %}
+    {% set post_cover = post.get('cabecera') or post.get('image') or page.get('cover_image') or negocio.get('cover_image') %}
+    {% if post_cover and not (post_cover.startswith('http://') or post_cover.startswith('https://')) %}
+      {% set post_cover = url_for('uploaded_file', filename=post_cover) %}
+    {% endif %}
+
+    <div class="mb-4">
+      <a href="{{ url_for('lista_blogs_negocio_slug', slug=site_slug) }}" class="nav-chip">
+        <i class="bi bi-arrow-left"></i>
+        Volver al blog
+      </a>
+    </div>
+
+    <article class="card-neo p-3 p-lg-4 p-xl-5">
+      <div class="mb-4">
+        <div class="d-flex flex-wrap gap-2 mb-3">
+          <span class="badge-soft">
+            <i class="bi bi-journal-medical"></i>
+            Publicación
+          </span>
+          <span class="badge-soft">
+            <i class="bi bi-calendar3"></i>
+            {{ post.get('date').strftime('%d/%m/%Y') if post.get('date') else 'Sin fecha' }}
+          </span>
+          {% if post.get('author') %}
+          <span class="badge-soft">
+            <i class="bi bi-person-heart"></i>
+            {{ post.get('author') }}
+          </span>
+          {% endif %}
+        </div>
+
+        <h1 class="brand-font fw-bold mb-3" style="font-size:clamp(2rem, 4vw, 3.6rem); line-height:.98; letter-spacing:-.05em;">
+          {{ post.get('title','Sin título') }}
+        </h1>
+
+        <p class="muted mb-0">
+          Publicado por {{ page.get('business_name') or negocio.get('business_name') }}
+        </p>
+      </div>
+
+      {% if post_cover %}
+        <div class="mb-4">
+          <img src="{{ post_cover }}" alt="{{ post.get('title','Post') }}" class="cover-box">
+        </div>
+      {% endif %}
+
+      <div class="article-body">
+        {{ post.get('content','')|safe }}
+      </div>
+
+      <div class="mt-5 pt-4 border-top">
+        <div class="d-flex flex-column flex-md-row gap-3 justify-content-between align-items-md-center">
+          <div>
+            <h5 class="brand-font fw-bold mb-1">¿Te interesó esta publicación?</h5>
+            <p class="muted mb-0">Explora más contenido o ponte en contacto con el negocio.</p>
+          </div>
+          <div class="d-flex flex-wrap gap-2">
+            <a href="{{ url_for('lista_blogs_negocio_slug', slug=site_slug) }}" class="btn btn-ghost">
+              <i class="bi bi-grid me-1"></i>
+              Ver más publicaciones
+            </a>
+            {% if (page.get('whatsapp') or negocio.get('whatsapp')) %}
+            <a href="https://wa.me/{{ (page.get('whatsapp') or negocio.get('whatsapp'))|replace(' ','') }}"
+               target="_blank" rel="noopener" class="btn btn-brand">
+              <i class="bi bi-whatsapp me-1"></i>
+              Contactar
+            </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </article>
+
+    {% if related_posts %}
+      <section class="mt-5">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <h3 class="brand-font fw-bold mb-0">Más publicaciones</h3>
+          <a href="{{ url_for('lista_blogs_negocio_slug', slug=site_slug) }}" class="footer-link">
+            Ver todas
+          </a>
+        </div>
+
+        <div class="row g-4">
+          {% for item in related_posts %}
+            {% set item_cover = item.get('cabecera') or item.get('image') or page.get('cover_image') or negocio.get('cover_image') %}
+            {% if item_cover and not (item_cover.startswith('http://') or item_cover.startswith('https://')) %}
+              {% set item_cover = url_for('uploaded_file', filename=item_cover) %}
+            {% endif %}
+
+            <div class="col-md-6 col-xl-4">
+              <article class="card-neo h-100 overflow-hidden">
+                {% if item_cover %}
+                  <img src="{{ item_cover }}" alt="{{ item.get('title','Post') }}" class="post-cover">
+                {% endif %}
+                <div class="p-3 p-lg-4">
+                  <div class="muted small mb-2">
+                    <i class="bi bi-calendar3 me-1"></i>
+                    {{ item.get('date').strftime('%d/%m/%Y') if item.get('date') else 'Sin fecha' }}
+                  </div>
+                  <h4 class="brand-font fw-bold post-card-title mb-2">
+                    {{ item.get('title','Sin título') }}
+                  </h4>
+                  <p class="muted mb-3">
+                    {{ item.get('content','')|striptags|truncate(110) }}
+                  </p>
+                  <a href="{{ url_for('ver_post_slug', slug=site_slug, post_id=item['_id']) }}" class="btn btn-brand w-100">
+                    Leer publicación
+                  </a>
+                </div>
+              </article>
+            </div>
+          {% endfor %}
+        </div>
+      </section>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

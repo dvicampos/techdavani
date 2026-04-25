@@ -1,0 +1,1534 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+  <!-- Metas -->
+  <title>{{ page.get('business_name','Mi negocio') }}</title>
+  <meta name="description" content="{{ page.get('slogan') or page.get('description','')[:160] }}">
+  <meta name="author" content="{{ page.get('business_name','') }}">
+
+  {# ====== OG / Twitter ====== #}
+  {% set og_img = page.get('cover_image') or page.get('image') %}
+  {% if og_img and not (og_img.startswith('http://') or og_img.startswith('https://')) %}
+    {% set og_img = url_for('uploaded_file', filename=og_img, _external=True) %}
+  {% endif %}
+  <meta property="og:title" content="{{ page.get('business_name','') }}">
+  <meta property="og:description" content="{{ page.get('slogan') or page.get('description','')[:200] }}">
+  <meta property="og:image" content="{{ og_img or url_for('static', filename='images/default.png', _external=True) }}">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="{{ request.url }}">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <!-- Fonts & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Leaflet -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    crossorigin=""
+  />
+
+  <style>
+    :root{
+      --brand: {{ page.get('color') or '#d96b9c' }};
+      --brand-ink: #4b182b;
+      --bg: #fff7f2;
+      --ink: #3a2026;
+      --muted: #80616a;
+      --card: rgba(255,255,255,.88);
+      --border: #653143;
+      --cream: #fff3df;
+      --cream-2: #fffaf4;
+      --strawberry: #ff7aa9;
+      --rose: #ffd6e5;
+      --lavender: #efe1ff;
+      --vanilla: #fff1bd;
+      --caramel: #c9894b;
+      --chocolate: #5b342d;
+      --gold: #d6a64f;
+      --radius: 26px;
+      --shadow: 0 22px 50px rgba(91,52,45,.16);
+      --shadow-sm: 0 14px 34px rgba(91,52,45,.13);
+      --shadow-xs: 0 8px 20px rgba(91,52,45,.10);
+      --ring: 0 0 0 .25rem rgba(217,107,156,.20);
+    }
+
+    html{scroll-behavior:smooth;}
+    html,body{background:var(--bg); color:var(--ink); min-height:100%;}
+    body{
+      font-family: Inter, system-ui, -apple-system, Segoe UI, sans-serif;
+      overflow-x:hidden;
+      background:
+        radial-gradient(circle at 12% 12%, rgba(255,214,229,.72) 0 120px, transparent 121px),
+        radial-gradient(circle at 88% 8%, rgba(239,225,255,.62) 0 140px, transparent 141px),
+        radial-gradient(circle at 76% 76%, rgba(255,241,189,.54) 0 160px, transparent 161px),
+        linear-gradient(135deg, #fffaf4 0%, #fff3f7 48%, #fff7ec 100%);
+    }
+
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      z-index:-2;
+      opacity:.55;
+      background-image:
+        radial-gradient(circle, rgba(217,107,156,.30) 0 2px, transparent 3px),
+        radial-gradient(circle, rgba(214,166,79,.30) 0 1.6px, transparent 2.8px),
+        radial-gradient(circle, rgba(91,52,45,.20) 0 1.3px, transparent 2.5px);
+      background-size: 54px 54px, 72px 72px, 42px 42px;
+      background-position: 0 0, 18px 12px, 34px 26px;
+    }
+
+    a{color:var(--brand-ink);}
+    a:hover{color:var(--brand);}
+    ::selection{background:var(--rose); color:var(--brand-ink);}
+
+    .brand-font{font-family:"Fraunces", "Space Grotesk", Inter, system-ui, sans-serif; letter-spacing:-.025em;}
+
+    .sweet-floating-elements{
+      position:fixed;
+      inset:0;
+      z-index:-1;
+      pointer-events:none;
+      overflow:hidden;
+    }
+    .sweet-floating-elements span{
+      position:absolute;
+      display:grid;
+      place-items:center;
+      width:48px;
+      height:48px;
+      border-radius:999px;
+      background:rgba(255,255,255,.68);
+      border:1px solid rgba(101,49,67,.12);
+      box-shadow:0 12px 28px rgba(91,52,45,.10);
+      filter:saturate(1.05);
+      animation:sweetFloat 9s ease-in-out infinite;
+    }
+    .sweet-floating-elements span:nth-child(1){left:4%; top:18%; animation-delay:0s;}
+    .sweet-floating-elements span:nth-child(2){right:7%; top:22%; animation-delay:1.4s;}
+    .sweet-floating-elements span:nth-child(3){left:8%; bottom:19%; animation-delay:2.2s;}
+    .sweet-floating-elements span:nth-child(4){right:12%; bottom:28%; animation-delay:3s;}
+    .sweet-floating-elements span:nth-child(5){left:50%; top:10%; animation-delay:4s;}
+
+    /* NAV */
+    .nb {
+      background:rgba(255,250,244,.86);
+      border-bottom:1px solid rgba(101,49,67,.14);
+      box-shadow:0 12px 28px rgba(91,52,45,.08);
+      backdrop-filter: blur(18px);
+      position:sticky;
+      top:0;
+      z-index:1020;
+    }
+    .nb .navbar-brand{
+      position:relative;
+      overflow:hidden;
+      font-weight:900;
+      letter-spacing:-.04em;
+      padding:.62rem 1rem;
+      border:1px solid rgba(101,49,67,.18);
+      border-radius:999px;
+      color:var(--brand-ink);
+      background:linear-gradient(135deg, #fff 0%, var(--rose) 48%, var(--vanilla) 100%);
+      box-shadow:var(--shadow-xs);
+    }
+    .nb .navbar-brand::after{
+      content:"✨";
+      margin-left:.45rem;
+      font-size:.9rem;
+    }
+    .nb .navbar-toggler{
+      border:1px solid rgba(101,49,67,.18);
+      border-radius:18px;
+      background:#fff;
+      box-shadow:var(--shadow-xs);
+    }
+    .nb .nav-link{
+      position:relative;
+      color:var(--ink);
+      font-weight:800;
+      border-radius:999px;
+      padding:.62rem .9rem;
+      transition:.22s ease;
+    }
+    .nb .nav-link:hover,
+    .nb .nav-link:focus{
+      color:var(--brand-ink);
+      background:rgba(255,214,229,.68);
+      transform:translateY(-1px);
+    }
+
+    /* HEADER */
+    .hero{
+      position:relative;
+      padding:72px 0 48px;
+      overflow:hidden;
+      border-bottom:1px solid rgba(101,49,67,.12);
+      {% if page.get('cover_image') %}
+      background:
+        linear-gradient(90deg, rgba(255,250,244,.96) 0%, rgba(255,250,244,.72) 44%, rgba(255,250,244,.18) 100%),
+        url("{{ url_for('uploaded_file', filename=page.cover_image) }}") center/cover no-repeat;
+      {% else %}
+      background:
+        radial-gradient(circle at 16% 22%, rgba(255,122,169,.22) 0 130px, transparent 132px),
+        radial-gradient(circle at 84% 10%, rgba(214,166,79,.22) 0 120px, transparent 122px),
+        linear-gradient(135deg, #fffaf4 0%, #ffe8f0 50%, #fff2d8 100%);
+      {% endif %}
+    }
+    .hero::before{
+      content:"";
+      position:absolute;
+      inset:auto -8% -52px -8%;
+      height:118px;
+      background:
+        radial-gradient(52px 38px at 50% 0, rgba(91,52,45,.16) 98%, transparent 100%) 0 0/112px 64px repeat-x;
+      opacity:.72;
+      pointer-events:none;
+    }
+    .hero-card{
+      position:relative;
+      border:1px solid rgba(101,49,67,.16);
+      border-radius:32px;
+      box-shadow:var(--shadow);
+      background:rgba(255,255,255,.82);
+      backdrop-filter: blur(18px);
+      padding:28px;
+      animation:sweetReveal .7s ease both;
+    }
+    .hero-card::before{
+      content:"🍰";
+      position:absolute;
+      right:24px;
+      top:18px;
+      width:54px;
+      height:54px;
+      display:grid;
+      place-items:center;
+      border-radius:50%;
+      background:linear-gradient(135deg, #fff, var(--rose));
+      box-shadow:var(--shadow-xs);
+      animation:sweetPop 2.8s ease-in-out infinite;
+    }
+    .hero-avatar{
+      width:min(240px, 72vw);
+      height:min(240px, 72vw);
+      object-fit:cover;
+      border-radius:32px;
+      border:8px solid rgba(255,255,255,.92);
+      outline:1px solid rgba(101,49,67,.18);
+      box-shadow:var(--shadow-sm);
+      background:#fff;
+      transition:transform .35s ease, box-shadow .35s ease;
+    }
+    .hero-avatar:hover{transform:rotate(-1.5deg) scale(1.02); box-shadow:0 24px 54px rgba(91,52,45,.18);}
+    .badge-pill{
+      border:1px solid rgba(101,49,67,.18);
+      padding:.5rem .9rem;
+      border-radius:999px;
+      background:linear-gradient(135deg, var(--brand), var(--strawberry));
+      color:#fff;
+      font-weight:900;
+      box-shadow:var(--shadow-xs);
+    }
+
+    /* CARDS */
+    .card-brutal{
+      border:1px solid rgba(101,49,67,.16);
+      background:var(--card);
+      border-radius:24px;
+      box-shadow:var(--shadow-sm);
+      overflow:hidden;
+      transition:transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+      animation:sweetReveal .65s ease both;
+    }
+    .card-brutal:hover{transform:translateY(-4px); box-shadow:0 26px 56px rgba(91,52,45,.17); border-color:rgba(217,107,156,.42);}
+    .card-brutal .card-header{
+      border-bottom:1px solid rgba(101,49,67,.14);
+      background:linear-gradient(135deg, rgba(255,214,229,.72), rgba(255,241,189,.54));
+      color:var(--brand-ink);
+      font-weight:900;
+    }
+    .card-img-top{transition:transform .45s ease, filter .45s ease;}
+    .card-brutal:hover .card-img-top{transform:scale(1.035); filter:saturate(1.08) contrast(1.02);}
+
+    .chip{
+      border:1px solid rgba(101,49,67,.16);
+      border-radius:999px;
+      padding:.4rem .78rem;
+      background:rgba(255,255,255,.84);
+      display:inline-flex;
+      align-items:center;
+      gap:.45rem;
+      box-shadow:var(--shadow-xs);
+      color:var(--brand-ink);
+      font-weight:700;
+    }
+    .chip i{color:var(--brand);}
+
+    /* BUTTONS */
+    .btn-brutal{
+      border:1px solid rgba(101,49,67,.20);
+      border-radius:999px;
+      padding:.72rem 1.12rem;
+      font-weight:900;
+      letter-spacing:.01em;
+      box-shadow:var(--shadow-xs);
+      transition:transform .2s ease, box-shadow .2s ease, filter .2s ease;
+    }
+    .btn-brand{
+      background:linear-gradient(135deg, var(--brand) 0%, var(--strawberry) 60%, var(--gold) 130%);
+      color:#fff;
+    }
+    .btn-brand:hover,
+    .btn-brand:focus{filter:saturate(1.08) brightness(1.02); color:#fff; transform:translateY(-2px); box-shadow:0 16px 34px rgba(217,107,156,.24);}
+    .btn-ghost{background:rgba(255,255,255,.88); color:var(--brand-ink);}
+    .btn-ghost:hover,
+    .btn-ghost:focus{background:#fff3f7; color:var(--brand-ink); transform:translateY(-2px);}
+
+    .form-control,
+    .form-select,
+    textarea.form-control{
+      border:1px solid rgba(101,49,67,.20)!important;
+      border-radius:18px!important;
+      background:rgba(255,255,255,.92);
+      color:var(--ink)!important;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.75);
+    }
+    .form-control:focus,
+    .form-select:focus,
+    textarea.form-control:focus{
+      border-color:rgba(217,107,156,.74)!important;
+      box-shadow:var(--ring)!important;
+      background:#fff;
+    }
+    .form-label{font-weight:800; color:var(--brand-ink);}
+
+    /* UTIL */
+    .section-title{
+      position:relative;
+      display:flex;
+      align-items:center;
+      gap:.62rem;
+      font-weight:900;
+      letter-spacing:-.04em;
+      border-left:0;
+      padding-left:0;
+      margin-bottom:1.25rem;
+      color:var(--brand-ink);
+    }
+    .section-title::before{
+      content:"🧁";
+      display:grid;
+      place-items:center;
+      width:44px;
+      height:44px;
+      border-radius:50%;
+      background:linear-gradient(135deg, #fff, var(--rose));
+      box-shadow:var(--shadow-xs);
+      font-size:1.15rem;
+    }
+    .text-muted-2{ color:var(--muted); }
+    .hover-raise:hover{ transform:translateY(-3px); transition:.2s transform ease; }
+
+    /* GALERÍA */
+    .gallery-wrap{
+      background:rgba(255,255,255,.78);
+      border:1px solid rgba(101,49,67,.16);
+      border-radius:28px;
+      box-shadow:var(--shadow-sm);
+      padding:1.35rem;
+      position:relative;
+      overflow:hidden;
+    }
+    .gallery-wrap::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      background:radial-gradient(circle at 12% 8%, rgba(255,214,229,.48), transparent 28%), radial-gradient(circle at 90% 100%, rgba(255,241,189,.42), transparent 32%);
+    }
+    .gallery-grid{position:relative; display:grid; grid-template-columns:repeat(auto-fit, minmax(158px,1fr)); gap:1rem;}
+    .gal-item{
+      position:relative;
+      border:1px solid rgba(101,49,67,.16);
+      border-radius:22px;
+      overflow:hidden;
+      background:#fff0f5;
+      aspect-ratio:4/3;
+      cursor:pointer;
+      box-shadow:var(--shadow-xs);
+      transition:transform .25s ease, box-shadow .25s ease;
+    }
+    .gal-item img,
+    .gal-item video{width:100%; height:100%; object-fit:cover; display:block; transition:transform .45s ease, filter .45s ease;}
+    .gal-item::after{content:""; position:absolute; inset:0; background:linear-gradient(180deg, transparent 45%, rgba(75,24,43,.58) 100%); opacity:.5; transition:.2s ease-out;}
+    .gal-item:hover{transform:translateY(-5px) rotate(-.4deg); box-shadow:0 22px 45px rgba(91,52,45,.16);}
+    .gal-item:hover img,
+    .gal-item:hover video{transform:scale(1.06); filter:saturate(1.1);}
+    .gal-item:hover::after{opacity:.74;}
+    .badge-type{
+      position:absolute;
+      top:.65rem;
+      left:.65rem;
+      z-index:2;
+      background:rgba(255,255,255,.86);
+      color:var(--brand-ink);
+      border:1px solid rgba(255,255,255,.55);
+      border-radius:999px;
+      padding:.35rem .65rem;
+      font-size:.72rem;
+      font-weight:900;
+      box-shadow:var(--shadow-xs);
+      display:flex;
+      align-items:center;
+      gap:.28rem;
+      backdrop-filter:blur(12px);
+    }
+
+    /* BANNER inferior */
+    .ticker{
+      position:fixed;
+      left:0;
+      right:0;
+      bottom:0;
+      z-index:1030;
+      background:linear-gradient(90deg, var(--chocolate), var(--brand-ink), var(--brand));
+      border-top:1px solid rgba(255,255,255,.34);
+      box-shadow:0 -18px 36px rgba(91,52,45,.16);
+      color:#fff;
+    }
+    .ticker .carousel-item{padding:.64rem 0;}
+    .pill-invert{
+      background:rgba(255,255,255,.92);
+      color:var(--brand-ink);
+      border:1px solid rgba(255,255,255,.65);
+      border-radius:999px;
+      padding:.38rem .76rem;
+      display:inline-block;
+      box-shadow:var(--shadow-xs);
+      font-weight:900;
+    }
+
+    /* MAP */
+    #map{height:320px; border:1px solid rgba(101,49,67,.18); border-radius:22px; box-shadow:var(--shadow-sm); overflow:hidden;}
+
+    /* WHATS */
+    .fab-wa{position:fixed; left:20px; bottom:12%; z-index:1050; text-decoration:none;}
+    .fab-wa .btn{border-radius:999px; border:1px solid rgba(101,49,67,.20); box-shadow:0 18px 42px rgba(37,211,102,.25); font-weight:900; animation:sweetPulse 2.4s ease-in-out infinite;}
+
+    /* FOOTER */
+    .ft{
+      background:rgba(255,255,255,.78);
+      border-top:1px solid rgba(101,49,67,.14);
+      margin-top:64px;
+      padding:28px 0;
+      padding-bottom:5%;
+      box-shadow:0 -20px 40px rgba(91,52,45,.06);
+    }
+    .ft a{color:var(--brand-ink)!important;}
+
+    .modal-content{border-radius:26px!important; overflow:hidden;}
+    .modal-header{background:linear-gradient(135deg, var(--brand), var(--strawberry))!important; color:#fff!important; border-bottom:0!important;}
+    .alert{border-radius:20px; border:1px solid rgba(101,49,67,.14)!important;}
+
+    @keyframes sweetFloat{0%,100%{transform:translateY(0) rotate(0deg)} 50%{transform:translateY(-18px) rotate(5deg)}}
+    @keyframes sweetReveal{from{opacity:0; transform:translateY(18px)} to{opacity:1; transform:translateY(0)}}
+    @keyframes sweetPop{0%,100%{transform:scale(1)} 50%{transform:scale(1.08) rotate(4deg)}}
+    @keyframes sweetPulse{0%,100%{transform:translateY(0); box-shadow:0 18px 42px rgba(37,211,102,.22)} 50%{transform:translateY(-3px); box-shadow:0 24px 54px rgba(37,211,102,.32)}}
+
+    @media (prefers-reduced-motion: reduce){
+      *, *::before, *::after{animation:none!important; transition:none!important; scroll-behavior:auto!important;}
+    }
+
+    @media (max-width: 768px){
+      .hero{padding:42px 0 34px;}
+      .hero-card{padding:20px; border-radius:28px;}
+      .hero-card::before{right:16px; top:12px; width:44px; height:44px;}
+      .nb .navbar-nav{padding-top:.75rem;}
+      .nb .nav-link{background:rgba(255,255,255,.72); margin-bottom:.35rem;}
+      .gallery-grid{display:flex; gap:1rem; overflow-x:auto; scroll-snap-type:x mandatory; padding-bottom:.65rem;}
+      .gal-item{flex:0 0 76vw; scroll-snap-align:start;}
+      .ft{padding-bottom:8vh;}
+      .ticker{font-size:.88rem;}
+      .fab-wa{left:14px; bottom:14%;}
+      .btn-brutal{width:auto;}
+    }
+  </style>
+</head>
+<body>
+  <div class="sweet-floating-elements" aria-hidden="true"><span>🧁</span><span>🍓</span><span>🍪</span><span>✨</span><span>🎂</span></div>
+  {% set site_slug = slug or page.get('slug','') %}
+  {% set site_name = page.get('business_name','Negocio') %}
+
+  <!-- NAV -->
+  <nav class="navbar navbar-expand-lg nb">
+    <div class="container">
+      <a class="navbar-brand brand-font" href="{{ url_for('negocio_por_slug', slug=site_slug) }}">
+        {{ site_name }}
+      </a>
+
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nv" aria-controls="nv" aria-expanded="false">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div id="nv" class="collapse navbar-collapse justify-content-end">
+        <ul class="navbar-nav gap-1">
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('negocio_por_slug', slug=site_slug) }}#info">Nuestra receta</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('negocio_por_slug', slug=site_slug) }}#galeria">Galería dulce</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('negocio_por_slug', slug=site_slug) }}#contacto">Pedidos</a>
+          </li>
+
+          {% if posts %}
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('lista_blogs_negocio_slug', slug=site_slug) }}">
+              Blog
+            </a>
+          </li>
+          {% endif %}
+
+          {% if (servicios and servicios|length>0) or (productos_fisicos and productos_fisicos|length>0) %}
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('negocio_por_slug', slug=site_slug) }}#productos">Postres</a>
+          </li>
+          {% endif %}
+
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('negocio_por_slug', slug=site_slug) }}#reseñas">Opiniones</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HEADER -->
+  <header class="hero">
+    <div class="container">
+      <div class="hero-card">
+        <div class="row g-4 align-items-center">
+          <div class="col-md-4 text-center">
+            {% if page.get('image') %}
+              <img class="hero-avatar" src="{{ url_for('uploaded_file', filename=page['image']) }}" alt="Logo/Imagen">
+            {% else %}
+              <img class="hero-avatar" src="{{ url_for('static', filename='images/default_image.png') }}" alt="Logo/Imagen">
+            {% endif %}
+          </div>
+          <div class="col-md-8">
+            <div class="d-inline-block mb-2 badge-pill brand-font">{{ page.get('category','Negocio') }}</div>
+            <h1 class="brand-font display-5 mb-1">{{ page.get('business_name','Mi negocio') }}</h1>
+            {% if page.get('slogan') %}
+              <p class="fs-5 text-muted-2 mb-3">{{ page['slogan'] }}</p>
+            {% endif %}
+            {% if page.get('website') %}
+            <a class="btn btn-brutal btn-brand me-2 hover-raise"
+              href="{{ page['website'] }}" target="_blank"
+              data-track="click_website">
+              <i class="bi bi-stars me-1"></i> Ver más delicias
+            </a>
+            {% endif %}
+
+            {% if page.get('phone') %}
+              <a class="btn btn-brutal btn-ghost hover-raise"
+                href="tel:{{ page['phone'] }}"
+                data-track="click_phone">
+                <i class="bi bi-telephone me-1"></i> Llamar para pedido
+              </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  {% if promos and promos|length > 0 %}
+  <section class="container my-4" id="promos">
+    <h2 class="section-title brand-font">Promos dulces activas</h2>
+    <div class="row g-3">
+      {% for p in promos %}
+        <div class="col-md-6">
+          <div class="card card-brutal h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <span>{{ p.title }}</span>
+              {% if p.code %}<span class="badge-pill" style="background:#111;border-color:#fff;">{{ p.code }}</span>{% endif %}
+            </div>
+            <div class="card-body">
+              {% if p.description %}<p class="mb-2">{{ p.description }}</p>{% endif %}
+              {% if p.discount_type in ['percent','fixed'] %}
+                <div class="chip"><i class="bi bi-tag"></i>
+                  {% if p.discount_type=='percent' %}{{ p.value }}% OFF{% else %}${{ p.value }} OFF{% endif %}
+                </div>
+              {% else %}
+                <div class="chip"><i class="bi bi-stars"></i> Promoción dulce</div>
+              {% endif %}
+              {% if p.ends_at %}
+                <div class="mt-2 text-muted-2 small"><i class="bi bi-clock"></i> Vigente hasta {{ p.ends_at.strftime('%d/%m/%Y') }}</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- INFO -->
+  <section class="container my-5" id="info">
+    <h2 class="section-title brand-font">Nuestra historia dulce</h2>
+    <div class="row g-4">
+      <div class="col-md-6">
+        <div class="card card-brutal h-100">
+          <div class="card-header">El corazón de la repostería</div>
+          <div class="card-body">
+            <p class="mb-3"><strong>Nuestra esencia</strong><br>{{ page.get('description','') }}</p>
+            <div class="d-flex flex-wrap gap-2">
+              {% if page.get('services') %}<span class="chip"><i class="bi bi-stars"></i> {{ page.services }}</span>{% endif %}
+              {% if page.get('payment_methods') %}<span class="chip"><i class="bi bi-credit-card-2-front"></i> {{ page.payment_methods }}</span>{% endif %}
+              {% if page.get('founding_date') %}<span class="chip"><i class="bi bi-calendar3"></i> {{ page.founding_date }}</span>{% endif %}
+              {% if page.get('delivery_available') %}<span class="chip"><i class="bi bi-truck"></i> Entrega a domicilio</span>{% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card card-brutal h-100">
+          <div class="card-header">Dónde encontrarnos y horarios</div>
+          <div class="card-body">
+            <p class="mb-2"><i class="bi bi-geo-alt-fill me-1"></i> <strong>Dirección:</strong> {{ page.get('address','') }}</p>
+            <div class="row">
+              <div class="col-6"><small class="text-muted-2"><i class="bi bi-pin-map"></i> CP</small><div>{{ page.get('postal_code','') }}</div></div>
+              <div class="col-6"><small class="text-muted-2"><i class="bi bi-buildings"></i> Ciudad</small><div>{{ page.get('city','') }}</div></div>
+            </div>
+            <div class="mt-2"><small class="text-muted-2"><i class="bi bi-flag"></i> Estado</small><div>{{ page.get('state','') }}</div></div>
+            <div class="mt-2"><small class="text-muted-2"><i class="bi bi-clock-history"></i> Horario</small><div>{{ page.get('operating_hours','') }}</div></div>
+
+            {% set lat_val = page.get('lat') %}
+            {% set lng_val = page.get('lng') %}
+            {% set has_coords = (lat_val is not none) and (lng_val is not none) and (lat_val|string|trim != '') and (lng_val|string|trim != '') %}
+
+            <div class="mt-3">
+              {% if has_coords %}
+                <div id="map" class="mb-3"></div>
+
+                <a class="btn btn-brutal btn-ghost hover-raise me-2" target="_blank"
+                  href="https://www.google.com/maps/dir/?api=1&destination={{ lat_val }},{{ lng_val }}"
+                  data-track="click_maps">
+                  <i class="bi bi-geo me-1"></i> Ir por mi antojo
+                </a>
+
+              {% elif page.get('address') %}
+                <a class="btn btn-brutal btn-ghost hover-raise me-2" target="_blank"
+                  href="https://www.google.com/maps/search/?api=1&query={{ page.address | urlencode }}" data-track="click_maps">
+                  <i class="bi bi-search me-1"></i> Buscar dirección
+                </a>
+              {% else %}
+                <div class="alert alert-warning py-2 px-3" style="border:3px solid var(--border); box-shadow: var(--shadow-xs);">
+                  Aún no hay ubicación definida para este negocio.
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- GALERÍA -->
+  <section class="container my-5" id="galeria">
+    <h2 class="section-title brand-font">Galería dulce</h2>
+    {% set tiene_portada = page.get('cover_image') %}
+    {% set tiene_media = page.get('media_gallery') and page.media_gallery|length > 0 %}
+    {% set tiene_galeria = galeria and galeria|length > 0 %}
+    {% if tiene_portada or tiene_media or tiene_galeria %}
+      <div class="gallery-wrap">
+        <div class="gallery-grid">
+          {% if tiene_portada %}
+            <div class="gal-item" data-type="image" data-src="{{ url_for('uploaded_file', filename=page.cover_image) }}">
+              <img src="{{ url_for('uploaded_file', filename=page.cover_image) }}" alt="Portada">
+              <span class="badge-type"><i class="bi bi-image"></i> Portada dulce</span>
+            </div>
+          {% endif %}
+
+          {% if tiene_media %}
+            {% for item in page.media_gallery %}
+              {% if item is string %}
+                <div class="gal-item" data-type="image" data-src="{{ url_for('uploaded_file', filename=item) }}">
+                  <img src="{{ url_for('uploaded_file', filename=item) }}" alt="Media">
+                  <span class="badge-type"><i class="bi bi-stars"></i> Detalle</span>
+                </div>
+              {% else %}
+                {% set fpath = item.path %}
+                {% set ftype = item.type or 'image' %}
+                {% if ftype == 'video' %}
+                  <div class="gal-item" data-type="video" data-src="{{ url_for('uploaded_file', filename=fpath) }}">
+                    <video src="{{ url_for('uploaded_file', filename=fpath) }}" muted playsinline></video>
+                    <span class="badge-type"><i class="bi bi-camera-reels"></i> Video dulce</span>
+                  </div>
+                {% else %}
+                  <div class="gal-item" data-type="image" data-src="{{ url_for('uploaded_file', filename=fpath) }}">
+                    <img src="{{ url_for('uploaded_file', filename=fpath) }}" alt="Media">
+                    <span class="badge-type"><i class="bi bi-stars"></i> Detalle</span>
+                  </div>
+                {% endif %}
+              {% endif %}
+            {% endfor %}
+          {% endif %}
+
+          {% if tiene_galeria %}
+            {% for g in (galeria or [])[:12] %}
+              <div class="gal-item" data-type="image" data-src="{{ url_for('uploaded_file', filename=g) }}">
+                <img src="{{ url_for('uploaded_file', filename=g) }}" alt="Foto {{ loop.index }}">
+                <span class="badge-type"><i class="bi bi-heart"></i> Galería</span>
+              </div>
+            {% endfor %}
+          {% endif %}
+        </div>
+      </div>
+    {% else %}
+      <div class="card card-brutal p-3">Aún no hay imágenes para mostrar. Cuando agregues portada o <code>media_gallery</code>, aquí lucirá la vitrina dulce. 🧁</div>
+    {% endif %}
+  </section>
+
+  <!-- CONTACTO -->
+  <section class="container my-5" id="contacto">
+    <h2 class="section-title brand-font">Pedidos y contacto</h2>
+    <div class="row g-4">
+      <div class="col-md-6">
+        <div class="card card-brutal h-100">
+          <div class="card-header">Canales para pedidos</div>
+          <div class="card-body">
+            {% if page.get('phone') %}<p><i class="bi bi-telephone-fill me-2"></i><strong>Teléfono:</strong> {{ page.phone }}</p>{% endif %}
+            {% if page.get('email') %}<p><i class="bi bi-envelope-fill me-2"></i><strong>Email:</strong> {{ page.email }}</p>{% endif %}
+            {% if page.get('website') %}<p><i class="bi bi-globe2 me-2"></i><strong>Web:</strong> <a href="{{ page.website }}" target="_blank" data-track="click_website">{{ page.website }}</a></p>{% endif %}
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card card-brutal h-100">
+          <div class="card-header">Redes y antojos</div>
+          <div class="card-body">
+            {% if page.get('facebook') %}<p><i class="bi bi-facebook me-2"></i><strong>Facebook:</strong> <a href="{{ page.facebook }}" target="_blank">Ir a Facebook</a></p>{% endif %}
+            {% if page.get('instagram') %}<p><i class="bi bi-instagram me-2"></i><strong>Instagram:</strong> <a href="{{ page.instagram }}" target="_blank">Ir a Instagram</a></p>{% endif %}
+            {% if page.get('tiktok') %}<p><i class="bi bi-tiktok me-2"></i><strong>TikTok:</strong> <a href="{{ page.tiktok }}" target="_blank">Ir a TikTok</a></p>{% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- POSTS -->
+  <section class="container my-5" id="publicaciones">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+      <h2 class="section-title brand-font mb-0">Novedades recién horneadas</h2>
+
+      {% if posts and posts|length > 0 %}
+        <a
+          class="btn btn-brutal btn-ghost hover-raise"
+          href="{{ url_for('lista_blogs_negocio_slug', slug=site_slug) }}"
+          data-track="click_blog_index"
+        >
+          <i class="bi bi-journal-text me-1"></i> Ver todo el blog dulce
+        </a>
+      {% endif %}
+    </div>
+
+    {% if posts and posts|length > 0 %}
+      <div class="row g-4">
+        {% for post in posts %}
+          <div class="col-md-4">
+            <div class="card card-brutal h-100">
+              {% if post.cabecera %}
+                <img
+                  src="{{ url_for('uploaded_file', filename=post.cabecera) }}"
+                  class="card-img-top"
+                  alt="Post"
+                  style="object-fit:cover; height:220px;"
+                >
+              {% endif %}
+
+              <div class="card-body d-flex flex-column">
+                <h5 class="brand-font">{{ post.title }}</h5>
+
+                <p class="text-muted-2">
+                  {{ post.content[:110] }}{% if post.content and post.content|length > 110 %}...{% endif %}
+                </p>
+
+                <a
+                  class="mt-auto btn btn-brutal btn-ghost hover-raise"
+                  href="{{ url_for('ver_post_slug', slug=site_slug, post_id=post._id) }}"
+                  data-track="click_post"
+                >
+                  Leer más
+                </a>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="card card-brutal p-3">Aún no hay publicaciones dulces.</div>
+    {% endif %}
+  </section>
+
+  <!-- PRODUCTOS / SERVICIOS / COTIZAR -->
+  <section class="container my-5" id="productos">
+    <h2 class="section-title brand-font">Postres, productos y servicios</h2>
+
+    {% if (servicios and servicios|length>0) or (productos_fisicos and productos_fisicos|length>0) %}
+
+      <div class="card card-brutal p-3 mb-3">
+        <div class="d-flex align-items-center gap-2">
+          <span class="pill-invert"><i class="bi bi-info-circle"></i></span>
+          <div>
+            <strong>Cotiza fácil:</strong> elige cantidades de productos o servicios dulces y luego pulsa <em>Cotizar pedido</em>.
+            Te pediremos tus datos para preparar la solicitud, registrar el interés y abrir WhatsApp con el mensaje listo.
+          </div>
+        </div>
+      </div>
+
+      <form id="form-cotizar" class="row g-3" method="post" action="javascript:void(0);">
+
+        <!-- SERVICIOS -->
+        {% if servicios and servicios|length>0 %}
+          <div class="col-12">
+            <h3 class="h5 brand-font d-flex align-items-center gap-2">
+              <i class="bi bi-stars text-primary"></i> Servicios dulces
+            </h3>
+          </div>
+
+          {% for item in servicios %}
+          <div class="col-12 col-sm-6 col-md-4">
+            <div class="card card-brutal h-100">
+              {% if item.image %}
+                <img
+                  src="{{ url_for('uploaded_file', filename=item.image) }}"
+                  alt="{{ item.title }}"
+                  class="card-img-top img-zoom-trigger"
+                  data-bs-toggle="modal" data-bs-target="#zoomModal"
+                  data-img-src="{{ url_for('uploaded_file', filename=item.image) }}"
+                  style="object-fit:cover; height:220px; cursor: zoom-in;"
+                >
+              {% endif %}
+              <div class="card-body d-flex flex-column">
+                <div class="mb-1">
+                  <span class="badge-pill" style="background:#111;color:#fff;border-color:#fff;">Servicio dulce</span>
+                </div>
+                <h6 class="brand-font mb-1">{{ item.title }}</h6>
+                {% if item.description %}<p class="text-muted-2 small">{{ item.description }}</p>{% endif %}
+                {% if item.show_price %}
+                  <div class="mb-2">
+                    <span class="badge-pill" style="background:var(--brand);color:#fff;border-color:#fff;">
+                      ${{ "%.2f"|format(item.price) }}
+                    </span>
+                  </div>
+                {% endif %}
+                <div class="mt-auto">
+                  <label class="form-label small">Cantidad / Nº de pedidos</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value="0"
+                    class="form-control"
+                    style="border:3px solid var(--border)"
+                    name="prod_{{ item.title | replace(' ','_') }}"
+                    data-item-id="{{ item._id }}"
+                    data-item-nombre="{{ item.title }}"
+                    data-item-price="{{ item.price or 0 }}"
+                    data-item-sku="{{ item.sku or '' }}"
+                    data-item-barcode="{{ item.barcode or '' }}"
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        {% endif %}
+
+        <!-- PRODUCTOS -->
+        {% if productos_fisicos and productos_fisicos|length>0 %}
+          <div class="col-12 mt-2">
+            <h3 class="h5 brand-font d-flex align-items-center gap-2">
+              <i class="bi bi-gift text-success"></i> Productos dulces
+            </h3>
+          </div>
+
+          {% for item in productos_fisicos %}
+          <div class="col-12 col-sm-6 col-md-4">
+            <div class="card card-brutal h-100">
+              {% if item.image %}
+                <img
+                  src="{{ url_for('uploaded_file', filename=item.image) }}"
+                  alt="{{ item.title }}"
+                  class="card-img-top img-zoom-trigger"
+                  data-bs-toggle="modal" data-bs-target="#zoomModal"
+                  data-img-src="{{ url_for('uploaded_file', filename=item.image) }}"
+                  style="object-fit:cover; height:220px; cursor: zoom-in;"
+                >
+              {% endif %}
+              <div class="card-body d-flex flex-column">
+                <div class="mb-1">
+                  <span class="badge-pill" style="background:#666;color:#fff;border-color:#fff;">Dulce</span>
+                </div>
+                <h6 class="brand-font mb-1">{{ item.title }}</h6>
+                {% if item.description %}<p class="text-muted-2 small">{{ item.description }}</p>{% endif %}
+                {% if item.show_price %}
+                  <div class="mb-2">
+                    <span class="badge-pill" style="background:var(--brand);color:#fff;border-color:#fff;">
+                      ${{ "%.2f"|format(item.price) }}
+                    </span>
+                  </div>
+                {% endif %}
+                <div class="mt-auto">
+                  <label class="form-label small">Cantidad</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value="0"
+                    class="form-control"
+                    style="border:3px solid var(--border)"
+                    name="prod_{{ item.title | replace(' ','_') }}"
+                    data-item-id="{{ item._id }}"
+                    data-item-nombre="{{ item.title }}"
+                    data-item-price="{{ item.price or 0 }}"
+                    data-item-sku="{{ item.sku or '' }}"
+                    data-item-barcode="{{ item.barcode or '' }}"
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        {% endif %}
+
+        <div class="col-12 text-center">
+          <button type="submit" class="btn btn-brutal btn-brand px-4 py-2 hover-raise">
+            <i class="bi bi-whatsapp me-1"></i> Cotizar pedido
+          </button>
+        </div>
+      </form>
+
+      <!-- Modal zoom -->
+      <div class="modal fade" id="zoomModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 72vw;">
+          <div class="modal-content" style="border:3px solid var(--border); box-shadow: var(--shadow);">
+            <img id="zoomedImage" src="" class="img-fluid" alt="Zoom">
+            <div class="p-2 text-end">
+              <button class="btn btn-brutal btn-ghost" data-bs-dismiss="modal">Cerrar vitrina</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal de cotización -->
+      <div class="modal fade" id="cotizarModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content" style="border:3px solid var(--border); box-shadow: var(--shadow);">
+            <div class="modal-header" style="background: var(--brand); color:#fff;">
+              <h5 class="modal-title">Cuéntanos tu antojo ✨</h5>
+              <button class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+              <p class="small text-muted">
+                Déjanos tus datos para preparar la cotización y abrir WhatsApp con el mensaje listo.
+              </p>
+
+              <div class="mb-3">
+                <label class="form-label">Tu nombre</label>
+                <input type="text" class="form-control" id="nombreClienteInput" placeholder="Ej. Ana Martínez" style="border:3px solid var(--border);">
+                <div class="text-danger small mt-1 d-none" id="errorModalNombre">Por favor escribe tu nombre 🙏</div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Teléfono</label>
+                <input type="text" class="form-control" id="telefonoClienteInput" placeholder="Ej. 5512345678" style="border:3px solid var(--border);">
+                <div class="text-danger small mt-1 d-none" id="errorModalTelefono">Por favor escribe tu teléfono 🙏</div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Correo electrónico <span class="text-muted">(opcional)</span></label>
+                <input type="email" class="form-control" id="emailClienteInput" placeholder="Ej. cliente@correo.com" style="border:3px solid var(--border);">
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Notas <span class="text-muted">(opcional)</span></label>
+                <textarea class="form-control" id="notasClienteInput" rows="3" placeholder="Sabor, porciones, fecha, colores, dedicatoria o detalles especiales" style="border:3px solid var(--border);"></textarea>
+              </div>
+
+              <div>
+                <div class="form-label mb-1">Tu selección dulce:</div>
+                <div id="resumenSeleccion" class="bg-light border rounded p-2 small" style="max-height:220px; overflow-y:auto; border:3px solid var(--border);"></div>
+              </div>
+            </div>
+            <div class="modal-footer justify-content-between">
+              <button class="btn btn-brutal btn-ghost" data-bs-dismiss="modal" type="button">Cancelar</button>
+              <button class="btn btn-brutal btn-brand" id="enviarCotizacionBtn" type="button">
+                <i class="bi bi-whatsapp me-1"></i> Enviar pedido por WhatsApp
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    {% else %}
+      <div class="card card-brutal p-3">No hay productos ni servicios dulces disponibles por ahora.</div>
+    {% endif %}
+  </section>
+
+  <!-- RESEÑAS -->
+  <section class="container my-5" id="reseñas">
+    <h2 class="section-title brand-font">Dulces reseñas</h2>
+    <div class="card card-brutal p-3 mb-4">
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          <div class="alert alert-info mb-3" style="border:3px solid var(--border); box-shadow: var(--shadow-xs);">
+            {% for m in messages %}<div>{{ m }}</div>{% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <form method="POST" class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Tu nombre</label>
+          <input type="text" name="nombre" class="form-control" style="border:3px solid var(--border)" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Calificación de tu experiencia</label>
+          <div id="starRating">
+            {% for i in range(1,6) %}
+              <i class="bi bi-star-fill fs-3 me-1 text-secondary star-icon" data-value="{{ i }}"></i>
+            {% endfor %}
+          </div>
+          <input type="hidden" name="estrellas" id="estrellas" value="0" required>
+        </div>
+        <div class="col-12">
+          <label class="form-label">Cuéntanos qué te encantó</label>
+          <textarea name="comentario" class="form-control" rows="3" style="border:3px solid var(--border)" required></textarea>
+        </div>
+        <div class="col-12">
+          <button class="btn btn-brutal btn-brand hover-raise" type="submit">Enviar reseña dulce</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="row g-3">
+      {% if reseñas and reseñas|length>0 %}
+        {% for r in reseñas %}
+          <div class="col-md-6">
+            <div class="card card-brutal h-100">
+              <div class="card-body">
+                <h5 class="brand-font text-center">{{ r.nombre }}</h5>
+                <div class="text-center mb-2">
+                  {% for i in range(1,6) %}
+                    {% if i <= r.estrellas %}<i class="bi bi-star-fill text-warning"></i>{% else %}<i class="bi bi-star text-secondary"></i>{% endif %}
+                  {% endfor %}
+                </div>
+                <p>{{ r.comentario }}</p>
+              </div>
+              <div class="card-footer bg-white" style="border-top:3px solid var(--border);">
+                <small class="text-muted">{{ r.fecha.strftime('%d/%m/%Y') }}</small>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div class="col-12"><div class="card card-brutal p-3">Aún no hay reseñas dulces.</div></div>
+      {% endif %}
+    </div>
+  </section>
+
+  <!-- BANNER avisos -->
+  <div class="ticker">
+    <div class="container">
+      <div id="noticiasCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="4500">
+        <div class="carousel-inner text-center">
+          {% if avisos and avisos|length>0 %}
+            {% for aviso in avisos %}
+              <div class="carousel-item {% if loop.first %}active{% endif %}">
+                <span class="pill-invert"><i class="bi bi-megaphone-fill me-1"></i> {{ aviso.title }}</span>
+                <span class="ms-2">{{ aviso.content }}</span>
+              </div>
+            {% endfor %}
+          {% else %}
+            <div class="carousel-item active">¡Gracias por visitarnos! Síguenos para descubrir nuevos antojos. 🍰</div>
+          {% endif %}
+        </div>
+        <button class="carousel-control-prev" type="button" data-bs-target="#noticiasCarousel" data-bs-slide="prev">
+          <span class="carousel-control-prev-icon"></span>
+          <span class="visually-hidden">Anterior</span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#noticiasCarousel" data-bs-slide="next">
+          <span class="carousel-control-next-icon"></span>
+          <span class="visually-hidden">Siguiente</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reservas -->
+  {% include "public/reservas.html" %}
+
+  <!-- FAB WhatsApp -->
+  {% if page.get('whatsapp') %}
+  <a class="fab-wa"
+    href="https://wa.me/{{ page.whatsapp | replace(' ','') }}"
+    target="_blank"
+    aria-label="WhatsApp"
+    data-track="click_whatsapp_fab">
+    <span class="btn btn-brutal btn-brand px-3 py-2 hover-raise">
+      <i class="bi bi-whatsapp"></i>
+    </span>
+  </a>
+  {% endif %}
+
+  <!-- FOOTER -->
+  <footer class="ft">
+    <div class="container d-flex flex-column flex-md-row align-items-center justify-content-between">
+      <div class="mb-2 mb-md-0">
+        <strong class="brand-font">{{ page.get('business_name','Negocio') }}</strong> · &copy; {{ current_year or 2026 }}
+      </div>
+      <div class="d-flex align-items-center gap-3">
+        {% if page.get('facebook') %}<a href="{{ page.facebook }}" target="_blank" class="text-dark" aria-label="Facebook"><i class="bi bi-facebook fs-4"></i></a>{% endif %}
+        {% if page.get('tiktok') %}<a href="{{ page.tiktok }}" target="_blank" class="text-dark" aria-label="TikTok"><i class="bi bi-tiktok fs-4"></i></a>{% endif %}
+      </div>
+    </div>
+  </footer>
+
+  <!-- JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+  <script>
+  // ===== MAPA (Leaflet) — robusto =====
+  (function () {
+    const el = document.getElementById('map');
+    if (!el) return;
+
+    const latRaw = "{{ page.get('lat','') }}";
+    const lngRaw = "{{ page.get('lng','') }}";
+
+    const lat = Number.parseFloat(latRaw);
+    const lng = Number.parseFloat(lngRaw);
+
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      console.warn('[map] Invalid coords:', { latRaw, lngRaw });
+      el.innerHTML = `
+        <div class="alert alert-warning py-2 px-3" style="border:3px solid var(--border); box-shadow: var(--shadow-xs);">
+          No se pudo cargar el mapa porque las coordenadas no son válidas.
+        </div>`;
+      return;
+    }
+
+    const map = L.map('map', {
+      scrollWheelZoom: false,
+      dragging: !L.Browser.mobile,
+      tap: true
+    }).setView([lat, lng], 16);
+
+    const tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap'
+    });
+
+    tiles.on('tileerror', function () {
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap &copy; CARTO'
+      }).addTo(map);
+    });
+
+    tiles.addTo(map);
+
+    const name = "{{ page.get('business_name','')|e }}";
+    const addr = "{{ page.get('address','')|e }}";
+    const popupHtml = `
+      <div style="min-width:180px">
+        <strong>${name || 'Ubicación'}</strong><br>
+        <span style="opacity:.8">${addr || ''}</span>
+      </div>
+    `;
+
+    const marker = L.marker([lat, lng]).addTo(map);
+    marker.bindPopup(popupHtml);
+
+    const fixSize = () => {
+      try { map.invalidateSize(true); } catch(e){}
+    };
+
+    setTimeout(fixSize, 120);
+    setTimeout(fixSize, 500);
+    window.addEventListener('resize', () => setTimeout(fixSize, 80));
+
+    if (!L.Browser.mobile) {
+      setTimeout(() => marker.openPopup(), 250);
+    }
+  })();
+  </script>
+
+  <script>
+  const SITE_SLUG = "{{ slug or page.get('slug','') }}";
+  const BUSINESS_NAME = "{{ page.get('business_name','')|e }}";
+  const BUSINESS_WA = "{{ (page.get('whatsapp','') or '')|replace(' ','') }}";
+
+  function track(type, meta){
+    try{
+      if(!SITE_SLUG) return;
+      fetch("/api/track", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ slug: SITE_SLUG, type, meta: meta || {} })
+      }).catch(()=>{});
+    }catch(e){}
+  }
+
+  track("view", { path: location.pathname, ref: document.referrer || "" });
+
+  document.addEventListener("click", (e)=>{
+    const el = e.target.closest("[data-track]");
+    if(!el) return;
+    const type = el.getAttribute("data-track");
+    const href = el.getAttribute("href") || "";
+    track(type, { href });
+  });
+
+  /* Zoom imágenes */
+  (function zoomModule(){
+    const zoomed = document.getElementById("zoomedImage");
+    if(!zoomed) return;
+
+    document.addEventListener("click", (e)=>{
+      const img = e.target.closest(".img-zoom-trigger");
+      if(!img) return;
+      const src = img.getAttribute("data-img-src") || img.getAttribute("src");
+      if(src) zoomed.src = src;
+      track("open_zoom", { src: src || "" });
+    });
+  })();
+
+  /* Stars reseñas */
+  (function starsModule(){
+    const stars = Array.from(document.querySelectorAll(".star-icon"));
+    const input = document.getElementById("estrellas");
+    if(!stars.length || !input) return;
+
+    function paint(v){
+      stars.forEach(s=>{
+        const n = parseInt(s.dataset.value || "0", 10);
+        if(n <= v){
+          s.classList.remove("text-secondary");
+          s.classList.add("text-warning");
+        }else{
+          s.classList.remove("text-warning");
+          s.classList.add("text-secondary");
+        }
+      });
+    }
+
+    stars.forEach(s=>{
+      s.style.cursor = "pointer";
+      s.addEventListener("click", ()=>{
+        const v = parseInt(s.dataset.value || "0", 10);
+        input.value = String(v);
+        paint(v);
+        track("rate_star_select", { value: v });
+      });
+    });
+  })();
+
+  /* Cotizar -> Lead + Cotización + WhatsApp */
+  (function cotizarModule(){
+    const form = document.getElementById("form-cotizar");
+    const modalEl = document.getElementById("cotizarModal");
+    const resumenEl = document.getElementById("resumenSeleccion");
+    const nombreInput = document.getElementById("nombreClienteInput");
+    const telefonoInput = document.getElementById("telefonoClienteInput");
+    const emailInput = document.getElementById("emailClienteInput");
+    const notasInput = document.getElementById("notasClienteInput");
+    const errNombre = document.getElementById("errorModalNombre");
+    const errTelefono = document.getElementById("errorModalTelefono");
+    const enviarBtn = document.getElementById("enviarCotizacionBtn");
+
+    if(!form || !modalEl || !resumenEl || !nombreInput || !telefonoInput || !enviarBtn) return;
+
+    const bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    let selectedItems = [];
+
+    function escapeHtml(s){
+      return String(s)
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    function getSelectedItems(){
+      const inputs = Array.from(form.querySelectorAll('input[type="number"][data-item-id]'));
+      const items = [];
+
+      for(const inp of inputs){
+        const producto_id = (inp.dataset.itemId || "").trim();
+        const title = (inp.dataset.itemNombre || "").trim();
+        const qty = parseInt(inp.value || "0", 10);
+        const unit_price = parseFloat(inp.dataset.itemPrice || "0");
+        const sku = (inp.dataset.itemSku || "").trim();
+        const barcode = (inp.dataset.itemBarcode || "").trim();
+
+        if(producto_id && title && Number.isFinite(qty) && qty > 0){
+          items.push({
+            producto_id,
+            title,
+            qty,
+            unit_price: Number.isFinite(unit_price) ? unit_price : 0,
+            sku,
+            barcode
+          });
+        }
+      }
+
+      return items;
+    }
+
+    function renderResumen(items){
+      if(!items.length){
+        resumenEl.innerHTML = `<div class="text-muted">Todavía no seleccionaste ningún antojo.</div>`;
+        return;
+      }
+
+      resumenEl.innerHTML = items.map(it => {
+        const total = ((Number(it.unit_price || 0)) * (Number(it.qty || 0))).toFixed(2);
+        return `
+          <div class="d-flex justify-content-between align-items-start gap-2 py-1 border-bottom">
+            <div>
+              • <strong>${escapeHtml(it.title)}</strong><br>
+              <small class="text-muted">Cantidad: ${it.qty}</small>
+            </div>
+            <div class="fw-bold">$${total}</div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    form.addEventListener("submit", (e)=>{
+      e.preventDefault();
+      e.stopPropagation();
+
+      selectedItems = getSelectedItems();
+
+      if(!selectedItems.length){
+        track("cotizar_empty", {});
+        resumenEl.innerHTML = `<div class="text-danger fw-bold">Selecciona al menos 1 producto o servicio dulce con cantidad mayor a 0.</div>`;
+        bsModal.show();
+        return false;
+      }
+
+      track("cotizar_open_modal", { items: selectedItems.length });
+      renderResumen(selectedItems);
+
+      errNombre.classList.add("d-none");
+      errTelefono.classList.add("d-none");
+
+      nombreInput.value = "";
+      telefonoInput.value = "";
+      if (emailInput) emailInput.value = "";
+      if (notasInput) notasInput.value = "";
+
+      bsModal.show();
+      setTimeout(()=> nombreInput.focus(), 150);
+      return false;
+    });
+
+    async function createLead(nombre, telefono, email, notes, items){
+      try{
+        const payload = {
+          slug: SITE_SLUG,
+          nombre,
+          telefono,
+          email,
+          notes,
+          canal: "whatsapp",
+          items: items.map(it => ({
+            title: it.title,
+            qty: it.qty
+          }))
+        };
+
+        const r = await fetch("/api/leads", {
+          method:"POST",
+          headers:{ "Content-Type":"application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        return await r.json();
+      }catch(e){
+        return { ok:false, error:"network" };
+      }
+    }
+
+    async function createCotizacion(payload){
+      try{
+        const r = await fetch("/api/cotizaciones/public", {
+          method:"POST",
+          headers:{ "Content-Type":"application/json" },
+          body: JSON.stringify(payload)
+        });
+        return await r.json();
+      }catch(e){
+        return { ok:false, error:"network" };
+      }
+    }
+
+    function buildWhatsAppMessage(nombre, telefono, email, notes, items, folio){
+      const lines = [];
+      lines.push(`Hola, soy ${nombre}.`);
+      lines.push(`Quisiera cotizar un pedido con ${BUSINESS_NAME}:`);
+      lines.push("");
+
+      for(const it of items){
+        lines.push(`- ${it.title} x${it.qty}`);
+      }
+
+      if(telefono){
+        lines.push("");
+        lines.push(`Teléfono: ${telefono}`);
+      }
+
+      if(email){
+        lines.push(`Correo: ${email}`);
+      }
+
+      if(notes){
+        lines.push(`Notas: ${notes}`);
+      }
+
+      if(folio){
+        lines.push("");
+        lines.push(`Folio de cotización: ${folio}`);
+      }
+
+      lines.push("");
+      lines.push("Gracias, quedo atento/a.");
+      return lines.join("\n");
+    }
+
+    function openWhatsApp(text){
+      if(!BUSINESS_WA){
+        alert("Este negocio aún no tiene WhatsApp configurado.");
+        return false;
+      }
+
+      const url = `https://wa.me/${BUSINESS_WA}?text=${encodeURIComponent(text)}`;
+      window.open(url, "_blank", "noopener");
+      return true;
+    }
+
+    enviarBtn.addEventListener("click", async ()=>{
+      const nombre = (nombreInput.value || "").trim();
+      const telefono = (telefonoInput.value || "").trim();
+      const email = (emailInput?.value || "").trim();
+      const notes = (notasInput?.value || "").trim();
+
+      errNombre.classList.add("d-none");
+      errTelefono.classList.add("d-none");
+
+      if(!nombre){
+        errNombre.classList.remove("d-none");
+        track("cotizar_missing_name", {});
+        nombreInput.focus();
+        return;
+      }
+
+      if(!telefono){
+        errTelefono.classList.remove("d-none");
+        track("cotizar_missing_phone", {});
+        telefonoInput.focus();
+        return;
+      }
+
+      if(!selectedItems.length){
+        track("cotizar_missing_items", {});
+        bsModal.hide();
+        return;
+      }
+
+      enviarBtn.disabled = true;
+      enviarBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Preparando pedido...`;
+
+      track("cotizar_send_click", { items: selectedItems.length });
+
+      const quotePayload = {
+        slug: SITE_SLUG,
+        customer_name: nombre,
+        customer_phone: telefono,
+        customer_email: email,
+        notes,
+        items: selectedItems,
+        canal: "whatsapp"
+      };
+
+      const [leadResp, quoteResp] = await Promise.allSettled([
+        createLead(nombre, telefono, email, notes, selectedItems),
+        createCotizacion(quotePayload)
+      ]);
+
+      const leadData = leadResp.status === "fulfilled" ? leadResp.value : { ok:false, error:"lead_promise_failed" };
+      const quoteData = quoteResp.status === "fulfilled" ? quoteResp.value : { ok:false, error:"quote_promise_failed" };
+
+      const msg = buildWhatsAppMessage(
+        nombre,
+        telefono,
+        email,
+        notes,
+        selectedItems,
+        quoteData && quoteData.ok ? (quoteData.folio || "") : ""
+      );
+
+      openWhatsApp(msg);
+
+      if(leadData && leadData.ok){
+        track("lead_saved", { lead_id: leadData.lead_id || "" });
+      }else{
+        track("lead_save_failed", { error: (leadData && leadData.error) || "unknown" });
+      }
+
+      if(quoteData && quoteData.ok){
+        track("quote_saved", {
+          quote_id: quoteData.quote_id || "",
+          folio: quoteData.folio || ""
+        });
+
+        resumenEl.innerHTML = `
+          <div class="alert alert-success mb-0">
+            ¡Listo! Guardamos tu solicitud y tu cotización${quoteData.folio ? ` <strong>(${escapeHtml(quoteData.folio)})</strong>` : ""}.
+            Ahora abriremos WhatsApp para continuar tu pedido.
+          </div>
+        `;
+      }else{
+        track("quote_save_failed", { error: (quoteData && quoteData.error) || "unknown" });
+
+        resumenEl.innerHTML = `
+          <div class="alert alert-warning mb-0">
+            Registramos la solicitud y abriremos WhatsApp, pero la cotización no se pudo guardar en sistema.
+          </div>
+        `;
+      }
+
+      setTimeout(()=>{
+        enviarBtn.disabled = false;
+        enviarBtn.innerHTML = `<i class="bi bi-whatsapp me-1"></i> Enviar pedido por WhatsApp`;
+        bsModal.hide();
+      }, 850);
+    });
+  })();
+  </script>
+</body>
+</html>

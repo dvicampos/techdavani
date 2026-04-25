@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  {% set site_title = meta_title
+      or page.get('business_name')
+      or negocio.get('business_name')
+      or 'Mi negocio' %}
+  {% set site_desc = meta_description
+      or page.get('slogan')
+      or page.get('description')
+      or negocio.get('slogan')
+      or negocio.get('description')
+      or 'Sitio web del negocio' %}
+
+  {% set cover = page.get('cover_image') or page.get('image') or negocio.get('cover_image') or negocio.get('image') %}
+  {% if cover and not (cover.startswith('http://') or cover.startswith('https://')) %}
+    {% set cover = url_for('uploaded_file', filename=cover, _external=True) %}
+  {% endif %}
+
+  <title>{{ site_title }}</title>
+  <meta name="description" content="{{ site_desc|striptags|truncate(180) }}">
+  <meta name="author" content="{{ page.get('business_name') or negocio.get('business_name') or '' }}">
+
+  <meta property="og:title" content="{{ site_title }}">
+  <meta property="og:description" content="{{ site_desc|striptags|truncate(200) }}">
+  <meta property="og:image" content="{{ cover or url_for('static', filename='images/default.png', _external=True) }}">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="{{ request.url }}">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Space+Grotesk:wght@400;500;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    :root{
+      --brand: {{ page.get('color') or negocio.get('color') or '#d77f9d' }};
+      --rose: #d77f9d;
+      --rose-deep: #9f3f63;
+      --blush: #fde8ef;
+      --peach: #ffd8bd;
+      --cream: #fffaf5;
+      --ivory: #fffdf8;
+      --sage: #8fae8b;
+      --sage-dark: #496a4b;
+      --lavender: #c8b7e8;
+      --gold: #c9a35a;
+      --bg: #fff6f8;
+      --card: rgba(255,253,248,.96);
+      --ink: #321b2a;
+      --muted: #7d6171;
+      --border: #563249;
+      --radius: 24px;
+      --shadow: 0 22px 52px rgba(86,50,73,.16), 0 0 0 2px rgba(86,50,73,.10);
+      --shadow-sm: 0 16px 36px rgba(86,50,73,.13), 0 0 0 2px rgba(86,50,73,.09);
+      --shadow-xs: 0 8px 20px rgba(86,50,73,.11), 0 0 0 1px rgba(86,50,73,.10);
+      --focus: 0 0 0 .24rem rgba(215,127,157,.28);
+    }
+
+    *{ box-sizing:border-box; }
+    html{ scroll-behavior:smooth; }
+    html, body { background: var(--bg); color: var(--ink); }
+    body {
+      position:relative;
+      min-height:100vh;
+      overflow-x:hidden;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, sans-serif;
+      background:
+        radial-gradient(circle at 10% 8%, rgba(215,127,157,.22) 0 130px, transparent 132px),
+        radial-gradient(circle at 90% 14%, rgba(143,174,139,.20) 0 145px, transparent 147px),
+        radial-gradient(circle at 75% 86%, rgba(200,183,232,.20) 0 150px, transparent 152px),
+        linear-gradient(135deg, rgba(255,255,255,.55), rgba(255,216,189,.18)),
+        var(--bg);
+    }
+    body::before,
+    body::after{
+      content:"🌸 🌿 ✨ 🌷";
+      position:fixed;
+      z-index:-1;
+      pointer-events:none;
+      opacity:.15;
+      font-size:clamp(1.2rem,2vw,2rem);
+      letter-spacing:1.2rem;
+      white-space:nowrap;
+      animation: petalDrift 14s ease-in-out infinite;
+    }
+    body::before{ left:-40px; top:18%; transform:rotate(-18deg); }
+    body::after{ right:-80px; bottom:16%; transform:rotate(16deg); animation-delay:-5s; }
+    @keyframes petalDrift{ 0%,100%{ translate:0 0; rotate:0deg; } 50%{ translate:16px -24px; rotate:5deg; } }
+    @keyframes bloomIn{ from{opacity:0; transform:translateY(14px) scale(.98); filter:blur(3px);} to{opacity:1; transform:translateY(0) scale(1); filter:blur(0);} }
+    @keyframes shimmerLine{ from{background-position:0 0;} to{background-position:80px 0;} }
+
+    .brand-font { font-family: "Playfair Display", "Space Grotesk", Inter, system-ui, sans-serif; }
+    a{ color: var(--rose-deep); }
+    a:hover{ color: var(--sage-dark); }
+    ::selection{ background: rgba(215,127,157,.35); color:var(--ink); }
+
+    .site-nav {
+      position: sticky;
+      top: 0;
+      z-index: 1030;
+      background: rgba(255,253,248,.86);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid rgba(86,50,73,.18);
+      box-shadow: var(--shadow-xs);
+    }
+    .site-nav::after{
+      content:"";
+      display:block;
+      height:5px;
+      background:linear-gradient(90deg, var(--rose), var(--peach), var(--sage), var(--lavender), var(--rose));
+      background-size:220% 100%;
+      animation:shimmerLine 14s linear infinite;
+    }
+    .site-nav .navbar-brand {
+      font-weight: 800;
+      letter-spacing: -.035em;
+      color: var(--rose-deep);
+      max-width:min(70vw,460px);
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+    .site-nav .navbar-brand::before{ content:"💐 "; font-family:Inter, system-ui, sans-serif; }
+
+    .nav-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: .45rem;
+      padding: .65rem 1rem;
+      border: 1px solid rgba(86,50,73,.18);
+      border-radius: 999px;
+      background: rgba(255,253,248,.92);
+      color: var(--ink);
+      text-decoration: none;
+      font-weight: 800;
+      transition: .22s ease;
+      box-shadow: var(--shadow-xs);
+    }
+    .nav-chip:hover,.nav-chip:focus-visible { transform: translateY(-2px); box-shadow: var(--shadow-sm); color: var(--rose-deep); background: var(--blush); outline:none; }
+
+    .btn-brand {
+      border: 1px solid rgba(86,50,73,.20);
+      background: linear-gradient(135deg, var(--rose), var(--rose-deep));
+      color: #fff;
+      font-weight: 900;
+      border-radius: 999px;
+      box-shadow: var(--shadow-xs);
+      transition:.22s ease;
+    }
+    .btn-brand:hover,.btn-brand:focus-visible { color:#fff; transform:translateY(-2px); box-shadow:var(--shadow-sm); filter:saturate(1.08); outline:none; }
+    .btn-ghost {
+      border: 1px solid rgba(86,50,73,.20);
+      background: rgba(255,253,248,.95);
+      color: var(--ink);
+      font-weight: 900;
+      border-radius: 999px;
+      box-shadow: var(--shadow-xs);
+      transition:.22s ease;
+    }
+    .btn-ghost:hover,.btn-ghost:focus-visible { color:var(--rose-deep); background:var(--blush); transform:translateY(-2px); box-shadow:var(--shadow-sm); outline:none; }
+
+    .section-shell { padding: 34px 0 76px; animation:bloomIn .55s ease both; }
+    .card-neo {
+      position:relative;
+      background: var(--card);
+      border: 1px solid rgba(86,50,73,.18);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .card-neo::before{
+      content:"";
+      position:absolute;
+      inset:0 0 auto 0;
+      height:6px;
+      background:linear-gradient(90deg,var(--rose),var(--peach),var(--sage),var(--lavender));
+      opacity:.8;
+      pointer-events:none;
+    }
+    .card-neo-sm {
+      background: var(--card);
+      border: 1px solid rgba(86,50,73,.18);
+      border-radius: 22px;
+      box-shadow: var(--shadow-sm);
+    }
+    .muted { color: var(--muted); }
+
+    .hero-mini { padding: 48px 0 24px; position:relative; }
+    .hero-mini::before{
+      content:"🌸";
+      position:absolute;
+      right:4%; top:28px;
+      width:74px;height:74px;
+      display:grid;place-items:center;
+      border-radius:50%;
+      background:rgba(253,232,239,.72);
+      box-shadow:var(--shadow-xs);
+      animation:petalDrift 10s ease-in-out infinite;
+    }
+    .hero-mini h1 {
+      font-size: clamp(2rem, 4vw, 3.55rem);
+      line-height: .98;
+      letter-spacing: -.055em;
+      margin: 0;
+      color: var(--ink);
+    }
+    .hero-mini p { font-size: 1.06rem; margin: 15px 0 0; color: var(--muted); max-width: 780px; }
+
+    .cover-box {
+      width: 100%;
+      aspect-ratio: 16/7;
+      object-fit: cover;
+      border-radius: 24px;
+      border: 1px solid rgba(86,50,73,.18);
+      box-shadow: var(--shadow-sm);
+      background: var(--blush);
+    }
+    .post-cover {
+      width: 100%;
+      aspect-ratio: 16/9;
+      object-fit: cover;
+      border-radius: 22px;
+      border: 1px solid rgba(86,50,73,.18);
+      box-shadow: var(--shadow-xs);
+      background: var(--blush);
+      transition:transform .45s ease, filter .45s ease;
+    }
+    article:hover .post-cover{ transform:scale(1.025); filter:saturate(1.06); }
+    .post-card-title { font-size: 1.16rem; line-height: 1.15; letter-spacing: -.03em; margin: 0; }
+
+    .badge-soft {
+      display: inline-flex;
+      align-items: center;
+      gap: .42rem;
+      padding: .48rem .82rem;
+      border: 1px solid rgba(86,50,73,.18);
+      border-radius: 999px;
+      background: rgba(255,253,248,.94);
+      font-weight: 850;
+      box-shadow: var(--shadow-xs);
+      color: var(--rose-deep);
+    }
+
+    .search-box .form-control {
+      border: 1px solid rgba(86,50,73,.24);
+      border-radius: 18px;
+      min-height: 54px;
+      box-shadow: var(--shadow-xs);
+      background: rgba(255,253,248,.96);
+      color: var(--ink);
+    }
+    .search-box .form-control:focus { border-color: rgba(159,63,99,.45); box-shadow: var(--focus), var(--shadow-xs); }
+    .search-box .btn { min-height: 54px; border-radius: 999px; }
+
+    .article-body { font-size: 1.065rem; line-height: 1.84; color: #43283a; }
+    .article-body img { max-width: 100%; height: auto; border-radius: 20px; border: 1px solid rgba(86,50,73,.18); box-shadow: var(--shadow-xs); margin: 1rem 0; }
+    .article-body iframe,.article-body video { max-width: 100%; border-radius: 20px; }
+
+    .footer-box {
+      margin-top: 50px;
+      border-top: 1px solid rgba(86,50,73,.18);
+      background: linear-gradient(180deg, rgba(255,253,248,.96), rgba(253,232,239,.82));
+      position:relative;
+    }
+    .footer-box::before{ content:""; position:absolute; left:0; right:0; top:-6px; height:6px; background:linear-gradient(90deg,var(--rose),var(--peach),var(--sage),var(--lavender),var(--rose)); }
+    .footer-link { color: var(--ink); text-decoration: none; font-weight: 800; }
+    .footer-link:hover { color: var(--rose-deep); text-decoration: underline; }
+
+    .page-link{ border-color: rgba(86,50,73,.22)!important; color:var(--ink)!important; box-shadow:var(--shadow-xs); }
+    .page-link:hover{ background:var(--blush)!important; color:var(--rose-deep)!important; }
+
+    @media (max-width: 767.98px) {
+      .section-shell { padding: 26px 0 58px; }
+      .hero-mini { padding: 30px 0 20px; }
+      .hero-mini::before{ opacity:.45; right:0; }
+      .nav-chip{ width:100%; justify-content:center; }
+      .cover-box{ aspect-ratio: 16/10; }
+    }
+    @media (prefers-reduced-motion: reduce){
+      *,*::before,*::after{ animation-duration:.001ms!important; animation-iteration-count:1!important; scroll-behavior:auto!important; transition:none!important; }
+    }
+  </style>
+
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  {% set site_slug = slug or page.get('slug') or negocio.get('slug') %}
+  {% set site_name = page.get('business_name') or negocio.get('business_name') or 'Mi negocio' %}
+  {% set wa = page.get('whatsapp') or negocio.get('whatsapp') %}
+  {% set ig = page.get('instagram') or negocio.get('instagram') %}
+  {% set fb = page.get('facebook') or negocio.get('facebook') %}
+  {% set tk = page.get('tiktok') or negocio.get('tiktok') %}
+
+  <nav class="navbar navbar-expand-lg site-nav">
+    <div class="container py-2">
+      <a class="navbar-brand brand-font" href="{{ url_for('negocio_por_slug', slug=site_slug) }}">
+        {{ site_name }}
+      </a>
+
+      <button class="navbar-toggler border-2" type="button" data-bs-toggle="collapse" data-bs-target="#topNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div id="topNav" class="collapse navbar-collapse">
+        <div class="ms-auto d-flex flex-column flex-lg-row gap-2 gap-lg-3 mt-3 mt-lg-0">
+          <a class="nav-chip" href="{{ url_for('negocio_por_slug', slug=site_slug) }}">
+            <i class="bi bi-house-heart"></i> Inicio
+          </a>
+          <a class="nav-chip" href="{{ url_for('lista_blogs_negocio_slug', slug=site_slug) }}">
+            <i class="bi bi-flower1"></i> Ideas
+          </a>
+          {% if wa %}
+          <a class="nav-chip" href="https://wa.me/{{ wa|replace(' ','') }}" target="_blank" rel="noopener">
+            <i class="bi bi-whatsapp"></i> WhatsApp
+          </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  {% block content %}{% endblock %}
+
+  <footer class="footer-box">
+    <div class="container py-4 py-lg-5">
+      <div class="row g-4 align-items-start">
+        <div class="col-lg-6">
+          <h3 class="brand-font fw-bold mb-2">{{ site_name }}</h3>
+          <p class="muted mb-0">
+            {{ page.get('slogan') or negocio.get('slogan') or page.get('description') or negocio.get('description') or 'Gracias por visitar nuestro rincón floral.' }}
+          </p>
+        </div>
+
+        <div class="col-lg-3">
+          <div class="fw-bold mb-2">Explorar</div>
+          <div class="d-flex flex-column gap-2">
+            <a class="footer-link" href="{{ url_for('negocio_por_slug', slug=site_slug) }}">Inicio</a>
+            <a class="footer-link" href="{{ url_for('lista_blogs_negocio_slug', slug=site_slug) }}">Ideas florales</a>
+          </div>
+        </div>
+
+        <div class="col-lg-3">
+          <div class="fw-bold mb-2">Inspiración</div>
+          <div class="d-flex gap-3 fs-4">
+            {% if ig %}<a href="{{ ig }}" target="_blank" rel="noopener" class="text-dark"><i class="bi bi-instagram"></i></a>{% endif %}
+            {% if fb %}<a href="{{ fb }}" target="_blank" rel="noopener" class="text-dark"><i class="bi bi-facebook"></i></a>{% endif %}
+            {% if tk %}<a href="{{ tk }}" target="_blank" rel="noopener" class="text-dark"><i class="bi bi-tiktok"></i></a>{% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-4 mt-4 border-top">
+        <small class="muted">© {{ current_year or 2026 }} {{ site_name }}. Todos los derechos reservados.</small>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

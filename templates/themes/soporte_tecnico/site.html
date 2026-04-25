@@ -1,0 +1,1473 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+  <!-- Metas -->
+  <title>{{ page.get('business_name','Mi negocio') }}</title>
+  <meta name="description" content="{{ page.get('slogan') or page.get('description','')[:160] }}">
+  <meta name="author" content="{{ page.get('business_name','') }}">
+
+  {# ====== OG / Twitter ====== #}
+  {% set og_img = page.get('cover_image') or page.get('image') %}
+  {% if og_img and not (og_img.startswith('http://') or og_img.startswith('https://')) %}
+    {% set og_img = url_for('uploaded_file', filename=og_img, _external=True) %}
+  {% endif %}
+  <meta property="og:title" content="{{ page.get('business_name','') }}">
+  <meta property="og:description" content="{{ page.get('slogan') or page.get('description','')[:200] }}">
+  <meta property="og:image" content="{{ og_img or url_for('static', filename='images/default.png', _external=True) }}">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="{{ request.url }}">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <!-- Fonts & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400..700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Leaflet -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    crossorigin=""
+  />
+
+  <style>
+    :root{
+      --brand: {{ page.get('color') or '#0ea5e9' }};
+      --brand-ink: #08111f;
+      --brand-soft: color-mix(in srgb, var(--brand) 20%, transparent);
+      --tech-cyan: #22d3ee;
+      --tech-blue: #2563eb;
+      --tech-violet: #8b5cf6;
+      --tech-green: #a3e635;
+      --bg: #030712;
+      --bg-2: #07111f;
+      --surface: rgba(15, 23, 42, .82);
+      --surface-2: rgba(2, 6, 23, .72);
+      --card: rgba(15, 23, 42, .72);
+      --ink: #f8fafc;
+      --muted: #a6b0c3;
+      --muted-2: #cbd5e1;
+      --border: rgba(148, 163, 184, .22);
+      --border-strong: rgba(34, 211, 238, .42);
+      --radius: 24px;
+      --shadow: 0 24px 70px rgba(0,0,0,.48);
+      --shadow-sm: 0 16px 38px rgba(0,0,0,.34);
+      --shadow-xs: 0 10px 24px rgba(0,0,0,.25);
+      --glow: 0 0 32px color-mix(in srgb, var(--brand) 42%, transparent);
+    }
+
+    *{box-sizing:border-box;}
+    html{scroll-behavior:smooth;}
+    html,body{background:var(--bg); color:var(--ink); min-height:100%;}
+    body{
+      font-family: Inter, system-ui, -apple-system, Segoe UI, sans-serif;
+      overflow-x:hidden;
+      padding-bottom: 58px;
+      background:
+        radial-gradient(circle at 12% 8%, color-mix(in srgb, var(--brand) 24%, transparent) 0, transparent 34%),
+        radial-gradient(circle at 88% 18%, rgba(139,92,246,.20) 0, transparent 32%),
+        radial-gradient(circle at 50% 100%, rgba(34,211,238,.12) 0, transparent 42%),
+        linear-gradient(135deg, #020617 0%, #07111f 48%, #030712 100%);
+    }
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      z-index:-2;
+      background-image:
+        linear-gradient(rgba(148,163,184,.07) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(148,163,184,.07) 1px, transparent 1px);
+      background-size: 42px 42px;
+      mask-image: linear-gradient(to bottom, rgba(0,0,0,.78), rgba(0,0,0,.18));
+    }
+    body::after{
+      content:"";
+      position:fixed;
+      inset:-20% -10%;
+      pointer-events:none;
+      z-index:-1;
+      background:
+        linear-gradient(115deg, transparent 0 42%, rgba(34,211,238,.08) 49%, transparent 56% 100%),
+        radial-gradient(circle, rgba(255,255,255,.12) 1px, transparent 1.6px);
+      background-size: 100% 100%, 28px 28px;
+      animation: techScan 14s linear infinite;
+      opacity:.55;
+    }
+
+    .brand-font{font-family: "Space Grotesk", Inter, system-ui, sans-serif;}
+    a{color:var(--tech-cyan);} a:hover{color:#67e8f9;}
+
+    /* NAV */
+    .nb {
+      background: rgba(2, 6, 23, .78);
+      border-bottom: 1px solid var(--border);
+      box-shadow: 0 14px 45px rgba(0,0,0,.32);
+      position: sticky;
+      top: 0;
+      z-index: 1020;
+      backdrop-filter: blur(18px);
+    }
+    .nb .navbar-brand{
+      font-weight: 900; letter-spacing: -.04em;
+      padding: .52rem .9rem;
+      border: 1px solid var(--border-strong);
+      border-radius: 999px;
+      background:
+        linear-gradient(135deg, color-mix(in srgb, var(--brand) 34%, transparent), rgba(139,92,246,.16)),
+        rgba(15,23,42,.78);
+      color: var(--ink);
+      box-shadow: var(--glow);
+      position:relative;
+      overflow:hidden;
+    }
+    .nb .navbar-brand::before{content:"▣"; color:var(--tech-green); margin-right:.45rem; font-size:.85em;}
+    .nb .navbar-brand::after{
+      content:""; position:absolute; inset:0;
+      background:linear-gradient(90deg, transparent, rgba(255,255,255,.18), transparent);
+      transform:translateX(-120%); animation: shine 5.5s ease-in-out infinite;
+    }
+    .navbar-toggler{border:1px solid var(--border-strong); background:rgba(15,23,42,.76); border-radius:14px;}
+    .navbar-toggler-icon{filter:invert(1) grayscale(1) brightness(1.6);}
+    .nb .nav-link{font-weight:700; color:var(--muted-2); border-radius:999px; padding:.6rem .82rem; transition:.22s ease;}
+    .nb .nav-link:hover{color: var(--ink); background:rgba(34,211,238,.10); box-shadow: inset 0 0 0 1px var(--border); transform:translateY(-1px);}
+
+    /* HEADER */
+    .hero{
+      position: relative;
+      padding: 70px 0 52px;
+      overflow: hidden;
+      border-bottom: 1px solid var(--border);
+      {% if page.get('cover_image') %}
+      background:
+        linear-gradient(90deg, rgba(3,7,18,.96) 0%, rgba(3,7,18,.82) 50%, rgba(3,7,18,.48) 100%),
+        radial-gradient(circle at 18% 20%, color-mix(in srgb, var(--brand) 32%, transparent), transparent 34%),
+        url("{{ url_for('uploaded_file', filename=page.cover_image) }}") center/cover no-repeat;
+      {% else %}
+      background:
+        radial-gradient(circle at 18% 18%, color-mix(in srgb, var(--brand) 28%, transparent), transparent 34%),
+        radial-gradient(circle at 78% 10%, rgba(139,92,246,.18), transparent 31%),
+        linear-gradient(135deg, rgba(34,211,238,.09) 25%, transparent 25%) -14px 0/48px 48px,
+        linear-gradient(225deg, rgba(139,92,246,.08) 25%, transparent 25%) -14px 0/48px 48px,
+        #030712;
+      {% endif %}
+    }
+    .hero::before{
+      content:""; position:absolute; inset:0; pointer-events:none;
+      background:
+        linear-gradient(90deg, transparent 0 14%, rgba(34,211,238,.15) 15%, transparent 16% 100%),
+        linear-gradient(180deg, transparent 0 75%, rgba(163,230,53,.10) 76%, transparent 77% 100%);
+      background-size: 220px 100%, 100% 120px;
+      opacity:.55; animation: gridDrift 18s linear infinite;
+    }
+    .hero-card{
+      position:relative;
+      border: 1px solid var(--border-strong);
+      border-radius: 32px;
+      box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,.08);
+      background: linear-gradient(135deg, rgba(15,23,42,.88), rgba(2,6,23,.72));
+      backdrop-filter: blur(18px);
+      padding: clamp(20px, 4vw, 34px);
+      overflow:hidden;
+      animation: revealUp .7s ease both;
+    }
+    .hero-card::before{
+      content:"</>  cpu online  •  soporte activo  •  cloud ready";
+      position:absolute; right:-42px; top:18px;
+      font-family:"Space Grotesk", monospace; font-weight:800; letter-spacing:.08em;
+      color:rgba(34,211,238,.16); transform:rotate(10deg); white-space:nowrap;
+      font-size:clamp(.8rem, 2vw, 1.1rem);
+    }
+    .hero-avatar{
+      width: min(240px, 72vw); height: min(240px, 72vw); object-fit: cover;
+      border-radius: 30px;
+      border: 1px solid var(--border-strong);
+      box-shadow: var(--shadow-sm), 0 0 0 8px rgba(34,211,238,.05);
+      background: rgba(255,255,255,.06);
+      animation: floatSoft 6s ease-in-out infinite;
+    }
+    .badge-pill{
+      border:1px solid var(--border-strong);
+      padding:.52rem .85rem; border-radius:999px;
+      background: linear-gradient(135deg, color-mix(in srgb, var(--brand) 30%, transparent), rgba(139,92,246,.16));
+      color:var(--ink); font-weight:900;
+      box-shadow: var(--shadow-xs);
+      display:inline-flex; align-items:center; gap:.42rem;
+    }
+    .badge-pill::before{content:"⚙️"; font-size:.95em;}
+
+    /* CARDS */
+    .card-brutal{
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(15,23,42,.82), rgba(2,6,23,.68));
+      border-radius: calc(var(--radius) - 4px);
+      box-shadow: var(--shadow-sm);
+      color:var(--ink);
+      overflow:hidden;
+      transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease;
+      backdrop-filter: blur(12px);
+    }
+    .card-brutal:hover{transform:translateY(-4px); border-color:var(--border-strong); box-shadow:var(--shadow), var(--glow);}
+    .card-brutal .card-header{
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(90deg, rgba(34,211,238,.13), rgba(139,92,246,.10));
+      color:var(--ink);
+      font-weight: 900;
+    }
+    .card-body,.card-footer{color:var(--ink);}
+    .card-footer.bg-white{background:rgba(2,6,23,.72)!important;}
+    .card-img-top{border-bottom:1px solid var(--border);}
+
+    .chip{
+      border:1px solid var(--border-strong);
+      border-radius: 999px;
+      padding: .35rem .78rem;
+      background: rgba(15,23,42,.74);
+      color:var(--muted-2);
+      display: inline-flex; align-items: center; gap:.45rem;
+      box-shadow: var(--shadow-xs);
+      font-weight:700;
+    }
+    .chip i{color:var(--tech-cyan);}
+
+    /* BUTTONS */
+    .btn-brutal{
+      border: 1px solid var(--border-strong);
+      border-radius: 999px;
+      padding:.72rem 1.1rem;
+      font-weight: 900;
+      letter-spacing: -.01em;
+      box-shadow: var(--shadow-xs);
+      transition:.22s ease;
+    }
+    .btn-brand{
+      background: linear-gradient(135deg, var(--brand), var(--tech-blue));
+      color:#ffffff;
+      position:relative;
+      overflow:hidden;
+    }
+    .btn-brand:hover{ filter: saturate(1.08) brightness(1.08); color:#fff; box-shadow:var(--glow); }
+    .btn-ghost{ background: rgba(15,23,42,.68); color:var(--ink); }
+    .btn-ghost:hover{ background: rgba(34,211,238,.12); color:var(--ink); }
+
+    /* UTIL */
+    .section-title{
+      font-weight: 950;
+      letter-spacing: -.04em;
+      border-left: 0;
+      padding-left: 0;
+      margin-bottom: 1.15rem;
+      color:var(--ink);
+      display:flex; align-items:center; gap:.68rem;
+    }
+    .section-title::before{
+      content:""; width:46px; height:14px; border-radius:999px;
+      background: linear-gradient(90deg, var(--brand), var(--tech-violet));
+      box-shadow:var(--glow);
+    }
+    .text-muted-2,.text-muted{ color: var(--muted)!important; }
+    .text-primary{color:var(--tech-cyan)!important;}
+    .text-success{color:var(--tech-green)!important;}
+    .text-dark{color:var(--ink)!important;}
+    .alert{border-radius:18px; background:rgba(15,23,42,.84); color:var(--ink); border:1px solid var(--border-strong)!important;}
+    code{color:#67e8f9; background:rgba(34,211,238,.08); padding:.12rem .34rem; border-radius:.4rem;}
+
+    /* GALERÍA */
+    .gallery-wrap{
+      background: rgba(15,23,42,.68);
+      border:1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: var(--shadow-sm);
+      padding: clamp(1rem, 3vw, 1.5rem);
+      backdrop-filter:blur(14px);
+    }
+    .gallery-grid{
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap:1rem;
+    }
+    .gal-item{
+      position:relative;
+      border:1px solid var(--border);
+      border-radius: 20px;
+      overflow:hidden;
+      background:#0f172a;
+      aspect-ratio: 4/3;
+      cursor:pointer;
+      box-shadow: var(--shadow-xs);
+      transition:.22s ease;
+    }
+    .gal-item:hover{transform:translateY(-4px) scale(1.01); border-color:var(--border-strong); box-shadow:var(--glow);}
+    .gal-item img,
+    .gal-item video{
+      width:100%; height:100%; object-fit:cover; display:block;
+      transition:transform .35s ease, filter .35s ease;
+    }
+    .gal-item:hover img,.gal-item:hover video{transform:scale(1.06); filter:saturate(1.12) contrast(1.04);}
+    .gal-item::after{
+      content:""; position:absolute; inset:0;
+      background:linear-gradient(180deg, transparent 45%, rgba(2,6,23,.82) 100%);
+      opacity:.82; transition:.2s ease-out;
+    }
+    .badge-type{
+      position:absolute; top:.65rem; left:.65rem; z-index:2;
+      background: rgba(2,6,23,.76);
+      color:var(--ink);
+      border:1px solid var(--border-strong);
+      border-radius:999px;
+      padding:.32rem .62rem;
+      font-size:.72rem;
+      font-weight:800;
+      box-shadow: var(--shadow-xs);
+      display:flex; align-items:center; gap:.28rem;
+      backdrop-filter:blur(10px);
+    }
+    @media (max-width: 768px){
+      .gallery-grid{display:flex; gap:1rem; overflow-x:auto; scroll-snap-type:x mandatory; padding-bottom:.5rem;}
+      .gal-item{flex: 0 0 74vw; scroll-snap-align: start;}
+    }
+
+    /* BANNER inferior */
+    .ticker{
+      position: fixed; left:0; right:0; bottom:0; z-index:1030;
+      background: linear-gradient(90deg, rgba(2,6,23,.96), rgba(15,23,42,.96));
+      border-top: 1px solid var(--border-strong);
+      box-shadow: 0 -18px 48px rgba(0,0,0,.34);
+      color:var(--ink);
+      backdrop-filter: blur(16px);
+    }
+    .ticker .carousel-item{ padding:.62rem 0; }
+    .pill-invert{
+      background:linear-gradient(135deg, var(--brand), var(--tech-violet)); color:#fff; border:1px solid rgba(255,255,255,.22);
+      border-radius: 999px; padding:.42rem .75rem; display:inline-block;
+      box-shadow: var(--shadow-xs);
+      font-weight:900;
+    }
+
+    /* MAP */
+    #map{height:340px; border:1px solid var(--border-strong); border-radius: 20px; box-shadow: var(--shadow-sm); overflow:hidden; background:#0f172a;}
+
+    /* WHATS */
+    .fab-wa{ position: fixed; left:20px; bottom: 12%; z-index:1050; text-decoration:none; }
+    .fab-wa .btn{ border-radius: 999px; border:1px solid rgba(255,255,255,.24); box-shadow: var(--shadow), var(--glow); font-weight:900; }
+
+    /* FORMULARIOS / MODALES */
+    .form-control,.form-select,textarea.form-control{
+      background:rgba(2,6,23,.72)!important;
+      color:var(--ink)!important;
+      border:1px solid var(--border-strong)!important;
+      border-radius:16px!important;
+      box-shadow:none!important;
+    }
+    .form-control::placeholder,textarea.form-control::placeholder{color:rgba(203,213,225,.62)!important;}
+    .form-control:focus,textarea.form-control:focus{box-shadow:0 0 0 .2rem rgba(34,211,238,.16)!important; border-color:var(--tech-cyan)!important;}
+    .modal-content{background:linear-gradient(180deg, rgba(15,23,42,.96), rgba(2,6,23,.96))!important; color:var(--ink)!important; border:1px solid var(--border-strong)!important; border-radius:24px!important; box-shadow:var(--shadow), var(--glow)!important;}
+    .modal-header{border-bottom:1px solid var(--border)!important; background:linear-gradient(135deg, var(--brand), var(--tech-blue))!important;}
+    .modal-footer{border-top:1px solid var(--border)!important;}
+    #resumenSeleccion{background:rgba(2,6,23,.72)!important; color:var(--ink)!important; border-color:var(--border-strong)!important;}
+
+    /* FOOTER */
+    .ft{
+      background: rgba(2,6,23,.92); border-top:1px solid var(--border);
+      margin-top: 64px; padding: 26px 0; padding-bottom: 6%;
+      color:var(--muted-2);
+      backdrop-filter: blur(14px);
+    }
+    @media (max-width: 768px) {
+      .hero{padding:42px 0 36px;}
+      .hero-card{text-align:center; border-radius:24px;}
+      .section-title{font-size:1.65rem;}
+      .section-title::before{width:34px;}
+      .ft { padding-bottom: 10vh; }
+      .fab-wa{left:14px; bottom: 82px;}
+      .modal-dialog{margin:.75rem;}
+    }
+
+    .hover-raise:hover{ transform: translateY(-3px); }
+
+    @keyframes revealUp{from{opacity:0; transform:translateY(18px);} to{opacity:1; transform:translateY(0);}}
+    @keyframes floatSoft{0%,100%{transform:translateY(0);} 50%{transform:translateY(-8px);}}
+    @keyframes shine{0%,75%{transform:translateX(-130%);} 100%{transform:translateX(130%);}}
+    @keyframes gridDrift{from{background-position:0 0,0 0;} to{background-position:220px 0,0 120px;}}
+    @keyframes techScan{from{transform:translate3d(0,0,0);} to{transform:translate3d(48px,48px,0);}}
+    @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important; transition:none!important; scroll-behavior:auto!important;}}
+  </style>
+</head>
+<body>
+  {% set site_slug = slug or page.get('slug','') %}
+  {% set site_name = page.get('business_name','Negocio') %}
+
+  <!-- NAV -->
+  <nav class="navbar navbar-expand-lg nb">
+    <div class="container">
+      <a class="navbar-brand brand-font" href="{{ url_for('negocio_por_slug', slug=site_slug) }}">
+        {{ site_name }}
+      </a>
+
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nv" aria-controls="nv" aria-expanded="false">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div id="nv" class="collapse navbar-collapse justify-content-end">
+        <ul class="navbar-nav gap-1">
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('negocio_por_slug', slug=site_slug) }}#info">Soluciones</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('negocio_por_slug', slug=site_slug) }}#galeria">Showroom</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('negocio_por_slug', slug=site_slug) }}#contacto">Contacto</a>
+          </li>
+
+          {% if posts %}
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('lista_blogs_negocio_slug', slug=site_slug) }}">
+              Blog
+            </a>
+          </li>
+          {% endif %}
+
+          {% if (servicios and servicios|length>0) or (productos_fisicos and productos_fisicos|length>0) %}
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('negocio_por_slug', slug=site_slug) }}#productos">Catálogo tech</a>
+          </li>
+          {% endif %}
+
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('negocio_por_slug', slug=site_slug) }}#reseñas">Opiniones</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HEADER -->
+  <header class="hero">
+    <div class="container">
+      <div class="hero-card">
+        <div class="row g-4 align-items-center">
+          <div class="col-md-4 text-center">
+            {% if page.get('image') %}
+              <img class="hero-avatar" src="{{ url_for('uploaded_file', filename=page['image']) }}" alt="Logo/Imagen">
+            {% else %}
+              <img class="hero-avatar" src="{{ url_for('static', filename='images/default_image.png') }}" alt="Logo/Imagen">
+            {% endif %}
+          </div>
+          <div class="col-md-8">
+            <div class="d-inline-block mb-2 badge-pill brand-font">{{ page.get('category','Negocio') }}</div>
+            <h1 class="brand-font display-5 mb-1">{{ page.get('business_name','Mi negocio') }}</h1>
+            {% if page.get('slogan') %}
+              <p class="fs-5 text-muted-2 mb-3">{{ page['slogan'] }}</p>
+            {% endif %}
+            {% if page.get('website') %}
+            <a class="btn btn-brutal btn-brand me-2 hover-raise"
+              href="{{ page['website'] }}" target="_blank"
+              data-track="click_website">
+              <i class="bi bi-box-arrow-up-right me-1"></i> Explorar sitio
+            </a>
+            {% endif %}
+
+            {% if page.get('phone') %}
+              <a class="btn btn-brutal btn-ghost hover-raise"
+                href="tel:{{ page['phone'] }}"
+                data-track="click_phone">
+                <i class="bi bi-headset me-1"></i> Solicitar soporte
+              </a>
+            {% endif %}
+            <div class="d-flex flex-wrap gap-2 mt-3 tech-hero-tags" aria-label="Áreas tecnológicas">
+              <span class="chip"><i class="bi bi-laptop"></i> Equipos</span>
+              <span class="chip"><i class="bi bi-tools"></i> Soporte</span>
+              <span class="chip"><i class="bi bi-code-slash"></i> Programación</span>
+              <span class="chip"><i class="bi bi-shield-check"></i> Confianza</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  {% if promos and promos|length > 0 %}
+  <section class="container my-4" id="promos">
+    <h2 class="section-title brand-font">Promociones tech activas</h2>
+    <div class="row g-3">
+      {% for p in promos %}
+        <div class="col-md-6">
+          <div class="card card-brutal h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <span>{{ p.title }}</span>
+              {% if p.code %}<span class="badge-pill" style="background:#111;border-color:#fff;">{{ p.code }}</span>{% endif %}
+            </div>
+            <div class="card-body">
+              {% if p.description %}<p class="mb-2">{{ p.description }}</p>{% endif %}
+              {% if p.discount_type in ['percent','fixed'] %}
+                <div class="chip"><i class="bi bi-tag"></i>
+                  {% if p.discount_type=='percent' %}{{ p.value }}% OFF{% else %}${{ p.value }} OFF{% endif %}
+                </div>
+              {% else %}
+                <div class="chip"><i class="bi bi-lightning-charge"></i> Promo tech</div>
+              {% endif %}
+              {% if p.ends_at %}
+                <div class="mt-2 text-muted-2 small"><i class="bi bi-clock"></i> Vigente hasta {{ p.ends_at.strftime('%d/%m/%Y') }}</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- INFO -->
+  <section class="container my-5" id="info">
+    <h2 class="section-title brand-font">Soluciones tecnológicas</h2>
+    <div class="row g-4">
+      <div class="col-md-6">
+        <div class="card card-brutal h-100">
+          <div class="card-header"><i class="bi bi-cpu me-1"></i> Perfil tecnológico</div>
+          <div class="card-body">
+            <p class="mb-3"><strong>Especialistas en tecnología</strong><br>{{ page.get('description','') }}</p>
+            <div class="d-flex flex-wrap gap-2">
+              {% if page.get('services') %}<span class="chip"><i class="bi bi-tools"></i> {{ page.services }}</span>{% endif %}
+              {% if page.get('payment_methods') %}<span class="chip"><i class="bi bi-credit-card-2-front"></i> {{ page.payment_methods }}</span>{% endif %}
+              {% if page.get('founding_date') %}<span class="chip"><i class="bi bi-calendar3"></i> {{ page.founding_date }}</span>{% endif %}
+              {% if page.get('delivery_available') %}<span class="chip"><i class="bi bi-truck"></i> Entrega / instalación disponible</span>{% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card card-brutal h-100">
+          <div class="card-header"><i class="bi bi-geo-alt me-1"></i> Ubicación y atención</div>
+          <div class="card-body">
+            <p class="mb-2"><i class="bi bi-geo-alt-fill me-1"></i> <strong>Dirección:</strong> {{ page.get('address','') }}</p>
+            <div class="row">
+              <div class="col-6"><small class="text-muted-2"><i class="bi bi-pin-map"></i> CP</small><div>{{ page.get('postal_code','') }}</div></div>
+              <div class="col-6"><small class="text-muted-2"><i class="bi bi-buildings"></i> Ciudad</small><div>{{ page.get('city','') }}</div></div>
+            </div>
+            <div class="mt-2"><small class="text-muted-2"><i class="bi bi-flag"></i> Estado</small><div>{{ page.get('state','') }}</div></div>
+            <div class="mt-2"><small class="text-muted-2"><i class="bi bi-clock-history"></i> Horario</small><div>{{ page.get('operating_hours','') }}</div></div>
+
+            {% set lat_val = page.get('lat') %}
+            {% set lng_val = page.get('lng') %}
+            {% set has_coords = (lat_val is not none) and (lng_val is not none) and (lat_val|string|trim != '') and (lng_val|string|trim != '') %}
+
+            <div class="mt-3">
+              {% if has_coords %}
+                <div id="map" class="mb-3"></div>
+
+                <a class="btn btn-brutal btn-ghost hover-raise me-2" target="_blank"
+                  href="https://www.google.com/maps/dir/?api=1&destination={{ lat_val }},{{ lng_val }}"
+                  data-track="click_maps">
+                  <i class="bi bi-geo me-1"></i> Cómo llegar
+                </a>
+
+              {% elif page.get('address') %}
+                <a class="btn btn-brutal btn-ghost hover-raise me-2" target="_blank"
+                  href="https://www.google.com/maps/search/?api=1&query={{ page.address | urlencode }}" data-track="click_maps">
+                  <i class="bi bi-search me-1"></i> Buscar dirección
+                </a>
+              {% else %}
+                <div class="alert alert-warning py-2 px-3" style="border:3px solid var(--border); box-shadow: var(--shadow-xs);">
+                  Aún no hay ubicación definida.
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- GALERÍA -->
+  <section class="container my-5" id="galeria">
+    <h2 class="section-title brand-font">Galería / showroom tecnológico</h2>
+    {% set tiene_portada = page.get('cover_image') %}
+    {% set tiene_media = page.get('media_gallery') and page.media_gallery|length > 0 %}
+    {% set tiene_galeria = galeria and galeria|length > 0 %}
+    {% if tiene_portada or tiene_media or tiene_galeria %}
+      <div class="gallery-wrap">
+        <div class="gallery-grid">
+          {% if tiene_portada %}
+            <div class="gal-item" data-type="image" data-src="{{ url_for('uploaded_file', filename=page.cover_image) }}">
+              <img src="{{ url_for('uploaded_file', filename=page.cover_image) }}" alt="Portada">
+              <span class="badge-type"><i class="bi bi-image"></i> Portada</span>
+            </div>
+          {% endif %}
+
+          {% if tiene_media %}
+            {% for item in page.media_gallery %}
+              {% if item is string %}
+                <div class="gal-item" data-type="image" data-src="{{ url_for('uploaded_file', filename=item) }}">
+                  <img src="{{ url_for('uploaded_file', filename=item) }}" alt="Media">
+                  <span class="badge-type"><i class="bi bi-window-stack"></i> Media</span>
+                </div>
+              {% else %}
+                {% set fpath = item.path %}
+                {% set ftype = item.type or 'image' %}
+                {% if ftype == 'video' %}
+                  <div class="gal-item" data-type="video" data-src="{{ url_for('uploaded_file', filename=fpath) }}">
+                    <video src="{{ url_for('uploaded_file', filename=fpath) }}" muted playsinline></video>
+                    <span class="badge-type"><i class="bi bi-camera-reels"></i> Video</span>
+                  </div>
+                {% else %}
+                  <div class="gal-item" data-type="image" data-src="{{ url_for('uploaded_file', filename=fpath) }}">
+                    <img src="{{ url_for('uploaded_file', filename=fpath) }}" alt="Media">
+                    <span class="badge-type"><i class="bi bi-window-stack"></i> Media</span>
+                  </div>
+                {% endif %}
+              {% endif %}
+            {% endfor %}
+          {% endif %}
+
+          {% if tiene_galeria %}
+            {% for g in (galeria or [])[:12] %}
+              <div class="gal-item" data-type="image" data-src="{{ url_for('uploaded_file', filename=g) }}">
+                <img src="{{ url_for('uploaded_file', filename=g) }}" alt="Foto {{ loop.index }}">
+                <span class="badge-type"><i class="bi bi-grid-3x3-gap"></i> Galería</span>
+              </div>
+            {% endfor %}
+          {% endif %}
+        </div>
+      </div>
+    {% else %}
+      <div class="card card-brutal p-3">Aún no hay imágenes del showroom, proyectos o equipo técnico. Sube una portada o envía <code>media_gallery</code>.</div>
+    {% endif %}
+  </section>
+
+  <!-- CONTACTO -->
+  <section class="container my-5" id="contacto">
+    <h2 class="section-title brand-font">Contacto y soporte</h2>
+    <div class="row g-4">
+      <div class="col-md-6">
+        <div class="card card-brutal h-100">
+          <div class="card-header"><i class="bi bi-headset me-1"></i> Canales de atención</div>
+          <div class="card-body">
+            {% if page.get('phone') %}<p><i class="bi bi-telephone-fill me-2"></i><strong>Teléfono:</strong> {{ page.phone }}</p>{% endif %}
+            {% if page.get('email') %}<p><i class="bi bi-envelope-fill me-2"></i><strong>Email:</strong> {{ page.email }}</p>{% endif %}
+            {% if page.get('website') %}<p><i class="bi bi-globe2 me-2"></i><strong>Sitio web:</strong> <a href="{{ page.website }}" target="_blank" data-track="click_website">{{ page.website }}</a></p>{% endif %}
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card card-brutal h-100">
+          <div class="card-header"><i class="bi bi-broadcast me-1"></i> Canales digitales</div>
+          <div class="card-body">
+            {% if page.get('facebook') %}<p><i class="bi bi-facebook me-2"></i><strong>Facebook:</strong> <a href="{{ page.facebook }}" target="_blank">Ir a Facebook</a></p>{% endif %}
+            {% if page.get('instagram') %}<p><i class="bi bi-instagram me-2"></i><strong>Instagram:</strong> <a href="{{ page.instagram }}" target="_blank">Ir a Instagram</a></p>{% endif %}
+            {% if page.get('tiktok') %}<p><i class="bi bi-tiktok me-2"></i><strong>TikTok:</strong> <a href="{{ page.tiktok }}" target="_blank">Ir a TikTok</a></p>{% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- POSTS -->
+  <section class="container my-5" id="publicaciones">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+      <h2 class="section-title brand-font mb-0">Updates y publicaciones recientes</h2>
+
+      {% if posts and posts|length > 0 %}
+        <a
+          class="btn btn-brutal btn-ghost hover-raise"
+          href="{{ url_for('lista_blogs_negocio_slug', slug=site_slug) }}"
+          data-track="click_blog_index"
+        >
+          <i class="bi bi-terminal me-1"></i> Ver todo el blog
+        </a>
+      {% endif %}
+    </div>
+
+    {% if posts and posts|length > 0 %}
+      <div class="row g-4">
+        {% for post in posts %}
+          <div class="col-md-4">
+            <div class="card card-brutal h-100">
+              {% if post.cabecera %}
+                <img
+                  src="{{ url_for('uploaded_file', filename=post.cabecera) }}"
+                  class="card-img-top"
+                  alt="Post"
+                  style="object-fit:cover; height:220px;"
+                >
+              {% endif %}
+
+              <div class="card-body d-flex flex-column">
+                <h5 class="brand-font">{{ post.title }}</h5>
+
+                <p class="text-muted-2">
+                  {{ post.content[:110] }}{% if post.content and post.content|length > 110 %}...{% endif %}
+                </p>
+
+                <a
+                  class="mt-auto btn btn-brutal btn-ghost hover-raise"
+                  href="{{ url_for('ver_post_slug', slug=site_slug, post_id=post._id) }}"
+                  data-track="click_post"
+                >
+                  Leer actualización
+                </a>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="card card-brutal p-3">Aún no hay publicaciones.</div>
+    {% endif %}
+  </section>
+
+  <!-- PRODUCTOS / SERVICIOS / COTIZAR -->
+  <section class="container my-5" id="productos">
+    <h2 class="section-title brand-font">Catálogo tecnológico y servicios</h2>
+
+    {% if (servicios and servicios|length>0) or (productos_fisicos and productos_fisicos|length>0) %}
+
+      <div class="card card-brutal p-3 mb-3">
+        <div class="d-flex align-items-center gap-2">
+          <span class="pill-invert"><i class="bi bi-info-circle"></i></span>
+          <div>
+            <strong>Cotización inteligente:</strong> selecciona equipos, accesorios o servicios técnicos, luego pulsa <em>Cotizar</em>.
+            Te pediremos tus datos, guardaremos el <strong>lead</strong> para medir el interés y también intentaremos guardar la <strong>cotización real</strong>. Después abriremos WhatsApp con el mensaje listo.
+          </div>
+        </div>
+      </div>
+
+      <form id="form-cotizar" class="row g-3" method="post" action="javascript:void(0);">
+
+        <!-- SERVICIOS -->
+        {% if servicios and servicios|length>0 %}
+          <div class="col-12">
+            <h3 class="h5 brand-font d-flex align-items-center gap-2">
+              <i class="bi bi-tools text-primary"></i> Servicios técnicos / programación
+            </h3>
+          </div>
+
+          {% for item in servicios %}
+          <div class="col-12 col-sm-6 col-md-4">
+            <div class="card card-brutal h-100">
+              {% if item.image %}
+                <img
+                  src="{{ url_for('uploaded_file', filename=item.image) }}"
+                  alt="{{ item.title }}"
+                  class="card-img-top img-zoom-trigger"
+                  data-bs-toggle="modal" data-bs-target="#zoomModal"
+                  data-img-src="{{ url_for('uploaded_file', filename=item.image) }}"
+                  style="object-fit:cover; height:220px; cursor: zoom-in;"
+                >
+              {% endif %}
+              <div class="card-body d-flex flex-column">
+                <div class="mb-1">
+                  <span class="badge-pill" style="background:#111;color:#fff;border-color:#fff;">Servicio técnico</span>
+                </div>
+                <h6 class="brand-font mb-1">{{ item.title }}</h6>
+                {% if item.description %}<p class="text-muted-2 small">{{ item.description }}</p>{% endif %}
+                {% if item.show_price %}
+                  <div class="mb-2">
+                    <span class="badge-pill" style="background:var(--brand);color:#fff;border-color:#fff;">
+                      ${{ "%.2f"|format(item.price) }}
+                    </span>
+                  </div>
+                {% endif %}
+                <div class="mt-auto">
+                  <label class="form-label small">Cantidad / horas / citas</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value="0"
+                    class="form-control"
+                    style="border:3px solid var(--border)"
+                    name="prod_{{ item.title | replace(' ','_') }}"
+                    data-item-id="{{ item._id }}"
+                    data-item-nombre="{{ item.title }}"
+                    data-item-price="{{ item.price or 0 }}"
+                    data-item-sku="{{ item.sku or '' }}"
+                    data-item-barcode="{{ item.barcode or '' }}"
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        {% endif %}
+
+        <!-- PRODUCTOS -->
+        {% if productos_fisicos and productos_fisicos|length>0 %}
+          <div class="col-12 mt-2">
+            <h3 class="h5 brand-font d-flex align-items-center gap-2">
+              <i class="bi bi-pc-display-horizontal text-success"></i> Equipos y accesorios
+            </h3>
+          </div>
+
+          {% for item in productos_fisicos %}
+          <div class="col-12 col-sm-6 col-md-4">
+            <div class="card card-brutal h-100">
+              {% if item.image %}
+                <img
+                  src="{{ url_for('uploaded_file', filename=item.image) }}"
+                  alt="{{ item.title }}"
+                  class="card-img-top img-zoom-trigger"
+                  data-bs-toggle="modal" data-bs-target="#zoomModal"
+                  data-img-src="{{ url_for('uploaded_file', filename=item.image) }}"
+                  style="object-fit:cover; height:220px; cursor: zoom-in;"
+                >
+              {% endif %}
+              <div class="card-body d-flex flex-column">
+                <div class="mb-1">
+                  <span class="badge-pill" style="background:#666;color:#fff;border-color:#fff;">Equipo / accesorio</span>
+                </div>
+                <h6 class="brand-font mb-1">{{ item.title }}</h6>
+                {% if item.description %}<p class="text-muted-2 small">{{ item.description }}</p>{% endif %}
+                {% if item.show_price %}
+                  <div class="mb-2">
+                    <span class="badge-pill" style="background:var(--brand);color:#fff;border-color:#fff;">
+                      ${{ "%.2f"|format(item.price) }}
+                    </span>
+                  </div>
+                {% endif %}
+                <div class="mt-auto">
+                  <label class="form-label small">Cantidad</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value="0"
+                    class="form-control"
+                    style="border:3px solid var(--border)"
+                    name="prod_{{ item.title | replace(' ','_') }}"
+                    data-item-id="{{ item._id }}"
+                    data-item-nombre="{{ item.title }}"
+                    data-item-price="{{ item.price or 0 }}"
+                    data-item-sku="{{ item.sku or '' }}"
+                    data-item-barcode="{{ item.barcode or '' }}"
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        {% endif %}
+
+        <div class="col-12 text-center">
+          <button type="submit" class="btn btn-brutal btn-brand px-4 py-2 hover-raise">
+            <i class="bi bi-whatsapp me-1"></i> Cotizar por WhatsApp
+          </button>
+        </div>
+      </form>
+
+      <!-- Modal zoom -->
+      <div class="modal fade" id="zoomModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 72vw;">
+          <div class="modal-content" style="border:3px solid var(--border); box-shadow: var(--shadow);">
+            <img id="zoomedImage" src="" class="img-fluid" alt="Zoom">
+            <div class="p-2 text-end">
+              <button class="btn btn-brutal btn-ghost" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal de cotización -->
+      <div class="modal fade" id="cotizarModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content" style="border:3px solid var(--border); box-shadow: var(--shadow);">
+            <div class="modal-header" style="background: var(--brand); color:#fff;">
+              <h5 class="modal-title">Preparamos tu cotización técnica ⚙️</h5>
+              <button class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+              <p class="small text-muted">
+                Déjanos tus datos para generar la cotización y abrir WhatsApp con el mensaje listo para soporte, compra o desarrollo.
+              </p>
+
+              <div class="mb-3">
+                <label class="form-label">Tu nombre</label>
+                <input type="text" class="form-control" id="nombreClienteInput" placeholder="Ej. Ana Martínez" style="border:3px solid var(--border);">
+                <div class="text-danger small mt-1 d-none" id="errorModalNombre">Por favor escribe tu nombre 🙏</div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Teléfono</label>
+                <input type="text" class="form-control" id="telefonoClienteInput" placeholder="Ej. 5512345678" style="border:3px solid var(--border);">
+                <div class="text-danger small mt-1 d-none" id="errorModalTelefono">Por favor escribe tu teléfono 🙏</div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Correo electrónico <span class="text-muted">(opcional)</span></label>
+                <input type="email" class="form-control" id="emailClienteInput" placeholder="Ej. cliente@correo.com" style="border:3px solid var(--border);">
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Notas <span class="text-muted">(opcional)</span></label>
+                <textarea class="form-control" id="notasClienteInput" rows="3" placeholder="Equipo, falla, requerimientos, software, versión, medidas, etc." style="border:3px solid var(--border);"></textarea>
+              </div>
+
+              <div>
+                <div class="form-label mb-1">Tu selección:</div>
+                <div id="resumenSeleccion" class="bg-light border rounded p-2 small" style="max-height:220px; overflow-y:auto; border:3px solid var(--border);"></div>
+              </div>
+            </div>
+            <div class="modal-footer justify-content-between">
+              <button class="btn btn-brutal btn-ghost" data-bs-dismiss="modal" type="button">Cancelar</button>
+              <button class="btn btn-brutal btn-brand" id="enviarCotizacionBtn" type="button">
+                <i class="bi bi-whatsapp me-1"></i> Enviar cotización por WhatsApp
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    {% else %}
+      <div class="card card-brutal p-3">No hay productos ni servicios disponibles.</div>
+    {% endif %}
+  </section>
+
+  <!-- RESEÑAS -->
+  <section class="container my-5" id="reseñas">
+    <h2 class="section-title brand-font">Opiniones de clientes</h2>
+    <div class="card card-brutal p-3 mb-4">
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          <div class="alert alert-info mb-3" style="border:3px solid var(--border); box-shadow: var(--shadow-xs);">
+            {% for m in messages %}<div>{{ m }}</div>{% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <form method="POST" class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Tu nombre</label>
+          <input type="text" name="nombre" class="form-control" style="border:3px solid var(--border)" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Calificación</label>
+          <div id="starRating">
+            {% for i in range(1,6) %}
+              <i class="bi bi-star-fill fs-3 me-1 text-secondary star-icon" data-value="{{ i }}"></i>
+            {% endfor %}
+          </div>
+          <input type="hidden" name="estrellas" id="estrellas" value="0" required>
+        </div>
+        <div class="col-12">
+          <label class="form-label">Cuéntanos tu experiencia</label>
+          <textarea name="comentario" class="form-control" rows="3" style="border:3px solid var(--border)" required></textarea>
+        </div>
+        <div class="col-12">
+          <button class="btn btn-brutal btn-brand hover-raise" type="submit">Enviar opinión</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="row g-3">
+      {% if reseñas and reseñas|length>0 %}
+        {% for r in reseñas %}
+          <div class="col-md-6">
+            <div class="card card-brutal h-100">
+              <div class="card-body">
+                <h5 class="brand-font text-center">{{ r.nombre }}</h5>
+                <div class="text-center mb-2">
+                  {% for i in range(1,6) %}
+                    {% if i <= r.estrellas %}<i class="bi bi-star-fill text-warning"></i>{% else %}<i class="bi bi-star text-secondary"></i>{% endif %}
+                  {% endfor %}
+                </div>
+                <p>{{ r.comentario }}</p>
+              </div>
+              <div class="card-footer bg-white" style="border-top:3px solid var(--border);">
+                <small class="text-muted">{{ r.fecha.strftime('%d/%m/%Y') }}</small>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div class="col-12"><div class="card card-brutal p-3">Aún no hay opiniones registradas.</div></div>
+      {% endif %}
+    </div>
+  </section>
+
+  <!-- BANNER avisos -->
+  <div class="ticker">
+    <div class="container">
+      <div id="noticiasCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="4500">
+        <div class="carousel-inner text-center">
+          {% if avisos and avisos|length>0 %}
+            {% for aviso in avisos %}
+              <div class="carousel-item {% if loop.first %}active{% endif %}">
+                <span class="pill-invert"><i class="bi bi-megaphone-fill me-1"></i> {{ aviso.title }}</span>
+                <span class="ms-2">{{ aviso.content }}</span>
+              </div>
+            {% endfor %}
+          {% else %}
+            <div class="carousel-item active">Gracias por visitarnos. Síguenos para novedades tecnológicas.</div>
+          {% endif %}
+        </div>
+        <button class="carousel-control-prev" type="button" data-bs-target="#noticiasCarousel" data-bs-slide="prev">
+          <span class="carousel-control-prev-icon"></span>
+          <span class="visually-hidden">Anterior</span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#noticiasCarousel" data-bs-slide="next">
+          <span class="carousel-control-next-icon"></span>
+          <span class="visually-hidden">Siguiente</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reservas -->
+  {% include "public/reservas.html" %}
+
+  <!-- FAB WhatsApp -->
+  {% if page.get('whatsapp') %}
+  <a class="fab-wa"
+    href="https://wa.me/{{ page.whatsapp | replace(' ','') }}"
+    target="_blank"
+    aria-label="WhatsApp"
+    data-track="click_whatsapp_fab">
+    <span class="btn btn-brutal btn-brand px-3 py-2 hover-raise">
+      <i class="bi bi-whatsapp"></i>
+    </span>
+  </a>
+  {% endif %}
+
+  <!-- FOOTER -->
+  <footer class="ft">
+    <div class="container d-flex flex-column flex-md-row align-items-center justify-content-between">
+      <div class="mb-2 mb-md-0">
+        <strong class="brand-font">{{ page.get('business_name','Negocio') }}</strong> · &copy; {{ current_year or 2026 }}
+      </div>
+      <div class="d-flex align-items-center gap-3">
+        {% if page.get('facebook') %}<a href="{{ page.facebook }}" target="_blank" class="text-dark" aria-label="Facebook"><i class="bi bi-facebook fs-4"></i></a>{% endif %}
+        {% if page.get('tiktok') %}<a href="{{ page.tiktok }}" target="_blank" class="text-dark" aria-label="TikTok"><i class="bi bi-tiktok fs-4"></i></a>{% endif %}
+      </div>
+    </div>
+  </footer>
+
+  <!-- JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+  <script>
+  // ===== MAPA (Leaflet) — robusto =====
+  (function () {
+    const el = document.getElementById('map');
+    if (!el) return;
+
+    const latRaw = "{{ page.get('lat','') }}";
+    const lngRaw = "{{ page.get('lng','') }}";
+
+    const lat = Number.parseFloat(latRaw);
+    const lng = Number.parseFloat(lngRaw);
+
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      console.warn('[map] Invalid coords:', { latRaw, lngRaw });
+      el.innerHTML = `
+        <div class="alert alert-warning py-2 px-3" style="border:3px solid var(--border); box-shadow: var(--shadow-xs);">
+          No se pudo cargar el mapa porque las coordenadas no son válidas.
+        </div>`;
+      return;
+    }
+
+    const map = L.map('map', {
+      scrollWheelZoom: false,
+      dragging: !L.Browser.mobile,
+      tap: true
+    }).setView([lat, lng], 16);
+
+    const tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap'
+    });
+
+    tiles.on('tileerror', function () {
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap &copy; CARTO'
+      }).addTo(map);
+    });
+
+    tiles.addTo(map);
+
+    const name = "{{ page.get('business_name','')|e }}";
+    const addr = "{{ page.get('address','')|e }}";
+    const popupHtml = `
+      <div style="min-width:180px">
+        <strong>${name || 'Ubicación'}</strong><br>
+        <span style="opacity:.8">${addr || ''}</span>
+      </div>
+    `;
+
+    const marker = L.marker([lat, lng]).addTo(map);
+    marker.bindPopup(popupHtml);
+
+    const fixSize = () => {
+      try { map.invalidateSize(true); } catch(e){}
+    };
+
+    setTimeout(fixSize, 120);
+    setTimeout(fixSize, 500);
+    window.addEventListener('resize', () => setTimeout(fixSize, 80));
+
+    if (!L.Browser.mobile) {
+      setTimeout(() => marker.openPopup(), 250);
+    }
+  })();
+  </script>
+
+  <script>
+  const SITE_SLUG = "{{ slug or page.get('slug','') }}";
+  const BUSINESS_NAME = "{{ page.get('business_name','')|e }}";
+  const BUSINESS_WA = "{{ (page.get('whatsapp','') or '')|replace(' ','') }}";
+
+  function track(type, meta){
+    try{
+      if(!SITE_SLUG) return;
+      fetch("/api/track", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ slug: SITE_SLUG, type, meta: meta || {} })
+      }).catch(()=>{});
+    }catch(e){}
+  }
+
+  track("view", { path: location.pathname, ref: document.referrer || "" });
+
+  document.addEventListener("click", (e)=>{
+    const el = e.target.closest("[data-track]");
+    if(!el) return;
+    const type = el.getAttribute("data-track");
+    const href = el.getAttribute("href") || "";
+    track(type, { href });
+  });
+
+  /* Zoom imágenes */
+  (function zoomModule(){
+    const zoomed = document.getElementById("zoomedImage");
+    if(!zoomed) return;
+
+    document.addEventListener("click", (e)=>{
+      const img = e.target.closest(".img-zoom-trigger");
+      if(!img) return;
+      const src = img.getAttribute("data-img-src") || img.getAttribute("src");
+      if(src) zoomed.src = src;
+      track("open_zoom", { src: src || "" });
+    });
+  })();
+
+  /* Stars reseñas */
+  (function starsModule(){
+    const stars = Array.from(document.querySelectorAll(".star-icon"));
+    const input = document.getElementById("estrellas");
+    if(!stars.length || !input) return;
+
+    function paint(v){
+      stars.forEach(s=>{
+        const n = parseInt(s.dataset.value || "0", 10);
+        if(n <= v){
+          s.classList.remove("text-secondary");
+          s.classList.add("text-warning");
+        }else{
+          s.classList.remove("text-warning");
+          s.classList.add("text-secondary");
+        }
+      });
+    }
+
+    stars.forEach(s=>{
+      s.style.cursor = "pointer";
+      s.addEventListener("click", ()=>{
+        const v = parseInt(s.dataset.value || "0", 10);
+        input.value = String(v);
+        paint(v);
+        track("rate_star_select", { value: v });
+      });
+    });
+  })();
+
+  /* Cotizar -> Lead + Cotización + WhatsApp */
+  (function cotizarModule(){
+    const form = document.getElementById("form-cotizar");
+    const modalEl = document.getElementById("cotizarModal");
+    const resumenEl = document.getElementById("resumenSeleccion");
+    const nombreInput = document.getElementById("nombreClienteInput");
+    const telefonoInput = document.getElementById("telefonoClienteInput");
+    const emailInput = document.getElementById("emailClienteInput");
+    const notasInput = document.getElementById("notasClienteInput");
+    const errNombre = document.getElementById("errorModalNombre");
+    const errTelefono = document.getElementById("errorModalTelefono");
+    const enviarBtn = document.getElementById("enviarCotizacionBtn");
+
+    if(!form || !modalEl || !resumenEl || !nombreInput || !telefonoInput || !enviarBtn) return;
+
+    const bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    let selectedItems = [];
+
+    function escapeHtml(s){
+      return String(s)
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    function getSelectedItems(){
+      const inputs = Array.from(form.querySelectorAll('input[type="number"][data-item-id]'));
+      const items = [];
+
+      for(const inp of inputs){
+        const producto_id = (inp.dataset.itemId || "").trim();
+        const title = (inp.dataset.itemNombre || "").trim();
+        const qty = parseInt(inp.value || "0", 10);
+        const unit_price = parseFloat(inp.dataset.itemPrice || "0");
+        const sku = (inp.dataset.itemSku || "").trim();
+        const barcode = (inp.dataset.itemBarcode || "").trim();
+
+        if(producto_id && title && Number.isFinite(qty) && qty > 0){
+          items.push({
+            producto_id,
+            title,
+            qty,
+            unit_price: Number.isFinite(unit_price) ? unit_price : 0,
+            sku,
+            barcode
+          });
+        }
+      }
+
+      return items;
+    }
+
+    function renderResumen(items){
+      if(!items.length){
+        resumenEl.innerHTML = `<div class="text-muted">No seleccionaste ningún equipo, accesorio o servicio todavía.</div>`;
+        return;
+      }
+
+      resumenEl.innerHTML = items.map(it => {
+        const total = ((Number(it.unit_price || 0)) * (Number(it.qty || 0))).toFixed(2);
+        return `
+          <div class="d-flex justify-content-between align-items-start gap-2 py-1 border-bottom">
+            <div>
+              • <strong>${escapeHtml(it.title)}</strong><br>
+              <small class="text-muted">Cantidad: ${it.qty}</small>
+            </div>
+            <div class="fw-bold">$${total}</div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    form.addEventListener("submit", (e)=>{
+      e.preventDefault();
+      e.stopPropagation();
+
+      selectedItems = getSelectedItems();
+
+      if(!selectedItems.length){
+        track("cotizar_empty", {});
+        resumenEl.innerHTML = `<div class="text-danger fw-bold">Selecciona al menos 1 equipo, accesorio o servicio con cantidad mayor a 0.</div>`;
+        bsModal.show();
+        return false;
+      }
+
+      track("cotizar_open_modal", { items: selectedItems.length });
+      renderResumen(selectedItems);
+
+      errNombre.classList.add("d-none");
+      errTelefono.classList.add("d-none");
+
+      nombreInput.value = "";
+      telefonoInput.value = "";
+      if (emailInput) emailInput.value = "";
+      if (notasInput) notasInput.value = "";
+
+      bsModal.show();
+      setTimeout(()=> nombreInput.focus(), 150);
+      return false;
+    });
+
+    async function createLead(nombre, telefono, email, notes, items){
+      try{
+        const payload = {
+          slug: SITE_SLUG,
+          nombre,
+          telefono,
+          email,
+          notes,
+          canal: "whatsapp",
+          items: items.map(it => ({
+            title: it.title,
+            qty: it.qty
+          }))
+        };
+
+        const r = await fetch("/api/leads", {
+          method:"POST",
+          headers:{ "Content-Type":"application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        return await r.json();
+      }catch(e){
+        return { ok:false, error:"network" };
+      }
+    }
+
+    async function createCotizacion(payload){
+      try{
+        const r = await fetch("/api/cotizaciones/public", {
+          method:"POST",
+          headers:{ "Content-Type":"application/json" },
+          body: JSON.stringify(payload)
+        });
+        return await r.json();
+      }catch(e){
+        return { ok:false, error:"network" };
+      }
+    }
+
+    function buildWhatsAppMessage(nombre, telefono, email, notes, items, folio){
+      const lines = [];
+      lines.push(`Hola, soy ${nombre}.`);
+      lines.push(`Quisiera una cotización técnica con ${BUSINESS_NAME}:`);
+      lines.push("");
+
+      for(const it of items){
+        lines.push(`- ${it.title} x${it.qty}`);
+      }
+
+      if(telefono){
+        lines.push("");
+        lines.push(`Teléfono: ${telefono}`);
+      }
+
+      if(email){
+        lines.push(`Correo: ${email}`);
+      }
+
+      if(notes){
+        lines.push(`Notas: ${notes}`);
+      }
+
+      if(folio){
+        lines.push("");
+        lines.push(`Folio de cotización: ${folio}`);
+      }
+
+      lines.push("");
+      lines.push("Gracias, quedo atento/a.");
+      return lines.join("\n");
+    }
+
+    function openWhatsApp(text){
+      if(!BUSINESS_WA){
+        alert("Este negocio aún no tiene WhatsApp configurado para soporte o cotizaciones.");
+        return false;
+      }
+
+      const url = `https://wa.me/${BUSINESS_WA}?text=${encodeURIComponent(text)}`;
+      window.open(url, "_blank", "noopener");
+      return true;
+    }
+
+    enviarBtn.addEventListener("click", async ()=>{
+      const nombre = (nombreInput.value || "").trim();
+      const telefono = (telefonoInput.value || "").trim();
+      const email = (emailInput?.value || "").trim();
+      const notes = (notasInput?.value || "").trim();
+
+      errNombre.classList.add("d-none");
+      errTelefono.classList.add("d-none");
+
+      if(!nombre){
+        errNombre.classList.remove("d-none");
+        track("cotizar_missing_name", {});
+        nombreInput.focus();
+        return;
+      }
+
+      if(!telefono){
+        errTelefono.classList.remove("d-none");
+        track("cotizar_missing_phone", {});
+        telefonoInput.focus();
+        return;
+      }
+
+      if(!selectedItems.length){
+        track("cotizar_missing_items", {});
+        bsModal.hide();
+        return;
+      }
+
+      enviarBtn.disabled = true;
+      enviarBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Enviando...`;
+
+      track("cotizar_send_click", { items: selectedItems.length });
+
+      const quotePayload = {
+        slug: SITE_SLUG,
+        customer_name: nombre,
+        customer_phone: telefono,
+        customer_email: email,
+        notes,
+        items: selectedItems,
+        canal: "whatsapp"
+      };
+
+      const [leadResp, quoteResp] = await Promise.allSettled([
+        createLead(nombre, telefono, email, notes, selectedItems),
+        createCotizacion(quotePayload)
+      ]);
+
+      const leadData = leadResp.status === "fulfilled" ? leadResp.value : { ok:false, error:"lead_promise_failed" };
+      const quoteData = quoteResp.status === "fulfilled" ? quoteResp.value : { ok:false, error:"quote_promise_failed" };
+
+      const msg = buildWhatsAppMessage(
+        nombre,
+        telefono,
+        email,
+        notes,
+        selectedItems,
+        quoteData && quoteData.ok ? (quoteData.folio || "") : ""
+      );
+
+      openWhatsApp(msg);
+
+      if(leadData && leadData.ok){
+        track("lead_saved", { lead_id: leadData.lead_id || "" });
+      }else{
+        track("lead_save_failed", { error: (leadData && leadData.error) || "unknown" });
+      }
+
+      if(quoteData && quoteData.ok){
+        track("quote_saved", {
+          quote_id: quoteData.quote_id || "",
+          folio: quoteData.folio || ""
+        });
+
+        resumenEl.innerHTML = `
+          <div class="alert alert-success mb-0">
+            ¡Listo! Guardamos el lead y la cotización técnica${quoteData.folio ? ` <strong>(${escapeHtml(quoteData.folio)})</strong>` : ""}.
+            Ahora abrimos WhatsApp para continuar la atención.
+          </div>
+        `;
+      }else{
+        track("quote_save_failed", { error: (quoteData && quoteData.error) || "unknown" });
+
+        resumenEl.innerHTML = `
+          <div class="alert alert-warning mb-0">
+            Guardamos el interés del cliente y abrimos WhatsApp, pero la cotización técnica no se pudo guardar en sistema.
+          </div>
+        `;
+      }
+
+      setTimeout(()=>{
+        enviarBtn.disabled = false;
+        enviarBtn.innerHTML = `<i class="bi bi-whatsapp me-1"></i> Enviar cotización por WhatsApp`;
+        bsModal.hide();
+      }, 850);
+    });
+  })();
+  </script>
+</body>
+</html>

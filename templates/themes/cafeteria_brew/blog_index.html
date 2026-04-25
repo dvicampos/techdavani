@@ -1,0 +1,158 @@
+{% extends "themes/classico/_base.html" %}
+
+{% set meta_title = "Blog brew | " ~ (page.get('business_name') or negocio.get('business_name') or 'Mi negocio') %}
+{% set meta_description = "Notas, novedades y contenido de " ~ (page.get('business_name') or negocio.get('business_name') or 'este negocio') %}
+
+{% block content %}
+<section class="section-shell">
+  <div class="container">
+    <div class="hero-mini">
+      <span class="badge-soft mb-3">
+        <i class="bi bi-cup-hot"></i>
+        Blog brew
+      </span>
+      <h1 class="brand-font fw-bold">
+        Historias, novedades y aromas de {{ page.get('business_name') or negocio.get('business_name') }}
+      </h1>
+      <p>
+        Explora publicaciones, novedades, recomendaciones y contenido reciente del negocio.
+      </p>
+    </div>
+
+    {% set site_slug = slug or page.get('slug') or negocio.get('slug') %}
+
+    <div class="card-neo p-3 p-lg-4 mb-4">
+      <form method="GET" action="{{ url_for('lista_blogs_negocio_slug', slug=site_slug) }}" class="search-box">
+        <div class="row g-3 align-items-center">
+          <div class="col-lg-9">
+            <input
+              type="text"
+              class="form-control"
+              name="search"
+              value="{{ query or '' }}"
+              placeholder="Buscar por título, café o novedad..."
+            >
+          </div>
+          <div class="col-lg-3 d-grid">
+            <button type="submit" class="btn btn-brand">
+              <i class="bi bi-search me-1"></i>
+              Buscar
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    {% if query %}
+      <div class="mb-4">
+        <span class="badge-soft">
+          <i class="bi bi-funnel"></i>
+          Búsqueda: “{{ query }}”
+        </span>
+      </div>
+    {% endif %}
+
+    {% if posts %}
+      <div class="row g-4">
+        {% for post in posts %}
+          {% set post_cover = post.get('cabecera') or post.get('image') or page.get('cover_image') or negocio.get('cover_image') %}
+          {% if post_cover and not (post_cover.startswith('http://') or post_cover.startswith('https://')) %}
+            {% set post_cover = url_for('uploaded_file', filename=post_cover) %}
+          {% endif %}
+
+          <div class="col-md-6 col-xl-4">
+            <article class="card-neo h-100 overflow-hidden">
+              {% if post_cover %}
+                <img src="{{ post_cover }}" alt="{{ post.get('title','Post') }}" class="post-cover">
+              {% endif %}
+
+              <div class="p-3 p-lg-4 d-flex flex-column h-100">
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                  <span class="badge-soft">
+                    <i class="bi bi-calendar3"></i>
+                    {{ post.get('date').strftime('%d/%m/%Y') if post.get('date') else 'Sin fecha' }}
+                  </span>
+                  {% if post.get('author') %}
+                  <span class="badge-soft">
+                    <i class="bi bi-person"></i>
+                    {{ post.get('author') }}
+                  </span>
+                  {% endif %}
+                </div>
+
+                <h2 class="brand-font fw-bold post-card-title mb-2">
+                  {{ post.get('title','Sin título') }}
+                </h2>
+
+                <p class="muted mb-4">
+                  {{ post.get('content','')|striptags|truncate(150) }}
+                </p>
+
+                <div class="mt-auto">
+                  <a
+                    href="{{ url_for('ver_post_slug', slug=site_slug, post_id=post['_id']) }}"
+                    class="btn btn-brand w-100"
+                  >
+                    Leer nota
+                  </a>
+                </div>
+              </div>
+            </article>
+          </div>
+        {% endfor %}
+      </div>
+
+      {% set current_page_num = page_number or page or 1 %}
+      {% set total_pages = ((total_posts or 0) / (per_page or 15))|round(0, 'ceil')|int %}
+
+      {% if total_pages > 1 %}
+        <nav class="mt-5">
+          <ul class="pagination justify-content-center flex-wrap gap-2">
+            {% if current_page_num > 1 %}
+              <li class="page-item">
+                <a class="page-link rounded-4 border-2 text-dark"
+                   href="{{ url_for('lista_blogs_negocio_slug', slug=site_slug, page=current_page_num-1, search=query or '') }}">
+                  ← Anterior
+                </a>
+              </li>
+            {% endif %}
+
+            {% for n in range(1, total_pages + 1) %}
+              <li class="page-item">
+                <a
+                  class="page-link rounded-4 border-2 {% if n == current_page_num %}fw-bold{% else %}text-dark{% endif %}"
+                  href="{{ url_for('lista_blogs_negocio_slug', slug=site_slug, page=n, search=query or '') }}"
+                  {% if n == current_page_num %}style="background: var(--brand); color:#0b0b0b;"{% endif %}
+                >
+                  {{ n }}
+                </a>
+              </li>
+            {% endfor %}
+
+            {% if current_page_num < total_pages %}
+              <li class="page-item">
+                <a class="page-link rounded-4 border-2 text-dark"
+                   href="{{ url_for('lista_blogs_negocio_slug', slug=site_slug, page=current_page_num+1, search=query or '') }}">
+                  Siguiente →
+                </a>
+              </li>
+            {% endif %}
+          </ul>
+        </nav>
+      {% endif %}
+    {% else %}
+      <div class="card-neo p-4 p-lg-5 text-center">
+        <div class="display-6 mb-3">☕</div>
+        <h3 class="brand-font fw-bold mb-2">Aún no hay publicaciones</h3>
+        <p class="muted mb-0">
+          {% if query %}
+            No encontramos resultados para tu búsqueda.
+          {% else %}
+            Este negocio todavía no publica notas en su blog.
+          {% endif %}
+        </p>
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
