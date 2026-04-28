@@ -5772,7 +5772,7 @@ def cotizacion_convertir_a_venta(quote_id):
         )
 
         flash(f"Cotización convertida a venta correctamente: {venta['folio']}", "success")
-        return redirect(url_for("venta_ticket_pdf", venta_id=str(venta["_id"])))
+        return redirect(url_for("venta_detail", venta_id=str(venta["_id"])))
 
     except Exception as e:
         mongo.db.cotizaciones.update_one(
@@ -5835,8 +5835,11 @@ def pos():
                 tipo='mostrador',
                 source='pos'
             )
+
             flash(f"Venta registrada correctamente: {venta['folio']}", 'success')
-            return redirect(url_for('venta_ticket_pdf', venta_id=str(venta['_id'])))
+
+            return redirect(url_for('venta_detail', venta_id=str(venta['_id'])))
+
         except Exception as e:
             flash(str(e), 'danger')
             return redirect(url_for('pos'))
