@@ -5837,8 +5837,9 @@ def pos():
             )
 
             flash(f"Venta registrada correctamente: {venta['folio']}", 'success')
-
-            return redirect(url_for('venta_detail', venta_id=str(venta['_id'])))
+            
+            return redirect(url_for('venta_print_view', venta_id=str(venta['_id']), paper='thermal'))
+            # return redirect(url_for('venta_detail', venta_id=str(venta['_id'])))
 
         except Exception as e:
             flash(str(e), 'danger')
@@ -6738,6 +6739,43 @@ def manifest():
     )
     response.headers["Content-Type"] = "application/manifest+json"
     return response
+
+@app.route('/ventas/<venta_id>/imprimir')
+@require_active_subscription
+@current_site(required=True)
+@login_required
+def venta_print_view(venta_id):
+    page_id = get_current_page_id()
+
+    venta = mongo.db.ventas.find_one({
+        '_id': ObjectId(venta_id),
+        'page_id': page_id
+    })
+
+    if not venta:
+        flash('Venta no encontrada.', 'warning')
+        return redirect(url_for('list_ventas'))
+
+    page = mongo.db.page_data.find_one({'_id': page_id}) or {}
+
+    paper = (request.args.get('paper') or 'thermal').strip().lower()
+
+    if paper not in ('thermal', 'letter'):
+        paper = 'thermal'
+
+    # ✅ Térmico usa vista limpia tipo ticket real
+    if paper == 'thermal':
+        template_name = 'tickets/thermal.html'
+    else:
+        # Puedes dejar aquí tu diseño actual para hoja normal
+        template_name = 'venta_print.html'
+
+    return render_template(
+        template_name,
+        venta=venta,
+        page=page,
+        paper=paper
+    )
 
 if __name__ == '__main__':
   app.run(host="0.0.0.0", port=5000, debug=True)

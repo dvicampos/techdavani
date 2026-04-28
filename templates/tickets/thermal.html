@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Ticket {{ venta.get('folio', '') }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #e5e7eb;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #111827;
+    }
+
+    .screen-topbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(255,255,255,.92);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid #d1d5db;
+      padding: 12px;
+    }
+
+    .screen-topbar-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .screen-title {
+      min-width: 0;
+    }
+
+    .screen-title strong {
+      display: block;
+      font-size: 15px;
+      line-height: 1.2;
+    }
+
+    .screen-title span {
+      display: block;
+      margin-top: 2px;
+      font-size: 12px;
+      color: #64748b;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .badge-ok {
+      flex-shrink: 0;
+      border-radius: 999px;
+      padding: 7px 10px;
+      background: #dcfce7;
+      color: #166534;
+      border: 1px solid #bbf7d0;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .screen-layout {
+      width: 100%;
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 16px 10px 96px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+
+    .actions-panel {
+      background: #ffffff;
+      border: 1px solid #dbe3ee;
+      border-radius: 20px;
+      padding: 12px;
+      box-shadow: 0 15px 35px rgba(15, 23, 42, .10);
+    }
+
+    .actions-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 9px;
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 14px;
+      min-height: 44px;
+      padding: 11px 12px;
+      text-decoration: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      font-size: 13px;
+      line-height: 1.15;
+      font-weight: 900;
+      text-align: center;
+    }
+
+    .btn-primary {
+      background: #111827;
+      color: #ffffff;
+      box-shadow: 0 12px 24px rgba(17, 24, 39, .20);
+    }
+
+    .btn-soft {
+      background: #f1f5f9;
+      color: #111827;
+      border: 1px solid #e2e8f0;
+    }
+
+    .btn-success {
+      background: #16a34a;
+      color: #ffffff;
+    }
+
+    .paper-switch {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      padding: 6px;
+      border-radius: 14px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+    }
+
+    .paper-switch a {
+      flex: 1;
+      text-decoration: none;
+      text-align: center;
+      color: #334155;
+      font-size: 12px;
+      font-weight: 900;
+      padding: 9px 8px;
+      border-radius: 10px;
+    }
+
+    .paper-switch a.active {
+      background: #111827;
+      color: #ffffff;
+    }
+
+    .hint {
+      margin: 10px 2px 0;
+      font-size: 12px;
+      line-height: 1.45;
+      color: #64748b;
+    }
+
+    .ticket-stage {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    .ticket {
+      width: 80mm;
+      min-height: 150mm;
+      background: #ffffff;
+      padding: 7mm 6mm;
+      color: #111827;
+      box-shadow: 0 18px 45px rgba(15,23,42,.22);
+      border: 1px solid rgba(15,23,42,.08);
+    }
+
+    .ticket-header {
+      text-align: center;
+    }
+
+    .business-name {
+      font-size: 14px;
+      font-weight: 900;
+      line-height: 1.15;
+      margin-bottom: 3px;
+    }
+
+    .business-meta {
+      color: #64748b;
+      font-size: 10px;
+      line-height: 1.35;
+    }
+
+    .separator {
+      border: 0;
+      border-top: 1px solid #cbd5e1;
+      margin: 11px 0;
+    }
+
+    .ticket-title {
+      text-align: center;
+      font-size: 12px;
+      font-weight: 900;
+      margin: 0 0 9px;
+      text-transform: uppercase;
+    }
+
+    .meta-lines {
+      font-size: 10px;
+      color: #64748b;
+      line-height: 1.65;
+      margin-bottom: 8px;
+    }
+
+    .meta-lines b {
+      color: #111827;
+      font-weight: 800;
+    }
+
+    .items {
+      display: grid;
+      gap: 8px;
+    }
+
+    .item {
+      display: grid;
+      gap: 2px;
+    }
+
+    .item-title {
+      font-size: 11px;
+      font-weight: 900;
+      line-height: 1.25;
+    }
+
+    .item-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 10px;
+      color: #64748b;
+      line-height: 1.25;
+    }
+
+    .item-bottom strong {
+      color: #111827;
+      font-size: 10px;
+      white-space: nowrap;
+      text-align: right;
+    }
+
+    .totals {
+      display: grid;
+      gap: 5px;
+      font-size: 10px;
+      color: #64748b;
+    }
+
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .total-row strong {
+      color: #111827;
+    }
+
+    .grand-total {
+      margin-top: 3px;
+      padding-top: 5px;
+      border-top: 1px solid #cbd5e1;
+      font-size: 13px;
+      color: #111827;
+      font-weight: 900;
+    }
+
+    .grand-total strong {
+      color: #15803d;
+      font-size: 13px;
+    }
+
+    .payment {
+      display: grid;
+      gap: 4px;
+      font-size: 10px;
+      color: #64748b;
+      line-height: 1.35;
+    }
+
+    .payment b {
+      color: #111827;
+    }
+
+    .notes {
+      font-size: 10px;
+      color: #111827;
+      line-height: 1.4;
+    }
+
+    .thanks {
+      margin-top: 12px;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .footer-small {
+      margin-top: 5px;
+      text-align: center;
+      color: #64748b;
+      font-size: 9px;
+      line-height: 1.3;
+    }
+
+    .mobile-bottom-actions {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 60;
+      display: grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap: 10px;
+      padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+      background: rgba(255,255,255,.92);
+      backdrop-filter: blur(16px);
+      border-top: 1px solid #d1d5db;
+    }
+
+    @media (min-width: 880px) {
+      .screen-layout {
+        grid-template-columns: 300px 1fr;
+        align-items: start;
+        padding: 18px 14px 28px;
+      }
+
+      .mobile-bottom-actions {
+        display: none;
+      }
+    }
+
+    @media (max-width: 420px) {
+      .actions-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .screen-layout {
+        padding-left: 0;
+        padding-right: 0;
+      }
+
+      .actions-panel {
+        margin: 0 10px;
+      }
+
+      .ticket-stage {
+        overflow-x: auto;
+        justify-content: flex-start;
+        padding-left: 0;
+      }
+
+      .ticket {
+        min-width: 80mm;
+      }
+    }
+
+    @media print {
+      html,
+      body {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 80mm !important;
+        min-height: auto !important;
+        background: #ffffff !important;
+      }
+
+      .screen-topbar,
+      .actions-panel,
+      .mobile-bottom-actions {
+        display: none !important;
+      }
+
+      .screen-layout {
+        display: block !important;
+        width: 80mm !important;
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+
+      .ticket-stage {
+        display: block !important;
+        width: 80mm !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+      }
+
+      .ticket {
+        width: 80mm !important;
+        min-height: auto !important;
+        box-shadow: none !important;
+        border: 0 !important;
+        margin: 0 !important;
+        padding: 5mm 5mm !important;
+      }
+
+      .grand-total strong {
+        color: #000000 !important;
+      }
+
+      @page {
+        size: 80mm auto;
+        margin: 0;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <header class="screen-topbar">
+    <div class="screen-topbar-inner">
+      <div class="screen-title">
+        <strong>Ticket térmico</strong>
+        <span>Folio {{ venta.get('folio', 'SIN FOLIO') }}</span>
+      </div>
+
+      <div class="badge-ok">
+        ✓ Venta registrada
+      </div>
+    </div>
+  </header>
+
+  <main class="screen-layout">
+
+    <aside class="actions-panel">
+      <div class="actions-grid">
+        <button class="btn btn-primary" onclick="printTicket()">
+          🖨️ Imprimir
+        </button>
+
+        <button class="btn btn-soft" onclick="shareTicket()">
+          📤 Compartir
+        </button>
+
+        <a class="btn btn-soft"
+           href="{{ url_for('venta_ticket_pdf', venta_id=venta._id|string, paper='thermal') }}"
+           target="_blank">
+          📄 PDF térmico
+        </a>
+
+        <a class="btn btn-soft"
+           href="{{ url_for('venta_detail', venta_id=venta._id|string) }}">
+          ← Detalle
+        </a>
+
+        <a class="btn btn-success"
+           href="{{ url_for('pos') }}"
+           style="grid-column: 1 / -1;">
+          ＋ Nueva venta
+        </a>
+      </div>
+
+      <div class="paper-switch">
+        <a class="active"
+           href="{{ url_for('venta_print_view', venta_id=venta._id|string, paper='thermal') }}">
+          Térmico
+        </a>
+
+        <a href="{{ url_for('venta_print_view', venta_id=venta._id|string, paper='letter') }}">
+          Hoja normal
+        </a>
+      </div>
+
+      <p class="hint">
+        Este diseño está pensado para impresora térmica de 80mm. En impresión real,
+        selecciona la térmica y margen mínimo o sin margen.
+      </p>
+    </aside>
+
+    <section class="ticket-stage">
+      <article class="ticket" id="ticket">
+
+        <header class="ticket-header">
+          <div class="business-name">
+            {{ page.get('business_name', 'Mi negocio') }}
+          </div>
+
+          {% if page.get('phone') or page.get('business_phone') or page.get('whatsapp') %}
+            <div class="business-meta">
+              {{ page.get('phone') or page.get('business_phone') or page.get('whatsapp') }}
+            </div>
+          {% endif %}
+
+          {% if page.get('address') or page.get('business_address') %}
+            <div class="business-meta">
+              {{ page.get('address') or page.get('business_address') }}
+            </div>
+          {% endif %}
+        </header>
+
+        <hr class="separator">
+
+        <h2 class="ticket-title">
+          TICKET {{ venta.get('folio', 'SIN FOLIO') }}
+        </h2>
+
+        <section class="meta-lines">
+          <div>
+            Fecha:
+            <b>
+              {% if venta.get('created_at') %}
+                {{ venta.get('created_at').strftime('%d/%m/%Y %H:%M') }}
+              {% else %}
+                -
+              {% endif %}
+            </b>
+          </div>
+
+          <div>
+            Cliente:
+            <b>{{ venta.get('customer_name') or 'Mostrador' }}</b>
+          </div>
+
+          <div>
+            Tel:
+            <b>{{ venta.get('customer_phone') or '-' }}</b>
+          </div>
+        </section>
+
+        <hr class="separator">
+
+        <section class="items">
+          {% for item in venta.get('items', []) %}
+            <div class="item">
+              <div class="item-title">
+                {{ item.get('qty', 0) }}
+                x
+                {{ item.get('title') or item.get('nombre') or item.get('product_name') or 'Producto' }}
+              </div>
+
+              <div class="item-bottom">
+                <span>
+                  P/U: ${{ "%.2f"|format((item.get('unit_price', 0) or 0)|float) }}
+                </span>
+
+                <strong>
+                  ${{ "%.2f"|format((item.get('subtotal', 0) or 0)|float) }}
+                </strong>
+              </div>
+            </div>
+          {% else %}
+            <div class="business-meta">
+              No hay productos registrados.
+            </div>
+          {% endfor %}
+        </section>
+
+        <hr class="separator">
+
+        <section class="totals">
+          <div class="total-row">
+            <span>Subtotal</span>
+            <strong>${{ "%.2f"|format((venta.get('subtotal', 0) or 0)|float) }}</strong>
+          </div>
+
+          <div class="total-row">
+            <span>Descuento</span>
+            <strong>
+              ${{ "%.2f"|format((venta.get('discount', venta.get('discount_total', 0)) or 0)|float) }}
+            </strong>
+          </div>
+
+          {% if venta.get('tax_total') %}
+          <div class="total-row">
+            <span>Impuestos</span>
+            <strong>${{ "%.2f"|format((venta.get('tax_total', 0) or 0)|float) }}</strong>
+          </div>
+          {% endif %}
+
+          <div class="total-row grand-total">
+            <span>TOTAL</span>
+            <strong>${{ "%.2f"|format((venta.get('total', 0) or 0)|float) }}</strong>
+          </div>
+        </section>
+
+        <hr class="separator">
+
+        <section class="payment">
+          <div>
+            Método:
+            <b>{{ (venta.get('payment_method') or '-')|capitalize }}</b>
+          </div>
+
+          <div>
+            Efectivo:
+            <b>${{ "%.2f"|format((venta.get('cash_amount', 0) or 0)|float) }}</b>
+          </div>
+
+          <div>
+            Digital:
+            <b>${{ "%.2f"|format((venta.get('digital_amount', 0) or 0)|float) }}</b>
+          </div>
+
+          {% if venta.get('change_amount') %}
+          <div>
+            Cambio:
+            <b>${{ "%.2f"|format((venta.get('change_amount', 0) or 0)|float) }}</b>
+          </div>
+          {% endif %}
+        </section>
+
+        {% if venta.get('notes') %}
+          <hr class="separator">
+
+          <section class="notes">
+            <strong>Notas:</strong><br>
+            {{ venta.get('notes') }}
+          </section>
+        {% endif %}
+
+        <hr class="separator">
+
+        <div class="thanks">
+          ¡Gracias por tu compra!
+        </div>
+
+        <div class="footer-small">
+          Conserva este comprobante
+        </div>
+
+      </article>
+    </section>
+
+  </main>
+
+  <div class="mobile-bottom-actions">
+    <button class="btn btn-primary" onclick="printTicket()">
+      🖨️ Imprimir
+    </button>
+
+    <button class="btn btn-soft" onclick="shareTicket()">
+      📤 Compartir
+    </button>
+  </div>
+
+  <script>
+    function printTicket() {
+      if (typeof window.print === 'function') {
+        window.print();
+      } else {
+        alert('Tu navegador no permite imprimir directamente. Abre el PDF o compártelo.');
+      }
+    }
+
+    async function shareTicket() {
+      const pdfUrl = "{{ url_for('venta_ticket_pdf', venta_id=venta._id|string, paper='thermal', _external=True) }}";
+
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: "Ticket {{ venta.get('folio', '') }}",
+            text: "Ticket de venta {{ venta.get('folio', '') }}",
+            url: pdfUrl
+          });
+        } catch (e) {
+          console.log('Compartir cancelado', e);
+        }
+      } else {
+        window.open(pdfUrl, '_blank');
+      }
+    }
+  </script>
+
+</body>
+</html>
