@@ -1,145 +1,730 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<div class="container d-flex justify-content-center align-items-center" style="min-height: 90vh;">
-  <div class="card shadow-lg border-0 rounded-4 p-4 w-100" style="max-width: 500px;">
-    <div class="card-body">
-      <h2 class="card-title text-center mb-4 text-primary">
-        <i class="fa fa-user-plus me-2"></i>Registro
-      </h2>
 
-      <div class="alert alert-warning text-center" role="alert">
-        <i class="fa fa-envelope me-1"></i>
-        Para activar tu cuenta, debes confirmar tu correo electrónico.
+<style>
+  :root {
+    --gp-dark: #060716;
+    --gp-brand: #1f1a4f;
+    --gp-brand-2: #5b54d6;
+    --gp-purple: #8b5cf6;
+    --gp-cyan: #06b6d4;
+    --gp-green: #22c55e;
+    --gp-orange: #f59e0b;
+    --gp-ink: #111827;
+    --gp-muted: #64748b;
+    --gp-card: rgba(255, 255, 255, .96);
+    --gp-border: rgba(15, 23, 42, .10);
+  }
+
+  body {
+    background:
+      radial-gradient(circle at 12% 10%, rgba(139, 92, 246, .42), transparent 28rem),
+      radial-gradient(circle at 88% 14%, rgba(6, 182, 212, .34), transparent 28rem),
+      linear-gradient(135deg, #060716 0%, #11123a 52%, #1f1a4f 100%) !important;
+  }
+
+  .register-page {
+    position: relative;
+    min-height: calc(100vh - 80px);
+    display: flex;
+    align-items: center;
+    padding: 42px 0;
+    overflow: hidden;
+  }
+
+  .register-page::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,.055) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.055) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: linear-gradient(to bottom, rgba(0,0,0,.95), rgba(0,0,0,.16));
+    pointer-events: none;
+  }
+
+  .register-page .container {
+    position: relative;
+    z-index: 2;
+  }
+
+  .register-left {
+    color: #fff;
+  }
+
+  .register-brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+
+  .register-brand img {
+    width: 52px;
+    height: 52px;
+    object-fit: cover;
+    border-radius: 16px;
+    box-shadow: 0 14px 34px rgba(91, 84, 214, .35);
+  }
+
+  .register-brand strong {
+    display: block;
+    font-size: 1.35rem;
+    font-weight: 900;
+    line-height: 1.1;
+  }
+
+  .register-brand span {
+    color: #cbd5e1;
+    font-weight: 700;
+  }
+
+  .register-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .55rem .9rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .12);
+    border: 1px solid rgba(255, 255, 255, .20);
+    color: #fff;
+    font-weight: 900;
+    font-size: .88rem;
+    margin-bottom: 1.1rem;
+  }
+
+  .register-title {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-weight: 900;
+    letter-spacing: -.055em;
+    line-height: .96;
+    font-size: clamp(2.35rem, 5vw, 4.7rem);
+    margin-bottom: 1.2rem;
+  }
+
+  .register-title span {
+    background: linear-gradient(135deg, #fff, #a5f3fc 38%, #c4b5fd 72%, #fbcfe8);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .register-text {
+    max-width: 620px;
+    color: #dbeafe;
+    font-size: 1.06rem;
+    line-height: 1.75;
+    margin-bottom: 1.4rem;
+  }
+
+  .benefit-list {
+    display: grid;
+    gap: .85rem;
+    max-width: 600px;
+  }
+
+  .benefit-item {
+    display: flex;
+    gap: .8rem;
+    align-items: flex-start;
+    padding: .9rem;
+    border-radius: 20px;
+    background: rgba(255,255,255,.09);
+    border: 1px solid rgba(255,255,255,.14);
+    backdrop-filter: blur(12px);
+  }
+
+  .benefit-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 15px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    background: rgba(255,255,255,.14);
+    color: #a5f3fc;
+  }
+
+  .benefit-item strong {
+    display: block;
+    color: #fff;
+    font-weight: 900;
+    line-height: 1.2;
+  }
+
+  .benefit-item small {
+    display: block;
+    color: #cbd5e1;
+    font-weight: 600;
+    line-height: 1.45;
+    margin-top: 2px;
+  }
+
+  .register-card {
+    width: 100%;
+    max-width: 520px;
+    margin-left: auto;
+    border-radius: 34px;
+    padding: 14px;
+    background: rgba(255,255,255,.14);
+    border: 1px solid rgba(255,255,255,.22);
+    box-shadow: 0 34px 90px rgba(0,0,0,.34);
+    backdrop-filter: blur(18px);
+  }
+
+  .register-card-inner {
+    border-radius: 26px;
+    background: var(--gp-card);
+    padding: 30px;
+    border: 1px solid rgba(255,255,255,.70);
+  }
+
+  .card-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    padding: .42rem .72rem;
+    border-radius: 999px;
+    background: rgba(91, 84, 214, .08);
+    border: 1px solid rgba(91, 84, 214, .16);
+    color: #312e81;
+    font-size: .82rem;
+    font-weight: 900;
+    margin-bottom: .9rem;
+  }
+
+  .register-card h2 {
+    color: var(--gp-brand);
+    font-weight: 950;
+    letter-spacing: -.04em;
+    margin-bottom: .45rem;
+  }
+
+  .register-card .subtitle {
+    color: var(--gp-muted);
+    font-weight: 650;
+    line-height: 1.55;
+    margin-bottom: 1.2rem;
+  }
+
+  .notice-box {
+    display: flex;
+    gap: .75rem;
+    align-items: flex-start;
+    padding: 1rem;
+    border-radius: 20px;
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    color: #9a3412;
+    font-weight: 700;
+    margin-bottom: 1rem;
+  }
+
+  .notice-box i {
+    font-size: 1.2rem;
+    margin-top: 1px;
+  }
+
+  .form-label {
+    font-weight: 850;
+    color: #1f2937;
+    margin-bottom: .45rem;
+  }
+
+  .form-control {
+    border-radius: 16px;
+    padding: .9rem 1rem;
+    border: 1px solid rgba(15, 23, 42, .14);
+    font-weight: 700;
+    color: #111827;
+    background: #fff;
+  }
+
+  .form-control:focus {
+    border-color: rgba(91, 84, 214, .65);
+    box-shadow: 0 0 0 .25rem rgba(91, 84, 214, .12);
+  }
+
+  .password-wrap {
+    position: relative;
+  }
+
+  .toggle-password {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    border: 0;
+    background: transparent;
+    color: #64748b;
+    padding: 4px 8px;
+  }
+
+  .password-hint {
+    font-size: .82rem;
+    color: #64748b;
+    font-weight: 650;
+    margin-top: .35rem;
+  }
+
+  .terms-box {
+    border-radius: 20px;
+    padding: 1rem;
+    background: #f8fafc;
+    border: 1px solid rgba(15, 23, 42, .08);
+  }
+
+  .form-check-input {
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+
+  .form-check-input:checked {
+    background-color: var(--gp-brand-2);
+    border-color: var(--gp-brand-2);
+  }
+
+  .btn-register {
+    width: 100%;
+    border: 0;
+    border-radius: 18px;
+    padding: .98rem 1rem;
+    font-weight: 950;
+    color: #fff;
+    background: linear-gradient(135deg, var(--gp-brand), var(--gp-brand-2));
+    box-shadow: 0 18px 38px rgba(91, 84, 214, .30);
+    transition: transform .22s ease, box-shadow .22s ease, opacity .22s ease;
+  }
+
+  .btn-register:hover:not(:disabled) {
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 24px 50px rgba(91, 84, 214, .38);
+  }
+
+  .btn-register:disabled {
+    opacity: .55;
+    cursor: not-allowed;
+  }
+
+  .quick-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .6rem;
+    justify-content: center;
+    margin-top: 1.1rem;
+  }
+
+  .quick-actions a {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    color: #312e81;
+    background: rgba(91, 84, 214, .08);
+    border: 1px solid rgba(91, 84, 214, .14);
+    padding: .52rem .75rem;
+    border-radius: 999px;
+    font-weight: 850;
+    font-size: .86rem;
+    text-decoration: none;
+  }
+
+  .quick-actions a:hover {
+    background: var(--gp-brand);
+    color: #fff;
+  }
+
+  .alert {
+    border-radius: 18px;
+    font-weight: 750;
+    border: 0;
+  }
+
+  .modal-content {
+    border: 0;
+    border-radius: 24px;
+    overflow: hidden;
+  }
+
+  .modal-header {
+    background: #f8fafc;
+  }
+
+  .modal-title {
+    font-weight: 900;
+    color: var(--gp-brand);
+  }
+
+  .modal-body h6 {
+    color: var(--gp-brand);
+    font-weight: 900;
+    margin-top: 1.1rem;
+  }
+
+  .floating-help {
+    position: fixed;
+    right: 22px;
+    bottom: 22px;
+    z-index: 20;
+    display: inline-flex;
+    align-items: center;
+    gap: .55rem;
+    color: #fff;
+    background: #25D366;
+    padding: .8rem 1rem;
+    border-radius: 999px;
+    font-weight: 950;
+    box-shadow: 0 18px 44px rgba(37, 211, 102, .38);
+    border: 3px solid rgba(255, 255, 255, .85);
+    text-decoration: none;
+  }
+
+  .floating-help:hover {
+    color: #fff;
+    transform: translateY(-2px);
+  }
+
+  @media (max-width: 991px) {
+    .register-page {
+      align-items: flex-start;
+      padding: 32px 0 86px;
+    }
+
+    .register-left {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .register-brand {
+      justify-content: center;
+    }
+
+    .register-text,
+    .benefit-list {
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .register-card {
+      margin: 0 auto;
+    }
+  }
+
+  @media (max-width: 575px) {
+    .register-card {
+      padding: 10px;
+      border-radius: 28px;
+    }
+
+    .register-card-inner {
+      padding: 22px;
+    }
+
+    .register-title {
+      font-size: 2.55rem;
+    }
+
+    .floating-help {
+      right: 14px;
+      bottom: 14px;
+      padding: .7rem .85rem;
+      font-size: .88rem;
+    }
+  }
+</style>
+
+<section class="register-page">
+  <div class="container">
+    <div class="row align-items-center g-5">
+
+      <div class="col-lg-7">
+        <div class="register-left">
+
+          <div class="register-brand">
+            <img src="{{ url_for('static', filename='images/logo.jpg') }}" alt="Global PYMES">
+            <div class="text-start">
+              <strong>Global PYMES</strong>
+              <span>Tu negocio digital</span>
+            </div>
+          </div>
+
+          <span class="register-badge">
+            <i class="fa fa-shield-alt"></i>
+            Creación de cuenta segura
+          </span>
+
+          <h1 class="register-title">
+            Crea tu acceso para <span>administrar tu página.</span>
+          </h1>
+
+          <p class="register-text">
+            Estás creando la cuenta principal para entrar al panel de Global PYMES. Desde ahí podrás editar tu sitio,
+            publicar productos y servicios, revisar reseñas, avisos, contactos, citas y administrar la información de tu negocio.
+          </p>
+
+          <div class="benefit-list">
+            <div class="benefit-item">
+              <div class="benefit-icon"><i class="fa fa-globe"></i></div>
+              <div>
+                <strong>Tu sitio conectado a tu cuenta</strong>
+                <small>El registro se asociará al negocio que acabas de crear para que puedas administrarlo.</small>
+              </div>
+            </div>
+
+            <div class="benefit-item">
+              <div class="benefit-icon"><i class="fa fa-store"></i></div>
+              <div>
+                <strong>Panel para productos, servicios y contenido</strong>
+                <small>Agrega información, imágenes, avisos, publicaciones y datos importantes para tus clientes.</small>
+              </div>
+            </div>
+
+            <div class="benefit-item">
+              <div class="benefit-icon"><i class="fa fa-credit-card"></i></div>
+              <div>
+                <strong>Activación por suscripción</strong>
+                <small>Después del registro podrás activar o gestionar tu plan desde el área de facturación.</small>
+              </div>
+            </div>
+          </div>
+
+        </div>
       </div>
 
-      {% with messages = get_flashed_messages() %}
-      {% if messages %}
-      <div class="alert alert-info alert-dismissible fade show" role="alert">
-        {{ messages[0] }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-      </div>
-      {% endif %}
-      {% endwith %}
+      <div class="col-lg-5">
+        <div class="register-card">
+          <div class="register-card-inner">
 
-      <form method="POST" id="registerForm" novalidate>
-        <div class="mb-3">
-          <label for="nombre" class="form-label">Nombre completo</label>
-          <input type="text" class="form-control shadow-sm" id="nombre" name="nombre" required>
-          <div class="invalid-feedback">Escribe tu nombre.</div>
-        </div>
+            <div class="text-center">
+              <span class="card-kicker">
+                <i class="fa fa-user-plus"></i>
+                Cuenta de administrador
+              </span>
 
-        <div class="mb-3">
-          <label for="email" class="form-label">Correo electrónico</label>
-          <input type="email" class="form-control shadow-sm" id="email" name="email" required>
-          <div class="invalid-feedback">Escribe un correo válido.</div>
-        </div>
+              <h2>Crear cuenta</h2>
+              <p class="subtitle">
+                Usa un correo real. Te enviaremos un enlace para confirmar tu cuenta y proteger el acceso a tu panel.
+              </p>
+            </div>
 
-        <div class="mb-3">
-          <label for="password" class="form-label">Contraseña</label>
-          <input type="password" class="form-control shadow-sm" id="password" name="password" required minlength="6">
-          <div class="invalid-feedback">La contraseña debe tener al menos 6 caracteres.</div>
-        </div>
+            <div class="notice-box">
+              <i class="fa fa-envelope"></i>
+              <div>
+                <strong>Confirma tu correo electrónico</strong><br>
+                <small>Para activar tu cuenta, revisa tu bandeja de entrada después de registrarte.</small>
+              </div>
+            </div>
 
-        <input type="hidden" name="role" value="admin">
-        <input type="hidden" name="page_id" value="{{ page_id }}">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+              {% for category, message in messages %}
+                <div class="alert alert-{{ 'info' if category == 'message' else category }} alert-dismissible fade show" role="alert">
+                  <i class="fa fa-info-circle me-1"></i>
+                  {{ message }}
+                  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+              {% endfor %}
+            {% endif %}
+            {% endwith %}
 
-        <!-- Aceptación de TyC -->
-        <div class="form-check mb-3">
-          <input class="form-check-input" type="checkbox" value="on" id="accept_tos" name="accept_tos">
-          <label class="form-check-label" for="accept_tos">
-            He leído y acepto los
-            <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal">Términos y Condiciones</a>
-            y el <a href="#" data-bs-toggle="modal" data-bs-target="#privacyModal">Aviso de Privacidad</a>.
-          </label>
-          <div class="invalid-feedback d-block" id="tosFeedback" style="display:none;">
-            Debes aceptar los Términos y Condiciones para continuar.
+            <form method="POST" id="registerForm" novalidate autocomplete="on">
+              <div class="mb-3">
+                <label for="nombre" class="form-label">Nombre completo</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="nombre"
+                  name="nombre"
+                  placeholder="Ej. Amairani Cuaquentzi"
+                  autocomplete="name"
+                  required>
+                <div class="invalid-feedback">Escribe tu nombre.</div>
+              </div>
+
+              <div class="mb-3">
+                <label for="email" class="form-label">Correo electrónico</label>
+                <input
+                  type="email"
+                  class="form-control"
+                  id="email"
+                  name="email"
+                  placeholder="correo@empresa.com"
+                  autocomplete="email"
+                  required>
+                <div class="invalid-feedback">Escribe un correo válido.</div>
+              </div>
+
+              <div class="mb-3">
+                <label for="password" class="form-label">Contraseña</label>
+                <div class="password-wrap">
+                  <input
+                    type="password"
+                    class="form-control pe-5"
+                    id="password"
+                    name="password"
+                    placeholder="Mínimo 6 caracteres"
+                    autocomplete="new-password"
+                    required
+                    minlength="6">
+                  <button type="button" class="toggle-password" data-target="password" aria-label="Mostrar contraseña">
+                    <i class="fa fa-eye"></i>
+                  </button>
+                </div>
+                <div class="password-hint">
+                  Usa al menos 6 caracteres. Combina letras y números para mayor seguridad.
+                </div>
+                <div class="invalid-feedback">La contraseña debe tener al menos 6 caracteres.</div>
+              </div>
+
+              <div class="mb-3">
+                <label for="password_confirm" class="form-label">Confirmar contraseña</label>
+                <div class="password-wrap">
+                  <input
+                    type="password"
+                    class="form-control pe-5"
+                    id="password_confirm"
+                    name="password_confirm"
+                    placeholder="Repite tu contraseña"
+                    autocomplete="new-password"
+                    required
+                    minlength="6">
+                  <button type="button" class="toggle-password" data-target="password_confirm" aria-label="Mostrar contraseña">
+                    <i class="fa fa-eye"></i>
+                  </button>
+                </div>
+                <div class="invalid-feedback" id="passwordMatchFeedback">
+                  Las contraseñas no coinciden.
+                </div>
+              </div>
+
+              <input type="hidden" name="role" value="admin">
+              <input type="hidden" name="page_id" value="{{ page_id }}">
+
+              <div class="terms-box mb-3">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" value="on" id="accept_tos" name="accept_tos">
+                  <label class="form-check-label fw-semibold" for="accept_tos">
+                    He leído y acepto los
+                    <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal" class="fw-bold">Términos y Condiciones</a>
+                    y el
+                    <a href="#" data-bs-toggle="modal" data-bs-target="#privacyModal" class="fw-bold">Aviso de Privacidad</a>.
+                  </label>
+                </div>
+                <div class="text-danger fw-bold mt-2 small" id="tosFeedback" style="display:none;">
+                  Debes aceptar los Términos y Condiciones para continuar.
+                </div>
+              </div>
+
+              <div class="d-grid">
+                <button type="submit" id="submitBtn" class="btn btn-register" disabled>
+                  <i class="fa fa-user-plus me-1"></i>
+                  Crear mi cuenta y entrar al sistema
+                </button>
+              </div>
+
+              <div class="quick-actions">
+                <a href="{{ url_for('login') }}">
+                  <i class="fa fa-sign-in-alt"></i>
+                  Ya tengo cuenta
+                </a>
+                <a href="{{ url_for('index') }}">
+                  <i class="fa fa-home"></i>
+                  Volver al inicio
+                </a>
+              </div>
+            </form>
+
           </div>
         </div>
+      </div>
 
-        <div class="d-grid">
-          <button type="submit" id="submitBtn" class="btn btn-primary btn-lg shadow-sm" disabled>
-            <i class="fa fa-user-plus me-1"></i> Registrarse
-          </button>
-        </div>
-      </form>
     </div>
   </div>
-</div>
+</section>
 
 <!-- Modal: Términos y Condiciones -->
 <div class="modal fade" id="termsModal" tabindex="-1" aria-labelledby="termsTitle" aria-hidden="true">
   <div class="modal-dialog modal-dialog-scrollable modal-lg">
-    <div class="modal-content rounded-4">
+    <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="termsTitle">Términos y Condiciones de la Plataforma</h5>
+        <h5 class="modal-title" id="termsTitle">
+          <i class="fa fa-file-contract me-2"></i>
+          Términos y Condiciones de Global PYMES
+        </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
       </div>
+
       <div class="modal-body">
-        <p><strong>Última actualización:</strong> 01/10/2025</p>
+        <p><strong>Última actualización:</strong> Febrero 2026</p>
         <p>
-          Bienvenido/a. Estos Términos regulan el uso de la plataforma “Global PYMES”. Al crear una cuenta,
-          aceptas cumplirlos. Si no estás de acuerdo, no debes usar el servicio.
+          Bienvenido/a a Global PYMES, una plataforma de software como servicio (SaaS) de Davani Technology
+          que permite crear y administrar una presencia digital para negocios, incluyendo página web,
+          catálogo de productos o servicios, publicaciones, avisos, reseñas, formularios, citas y herramientas administrativas.
         </p>
 
         <h6>1. Cuenta y verificación</h6>
         <ul>
           <li>Debes proporcionar información veraz y mantener segura tu contraseña.</li>
-          <li>Podemos solicitar verificación por correo electrónico.</li>
+          <li>Podemos solicitar confirmación de correo electrónico para activar tu cuenta.</li>
+          <li>La cuenta creada quedará asociada al negocio o página seleccionada durante el registro.</li>
         </ul>
 
         <h6>2. Contenido del usuario</h6>
         <ul>
-          <li>Eres titular de tus contenidos (textos, imágenes, logos). Nos concedes una licencia limitada
-              para alojarlos y mostrarlos en tu web.</li>
-          <li>No publiques contenido ilegal, difamatorio, que infrinja derechos de terceros o normativas aplicables.</li>
+          <li>Eres responsable de los textos, imágenes, logos, productos, servicios, precios y datos que publiques.</li>
+          <li>Nos concedes una licencia limitada para alojar y mostrar tu contenido dentro de tu sitio web.</li>
+          <li>No debes publicar contenido ilegal, engañoso, difamatorio o que infrinja derechos de terceros.</li>
         </ul>
 
-        <h6>3. Pagos y facturación</h6>
+        <h6>3. Suscripción, pagos y facturación</h6>
         <ul>
-          <li>La activación de licencia es de pago único. Procesamos pagos con Mercado Pago.</li>
-          <li>No almacenamos datos completos de tarjetas en nuestros servidores.</li>
+          <li>Global PYMES funciona bajo un modelo de suscripción mensual por sitio web creado.</li>
+          <li>Los pagos se procesan mediante Mercado Pago. No almacenamos datos completos de tarjetas en nuestros servidores.</li>
+          <li>Puedes pausar, reanudar o cancelar tu suscripción desde el área de facturación cuando esté disponible para tu cuenta.</li>
+          <li>La falta de pago puede suspender la visualización pública del sitio asociado.</li>
         </ul>
 
         <h6>4. Uso permitido</h6>
         <ul>
-          <li>No intentes vulnerar la seguridad, realizar ingeniería inversa ni usar la plataforma con fines ilegales.</li>
+          <li>No debes intentar vulnerar la seguridad, realizar ingeniería inversa o usar la plataforma con fines ilegales.</li>
+          <li>No debes usar el servicio para spam, fraude, suplantación de identidad o actividades que dañen a terceros.</li>
         </ul>
 
         <h6>5. Disponibilidad y soporte</h6>
         <ul>
-          <li>Buscamos alta disponibilidad, pero el servicio puede verse afectado por mantenimiento o causas externas.</li>
-          <li>Incluimos soporte básico y actualizaciones razonables.</li>
+          <li>Buscamos mantener el servicio disponible, pero puede haber interrupciones por mantenimiento o causas externas.</li>
+          <li>El soporte se brinda por los canales oficiales de Davani Technology.</li>
         </ul>
 
         <h6>6. Propiedad intelectual</h6>
         <ul>
-          <li>El software, marca y diseño de la plataforma pertenecen a sus respectivos titulares.</li>
+          <li>La plataforma, software, diseño base, marca y componentes pertenecen a Davani Technology o sus respectivos titulares.</li>
+          <li>Tu contenido de negocio sigue siendo tuyo, siempre que tengas derecho legal para usarlo.</li>
         </ul>
 
-        <h6>7. Limitación de responsabilidad</h6>
+        <h6>7. Terminación</h6>
         <ul>
-          <li>La plataforma se ofrece “tal cual”. En la medida máxima permitida por ley, no somos responsables
-              por daños indirectos o pérdida de ganancias derivadas del uso.</li>
+          <li>Podemos suspender o cancelar cuentas que incumplan estos términos, afecten la seguridad o infrinjan la ley.</li>
         </ul>
 
-        <h6>8. Terminación</h6>
-        <ul>
-          <li>Podemos suspender o cancelar cuentas que incumplan estos Términos o la ley.</li>
-        </ul>
-
-        <h6>9. Cambios</h6>
-        <ul>
-          <li>Podemos actualizar estos Términos. Notificaremos cambios relevantes por medios razonables.</li>
-        </ul>
-
-        <h6>10. Contacto</h6>
-        <p>Soporte: technologydavani@gmail.com</p>
+        <h6>8. Contacto</h6>
+        <p>
+          Soporte:
+          <a href="mailto:technologydavani@gmail.com">technologydavani@gmail.com</a><br>
+          WhatsApp:
+          <a href="https://wa.me/522461038844" target="_blank">246 103 8844</a>
+        </p>
       </div>
+
       <div class="modal-footer">
-        <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">Cerrar</button>
-        <button type="button" class="btn btn-primary" data-bs-dismiss="modal"
-                onclick="document.getElementById('accept_tos').checked = true; document.getElementById('accept_tos').dispatchEvent(new Event('change'));">
+        <button type="button" class="btn btn-light rounded-4 fw-bold" data-bs-dismiss="modal">Cerrar</button>
+        <button
+          type="button"
+          class="btn btn-primary rounded-4 fw-bold"
+          data-bs-dismiss="modal"
+          onclick="document.getElementById('accept_tos').checked = true; document.getElementById('accept_tos').dispatchEvent(new Event('change'));">
           Acepto los Términos
         </button>
       </div>
@@ -150,80 +735,150 @@
 <!-- Modal: Aviso de Privacidad -->
 <div class="modal fade" id="privacyModal" tabindex="-1" aria-labelledby="privacyTitle" aria-hidden="true">
   <div class="modal-dialog modal-dialog-scrollable modal-lg">
-    <div class="modal-content rounded-4">
+    <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="privacyTitle">Aviso de Privacidad</h5>
+        <h5 class="modal-title" id="privacyTitle">
+          <i class="fa fa-shield-alt me-2"></i>
+          Aviso de Privacidad
+        </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
       </div>
+
       <div class="modal-body">
-        <p><strong>Resumen:</strong> Tratamos tus datos para crear tu cuenta, proveer el servicio,
-           enviar comunicaciones operativas y mejorar la plataforma. Puedes ejercer derechos de acceso,
-           rectificación, cancelación y oposición (ARCO) escribiendo a technologydavani@gmail.com.</p>
+        <p>
+          Davani Technology trata tus datos personales para crear tu cuenta, asociarla a tu negocio,
+          prestar el servicio de Global PYMES, enviar comunicaciones operativas, proteger la plataforma
+          y mejorar la experiencia de uso.
+        </p>
 
         <h6>Datos que recabamos</h6>
         <ul>
-          <li>Identificación (nombre), contacto (correo), y los que nos compartas en tu web.</li>
+          <li>Nombre, correo electrónico y credenciales de acceso.</li>
+          <li>Información del negocio que tú registres dentro de la plataforma.</li>
+          <li>Datos operativos necesarios para administrar tu sitio, citas, publicaciones, reseñas o mensajes.</li>
         </ul>
 
         <h6>Finalidades</h6>
         <ul>
-          <li>Proveer y mantener el servicio; seguridad (verificación y prevención de fraude).</li>
+          <li>Crear y administrar tu cuenta.</li>
+          <li>Permitir el acceso al panel de Global PYMES.</li>
+          <li>Mostrar la información pública de tu negocio en tu sitio web.</li>
+          <li>Gestionar seguridad, soporte, comunicaciones y operación del servicio.</li>
+        </ul>
+
+        <h6>Pagos</h6>
+        <ul>
+          <li>Los pagos se procesan mediante Mercado Pago.</li>
+          <li>No almacenamos datos bancarios completos ni información completa de tarjetas en nuestros servidores.</li>
         </ul>
 
         <h6>Conservación y seguridad</h6>
         <ul>
-          <li>Conservamos datos el tiempo necesario para prestar el servicio y por obligaciones legales.</li>
+          <li>Conservamos los datos durante el tiempo necesario para prestar el servicio y cumplir obligaciones aplicables.</li>
           <li>Aplicamos medidas razonables de seguridad técnica y organizativa.</li>
         </ul>
 
-        <h6>Compartición</h6>
-        <ul>
-          <li>Con proveedores tecnológicos (p. ej., hosting, correo, pasarela de pagos) bajo contratos de encargo.</li>
-        </ul>
-
         <h6>Tus derechos</h6>
-        <ul>
-          <li>Puedes solicitar acceso/rectificación/cancelación/oposición enviando un correo a soporte.</li>
-        </ul>
+        <p>
+          Puedes solicitar acceso, rectificación, cancelación u oposición de tus datos escribiendo a:
+          <a href="mailto:technologydavani@gmail.com">technologydavani@gmail.com</a>.
+        </p>
 
         <h6>Actualizaciones</h6>
-        <p>Podemos actualizar este Aviso; publicaremos la versión vigente en la plataforma.</p>
+        <p>
+          Este aviso puede actualizarse. La versión vigente estará disponible dentro de la plataforma o en nuestros canales oficiales.
+        </p>
       </div>
+
       <div class="modal-footer">
-        <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">Cerrar</button>
-        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Entendido</button>
+        <button type="button" class="btn btn-light rounded-4 fw-bold" data-bs-dismiss="modal">Cerrar</button>
+        <button type="button" class="btn btn-primary rounded-4 fw-bold" data-bs-dismiss="modal">Entendido</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Habilitar botón sólo si se acepta TyC + pequeña validación visual -->
+<a
+  href="https://wa.me/522461038844?text=Hola%20Global%20PYMES%2C%20necesito%20ayuda%20con%20mi%20registro"
+  class="floating-help"
+  target="_blank"
+  aria-label="Ayuda por WhatsApp">
+  <i class="fa fa-whatsapp"></i>
+  Ayuda
+</a>
+
 <script>
   (function () {
     const form = document.getElementById('registerForm');
     const checkbox = document.getElementById('accept_tos');
     const submitBtn = document.getElementById('submitBtn');
     const tosFeedback = document.getElementById('tosFeedback');
+    const password = document.getElementById('password');
+    const passwordConfirm = document.getElementById('password_confirm');
 
-    function updateState() {
-      const ok = checkbox.checked;
-      submitBtn.disabled = !ok;
-      tosFeedback.style.display = ok ? 'none' : 'block';
+    function passwordsMatch() {
+      if (!password || !passwordConfirm) return true;
+      if (!passwordConfirm.value) return false;
+      return password.value === passwordConfirm.value;
     }
 
+    function updateState() {
+      const accepted = checkbox.checked;
+      const match = passwordsMatch();
+
+      submitBtn.disabled = !accepted;
+
+      if (tosFeedback) {
+        tosFeedback.style.display = accepted ? 'none' : 'block';
+      }
+
+      if (passwordConfirm && passwordConfirm.value) {
+        passwordConfirm.setCustomValidity(match ? '' : 'Las contraseñas no coinciden.');
+      }
+    }
+
+    document.querySelectorAll('.toggle-password').forEach(btn => {
+      btn.addEventListener('click', function () {
+        const targetId = this.getAttribute('data-target');
+        const input = document.getElementById(targetId);
+        if (!input) return;
+
+        const isPassword = input.getAttribute('type') === 'password';
+        input.setAttribute('type', isPassword ? 'text' : 'password');
+
+        this.innerHTML = isPassword
+          ? '<i class="fa fa-eye-slash"></i>'
+          : '<i class="fa fa-eye"></i>';
+      });
+    });
+
     checkbox.addEventListener('change', updateState);
+    if (password) password.addEventListener('input', updateState);
+    if (passwordConfirm) passwordConfirm.addEventListener('input', updateState);
+
     updateState();
 
-    // Validación básica BS5
     form.addEventListener('submit', function (e) {
-      if (!checkbox.checked) {
+      const match = passwordsMatch();
+
+      if (!checkbox.checked || !form.checkValidity() || !match) {
         e.preventDefault();
         e.stopPropagation();
+
+        if (!checkbox.checked && checkbox) {
+          checkbox.focus();
+        }
+
+        if (!match && passwordConfirm) {
+          passwordConfirm.setCustomValidity('Las contraseñas no coinciden.');
+        }
+
         updateState();
-        checkbox.focus();
       }
+
       form.classList.add('was-validated');
     }, false);
   })();
 </script>
+
 {% endblock %}
