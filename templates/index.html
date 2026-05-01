@@ -3,26 +3,26 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Global PYMES — Tu web completa con suscripción mensual</title>
+  <title>Global PYMES — Tu negocio digital con página, catálogo, reseñas, WhatsApp y pagos</title>
 
   <!-- Bootstrap & fuentes -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;600&display=swap" rel="stylesheet" />
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="icon" href="{{ url_for('static', filename='images/logo.jpg') }}" type="image/png">
 
   <!-- SEO -->
-  <meta name="description" content="Crea la web de tu negocio con suscripción mensual. Productos, reseñas, WhatsApp, SEO y cobros con Mercado Pago. Hecho en México.">
-  <meta name="keywords" content="suscripción mensual, pymes, catálogo, reseñas, Mercado Pago, Global PYMES, DavaniTechnology">
+  <meta name="description" content="Global PYMES te ayuda a crear la página web de tu negocio con catálogo, productos, servicios, reseñas, WhatsApp, SEO, citas, avisos, blog y cobros con Mercado Pago por suscripción mensual.">
+  <meta name="keywords" content="Global PYMES, página para negocio, página web para pymes, catálogo digital, reseñas, WhatsApp, Mercado Pago, suscripción mensual, Davani Technology, México">
   <meta name="author" content="DavaniTechnology">
   <meta name="geo.region" content="MX">
   <meta name="geo.placename" content="México">
   <meta name="language" content="es">
   <meta name="robots" content="index, follow">
 
-  <!-- OG -->
-  <meta property="og:title" content="Global PYMES — Tu web completa con suscripción mensual">
-  <meta property="og:description" content="Todo para tu web en un solo plan mensual: catálogo, reseñas, WhatsApp, SEO y cobros con Mercado Pago.">
+  <!-- Open Graph -->
+  <meta property="og:title" content="Global PYMES — Tu negocio digital listo para vender">
+  <meta property="og:description" content="Crea una web para tu negocio con catálogo, WhatsApp, reseñas, SEO, avisos, citas y cobros con Mercado Pago.">
   <meta property="og:image" content="https://technologydavani.com/static/images/logo.jpg">
   <meta property="og:url" content="https://technologydavani.com">
   <meta property="og:type" content="website">
@@ -34,114 +34,687 @@
   <meta name="google-site-verification" content="H4BIsj6uh3wjN1LWdvTaO-_LzBxbWpWTov1BJla4xg8" />
 
   <style>
-    :root{ --brand:#1f1a4f; --brand-2:#5b54d6; --ink:#1d2330; }
-    body{font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',sans-serif;color:var(--ink);background:#fff;}
-    .navbar{backdrop-filter:saturate(140%) blur(6px);background:rgba(255,255,255,.9);}
-    .btn-brand{background:var(--brand);color:#fff;border-radius:12px;border:none;}
-    .btn-brand:hover{background:#17124a;color:#fff;}
-    .btn-ghost{border:1px solid var(--brand);color:var(--brand);border-radius:12px;background:#fff;}
-    .btn-ghost:hover{background:var(--brand);color:#fff;}
-    .hero{
-      background:linear-gradient(180deg, rgba(31,26,79,.92), rgba(31,26,79,.75)), url("{{ url_for('static', filename='images/fondo.jpg') }}") center/cover no-repeat;
-      color:#fff; border-bottom:4px solid var(--brand);
+    :root{
+      --gp-dark:#060716;
+      --gp-navy:#11123a;
+      --gp-brand:#1f1a4f;
+      --gp-brand-2:#5b54d6;
+      --gp-purple:#8b5cf6;
+      --gp-cyan:#06b6d4;
+      --gp-green:#22c55e;
+      --gp-orange:#f59e0b;
+      --gp-pink:#ec4899;
+      --gp-ink:#111827;
+      --gp-muted:#64748b;
+      --gp-soft:#f7f8ff;
+      --gp-card:#ffffff;
+      --gp-border:rgba(15,23,42,.10);
+      --gp-shadow:0 24px 70px rgba(15,23,42,.12);
+      --gp-radius:26px;
     }
-    .hero h1{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(2.2rem,4vw,3.2rem);}
-    .hero p.lead{font-size:1.15rem;opacity:.95}
-    .badge-soft{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff}
-    .section-title{font-family:'Playfair Display',serif;color:var(--brand)}
-    .card{border:none;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.06);transition:transform .25s ease, box-shadow .25s ease;}
-    .card:hover{transform:translateY(-4px);box-shadow:0 16px 40px rgba(0,0,0,.10)}
-    .icon-pill{width:54px;height:54px;display:inline-grid;place-items:center;border-radius:14px;background:linear-gradient(135deg, var(--brand), var(--brand-2));color:#fff;}
-    .grid-feature p{opacity:.85}
-    .price{font-size:2.4rem;font-weight:800;color:var(--brand);}
-    .footer{background:#0f1220;color:#cbd5e1}
-    .footer a{color:#94a3b8}
-    .price-note{font-size:.95rem;color:#6b7280}
-    .price-wrap{
-    display:flex;
-    flex-wrap:wrap;
-    gap:12px;
-    align-items:baseline;
-  }
-  .price-now{
-    font-size:2.9rem;
-    font-weight:900;
-    letter-spacing:-0.02em;
-    color:var(--brand);
-    line-height:1;
-  }
-  .price-was{
-    font-size:1.15rem;
-    color:#6b7280;
-    text-decoration:line-through;
-    text-decoration-thickness:2px;
-    text-decoration-color:rgba(107,114,128,.75);
-  }
-  .price-save{
-    font-size:.9rem;
-    font-weight:800;
-    padding:.35rem .6rem;
-    border-radius:999px;
-    background:#16a34a;
-    color:#fff;
-    border:1px solid rgba(0,0,0,.06);
-  }
-  .price-micro{
-    display:block;
-    font-size:.92rem;
-    color:#6b7280;
-    margin-top:.25rem;
-  }
-  .price-pill{
-    display:inline-flex;
-    align-items:center;
-    gap:.4rem;
-    padding:.45rem .7rem;
-    border-radius:999px;
-    background:rgba(31,26,79,.06);
-    border:1px solid rgba(31,26,79,.12);
-    color:var(--brand);
-    font-weight:700;
-    font-size:.92rem;
-  }
 
+    *{box-sizing:border-box;}
+    html{scroll-behavior:smooth;}
+    body{
+      margin:0;
+      font-family:'Inter',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+      color:var(--gp-ink);
+      background:
+        radial-gradient(circle at 5% 0%, rgba(91,84,214,.10), transparent 30rem),
+        radial-gradient(circle at 95% 4%, rgba(6,182,212,.10), transparent 30rem),
+        #fff;
+      overflow-x:hidden;
+    }
+    a{text-decoration:none;}
+    .section-pad{padding:92px 0;}
+    .section-pad-sm{padding:68px 0;}
+    .container{position:relative;}
+
+    .section-kicker{
+      display:inline-flex;
+      align-items:center;
+      gap:.5rem;
+      padding:.48rem .85rem;
+      border-radius:999px;
+      font-size:.84rem;
+      font-weight:900;
+      color:#312e81;
+      background:rgba(91,84,214,.10);
+      border:1px solid rgba(91,84,214,.16);
+      margin-bottom:1rem;
+    }
+    .section-title{
+      font-family:'Playfair Display',serif;
+      font-weight:800;
+      letter-spacing:-.045em;
+      color:#111827;
+      line-height:1.02;
+      font-size:clamp(2rem,4vw,3.5rem);
+    }
+    .section-text{
+      color:var(--gp-muted);
+      font-size:1.08rem;
+      line-height:1.75;
+    }
+
+    /* NAV */
+    .top-bar{
+      background:#070817;
+      color:#dbeafe;
+      font-size:.86rem;
+      font-weight:800;
+      border-bottom:1px solid rgba(255,255,255,.08);
+    }
+    .top-bar a{color:#a5f3fc;}
+    .navbar-gp{
+      background:rgba(255,255,255,.88);
+      backdrop-filter:blur(18px) saturate(150%);
+      border-bottom:1px solid rgba(15,23,42,.08);
+    }
+    .brand-logo{
+      width:42px;
+      height:42px;
+      object-fit:cover;
+      border-radius:14px;
+      box-shadow:0 12px 28px rgba(91,84,214,.20);
+    }
+    .navbar-brand strong{
+      color:#111827;
+      letter-spacing:-.035em;
+      font-weight:900;
+    }
+    .nav-link{
+      color:#334155;
+      font-weight:800;
+      font-size:.94rem;
+    }
+    .nav-link:hover{color:var(--gp-brand-2);}
+
+    .btn-brand{
+      border:0;
+      border-radius:16px;
+      background:linear-gradient(135deg,var(--gp-brand),var(--gp-brand-2));
+      color:#fff;
+      font-weight:900;
+      padding:.82rem 1.08rem;
+      box-shadow:0 16px 34px rgba(91,84,214,.28);
+      transition:transform .22s ease, box-shadow .22s ease, filter .22s ease;
+    }
+    .btn-brand:hover{
+      color:#fff;
+      transform:translateY(-2px);
+      filter:saturate(1.08);
+      box-shadow:0 22px 48px rgba(91,84,214,.36);
+    }
+    .btn-ghost{
+      border:1px solid rgba(91,84,214,.22);
+      color:#312e81;
+      border-radius:16px;
+      background:#fff;
+      font-weight:900;
+      padding:.8rem 1.08rem;
+      box-shadow:0 12px 26px rgba(15,23,42,.06);
+    }
+    .btn-ghost:hover{
+      background:#1f1a4f;
+      color:#fff;
+      border-color:#1f1a4f;
+    }
+
+    /* HERO */
+    .hero{
+      position:relative;
+      min-height:calc(100vh - 92px);
+      display:flex;
+      align-items:center;
+      color:#fff;
+      overflow:hidden;
+      background:
+        radial-gradient(circle at 12% 12%, rgba(139,92,246,.70), transparent 25rem),
+        radial-gradient(circle at 88% 18%, rgba(6,182,212,.56), transparent 26rem),
+        radial-gradient(circle at 55% 92%, rgba(236,72,153,.28), transparent 24rem),
+        linear-gradient(135deg,#070817 0%,#12133f 48%,#1f1a4f 100%);
+    }
+    .hero::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background-image:
+        linear-gradient(rgba(255,255,255,.055) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.055) 1px, transparent 1px);
+      background-size:42px 42px;
+      mask-image:linear-gradient(to bottom, rgba(0,0,0,.92), rgba(0,0,0,.16));
+      pointer-events:none;
+    }
+    .hero::after{
+      content:"";
+      position:absolute;
+      width:760px;
+      height:760px;
+      right:-280px;
+      top:-180px;
+      border-radius:50%;
+      border:1px solid rgba(255,255,255,.14);
+      box-shadow:inset 0 0 90px rgba(255,255,255,.08);
+      pointer-events:none;
+    }
+    .hero-content{position:relative;z-index:2;}
+    .badge-soft{
+      display:inline-flex;
+      align-items:center;
+      gap:.55rem;
+      background:rgba(255,255,255,.12);
+      border:1px solid rgba(255,255,255,.22);
+      color:#fff;
+      font-weight:900;
+      padding:.55rem .9rem;
+      border-radius:999px;
+      margin-bottom:1.15rem;
+    }
+    .hero-title{
+      font-family:'Playfair Display',serif;
+      font-size:clamp(2.7rem,6vw,5.55rem);
+      line-height:.94;
+      letter-spacing:-.06em;
+      font-weight:800;
+      margin-bottom:1.2rem;
+    }
+    .hero-title span{
+      background:linear-gradient(135deg,#fff,#a5f3fc 38%,#c4b5fd 72%,#fbcfe8);
+      -webkit-background-clip:text;
+      background-clip:text;
+      color:transparent;
+    }
+    .hero-lead{
+      color:#dbeafe;
+      font-size:clamp(1.06rem,2vw,1.28rem);
+      line-height:1.75;
+      max-width:760px;
+      margin-bottom:1.45rem;
+    }
+    .hero-points{
+      display:flex;
+      flex-wrap:wrap;
+      gap:.7rem;
+      margin:1.3rem 0 1.8rem;
+    }
+    .hero-point{
+      display:inline-flex;
+      align-items:center;
+      gap:.45rem;
+      padding:.55rem .75rem;
+      border:1px solid rgba(255,255,255,.16);
+      border-radius:999px;
+      background:rgba(255,255,255,.08);
+      color:#eef2ff;
+      font-weight:850;
+      font-size:.9rem;
+    }
+
+    .hero-visual{position:relative;z-index:2;}
+    .app-mock{
+      position:relative;
+      border-radius:34px;
+      padding:1rem;
+      background:rgba(255,255,255,.10);
+      border:1px solid rgba(255,255,255,.20);
+      box-shadow:0 34px 90px rgba(0,0,0,.38);
+      backdrop-filter:blur(18px);
+      transform:rotate(1.3deg);
+    }
+    .app-inner{
+      border-radius:26px;
+      overflow:hidden;
+      background:#f8fafc;
+      color:#0f172a;
+    }
+    .app-top{
+      background:#fff;
+      padding:1rem 1.15rem;
+      border-bottom:1px solid rgba(15,23,42,.08);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:.75rem;
+    }
+    .app-url{
+      height:32px;
+      border-radius:999px;
+      background:#f1f5f9;
+      color:#64748b;
+      display:flex;
+      align-items:center;
+      padding:0 .9rem;
+      font-weight:900;
+      font-size:.82rem;
+      flex:1;
+    }
+    .app-body{padding:1.2rem;}
+    .site-preview{
+      border-radius:24px;
+      background:linear-gradient(135deg,#1f1a4f,#5b54d6);
+      color:#fff;
+      padding:1.15rem;
+      margin-bottom:1rem;
+      position:relative;
+      overflow:hidden;
+    }
+    .site-preview::after{
+      content:"";
+      position:absolute;
+      width:170px;
+      height:170px;
+      right:-70px;
+      top:-70px;
+      border-radius:50%;
+      background:rgba(255,255,255,.14);
+    }
+    .mini-stats{
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:.85rem;
+    }
+    .mini-card{
+      background:#fff;
+      border:1px solid rgba(15,23,42,.08);
+      border-radius:20px;
+      padding:1rem;
+      box-shadow:0 16px 34px rgba(15,23,42,.07);
+      min-height:108px;
+    }
+    .mini-card i{font-size:1.7rem;}
+    .mini-card strong{display:block;margin-top:.45rem;font-weight:950;}
+    .mini-card small{color:#64748b;font-weight:800;}
+
+    .floating-chip{
+      position:absolute;
+      z-index:4;
+      display:flex;
+      align-items:center;
+      gap:.55rem;
+      padding:.68rem .85rem;
+      border-radius:18px;
+      background:rgba(255,255,255,.95);
+      color:#111827;
+      border:1px solid rgba(255,255,255,.65);
+      box-shadow:0 18px 46px rgba(0,0,0,.20);
+      font-weight:950;
+      white-space:nowrap;
+    }
+    .chip-1{left:-16px;top:12%;}
+    .chip-2{right:-18px;bottom:18%;}
+    .chip-3{left:8%;bottom:-18px;}
+
+    /* TRUST */
+    .trust-strip{
+      position:relative;
+      z-index:4;
+      margin-top:-42px;
+    }
+    .trust-box{
+      border-radius:30px;
+      background:#fff;
+      box-shadow:var(--gp-shadow);
+      border:1px solid rgba(15,23,42,.08);
+      padding:1.15rem;
+    }
+    .trust-item{
+      display:flex;
+      gap:.85rem;
+      align-items:center;
+      padding:.85rem;
+    }
+    .trust-icon{
+      width:52px;
+      height:52px;
+      border-radius:18px;
+      display:grid;
+      place-items:center;
+      color:#fff;
+      background:linear-gradient(135deg,var(--gp-brand-2),var(--gp-cyan));
+      flex:0 0 auto;
+    }
+    .trust-item strong{display:block;color:#111827;font-weight:950;}
+    .trust-item small{display:block;color:#64748b;font-weight:800;}
+
+    /* CARDS */
+    .feature-card,
+    .module-card,
+    .business-card,
+    .step-card,
+    .price-card,
+    .about-card,
+    .contact-card{
+      height:100%;
+      border-radius:var(--gp-radius);
+      background:var(--gp-card);
+      border:1px solid var(--gp-border);
+      box-shadow:0 16px 40px rgba(15,23,42,.07);
+      transition:transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+      overflow:hidden;
+    }
+    .feature-card:hover,
+    .module-card:hover,
+    .business-card:hover,
+    .step-card:hover,
+    .price-card:hover,
+    .about-card:hover{
+      transform:translateY(-6px);
+      box-shadow:0 28px 70px rgba(15,23,42,.13);
+      border-color:rgba(91,84,214,.22);
+    }
+    .feature-card{padding:1.35rem;}
+    .icon-pill{
+      width:58px;
+      height:58px;
+      display:grid;
+      place-items:center;
+      border-radius:20px;
+      background:linear-gradient(135deg,var(--gp-brand),var(--gp-brand-2));
+      color:#fff;
+      font-size:1.45rem;
+      margin-bottom:1rem;
+      box-shadow:0 18px 34px rgba(91,84,214,.22);
+    }
+    .feature-card h3,
+    .module-card h3,
+    .business-card h3,
+    .step-card h3,
+    .about-card h3{
+      font-size:1.1rem;
+      font-weight:950;
+      letter-spacing:-.02em;
+      color:#111827;
+      margin-bottom:.55rem;
+    }
+    .feature-card p,
+    .module-card p,
+    .business-card p,
+    .step-card p,
+    .about-card p{
+      color:#64748b;
+      line-height:1.7;
+      margin-bottom:0;
+    }
+
+    /* MODULES */
+    .modules-section{
+      background:
+        radial-gradient(circle at 20% 10%, rgba(91,84,214,.10), transparent 24rem),
+        radial-gradient(circle at 86% 28%, rgba(6,182,212,.10), transparent 24rem),
+        #f8fafc;
+    }
+    .module-card{padding:1.25rem;position:relative;}
+    .module-tag{
+      display:inline-flex;
+      align-items:center;
+      gap:.4rem;
+      color:#312e81;
+      font-weight:950;
+      border-radius:999px;
+      padding:.36rem .65rem;
+      background:rgba(91,84,214,.08);
+      margin-bottom:.95rem;
+      font-size:.82rem;
+    }
+
+    /* PRICE */
+    .price-section{
+      background:#070817;
+      color:#fff;
+      position:relative;
+      overflow:hidden;
+    }
+    .price-section::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:
+        radial-gradient(circle at 18% 18%, rgba(91,84,214,.44), transparent 26rem),
+        radial-gradient(circle at 82% 35%, rgba(6,182,212,.30), transparent 26rem),
+        radial-gradient(circle at 50% 100%, rgba(236,72,153,.18), transparent 22rem);
+      pointer-events:none;
+    }
+    .price-section .container{position:relative;z-index:2;}
+    .price-section .section-title{color:#fff;}
+    .price-section .section-text{color:#cbd5e1;}
+    .price-card{
+      padding:1.6rem;
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.14);
+      color:#fff;
+      box-shadow:0 24px 70px rgba(0,0,0,.22);
+      backdrop-filter:blur(16px);
+    }
+    .price-card h3{color:#fff;font-weight:950;}
+    .price-card p{color:#cbd5e1;line-height:1.7;}
+    .price-wrap{display:flex;flex-wrap:wrap;gap:12px;align-items:baseline;margin:.85rem 0;}
+    .price-now{
+      font-size:clamp(2.8rem,6vw,4.6rem);
+      font-weight:950;
+      letter-spacing:-.06em;
+      color:#fff;
+      line-height:.95;
+    }
+    .price-now small{font-size:1.05rem;font-weight:900;color:#cbd5e1;letter-spacing:0;}
+    .price-was{font-size:1.1rem;color:#94a3b8;text-decoration:line-through;text-decoration-thickness:2px;}
+    .price-save{font-size:.9rem;font-weight:950;padding:.38rem .65rem;border-radius:999px;background:#22c55e;color:#fff;}
+    .price-pill{
+      display:inline-flex;
+      align-items:center;
+      gap:.4rem;
+      padding:.48rem .75rem;
+      border-radius:999px;
+      background:rgba(6,182,212,.10);
+      border:1px solid rgba(6,182,212,.22);
+      color:#a5f3fc;
+      font-weight:950;
+      font-size:.9rem;
+    }
+    .check-list{list-style:none;padding:0;margin:1.15rem 0 0;}
+    .check-list li{
+      display:flex;
+      align-items:flex-start;
+      gap:.55rem;
+      margin-bottom:.8rem;
+      color:#e2e8f0;
+      font-weight:800;
+      line-height:1.45;
+    }
+    .check-list i{color:#22c55e;font-size:1.08rem;}
+    .how-card{
+      border-radius:var(--gp-radius);
+      padding:1.45rem;
+      background:#fff;
+      color:#111827;
+      border:1px solid rgba(255,255,255,.14);
+      box-shadow:0 24px 70px rgba(0,0,0,.20);
+      height:100%;
+    }
+    .how-step{
+      display:flex;
+      gap:.85rem;
+      padding:.95rem 0;
+      border-bottom:1px solid rgba(15,23,42,.08);
+    }
+    .how-step:last-child{border-bottom:0;}
+    .how-num{
+      width:42px;
+      height:42px;
+      border-radius:15px;
+      display:grid;
+      place-items:center;
+      background:#111827;
+      color:#fff;
+      font-weight:950;
+      flex:0 0 auto;
+    }
+
+    /* BUSINESS */
+    .business-card{
+      padding:1.05rem;
+      display:flex;
+      align-items:center;
+      gap:.85rem;
+    }
+    .business-icon{
+      width:48px;
+      height:48px;
+      display:grid;
+      place-items:center;
+      border-radius:17px;
+      color:#fff;
+      background:linear-gradient(135deg,var(--gp-brand-2),var(--gp-cyan));
+      flex:0 0 auto;
+    }
+    .business-card p{font-size:.92rem;}
+
+    /* ABOUT */
+    .about-card{padding:1.35rem;}
+    .about-card .icon-pill{width:54px;height:54px;font-size:1.3rem;}
+
+    /* CONTACT */
+    .contact-section{background:#f8fafc;}
+    .contact-info{
+      height:100%;
+      border-radius:var(--gp-radius);
+      padding:1.5rem;
+      color:#fff;
+      background:
+        radial-gradient(circle at top right, rgba(6,182,212,.40), transparent 20rem),
+        linear-gradient(135deg,#111827,#312e81);
+      box-shadow:0 24px 70px rgba(15,23,42,.14);
+    }
+    .contact-info p{color:#dbeafe;line-height:1.75;}
+    .contact-link{
+      display:flex;
+      align-items:center;
+      gap:.75rem;
+      color:#fff;
+      padding:.88rem;
+      border-radius:18px;
+      background:rgba(255,255,255,.10);
+      border:1px solid rgba(255,255,255,.14);
+      margin-bottom:.8rem;
+      font-weight:900;
+    }
+    .contact-link:hover{color:#fff;background:rgba(255,255,255,.16);}
+    .contact-card{padding:1.5rem;}
+    .form-control,.form-select{
+      border-radius:16px;
+      border:1px solid rgba(15,23,42,.12);
+      padding:.9rem 1rem;
+      font-weight:700;
+      color:#111827;
+    }
+    .form-control:focus,.form-select:focus{
+      border-color:rgba(91,84,214,.55);
+      box-shadow:0 0 0 .25rem rgba(91,84,214,.12);
+    }
+
+    /* FAQ / FOOTER */
+    .accordion-item{
+      border:1px solid rgba(15,23,42,.10);
+      border-radius:18px!important;
+      overflow:hidden;
+      margin-bottom:.85rem;
+      box-shadow:0 10px 24px rgba(15,23,42,.05);
+    }
+    .accordion-button{font-weight:950;}
+    .accordion-button:not(.collapsed){background:rgba(91,84,214,.08);color:#312e81;}
+    .footer{
+      background:#050713;
+      color:#cbd5e1;
+      padding:2.2rem 0;
+    }
+    .footer a{color:#c4b5fd;}
+
+    .floating-whatsapp{
+      position:fixed;
+      right:22px;
+      bottom:22px;
+      z-index:999;
+      width:62px;
+      height:62px;
+      border-radius:999px;
+      display:grid;
+      place-items:center;
+      color:#fff;
+      background:#25D366;
+      font-size:1.85rem;
+      border:3px solid rgba(255,255,255,.90);
+      box-shadow:0 18px 44px rgba(37,211,102,.38);
+      transition:transform .2s ease, box-shadow .2s ease;
+    }
+    .floating-whatsapp:hover{color:#fff;transform:translateY(-4px) scale(1.04);box-shadow:0 24px 56px rgba(37,211,102,.50);}
+
+    @media (max-width:991px){
+      .hero{padding:86px 0 104px;min-height:auto;}
+      .hero-visual{margin-top:2rem;}
+      .app-mock{transform:none;}
+      .floating-chip{display:none;}
+      .trust-strip{margin-top:-34px;}
+    }
+    @media (max-width:575px){
+      .section-pad{padding:68px 0;}
+      .section-title{font-size:2.25rem;}
+      .hero-title{font-size:3rem;}
+      .hero-point{font-size:.78rem;}
+      .mini-stats{grid-template-columns:1fr;}
+      .btn-brand,.btn-ghost{width:100%;justify-content:center;}
+      .floating-whatsapp{right:16px;bottom:16px;width:56px;height:56px;font-size:1.65rem;}
+    }
   </style>
 </head>
 <body>
 
+<!-- TOP BAR -->
+<div class="top-bar py-2 d-none d-md-block">
+  <div class="container d-flex justify-content-between align-items-center gap-3">
+    <span><i class="bi bi-lightning-charge-fill me-1 text-warning"></i> Precio de lanzamiento para negocios en México</span>
+    <span><i class="bi bi-whatsapp me-1 text-success"></i> Atención por WhatsApp: <a href="https://wa.me/522461038844" target="_blank">246 103 8844</a></span>
+  </div>
+</div>
+
 <!-- NAV -->
-<nav class="navbar navbar-expand-lg sticky-top border-bottom">
+<nav class="navbar navbar-expand-lg sticky-top navbar-gp">
   <div class="container">
-    <a class="navbar-brand fw-bold" href="/">
-      <img src="{{ url_for('static', filename='images/logo.jpg') }}" alt="logo" width="36" class="me-2 rounded">Global PYMES
+    <a class="navbar-brand d-flex align-items-center gap-2" href="/">
+      <img src="{{ url_for('static', filename='images/logo.jpg') }}" alt="Global PYMES" class="brand-logo">
+      <span class="d-flex flex-column lh-sm">
+        <strong>Global PYMES</strong>
+        <small class="text-muted fw-bold">Tu negocio digital</small>
+      </span>
     </a>
-    <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#nav"><span class="navbar-toggler-icon"></span></button>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav" aria-controls="nav" aria-expanded="false" aria-label="Abrir menú">
+      <span class="navbar-toggler-icon"></span>
+    </button>
     <div id="nav" class="collapse navbar-collapse">
-      <ul class="navbar-nav ms-auto align-items-lg-center gap-2">
+      <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2 py-3 py-lg-0">
         <li class="nav-item"><a class="nav-link" href="#features">Características</a></li>
+        <li class="nav-item"><a class="nav-link" href="#modulos">Módulos</a></li>
         <li class="nav-item"><a class="nav-link" href="#price">Precios</a></li>
+        <li class="nav-item"><a class="nav-link" href="#contact">Contacto</a></li>
         <li class="nav-item"><a class="nav-link" href="#faq">FAQ</a></li>
         <li class="nav-item">
-          <a class="nav-link fw-bold text-primary" href="{{ url_for('davani_landing') }}">
-            Davani Technology
-          </a>
+          <a class="nav-link fw-bold text-primary" href="{{ url_for('davani_landing') }}">Servicios a medida</a>
         </li>
 
         {% if current_user.is_authenticated %}
-          <li class="nav-item ms-lg-3">
-            <a href="{{ url_for('dashboard') }}" class="btn btn-ghost btn-sm"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a>
+          <li class="nav-item ms-lg-2">
+            <a href="{{ url_for('dashboard') }}" class="btn btn-ghost btn-sm"><i class="bi bi-speedometer2 me-1"></i> Dashboard</a>
           </li>
           <li class="nav-item">
-            <a href="{{ url_for('pay_subscription') }}"
-               class="btn btn-brand btn-sm ms-lg-2 js-open-terms"
-               data-requires-terms="true"><i class="bi bi-credit-card me-1"></i> Activar suscripción</a>
+            <a href="{{ url_for('pay_subscription') }}" class="btn btn-brand btn-sm ms-lg-1 js-open-terms" data-requires-terms="true">
+              <i class="bi bi-credit-card me-1"></i> Activar
+            </a>
           </li>
         {% else %}
-          <li class="nav-item ms-lg-3">
-            <a href="{{ url_for('login') }}" class="btn btn-ghost btn-sm"><i class="bi bi-box-arrow-in-right me-1"></i>Iniciar sesión</a>
+          <li class="nav-item ms-lg-2">
+            <a href="{{ url_for('login') }}" class="btn btn-ghost btn-sm"><i class="bi bi-box-arrow-in-right me-1"></i> Iniciar sesión</a>
           </li>
           <li class="nav-item">
-            <a href="{{ url_for('create_page') }}" class="btn btn-brand btn-sm ms-lg-2"><i class="bi bi-rocket-takeoff me-1"></i>Crear mi página</a>
+            <a href="{{ url_for('create_page') }}" class="btn btn-brand btn-sm ms-lg-1"><i class="bi bi-rocket-takeoff me-1"></i> Crear mi página</a>
           </li>
         {% endif %}
       </ul>
@@ -150,297 +723,437 @@
 </nav>
 
 <!-- HERO -->
-<header class="hero py-5 py-md-6">
-  <div class="container text-center">
-    <span class="badge badge-soft rounded-pill px-3 py-2 mb-3">
-      Hecho en México · Mercado Pago · SEO automático
-    </span>
-    <h1 class="mb-3">Tu web completa con <u>suscripción mensual</u></h1>
-    <p class="lead mb-4">
-      Catálogo, reseñas, WhatsApp y cobros con Mercado Pago. Administra todo desde un panel sencillo.
-    </p>
+<header class="hero">
+  <div class="container hero-content">
+    <div class="row align-items-center g-5">
+      <div class="col-lg-7">
+        <span class="badge-soft"><i class="bi bi-stars"></i> Hecho en México · Mercado Pago · SEO automático</span>
+        <h1 class="hero-title">La página de tu negocio <span>lista para vender, recibir clientes y crecer.</span></h1>
+        <p class="hero-lead">
+          Global PYMES reúne en un solo lugar tu sitio web, catálogo, productos, servicios, reseñas, avisos, blog, WhatsApp, formularios, citas, SEO y cobros con Mercado Pago. Todo desde un panel simple y por suscripción mensual.
+        </p>
 
-    <div class="d-flex flex-wrap justify-content-center gap-2">
-      <a href="{{ url_for('create_page') }}" class="btn btn-brand btn-lg">
-        <i class="bi bi-magic me-1"></i> Crear mi página
-      </a>
-      {% if current_user.is_authenticated %}
-      <a href="{{ url_for('pay_subscription') }}"
-         class="btn btn-ghost btn-lg js-open-terms"
-         data-requires-terms="true">
-        <i class="bi bi-credit-card me-1"></i> Activar suscripción
-      </a>
-      {% else %}
-      <a href="{{ url_for('login') }}" class="btn btn-ghost btn-lg">
-        <i class="bi bi-credit-card me-1"></i> Activar suscripción
-      </a>
-      {% endif %}
+        <div class="hero-points">
+          <span class="hero-point"><i class="bi bi-check2-circle"></i> Catálogo digital</span>
+          <span class="hero-point"><i class="bi bi-check2-circle"></i> Reseñas verificadas</span>
+          <span class="hero-point"><i class="bi bi-check2-circle"></i> WhatsApp integrado</span>
+          <span class="hero-point"><i class="bi bi-check2-circle"></i> SEO automático</span>
+          <span class="hero-point"><i class="bi bi-check2-circle"></i> Pago mensual</span>
+        </div>
+
+        <div class="d-flex flex-wrap gap-3">
+          <a href="{{ url_for('create_page') }}" class="btn btn-brand btn-lg"><i class="bi bi-magic me-1"></i> Crear mi página</a>
+          {% if current_user.is_authenticated %}
+            <a href="{{ url_for('pay_subscription') }}" class="btn btn-ghost btn-lg js-open-terms" data-requires-terms="true">
+              <i class="bi bi-credit-card me-1"></i> Activar suscripción
+            </a>
+          {% else %}
+            <a href="{{ url_for('login') }}" class="btn btn-ghost btn-lg"><i class="bi bi-credit-card me-1"></i> Activar suscripción</a>
+          {% endif %}
+          <a href="https://wa.me/522461038844?text=Hola%20Global%20PYMES%2C%20quiero%20informaci%C3%B3n%20para%20crear%20mi%20p%C3%A1gina" target="_blank" class="btn btn-ghost btn-lg">
+            <i class="bi bi-whatsapp me-1"></i> WhatsApp
+          </a>
+        </div>
+      </div>
+
+      <div class="col-lg-5 hero-visual">
+        <div class="floating-chip chip-1"><i class="bi bi-google text-primary"></i> SEO listo</div>
+        <div class="floating-chip chip-2"><i class="bi bi-whatsapp text-success"></i> Clientes directos</div>
+        <div class="floating-chip chip-3"><i class="bi bi-credit-card text-info"></i> Mercado Pago</div>
+
+        <div class="app-mock">
+          <div class="app-inner">
+            <div class="app-top">
+              <div class="app-url"><i class="bi bi-lock-fill me-1"></i> globalpymes.mx/tu-negocio</div>
+              <span class="badge rounded-pill text-bg-success">Online</span>
+            </div>
+            <div class="app-body">
+              <div class="site-preview">
+                <div class="d-flex align-items-center justify-content-between position-relative" style="z-index:2">
+                  <div>
+                    <small class="fw-bold text-white-50">Vista pública</small>
+                    <h3 class="fw-black fw-bold mb-1">Tu negocio</h3>
+                    <p class="mb-0 text-white-50">Productos · Servicios · Reseñas · Contacto</p>
+                  </div>
+                  <i class="bi bi-shop fs-1"></i>
+                </div>
+              </div>
+              <div class="mini-stats">
+                <div class="mini-card"><i class="bi bi-bag-check text-primary"></i><strong>Catálogo</strong><small>Productos y servicios</small></div>
+                <div class="mini-card"><i class="bi bi-star-half text-warning"></i><strong>Reseñas</strong><small>Confianza social</small></div>
+                <div class="mini-card"><i class="bi bi-newspaper text-info"></i><strong>Avisos</strong><small>Novedades y promos</small></div>
+                <div class="mini-card"><i class="bi bi-bar-chart-line text-success"></i><strong>Panel</strong><small>Control total</small></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </header>
 
-<!-- FEATURES -->
-<section id="features" class="py-5">
+<!-- TRUST -->
+<section class="trust-strip">
   <div class="container">
-    <h2 class="section-title text-center mb-4">¿Qué incluye Global PYMES?</h2>
-    <p class="text-center text-muted mb-5">Todo lo esencial para operar simple, vender fácil y crecer a tu ritmo.</p>
+    <div class="trust-box">
+      <div class="row g-2">
+        <div class="col-md-4">
+          <div class="trust-item"><div class="trust-icon"><i class="bi bi-lightning-charge-fill"></i></div><div><strong>Arranca rápido</strong><small>Crea tu página y comienza a configurarla.</small></div></div>
+        </div>
+        <div class="col-md-4">
+          <div class="trust-item"><div class="trust-icon"><i class="bi bi-shield-check"></i></div><div><strong>Datos protegidos</strong><small>Pagos por Mercado Pago y formularios seguros.</small></div></div>
+        </div>
+        <div class="col-md-4">
+          <div class="trust-item"><div class="trust-icon"><i class="bi bi-phone-fill"></i></div><div><strong>Perfecto para móvil</strong><small>Diseño pensado para clientes en celular.</small></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 
-    <div class="row g-4 grid-feature">
-      <div class="col-md-4">
-        <div class="card h-100 p-4">
-          <div class="icon-pill mb-3"><i class="bi bi-grid-1x2"></i></div>
-          <h5 class="fw-bold">Página completa</h5>
-          <p>Secciones de negocio, productos/servicios, blog, avisos y reseñas en un mismo sitio.</p>
-        </div>
+<!-- FEATURES -->
+<section id="features" class="section-pad">
+  <div class="container">
+    <div class="row justify-content-center text-center mb-5">
+      <div class="col-lg-9">
+        <span class="section-kicker"><i class="bi bi-grid-1x2-fill"></i> Todo incluido</span>
+        <h2 class="section-title">Una presencia digital completa sin complicarte con mil herramientas.</h2>
+        <p class="section-text mt-3">Global PYMES está diseñado para negocios que quieren verse profesionales, recibir clientes y administrar su contenido sin depender de procesos complicados.</p>
       </div>
-      <div class="col-md-4">
-        <div class="card h-100 p-4">
-          <div class="icon-pill mb-3"><i class="bi bi-whatsapp"></i></div>
-          <h5 class="fw-bold">Contacto directo</h5>
-          <p>Botón a <strong>WhatsApp</strong> y formulario con reCAPTCHA para recibir cotizaciones al instante.</p>
-        </div>
-      </div>
-      <div class="col-md-4">
-        <div class="card h-100 p-4">
-          <div class="icon-pill mb-3"><i class="bi bi-star-half"></i></div>
-          <h5 class="fw-bold">Reseñas verificadas</h5>
-          <p>Clientes califican y comentan; tú moderas desde el panel. Da confianza a nuevos compradores.</p>
-        </div>
-      </div>
+    </div>
 
-      <div class="col-md-4">
-        <div class="card h-100 p-4">
-          <div class="icon-pill mb-3"><i class="bi bi-credit-card-2-front"></i></div>
-          <h5 class="fw-bold">Mercado Pago</h5>
-          <p>Suscripción mensual con <strong>preapproval</strong>. Cobro automático y control desde tu panel.</p>
-        </div>
+    <div class="row g-4">
+      <div class="col-md-6 col-xl-4"><article class="feature-card"><div class="icon-pill"><i class="bi bi-window-stack"></i></div><h3>Página completa</h3><p>Secciones para presentar tu negocio, horarios, ubicación, imágenes, videos, información general y llamadas a la acción.</p></article></div>
+      <div class="col-md-6 col-xl-4"><article class="feature-card"><div class="icon-pill"><i class="bi bi-bag-heart-fill"></i></div><h3>Productos y servicios</h3><p>Catálogo dinámico para mostrar lo que vendes o lo que ofreces, con una vista clara para tus clientes.</p></article></div>
+      <div class="col-md-6 col-xl-4"><article class="feature-card"><div class="icon-pill"><i class="bi bi-whatsapp"></i></div><h3>Contacto directo</h3><p>Botones de WhatsApp y formulario para recibir mensajes, cotizaciones y solicitudes desde tu sitio.</p></article></div>
+      <div class="col-md-6 col-xl-4"><article class="feature-card"><div class="icon-pill"><i class="bi bi-star-half"></i></div><h3>Reseñas y confianza</h3><p>Tus clientes pueden calificar y comentar. Tú puedes moderar para cuidar la reputación de tu negocio.</p></article></div>
+      <div class="col-md-6 col-xl-4"><article class="feature-card"><div class="icon-pill"><i class="bi bi-credit-card-2-front"></i></div><h3>Mercado Pago</h3><p>Suscripción mensual con pago recurrente. Activa, pausa o cancela desde el panel de facturación.</p></article></div>
+      <div class="col-md-6 col-xl-4"><article class="feature-card"><div class="icon-pill"><i class="bi bi-rocket-takeoff"></i></div><h3>SEO automático</h3><p>Metadatos, sitemap y estructura lista para ayudar a que tu negocio tenga presencia en Google.</p></article></div>
+    </div>
+  </div>
+</section>
+
+<!-- MODULES -->
+<section id="modulos" class="section-pad modules-section">
+  <div class="container">
+    <div class="row align-items-end mb-5 g-4">
+      <div class="col-lg-8">
+        <span class="section-kicker"><i class="bi bi-box-seam-fill"></i> Módulos del sistema</span>
+        <h2 class="section-title">No es solo una landing. Es una mini plataforma para tu negocio.</h2>
       </div>
-      <div class="col-md-4">
-        <div class="card h-100 p-4">
-          <div class="icon-pill mb-3"><i class="bi bi-rocket-takeoff"></i></div>
-          <h5 class="fw-bold">SEO automático</h5>
-          <p>Sitemap, metadatos y estructura optimizada para que tu negocio aparezca en Google.</p>
-        </div>
+      <div class="col-lg-4">
+        <p class="section-text mb-0">Cada módulo está pensado para que el negocio publique, venda, atienda y mida mejor.</p>
       </div>
-      <div class="col-md-4">
-        <div class="card h-100 p-4">
-          <div class="icon-pill mb-3"><i class="bi bi-palette2"></i></div>
-          <h5 class="fw-bold">Personalización</h5>
-          <p>Colores, logotipo y contenido a tu medida. Administra todo desde un panel simple.</p>
-        </div>
-      </div>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-md-6 col-lg-4"><article class="module-card"><span class="module-tag"><i class="bi bi-pencil-square"></i> Contenido</span><h3>Blog y publicaciones</h3><p>Comparte novedades, historias, consejos, lanzamientos y contenido útil para tus clientes.</p></article></div>
+      <div class="col-md-6 col-lg-4"><article class="module-card"><span class="module-tag"><i class="bi bi-megaphone-fill"></i> Promoción</span><h3>Avisos y promociones</h3><p>Publica ofertas, noticias, eventos, anuncios temporales o promociones especiales.</p></article></div>
+      <div class="col-md-6 col-lg-4"><article class="module-card"><span class="module-tag"><i class="bi bi-calendar-check-fill"></i> Agenda</span><h3>Citas y reservas</h3><p>Ideal para barberías, consultorios, servicios, talleres, estética, clases y negocios por horario.</p></article></div>
+      <div class="col-md-6 col-lg-4"><article class="module-card"><span class="module-tag"><i class="bi bi-receipt-cutoff"></i> Ventas</span><h3>POS y tickets</h3><p>Para ventas físicas: historial, tickets, caja, inventario y reportes cuando el negocio lo requiera.</p></article></div>
+      <div class="col-md-6 col-lg-4"><article class="module-card"><span class="module-tag"><i class="bi bi-graph-up-arrow"></i> Métricas</span><h3>Analítica y leads</h3><p>Consulta visitas, contactos recientes, clics importantes y actividad del sitio desde el panel.</p></article></div>
+      <div class="col-md-6 col-lg-4"><article class="module-card"><span class="module-tag"><i class="bi bi-palette2"></i> Diseño</span><h3>Temáticas por giro</h3><p>Adapta el estilo visual a cafetería, farmacia, barbería, gaming, regalos, repostería, tecnología y más.</p></article></div>
     </div>
   </div>
 </section>
 
 <!-- PRICE -->
-<section id="price" class="py-5 bg-light">
+<section id="price" class="section-pad price-section">
   <div class="container">
-    <div class="row align-items-stretch g-4">
+    <div class="row justify-content-center text-center mb-5">
+      <div class="col-lg-9">
+        <span class="section-kicker" style="background:rgba(255,255,255,.10);border-color:rgba(255,255,255,.16);color:#fff"><i class="bi bi-cash-coin"></i> Plan mensual</span>
+        <h2 class="section-title">Un precio simple para empezar a digitalizar tu negocio.</h2>
+        <p class="section-text mt-3">Sin inversiones enormes al inicio. Tu sitio se mantiene activo con una suscripción mensual por cada negocio.</p>
+      </div>
+    </div>
+
+    <div class="row g-4 align-items-stretch">
       <div class="col-lg-7">
-        <div class="card h-100 p-4 p-md-5">
-          <span class="badge rounded-pill text-bg-primary w-fit mb-3">Plan mensual</span>
-          <h3 class="mb-3">{{ SUB_PLAN.name }}</h3>
-          <p class="mb-4">
-            Un solo plan. Todo incluido. Sin límites de secciones internas ni reseñas.
-            <br><br>
-            <i class="bi bi-diagram-3-fill text-primary me-1"></i><strong>¿Manejas varios negocios?</strong> Crea todos los sitios web que necesites desde una misma cuenta. Cada sitio adicional tiene su propia suscripción de $99 MXN/mes.
-            <br><br>
-            Se renueva automáticamente cada mes y puedes <strong>pausar o cancelar cada sitio de forma independiente cuando quieras</strong>.
-          </p>
+        <article class="price-card">
+          <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+            <span class="price-pill"><i class="bi bi-lightning-charge-fill"></i> Precio de lanzamiento</span>
+            <span class="badge rounded-pill text-bg-warning fw-bold">Cupo limitado</span>
+          </div>
+
+          <h3 class="mb-2">{{ SUB_PLAN.name }}</h3>
+          <p class="mb-3">Un solo plan con página completa, catálogo, reseñas, WhatsApp, SEO, formulario y panel para administrar tu negocio.</p>
 
           {% set display_price = ('%.0f'|format(SUB_PLAN.price)).rstrip('0').rstrip('.') %}
           {% set was_price = 499 %}
           {% set save_pct = ((1 - (SUB_PLAN.price / was_price)) * 100) | round(0) %}
 
-          <div class="mb-3">
-            <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
-              <span class="price-pill"><i class="bi bi-lightning-charge-fill"></i> Precio de lanzamiento</span>
-              <span class="badge rounded-pill text-bg-warning">Cupo limitado</span>
-            </div>
-
-            <div class="price-wrap">
-              <div class="price-was">${{ was_price }} {{ SUB_PLAN.currency }}/mes</div>
-              <div class="price-now">${{ display_price }} {{ SUB_PLAN.currency }}<span style="font-size:1.05rem;font-weight:800">/mes</span></div>
-              <div class="price-save">Ahorra {{ save_pct }}%</div>
-            </div>
-
-            <span class="price-micro">Cobro automático vía Mercado Pago. Pausa o cancela cuando quieras.</span>
+          <div class="price-wrap">
+            <div class="price-now">${{ display_price }} <small>{{ SUB_PLAN.currency }}/mes</small></div>
+            <div class="price-was">${{ was_price }} {{ SUB_PLAN.currency }}/mes</div>
+            <div class="price-save">Ahorra {{ save_pct }}%</div>
           </div>
 
-          <ul class="list-unstyled mt-3">
-            <li class="mb-2"><i class="bi bi-check2-circle text-success me-2"></i> Web completa lista para vender</li>
-            <li class="mb-2"><i class="bi bi-check2-circle text-success me-2"></i> Reseñas y moderación</li>
-            <li class="mb-2"><i class="bi bi-check2-circle text-success me-2"></i> WhatsApp y correo integrados</li>
-            <li class="mb-2"><i class="bi bi-check2-circle text-success me-2"></i> SEO y sitemap automáticos</li>
+          <small class="d-block text-white-50 fw-bold mb-3">Cobro automático vía Mercado Pago. Puedes pausar o cancelar cuando quieras.</small>
+
+          <ul class="check-list">
+            <li><i class="bi bi-check-circle-fill"></i> Web completa lista para presentar tu negocio</li>
+            <li><i class="bi bi-check-circle-fill"></i> Productos, servicios, reseñas, blog y avisos</li>
+            <li><i class="bi bi-check-circle-fill"></i> WhatsApp y correo integrados</li>
+            <li><i class="bi bi-check-circle-fill"></i> SEO y sitemap automáticos</li>
+            <li><i class="bi bi-check-circle-fill"></i> Varios sitios desde una misma cuenta</li>
           </ul>
 
-          <div class="d-flex align-items-end gap-3 mt-3">
+          <div class="d-flex flex-wrap gap-3 align-items-center mt-4">
             {% if current_user.is_authenticated %}
-              <a href="{{ url_for('pay_subscription') }}"
-                 class="btn btn-brand btn-lg ms-auto js-open-terms"
-                 data-requires-terms="true">
+              <a href="{{ url_for('pay_subscription') }}" class="btn btn-brand btn-lg js-open-terms" data-requires-terms="true">
                 <i class="bi bi-credit-card me-1"></i> Activar con Mercado Pago
               </a>
             {% else %}
-              <a href="{{ url_for('login') }}" class="btn btn-brand btn-lg ms-auto">
+              <a href="{{ url_for('login') }}" class="btn btn-brand btn-lg">
                 <i class="bi bi-credit-card me-1"></i> Inicia sesión para activar
               </a>
             {% endif %}
+            <a href="{{ url_for('create_page') }}" class="btn btn-ghost btn-lg"><i class="bi bi-magic me-1"></i> Crear mi página</a>
           </div>
 
           <div class="mt-3">
-            <small class="text-muted">
+            <small class="text-white-50">
               Al continuar, aceptas nuestros
-              <a href="#" class="link-secondary js-open-terms-link">Términos y Condiciones</a>
+              <a href="#" class="fw-bold js-open-terms-link">Términos y Condiciones</a>
               y el
-              <a href="#" class="link-secondary js-open-privacy-link">Aviso de Privacidad</a>.
+              <a href="#" class="fw-bold js-open-privacy-link">Aviso de Privacidad</a>.
             </small>
           </div>
-        </div>
+        </article>
       </div>
 
       <div class="col-lg-5">
-        <div class="card h-100 p-4 p-md-5">
-          <h5 class="mb-3">¿Cómo funciona?</h5>
-          <div class="mb-2"><strong>1)</strong> Crea tu página con los datos básicos de tu negocio.</div>
-          <div class="mb-2"><strong>2)</strong> Activa tu <em>suscripción mensual</em> con Mercado Pago.</div>
-          <div class="mb-4"><strong>3)</strong> Personaliza contenido y comienza a vender.</div>
+        <aside class="how-card">
+          <span class="section-kicker"><i class="bi bi-signpost-split-fill"></i> ¿Cómo funciona?</span>
+          <div class="how-step"><div class="how-num">1</div><div><strong>Crea tu página</strong><p class="mb-0 text-muted">Registra los datos básicos de tu negocio y comienza a personalizar.</p></div></div>
+          <div class="how-step"><div class="how-num">2</div><div><strong>Activa tu suscripción</strong><p class="mb-0 text-muted">Paga de forma segura con Mercado Pago mediante suscripción mensual.</p></div></div>
+          <div class="how-step"><div class="how-num">3</div><div><strong>Publica y vende</strong><p class="mb-0 text-muted">Agrega productos, servicios, reseñas, avisos y contenido para tus clientes.</p></div></div>
 
-          <div class="alert alert-info mb-0">
+          <div class="alert alert-info mt-4 mb-0 rounded-4">
             <i class="bi bi-info-circle me-1"></i>
-            Gestiona tu suscripción desde <a href="{{ url_for('billing_portal') }}">Facturación</a>: pausar, reanudar o cancelar.
+            Gestiona tu suscripción desde <a href="{{ url_for('billing_portal') }}" class="fw-bold">Facturación</a>: pausar, reanudar o cancelar.
           </div>
-        </div>
+        </aside>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- BUSINESS TYPES -->
+<section class="section-pad-sm">
+  <div class="container">
+    <div class="row justify-content-center text-center mb-5">
+      <div class="col-lg-8">
+        <span class="section-kicker"><i class="bi bi-briefcase-fill"></i> Para muchos negocios</span>
+        <h2 class="section-title">Global PYMES se adapta a tu giro.</h2>
+        <p class="section-text mt-3">Puedes usarlo para negocios locales, servicios profesionales, tiendas, alimentos, belleza, salud, tecnología, escuelas y más.</p>
+      </div>
+    </div>
+
+    <div class="row g-3">
+      <div class="col-md-6 col-lg-4"><div class="business-card"><div class="business-icon"><i class="bi bi-cup-hot-fill"></i></div><div><h3>Cafeterías y restaurantes</h3><p>Menús, promociones, contacto y ubicación.</p></div></div></div>
+      <div class="col-md-6 col-lg-4"><div class="business-card"><div class="business-icon"><i class="bi bi-scissors"></i></div><div><h3>Barberías y belleza</h3><p>Servicios, citas, galería y reseñas.</p></div></div></div>
+      <div class="col-md-6 col-lg-4"><div class="business-card"><div class="business-icon"><i class="bi bi-bag-heart-fill"></i></div><div><h3>Tiendas y comercios</h3><p>Productos, inventario y ventas.</p></div></div></div>
+      <div class="col-md-6 col-lg-4"><div class="business-card"><div class="business-icon"><i class="bi bi-heart-pulse-fill"></i></div><div><h3>Salud y bienestar</h3><p>Servicios, formularios y confianza.</p></div></div></div>
+      <div class="col-md-6 col-lg-4"><div class="business-card"><div class="business-icon"><i class="bi bi-controller"></i></div><div><h3>Gaming y tecnología</h3><p>Catálogos visuales y ecommerce.</p></div></div></div>
+      <div class="col-md-6 col-lg-4"><div class="business-card"><div class="business-icon"><i class="bi bi-mortarboard-fill"></i></div><div><h3>Escuelas e instituciones</h3><p>Información, avisos y comunidad.</p></div></div></div>
     </div>
   </div>
 </section>
 
 <!-- ABOUT -->
-<section class="py-5">
-  <div class="container text-center">
-    <h2 class="section-title mb-3">¿Quiénes somos?</h2>
-    <p class="text-muted fs-5 mx-auto" style="max-width:860px">
-      Somos jóvenes desarrolladores en México. Construimos herramientas claras, seguras y accesibles para que las PYMES
-      digitalicen su operación sin dolores de cabeza.
-    </p>
+<section class="section-pad-sm modules-section">
+  <div class="container">
+    <div class="row justify-content-center text-center mb-5">
+      <div class="col-lg-8">
+        <span class="section-kicker"><i class="bi bi-heart-fill"></i> ¿Quiénes somos?</span>
+        <h2 class="section-title">Tecnología cercana para negocios reales.</h2>
+        <p class="section-text mt-3">Somos jóvenes desarrolladores en México. Construimos herramientas claras, seguras y accesibles para que las PYMES digitalicen su operación sin dolores de cabeza.</p>
+      </div>
+    </div>
 
-    <div class="row mt-4 g-4">
-      <div class="col-md-4">
-        <div class="card h-100 p-4 text-start">
-          <div class="icon-pill mb-3"><i class="bi bi-chat-dots"></i></div>
-          <h5 class="fw-bold">Comunicación</h5>
-          <p>Atención cercana y avances visibles. Queremos que disfrutes el proceso.</p>
-        </div>
-      </div>
-      <div class="col-md-4">
-        <div class="card h-100 p-4 text-start">
-          <div class="icon-pill mb-3"><i class="bi bi-shield-lock"></i></div>
-          <h5 class="fw-bold">Seguridad</h5>
-          <p>Encriptado de claves, correo verificado, reCAPTCHA y moderación de reseñas.</p>
-        </div>
-      </div>
-      <div class="col-md-4">
-        <div class="card h-100 p-4 text-start">
-          <div class="icon-pill mb-3"><i class="bi bi-fingerprint"></i></div>
-          <h5 class="fw-bold">Autenticidad</h5>
-          <p>Desarrollos a la medida, listos para crecer cuando lo necesites.</p>
-        </div>
-      </div>
+    <div class="row g-4">
+      <div class="col-md-4"><article class="about-card"><div class="icon-pill"><i class="bi bi-chat-dots"></i></div><h3>Comunicación</h3><p>Atención cercana y avances claros. Queremos que entiendas y disfrutes el proceso.</p></article></div>
+      <div class="col-md-4"><article class="about-card"><div class="icon-pill"><i class="bi bi-shield-lock"></i></div><h3>Seguridad</h3><p>Correo verificado, formularios protegidos, pagos externos seguros y moderación de reseñas.</p></article></div>
+      <div class="col-md-4"><article class="about-card"><div class="icon-pill"><i class="bi bi-fingerprint"></i></div><h3>Autenticidad</h3><p>Herramientas prácticas, visuales y listas para crecer cuando tu negocio lo necesite.</p></article></div>
     </div>
   </div>
 </section>
 
 <!-- CONTACTO -->
-<section class="py-5" id="contact">
+<section class="section-pad contact-section" id="contact">
   <div class="container">
-    <h2 class="section-title text-center mb-3">Contacto</h2>
-    <p class="text-center text-muted mb-4">¿Dudas? Escríbenos y te respondemos a la brevedad.</p>
-
-    {% with messages = get_flashed_messages() %}
-    {% if messages %}
-      <div class="alert alert-info alert-dismissible fade show" role="alert">
-        {{ messages[0] }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    <div class="row g-4 align-items-stretch">
+      <div class="col-lg-5">
+        <div class="contact-info">
+          <span class="section-kicker" style="background:rgba(255,255,255,.10);border-color:rgba(255,255,255,.16);color:#fff"><i class="bi bi-send-fill"></i> Contacto</span>
+          <h2 class="section-title text-white">¿Dudas? Escríbenos y te ayudamos a empezar.</h2>
+          <p class="mt-3">Te orientamos para crear tu página, activar tu suscripción o resolver dudas sobre el sistema.</p>
+          <div class="mt-4">
+            <a class="contact-link" href="tel:+522461038844"><i class="bi bi-telephone-fill"></i> 246 103 8844</a>
+            <a class="contact-link" href="https://wa.me/522461038844?text=Hola%20Global%20PYMES%2C%20quiero%20informaci%C3%B3n" target="_blank"><i class="bi bi-whatsapp"></i> WhatsApp Global PYMES</a>
+            <a class="contact-link" href="mailto:technologydavani@gmail.com"><i class="bi bi-envelope-fill"></i> technologydavani@gmail.com</a>
+            <a class="contact-link" href="https://www.facebook.com/profile.php?id=61561619890202" target="_blank"><i class="bi bi-facebook"></i> Facebook</a>
+            <a class="contact-link" href="https://www.tiktok.com/@technologydavani" target="_blank"><i class="bi bi-tiktok"></i> TikTok</a>
+          </div>
+        </div>
       </div>
-    {% endif %}
-    {% endwith %}
 
-    <form class="row g-3" method="POST" action="/enviar">
-      <div class="col-md-6"><input type="text" name="nombre" id="nombre" class="form-control rounded-3" placeholder="Tu nombre o empresa" required></div>
-      <div class="col-md-6"><input type="email" name="correo" id="correo" class="form-control rounded-3" placeholder="Tu correo" required></div>
-      <div class="col-12"><textarea name="mensaje" id="mensaje" class="form-control rounded-3" rows="4" placeholder="Tu mensaje..." required></textarea></div>
-      <div class="g-recaptcha" data-sitekey="{{ RECAPTCHA_SITE_KEY }}"></div>
-      <div class="col-12 text-center"><button type="submit" class="btn btn-brand btn-lg rounded-3">Enviar</button></div>
-    </form>
+      <div class="col-lg-7">
+        <div class="contact-card">
+          <h3 class="fw-black fw-bold mb-2">Envíanos un mensaje</h3>
+          <p class="text-muted mb-4">Cuéntanos qué tipo de negocio tienes y qué necesitas mostrar en tu página.</p>
+
+          {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            <div class="alert alert-info alert-dismissible fade show" role="alert">
+              {{ messages[0] }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          {% endif %}
+          {% endwith %}
+
+          <form class="row g-3" method="POST" action="/enviar">
+            <div class="col-md-6">
+              <label for="nombre" class="form-label fw-bold">Nombre o empresa</label>
+              <input type="text" name="nombre" id="nombre" class="form-control" placeholder="Ej. Mi Negocio MX" required>
+            </div>
+            <div class="col-md-6">
+              <label for="correo" class="form-label fw-bold">Correo</label>
+              <input type="email" name="correo" id="correo" class="form-control" placeholder="correo@empresa.com" required>
+            </div>
+            <div class="col-md-6">
+              <label for="telefono" class="form-label fw-bold">Teléfono / WhatsApp</label>
+              <input type="tel" name="telefono" id="telefono" class="form-control" placeholder="Ej. 246 103 8844">
+            </div>
+            <div class="col-md-6">
+              <label for="tipo" class="form-label fw-bold">Tipo de negocio</label>
+              <select name="tipo" id="tipo" class="form-select">
+                <option value="Global PYMES - Información general">Información general</option>
+                <option value="Quiero crear mi página">Quiero crear mi página</option>
+                <option value="Duda sobre suscripción">Duda sobre suscripción</option>
+                <option value="Duda sobre Mercado Pago">Duda sobre Mercado Pago</option>
+                <option value="Necesito ayuda con mi sitio">Necesito ayuda con mi sitio</option>
+              </select>
+            </div>
+            <div class="col-12">
+              <label for="mensaje" class="form-label fw-bold">Mensaje</label>
+              <textarea name="mensaje" id="mensaje" class="form-control" rows="5" placeholder="Cuéntanos tu duda o qué necesitas para tu negocio..." required></textarea>
+            </div>
+
+            {% if RECAPTCHA_SITE_KEY %}
+              <div class="col-12">
+                <div class="g-recaptcha" data-sitekey="{{ RECAPTCHA_SITE_KEY }}"></div>
+              </div>
+            {% endif %}
+
+            <div class="col-12 d-flex flex-wrap gap-3 align-items-center justify-content-between">
+              <small class="text-muted fw-semibold">Te responderemos lo antes posible.</small>
+              <button type="submit" class="btn btn-brand btn-lg"><i class="bi bi-send-fill me-1"></i> Enviar mensaje</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
   </div>
 </section>
 
 <!-- FAQ -->
-<section class="container my-5" id="faq">
-  <h2 class="section-title text-center mb-4">Preguntas frecuentes</h2>
-  <div class="accordion" id="faqAccordion">
-    <div class="accordion-item">
-      <h2 class="accordion-header">
-        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq-cost">¿Cuál es el costo?</button>
-      </h2>
-      <div id="faq-cost" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
-        <div class="accordion-body">
-          {% set display_price = ('%.0f'|format(SUB_PLAN.price)).rstrip('0').rstrip('.') %}
-          {% set was_price = 499 %}
-          El plan está en <strong>${{ display_price }} {{ SUB_PLAN.currency }}/mes</strong> 
-          <span class="text-muted text-decoration-line-through ms-1">${{ was_price }} {{ SUB_PLAN.currency }}/mes</span>.
-          Se renueva automáticamente y puedes pausar o cancelar en cualquier momento desde <a href="{{ url_for('billing_portal') }}">Facturación</a>.
+<section class="section-pad-sm" id="faq">
+  <div class="container">
+    <div class="row justify-content-center text-center mb-5">
+      <div class="col-lg-8">
+        <span class="section-kicker"><i class="bi bi-question-circle-fill"></i> Preguntas frecuentes</span>
+        <h2 class="section-title">Lo que necesitas saber antes de empezar.</h2>
+      </div>
+    </div>
+
+    <div class="row justify-content-center">
+      <div class="col-lg-9">
+        <div class="accordion" id="faqAccordion">
+          <div class="accordion-item">
+            <h2 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq-cost">¿Cuál es el costo?</button></h2>
+            <div id="faq-cost" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
+              <div class="accordion-body">
+                {% set display_price = ('%.0f'|format(SUB_PLAN.price)).rstrip('0').rstrip('.') %}
+                {% set was_price = 499 %}
+                El plan está en <strong>${{ display_price }} {{ SUB_PLAN.currency }}/mes</strong>
+                <span class="text-muted text-decoration-line-through ms-1">${{ was_price }} {{ SUB_PLAN.currency }}/mes</span>.
+                Se renueva automáticamente y puedes pausar o cancelar en cualquier momento desde <a href="{{ url_for('billing_portal') }}">Facturación</a>.
+              </div>
+            </div>
+          </div>
+
+          <div class="accordion-item">
+            <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">¿Qué incluye el plan?</button></h2>
+            <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+              <div class="accordion-body">Incluye acceso al panel, página pública, catálogo, servicios, reseñas, blog, avisos, WhatsApp, formulario, SEO y cobros con <strong>Mercado Pago</strong>.</div>
+            </div>
+          </div>
+
+          <div class="accordion-item">
+            <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">¿Puedo manejar varios negocios?</button></h2>
+            <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+              <div class="accordion-body">Sí. Puedes crear varios sitios desde una misma cuenta. Cada sitio adicional tiene su propia suscripción mensual independiente.</div>
+            </div>
+          </div>
+
+          <div class="accordion-item">
+            <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">¿Cómo se procesa el pago?</button></h2>
+            <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+              <div class="accordion-body">Con <strong>Mercado Pago</strong> mediante suscripción recurrente. Tras autorizar, el cobro se realiza automáticamente cada mes.</div>
+            </div>
+          </div>
+
+          <div class="accordion-item">
+            <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq5">¿Puedo pausar o cancelar?</button></h2>
+            <div id="faq5" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+              <div class="accordion-body">Sí. Desde <a href="{{ url_for('billing_portal') }}">Facturación</a> puedes pausar, reanudar o cancelar cuando quieras.</div>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
-    <div class="accordion-item">
-      <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#faq2">¿Qué incluye el plan?</button></h2>
-      <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-        <div class="accordion-body">Acceso al panel, catálogo, reseñas, SEO, WhatsApp y cobros con <strong>Mercado Pago</strong>.</div>
-      </div>
-    </div>
-    <div class="accordion-item">
-      <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#faq4">¿Cómo se procesa el pago?</button></h2>
-      <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-        <div class="accordion-body">Con <strong>Mercado Pago</strong> (preapproval). Tras autorizar, se cobra cada mes automáticamente.</div>
-      </div>
-    </div>
-    <div class="accordion-item">
-      <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#faq5">¿Puedo pausar o cancelar?</button></h2>
-      <div id="faq5" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-        <div class="accordion-body">Sí. Desde <a href="{{ url_for('billing_portal') }}">Facturación</a> puedes pausar, reanudar o cancelar cuando quieras.</div>
       </div>
     </div>
   </div>
 </section>
 
 <!-- FOOTER -->
-<footer class="footer pt-4 pb-3">
-  <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center">
-    <div class="mb-3 mb-md-0">
-      <p class="mb-0">&copy; 2026 <strong>DavaniTechnology</strong>. Todos los derechos reservados.</p>
-      <small>
-        <a href="#" class="fw-semibold text-decoration-underline js-open-terms-link">Términos y Condiciones</a> ·
-        <a href="#" class="fw-semibold text-decoration-underline js-open-privacy-link">Aviso de Privacidad</a>
-      </small>
-    </div>
-    <div>
-      <a href="https://www.facebook.com/profile.php?id=61561619890202" target="_blank" class="me-3 fs-4" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
-      <a href="https://www.tiktok.com/@technologydavani" target="_blank" class="fs-4" aria-label="TikTok"><i class="bi bi-tiktok"></i></a>
+<footer class="footer">
+  <div class="container">
+    <div class="row g-4 align-items-center">
+      <div class="col-md-6">
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <img src="{{ url_for('static', filename='images/logo.jpg') }}" alt="Global PYMES" class="brand-logo">
+          <div>
+            <strong class="text-white">Global PYMES</strong><br>
+            <small>Una solución de Davani Technology para digitalizar negocios.</small><br>
+            <small><i class="bi bi-telephone-fill me-1"></i><a href="tel:+522461038844">246 103 8844</a></small>
+          </div>
+        </div>
+        <small>&copy; 2026 <strong>DavaniTechnology</strong>. Todos los derechos reservados.</small><br>
+        <small>
+          <a href="#" class="fw-semibold text-decoration-underline js-open-terms-link">Términos y Condiciones</a> ·
+          <a href="#" class="fw-semibold text-decoration-underline js-open-privacy-link">Aviso de Privacidad</a>
+        </small>
+      </div>
+      <div class="col-md-6 text-md-end">
+        <a href="#features" class="me-3">Características</a>
+        <a href="#price" class="me-3">Precios</a>
+        <a href="#contact" class="me-3">Contacto</a>
+        <a href="https://www.facebook.com/profile.php?id=61561619890202" target="_blank" class="fs-4 me-2" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
+        <a href="https://www.tiktok.com/@technologydavani" target="_blank" class="fs-4" aria-label="TikTok"><i class="bi bi-tiktok"></i></a>
+      </div>
     </div>
   </div>
 </footer>
 
-<!-- ===== Modal: Términos y Condiciones / Privacidad ===== -->
+<!-- Modal: Términos y Condiciones / Privacidad -->
 <div class="modal fade" id="termsModal" tabindex="-1" aria-labelledby="termsTitle" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-scrollable">
     <div class="modal-content rounded-4 border-0 shadow">
       <div class="modal-header border-bottom-0 pb-0">
-        <h5 class="modal-title fw-bold" id="termsTitle">
-          <i class="bi bi-file-earmark-text me-2 text-primary"></i>Términos, Condiciones y Privacidad
-        </h5>
+        <h5 class="modal-title fw-bold" id="termsTitle"><i class="bi bi-file-earmark-text me-2 text-primary"></i>Términos, Condiciones y Privacidad</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
       </div>
       <div class="modal-body pt-3">
@@ -458,7 +1171,7 @@
 
         <section class="mb-4">
           <h6 class="fw-bold">3. Suscripción, Pagos y Multi-sitio (Mercado Pago)</h6>
-          <p class="small">El costo del servicio es de <strong>$99.00 MXN mensuales</strong> (IVA incluido, si aplica) <strong>por cada página web (sitio) creada</strong>. Los usuarios pueden crear y administrar múltiples sitios desde una sola cuenta. Cada sitio requerirá su propia suscripción mensual independiente. El pago se gestiona exclusivamente a través de Mercado Pago mediante el modelo de suscripción recurrente. El usuario acepta que los cobros se realicen de forma automática cada mes hasta que decida cancelar o pausar el servicio de cada sitio específico desde su panel de facturación.</p>
+          <p class="small">El costo del servicio es de <strong>$99.00 MXN mensuales</strong> (IVA incluido, si aplica) <strong>por cada página web (sitio) creada</strong>. Los usuarios pueden crear y administrar múltiples sitios desde una sola cuenta. Cada sitio requerirá su propia suscripción mensual independiente. El pago se gestiona exclusivamente a través de Mercado Pago mediante el modelo de suscripción recurrente.</p>
         </section>
 
         <section class="mb-4">
@@ -479,9 +1192,7 @@
         <div class="bg-light p-3 rounded-3 mt-4">
           <div class="form-check">
             <input class="form-check-input" type="checkbox" value="" id="acceptTerms">
-            <label class="form-check-label small fw-bold" for="acceptTerms">
-              He leído y acepto los Términos de Servicio y el Aviso de Privacidad de Global PYMES.
-            </label>
+            <label class="form-check-label small fw-bold" for="acceptTerms">He leído y acepto los Términos de Servicio y el Aviso de Privacidad de Global PYMES.</label>
           </div>
         </div>
       </div>
@@ -493,29 +1204,38 @@
   </div>
 </div>
 
+<a href="https://wa.me/522461038844?text=Hola%20Global%20PYMES%2C%20quiero%20informaci%C3%B3n%20para%20crear%20mi%20p%C3%A1gina" class="floating-whatsapp" target="_blank" aria-label="Contactar por WhatsApp">
+  <i class="bi bi-whatsapp"></i>
+</a>
+
+{% if RECAPTCHA_SITE_KEY %}
 <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+{% endif %}
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-  // === Gate de T&C para botones con data-requires-terms="true" ===
+  // Gate de T&C para botones con data-requires-terms="true"
   (function () {
     const termsModalEl = document.getElementById('termsModal');
+    if (!termsModalEl || !window.bootstrap) return;
+
     const termsModal = new bootstrap.Modal(termsModalEl);
     const acceptChk = document.getElementById('acceptTerms');
     const btnContinue = document.getElementById('btnTermsContinue');
-
     let pendingHref = null;
 
-    acceptChk.addEventListener('change', function(){
-      btnContinue.disabled = !this.checked;
-    });
+    if (acceptChk && btnContinue) {
+      acceptChk.addEventListener('change', function(){
+        btnContinue.disabled = !this.checked;
+      });
+    }
 
     document.querySelectorAll('[data-requires-terms="true"]').forEach(btn => {
       btn.addEventListener('click', function(e){
         e.preventDefault();
         pendingHref = this.getAttribute('href');
-        acceptChk.checked = false;
-        btnContinue.disabled = true;
+        if (acceptChk) acceptChk.checked = false;
+        if (btnContinue) btnContinue.disabled = true;
         termsModal.show();
       });
     });
@@ -524,21 +1244,23 @@
       a.addEventListener('click', function(e){
         e.preventDefault();
         pendingHref = null;
-        acceptChk.checked = false;
-        btnContinue.disabled = true;
+        if (acceptChk) acceptChk.checked = false;
+        if (btnContinue) btnContinue.disabled = true;
         termsModal.show();
       });
     });
 
-    btnContinue.addEventListener('click', function(){
-      if (acceptChk.checked) {
-        if (pendingHref) {
-          window.location.href = pendingHref;
-        } else {
-          termsModal.hide();
+    if (btnContinue) {
+      btnContinue.addEventListener('click', function(){
+        if (acceptChk && acceptChk.checked) {
+          if (pendingHref) {
+            window.location.href = pendingHref;
+          } else {
+            termsModal.hide();
+          }
         }
-      }
-    });
+      });
+    }
   })();
 </script>
 </body>
