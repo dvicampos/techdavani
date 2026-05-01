@@ -6777,5 +6777,9 @@ def venta_print_view(venta_id):
         paper=paper
     )
 
+@app.route("/davani")
+def davani_landing():
+    return render_template("davani_landing.html")
+
 if __name__ == '__main__':
   app.run(host="0.0.0.0", port=5000, debug=True)

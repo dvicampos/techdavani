@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Davani Technology — Desarrollo web, apps, ecommerce y sistemas a medida</title>
+
+  <!-- Bootstrap, iconos y fuentes -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="icon" href="{{ url_for('static', filename='images/logo.jpg') }}" type="image/png">
+
+  <!-- SEO -->
+  <meta name="description" content="Davani Technology crea páginas web, tiendas online, apps, sistemas administrativos, automatizaciones, PWA, APK, Shopify, POS, certificados digitales y soluciones a medida para negocios.">
+  <meta name="keywords" content="Davani Technology, desarrollo web, páginas web, Shopify, ecommerce, apps, PWA, APK, sistemas a medida, punto de venta, certificados digitales, automatización, México">
+  <meta name="author" content="Davani Technology">
+  <meta name="geo.region" content="MX">
+  <meta name="geo.placename" content="México">
+  <meta name="language" content="es">
+  <meta name="robots" content="index, follow">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Davani Technology — Creamos tecnología para vender, administrar y crecer">
+  <meta property="og:description" content="Desarrollo web, ecommerce, apps, sistemas personalizados, POS, PWA, APK, Shopify, automatizaciones y soluciones digitales para negocios.">
+  <meta property="og:image" content="https://technologydavani.com/static/images/logo.jpg">
+  <meta property="og:url" content="https://technologydavani.com">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Davani Technology">
+
+  <style>
+    :root{
+      --davani-dark:#070817;
+      --davani-ink:#101322;
+      --davani-text:#eaf0ff;
+      --davani-muted:#94a3b8;
+      --davani-soft:#f6f8ff;
+      --davani-card:#ffffff;
+      --davani-primary:#5b54d6;
+      --davani-primary-2:#8b5cf6;
+      --davani-cyan:#06b6d4;
+      --davani-green:#22c55e;
+      --davani-orange:#f59e0b;
+      --davani-pink:#ec4899;
+      --davani-border:rgba(15,23,42,.10);
+      --davani-shadow:0 24px 80px rgba(15,23,42,.12);
+      --davani-radius:26px;
+    }
+
+    *{box-sizing:border-box;}
+    html{scroll-behavior:smooth;}
+    body{
+      margin:0;
+      font-family:'Inter',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+      color:var(--davani-ink);
+      background:
+        radial-gradient(circle at top left, rgba(91,84,214,.10), transparent 32rem),
+        radial-gradient(circle at top right, rgba(6,182,212,.10), transparent 30rem),
+        #fff;
+      overflow-x:hidden;
+    }
+
+    a{text-decoration:none;}
+    .section-pad{padding:92px 0;}
+    .section-pad-sm{padding:64px 0;}
+    .section-kicker{
+      display:inline-flex;
+      align-items:center;
+      gap:.55rem;
+      padding:.45rem .85rem;
+      border-radius:999px;
+      color:#312e81;
+      background:rgba(91,84,214,.10);
+      border:1px solid rgba(91,84,214,.16);
+      font-weight:800;
+      font-size:.86rem;
+      letter-spacing:.01em;
+      margin-bottom:1rem;
+    }
+    .section-title{
+      font-family:'Playfair Display',serif;
+      font-weight:800;
+      letter-spacing:-.04em;
+      color:#111827;
+      font-size:clamp(2rem,4vw,3.45rem);
+      line-height:1.02;
+    }
+    .section-text{
+      color:#64748b;
+      font-size:1.08rem;
+      line-height:1.75;
+    }
+
+    /* NAV */
+    .navbar-davani{
+      background:rgba(255,255,255,.86);
+      backdrop-filter:blur(18px) saturate(160%);
+      border-bottom:1px solid rgba(15,23,42,.08);
+    }
+    .brand-logo{
+      width:42px;
+      height:42px;
+      object-fit:cover;
+      border-radius:14px;
+      box-shadow:0 10px 22px rgba(91,84,214,.18);
+    }
+    .navbar-brand strong{
+      letter-spacing:-.03em;
+      color:#111827;
+    }
+    .nav-link{
+      color:#334155;
+      font-weight:700;
+      font-size:.94rem;
+    }
+    .nav-link:hover{color:var(--davani-primary);}
+
+    .btn-davani{
+      border:0;
+      border-radius:16px;
+      padding:.82rem 1.08rem;
+      font-weight:900;
+      color:#fff;
+      background:linear-gradient(135deg,var(--davani-primary),var(--davani-primary-2));
+      box-shadow:0 16px 34px rgba(91,84,214,.28);
+      transition:transform .22s ease, box-shadow .22s ease, filter .22s ease;
+    }
+    .btn-davani:hover{
+      color:#fff;
+      transform:translateY(-2px);
+      filter:saturate(1.08);
+      box-shadow:0 22px 44px rgba(91,84,214,.35);
+    }
+    .btn-davani-outline{
+      border:1px solid rgba(91,84,214,.22);
+      border-radius:16px;
+      padding:.8rem 1.08rem;
+      color:#312e81;
+      background:#fff;
+      font-weight:900;
+      box-shadow:0 12px 28px rgba(15,23,42,.06);
+    }
+    .btn-davani-outline:hover{
+      color:#fff;
+      background:#1f1a4f;
+      border-color:#1f1a4f;
+    }
+
+    /* HERO */
+    .hero-davani{
+      position:relative;
+      min-height:calc(100vh - 50px);
+      display:flex;
+      align-items:center;
+      color:#fff;
+      background:
+        radial-gradient(circle at 15% 12%, rgba(139,92,246,.72), transparent 25rem),
+        radial-gradient(circle at 82% 18%, rgba(6,182,212,.58), transparent 25rem),
+        radial-gradient(circle at 55% 95%, rgba(236,72,153,.30), transparent 24rem),
+        linear-gradient(135deg,#070817 0%,#11123a 52%,#1f1a4f 100%);
+      overflow:hidden;
+    }
+    .hero-davani::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background-image:
+        linear-gradient(rgba(255,255,255,.055) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.055) 1px, transparent 1px);
+      background-size:42px 42px;
+      mask-image:linear-gradient(to bottom, rgba(0,0,0,.9), rgba(0,0,0,.18));
+      pointer-events:none;
+    }
+    .hero-davani::after{
+      content:"";
+      position:absolute;
+      width:720px;
+      height:720px;
+      right:-260px;
+      top:-160px;
+      border-radius:50%;
+      border:1px solid rgba(255,255,255,.16);
+      box-shadow:inset 0 0 90px rgba(255,255,255,.08);
+      pointer-events:none;
+    }
+    .hero-content{position:relative;z-index:2;}
+    .hero-kicker{
+      display:inline-flex;
+      align-items:center;
+      gap:.6rem;
+      padding:.55rem .9rem;
+      border-radius:999px;
+      background:rgba(255,255,255,.11);
+      border:1px solid rgba(255,255,255,.22);
+      color:#fff;
+      font-weight:800;
+      margin-bottom:1.2rem;
+    }
+    .hero-title{
+      font-family:'Playfair Display',serif;
+      font-size:clamp(2.65rem,6vw,5.75rem);
+      line-height:.94;
+      letter-spacing:-.06em;
+      font-weight:800;
+      margin-bottom:1.25rem;
+    }
+    .hero-gradient-text{
+      background:linear-gradient(135deg,#fff 0%,#a5f3fc 42%,#c4b5fd 78%,#fbcfe8 100%);
+      -webkit-background-clip:text;
+      background-clip:text;
+      color:transparent;
+    }
+    .hero-lead{
+      color:#dbeafe;
+      font-size:clamp(1.05rem,2vw,1.28rem);
+      line-height:1.75;
+      max-width:740px;
+      margin-bottom:1.6rem;
+    }
+    .hero-points{
+      display:flex;
+      flex-wrap:wrap;
+      gap:.7rem;
+      margin:1.3rem 0 1.8rem;
+    }
+    .hero-point{
+      display:inline-flex;
+      align-items:center;
+      gap:.45rem;
+      padding:.55rem .75rem;
+      border:1px solid rgba(255,255,255,.16);
+      border-radius:999px;
+      background:rgba(255,255,255,.08);
+      color:#eef2ff;
+      font-weight:800;
+      font-size:.9rem;
+    }
+    .hero-visual{
+      position:relative;
+      z-index:2;
+    }
+    .dashboard-mock{
+      position:relative;
+      border-radius:34px;
+      padding:1rem;
+      background:rgba(255,255,255,.10);
+      border:1px solid rgba(255,255,255,.20);
+      box-shadow:0 34px 90px rgba(0,0,0,.38);
+      backdrop-filter:blur(18px);
+      transform:rotate(1.5deg);
+    }
+    .mock-inner{
+      border-radius:26px;
+      background:#f8fafc;
+      overflow:hidden;
+      color:#0f172a;
+    }
+    .mock-top{
+      display:flex;
+      align-items:center;
+      gap:.45rem;
+      padding:1rem 1.15rem;
+      background:#fff;
+      border-bottom:1px solid rgba(15,23,42,.08);
+    }
+    .mock-dot{width:12px;height:12px;border-radius:50%;background:#ef4444;}
+    .mock-dot:nth-child(2){background:#f59e0b;}
+    .mock-dot:nth-child(3){background:#22c55e;}
+    .mock-body{padding:1.25rem;}
+    .mock-card{
+      border-radius:22px;
+      padding:1rem;
+      background:#fff;
+      border:1px solid rgba(15,23,42,.08);
+      box-shadow:0 16px 34px rgba(15,23,42,.07);
+      margin-bottom:1rem;
+    }
+    .mock-pill{
+      height:12px;
+      border-radius:99px;
+      background:linear-gradient(90deg,#5b54d6,#06b6d4);
+      margin:.7rem 0;
+    }
+    .mock-grid{
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:.85rem;
+    }
+    .mock-mini{
+      min-height:96px;
+      border-radius:20px;
+      padding:1rem;
+      background:linear-gradient(135deg, rgba(91,84,214,.12), rgba(6,182,212,.10));
+      border:1px solid rgba(91,84,214,.12);
+    }
+    .floating-chip{
+      position:absolute;
+      z-index:4;
+      display:flex;
+      align-items:center;
+      gap:.55rem;
+      padding:.7rem .85rem;
+      border-radius:18px;
+      background:rgba(255,255,255,.94);
+      color:#111827;
+      box-shadow:0 18px 46px rgba(0,0,0,.20);
+      font-weight:900;
+      border:1px solid rgba(255,255,255,.65);
+    }
+    .chip-1{left:-18px;top:12%;}
+    .chip-2{right:-18px;bottom:14%;}
+    .chip-3{left:8%;bottom:-18px;}
+
+    /* TRUST STRIP */
+    .trust-strip{
+      position:relative;
+      z-index:3;
+      margin-top:2%;
+    }
+    .trust-box{
+      border-radius:28px;
+      background:#fff;
+      box-shadow:var(--davani-shadow);
+      border:1px solid rgba(15,23,42,.08);
+      padding:1.25rem;
+    }
+    .trust-item{
+      display:flex;
+      align-items:center;
+      gap:.85rem;
+      padding:.7rem;
+    }
+    .trust-icon{
+      width:48px;
+      height:48px;
+      border-radius:17px;
+      display:grid;
+      place-items:center;
+      color:#fff;
+      background:linear-gradient(135deg,var(--davani-primary),var(--davani-cyan));
+      flex:0 0 auto;
+    }
+    .trust-item strong{display:block;color:#111827;}
+    .trust-item small{color:#64748b;font-weight:700;}
+
+    /* CARDS */
+    .service-card,
+    .product-card,
+    .sector-card,
+    .process-card,
+    .price-card,
+    .contact-card{
+      height:100%;
+      border-radius:var(--davani-radius);
+      background:var(--davani-card);
+      border:1px solid var(--davani-border);
+      box-shadow:0 16px 40px rgba(15,23,42,.07);
+      transition:transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+      overflow:hidden;
+    }
+    .service-card:hover,
+    .product-card:hover,
+    .sector-card:hover,
+    .process-card:hover,
+    .price-card:hover{
+      transform:translateY(-6px);
+      box-shadow:0 28px 70px rgba(15,23,42,.13);
+      border-color:rgba(91,84,214,.22);
+    }
+    .service-card{padding:1.35rem;}
+    .service-icon{
+      width:58px;
+      height:58px;
+      border-radius:20px;
+      display:grid;
+      place-items:center;
+      color:#fff;
+      font-size:1.45rem;
+      background:linear-gradient(135deg,var(--davani-primary),var(--davani-primary-2));
+      margin-bottom:1.05rem;
+      box-shadow:0 18px 34px rgba(91,84,214,.22);
+    }
+    .service-card h3,
+    .product-card h3,
+    .price-card h3{
+      font-size:1.15rem;
+      font-weight:900;
+      letter-spacing:-.02em;
+      color:#111827;
+    }
+    .service-card p,
+    .product-card p,
+    .sector-card p,
+    .process-card p,
+    .price-card p{
+      color:#64748b;
+      line-height:1.7;
+      margin-bottom:0;
+    }
+
+    /* PRODUCTS */
+    .products-section{
+      background:
+        radial-gradient(circle at 18% 18%, rgba(91,84,214,.10), transparent 24rem),
+        radial-gradient(circle at 82% 28%, rgba(6,182,212,.10), transparent 24rem),
+        #f8fafc;
+    }
+    .product-card{padding:0;}
+    .product-head{
+      padding:1.35rem 1.35rem 1rem;
+      color:#fff;
+      background:linear-gradient(135deg,#111827,#312e81);
+      position:relative;
+      overflow:hidden;
+    }
+    .product-head::after{
+      content:"";
+      position:absolute;
+      width:170px;
+      height:170px;
+      right:-60px;
+      top:-65px;
+      border-radius:50%;
+      background:rgba(255,255,255,.12);
+    }
+    .product-head .service-icon{
+      background:rgba(255,255,255,.14);
+      box-shadow:none;
+      margin-bottom:.9rem;
+      position:relative;
+      z-index:2;
+    }
+    .product-head h3{color:#fff;position:relative;z-index:2;margin-bottom:.35rem;}
+    .product-head small{color:#c7d2fe;font-weight:800;position:relative;z-index:2;}
+    .product-body{padding:1.35rem;}
+    .check-list{
+      list-style:none;
+      padding:0;
+      margin:1rem 0 0;
+    }
+    .check-list li{
+      display:flex;
+      gap:.55rem;
+      align-items:flex-start;
+      color:#334155;
+      font-weight:700;
+      margin-bottom:.75rem;
+      line-height:1.45;
+    }
+    .check-list i{color:var(--davani-green);font-size:1.08rem;}
+
+    /* CTA BAND */
+    .cta-band{
+      position:relative;
+      border-radius:36px;
+      padding:2rem;
+      color:#fff;
+      background:
+        radial-gradient(circle at top left, rgba(6,182,212,.48), transparent 24rem),
+        radial-gradient(circle at bottom right, rgba(236,72,153,.42), transparent 24rem),
+        linear-gradient(135deg,#0f1028,#312e81 60%,#5b54d6);
+      overflow:hidden;
+      box-shadow:0 30px 80px rgba(49,46,129,.28);
+    }
+    .cta-band::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background-image:linear-gradient(rgba(255,255,255,.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.06) 1px, transparent 1px);
+      background-size:36px 36px;
+      pointer-events:none;
+    }
+    .cta-band > *{position:relative;z-index:2;}
+    .cta-band h2{
+      font-family:'Playfair Display',serif;
+      font-size:clamp(2rem,4vw,3.25rem);
+      font-weight:800;
+      letter-spacing:-.04em;
+    }
+    .cta-band p{color:#dbeafe;font-size:1.08rem;line-height:1.75;}
+
+    /* SECTORS */
+    .sector-card{
+      padding:1.05rem;
+      display:flex;
+      align-items:center;
+      gap:.85rem;
+    }
+    .sector-icon{
+      width:46px;
+      height:46px;
+      border-radius:16px;
+      display:grid;
+      place-items:center;
+      color:#fff;
+      background:linear-gradient(135deg,var(--davani-primary),var(--davani-cyan));
+      flex:0 0 auto;
+    }
+    .sector-card h3{
+      font-size:1rem;
+      font-weight:900;
+      margin:0;
+    }
+    .sector-card p{font-size:.9rem;margin:.1rem 0 0;}
+
+    /* PROCESS */
+    .process-card{padding:1.35rem;position:relative;}
+    .process-number{
+      width:46px;
+      height:46px;
+      border-radius:16px;
+      display:grid;
+      place-items:center;
+      background:#111827;
+      color:#fff;
+      font-weight:900;
+      margin-bottom:1rem;
+    }
+    .process-card h3{font-size:1.1rem;font-weight:900;}
+
+    /* PRICING */
+    .pricing-section{
+      background:#070817;
+      color:#fff;
+      position:relative;
+      overflow:hidden;
+    }
+    .pricing-section::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:
+        radial-gradient(circle at 20% 18%, rgba(91,84,214,.40), transparent 28rem),
+        radial-gradient(circle at 85% 42%, rgba(6,182,212,.30), transparent 28rem);
+      pointer-events:none;
+    }
+    .pricing-section .container{position:relative;z-index:2;}
+    .pricing-section .section-title{color:#fff;}
+    .pricing-section .section-text{color:#cbd5e1;}
+    .price-card{
+      padding:1.5rem;
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.14);
+      box-shadow:0 24px 70px rgba(0,0,0,.22);
+      color:#fff;
+      backdrop-filter:blur(16px);
+    }
+    .price-card h3{color:#fff;}
+    .price-card p{color:#cbd5e1;}
+    .price-label{
+      display:inline-flex;
+      align-items:center;
+      gap:.45rem;
+      color:#a5f3fc;
+      font-weight:900;
+      padding:.45rem .7rem;
+      border-radius:999px;
+      background:rgba(6,182,212,.10);
+      border:1px solid rgba(6,182,212,.20);
+      margin-bottom:1rem;
+    }
+    .price-main{
+      font-size:2.35rem;
+      font-weight:900;
+      letter-spacing:-.04em;
+      margin:.75rem 0 .2rem;
+    }
+    .price-card .check-list li{color:#e2e8f0;}
+
+    /* CONTACT */
+    .contact-section{background:#f8fafc;}
+    .contact-card{padding:1.5rem;}
+    .form-control,
+    .form-select{
+      border-radius:16px;
+      border:1px solid rgba(15,23,42,.12);
+      padding:.9rem 1rem;
+      font-weight:700;
+      color:#111827;
+    }
+    .form-control:focus,
+    .form-select:focus{
+      border-color:rgba(91,84,214,.55);
+      box-shadow:0 0 0 .25rem rgba(91,84,214,.12);
+    }
+    .contact-info{
+      border-radius:26px;
+      color:#fff;
+      padding:1.5rem;
+      height:100%;
+      background:
+        radial-gradient(circle at top right, rgba(6,182,212,.38), transparent 18rem),
+        linear-gradient(135deg,#111827,#312e81);
+    }
+    .contact-info p{color:#dbeafe;}
+    .contact-link{
+      display:flex;
+      align-items:center;
+      gap:.75rem;
+      padding:.85rem;
+      border-radius:18px;
+      background:rgba(255,255,255,.10);
+      color:#fff;
+      border:1px solid rgba(255,255,255,.14);
+      margin-bottom:.8rem;
+      font-weight:800;
+    }
+    .contact-link:hover{color:#fff;background:rgba(255,255,255,.16);}
+
+    /* FAQ / FOOTER */
+    .accordion-item{
+      border:1px solid rgba(15,23,42,.10);
+      border-radius:18px!important;
+      overflow:hidden;
+      margin-bottom:.85rem;
+      box-shadow:0 10px 24px rgba(15,23,42,.05);
+    }
+    .accordion-button{font-weight:900;}
+    .accordion-button:not(.collapsed){background:rgba(91,84,214,.08);color:#312e81;}
+    .footer-davani{
+      background:#050713;
+      color:#cbd5e1;
+      padding:2.2rem 0;
+    }
+    .footer-davani a{color:#c4b5fd;}
+
+    @media (max-width:991px){
+      .hero-davani{padding:86px 0 104px;min-height:auto;}
+      .hero-visual{margin-top:2.4rem;}
+      .dashboard-mock{transform:none;}
+      .floating-chip{display:none;}
+      .trust-strip{margin-top:-34px;}
+    }
+    @media (max-width:575px){
+      .section-pad{padding:68px 0;}
+      .hero-title{font-size:3rem;}
+      .hero-points{gap:.5rem;}
+      .hero-point{font-size:.78rem;}
+      .cta-band{padding:1.35rem;border-radius:28px;}
+      .mock-grid{grid-template-columns:1fr;}
+      .btn-davani,.btn-davani-outline{width:100%;justify-content:center;}
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="navbar navbar-expand-lg navbar-davani sticky-top">
+  <div class="container">
+    <a class="navbar-brand d-flex align-items-center gap-2" href="/">
+      <img src="{{ url_for('static', filename='images/logo.jpg') }}" alt="Davani Technology" class="brand-logo">
+      <span class="d-flex flex-column lh-sm">
+        <strong>Davani Technology</strong>
+        <small class="text-muted fw-bold">Software · Web · Apps</small>
+      </span>
+    </a>
+
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#davaniNav" aria-controls="davaniNav" aria-expanded="false" aria-label="Abrir menú">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="davaniNav">
+      <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2 py-3 py-lg-0">
+        <li class="nav-item"><a class="nav-link" href="#servicios">Servicios</a></li>
+        <li class="nav-item"><a class="nav-link" href="#soluciones">Soluciones</a></li>
+        <li class="nav-item"><a class="nav-link" href="#proceso">Proceso</a></li>
+        <li class="nav-item"><a class="nav-link" href="#planes">Planes</a></li>
+        <li class="nav-item"><a class="nav-link" href="#faq">FAQ</a></li>
+
+        {% if current_user.is_authenticated %}
+          <li class="nav-item ms-lg-2">
+            <a href="{{ url_for('dashboard') }}" class="btn btn-davani-outline btn-sm"><i class="bi bi-speedometer2 me-1"></i> Dashboard</a>
+          </li>
+        {% else %}
+          <li class="nav-item ms-lg-2">
+            <a href="{{ url_for('login') }}" class="btn btn-davani-outline btn-sm"><i class="bi bi-box-arrow-in-right me-1"></i> Iniciar sesión</a>
+          </li>
+        {% endif %}
+        <li class="nav-item">
+          <a href="#contacto" class="btn btn-davani btn-sm ms-lg-1"><i class="bi bi-send-fill me-1"></i> Cotizar proyecto</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero-davani">
+  <div class="container hero-content">
+    <div class="row align-items-center g-5">
+      <div class="col-lg-7">
+        <span class="hero-kicker"><i class="bi bi-stars"></i> Tecnología hecha para negocios reales</span>
+        <h1 class="hero-title">
+          Creamos sistemas, páginas y apps para que tu negocio <span class="hero-gradient-text">venda más y trabaje mejor.</span>
+        </h1>
+        <p class="hero-lead">
+          En Davani Technology desarrollamos desde páginas web llamativas hasta plataformas completas: ecommerce, Shopify, PWA, APK, punto de venta, catálogos digitales, automatizaciones, certificados y sistemas administrativos a medida.
+        </p>
+
+        <div class="hero-points">
+          <span class="hero-point"><i class="bi bi-check2-circle"></i> Webs profesionales</span>
+          <span class="hero-point"><i class="bi bi-check2-circle"></i> Apps y PWA</span>
+          <span class="hero-point"><i class="bi bi-check2-circle"></i> Ecommerce</span>
+          <span class="hero-point"><i class="bi bi-check2-circle"></i> Sistemas a medida</span>
+          <span class="hero-point"><i class="bi bi-check2-circle"></i> Automatización</span>
+        </div>
+
+        <div class="d-flex flex-wrap gap-3">
+          <a href="#contacto" class="btn btn-davani btn-lg"><i class="bi bi-whatsapp me-1"></i> Quiero cotizar</a>
+          <a href="#soluciones" class="btn btn-davani-outline btn-lg"><i class="bi bi-grid-1x2 me-1"></i> Ver soluciones</a>
+        </div>
+      </div>
+
+      <div class="col-lg-5 hero-visual">
+        <div class="floating-chip chip-1"><i class="bi bi-bag-check-fill text-success"></i> Ecommerce</div>
+        <div class="floating-chip chip-2"><i class="bi bi-phone-fill text-primary"></i> PWA / APK</div>
+        <div class="floating-chip chip-3"><i class="bi bi-cpu-fill text-info"></i> Sistemas SaaS</div>
+
+        <div class="dashboard-mock">
+          <div class="mock-inner">
+            <div class="mock-top">
+              <span class="mock-dot"></span><span class="mock-dot"></span><span class="mock-dot"></span>
+              <span class="ms-2 small text-muted fw-bold">davani.app/dashboard</span>
+            </div>
+            <div class="mock-body">
+              <div class="mock-card">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <strong>Panel de negocio</strong>
+                  <span class="badge rounded-pill text-bg-success">Activo</span>
+                </div>
+                <div class="mock-pill" style="width:86%"></div>
+                <div class="mock-pill" style="width:58%;background:linear-gradient(90deg,#8b5cf6,#ec4899)"></div>
+              </div>
+              <div class="mock-grid">
+                <div class="mock-mini">
+                  <i class="bi bi-cart-check fs-3 text-primary"></i>
+                  <div class="fw-black fw-bold mt-2">Ventas</div>
+                  <small class="text-muted fw-bold">Catálogo + pagos</small>
+                </div>
+                <div class="mock-mini">
+                  <i class="bi bi-qr-code fs-3 text-info"></i>
+                  <div class="fw-black fw-bold mt-2">Validación</div>
+                  <small class="text-muted fw-bold">QR + seguridad</small>
+                </div>
+                <div class="mock-mini">
+                  <i class="bi bi-shop fs-3 text-warning"></i>
+                  <div class="fw-black fw-bold mt-2">PYMES</div>
+                  <small class="text-muted fw-bold">Sitios dinámicos</small>
+                </div>
+                <div class="mock-mini">
+                  <i class="bi bi-graph-up-arrow fs-3 text-success"></i>
+                  <div class="fw-black fw-bold mt-2">Crecimiento</div>
+                  <small class="text-muted fw-bold">SEO + métricas</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- TRUST STRIP -->
+<section class="trust-strip">
+  <div class="container">
+    <div class="trust-box">
+      <div class="row g-2">
+        <div class="col-md-4">
+          <div class="trust-item">
+            <div class="trust-icon"><i class="bi bi-lightning-charge-fill"></i></div>
+            <div><strong>Rápido de implementar</strong><small>De idea a sistema funcional</small></div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="trust-item">
+            <div class="trust-icon"><i class="bi bi-shield-lock-fill"></i></div>
+            <div><strong>Seguro y escalable</strong><small>Buenas prácticas desde el inicio</small></div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="trust-item">
+            <div class="trust-icon"><i class="bi bi-heart-pulse-fill"></i></div>
+            <div><strong>Acompañamiento real</strong><small>Te guiamos paso a paso</small></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SERVICIOS -->
+<section id="servicios" class="section-pad">
+  <div class="container">
+    <div class="row justify-content-center text-center mb-5">
+      <div class="col-lg-9">
+        <span class="section-kicker"><i class="bi bi-tools"></i> Lo que hacemos</span>
+        <h2 class="section-title">Todo lo que tu negocio necesita para entrar, vender y crecer en digital.</h2>
+        <p class="section-text mt-3">
+          No solo hacemos páginas bonitas: construimos herramientas útiles para que puedas administrar, vender, cobrar, publicar, medir y atender clientes desde un sistema claro.
+        </p>
+      </div>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-md-6 col-xl-4">
+        <article class="service-card">
+          <div class="service-icon"><i class="bi bi-window-stack"></i></div>
+          <h3>Páginas web profesionales</h3>
+          <p>Landing pages, sitios corporativos, páginas para servicios, catálogos digitales, blogs, formularios, SEO básico y diseños responsivos para celular.</p>
+        </article>
+      </div>
+      <div class="col-md-6 col-xl-4">
+        <article class="service-card">
+          <div class="service-icon"><i class="bi bi-bag-heart-fill"></i></div>
+          <h3>Tiendas online y ecommerce</h3>
+          <p>Tiendas con productos, carrito, pagos, pedidos, inventario, promociones y experiencia visual pensada para vender mejor.</p>
+        </article>
+      </div>
+      <div class="col-md-6 col-xl-4">
+        <article class="service-card">
+          <div class="service-icon"><i class="bi bi-shop-window"></i></div>
+          <h3>Shopify, WordPress y plataformas</h3>
+          <p>Personalización de temas, secciones, menús, productos, colecciones, blogs, metafields, liquid, integraciones y mejoras visuales.</p>
+        </article>
+      </div>
+      <div class="col-md-6 col-xl-4">
+        <article class="service-card">
+          <div class="service-icon"><i class="bi bi-phone-flip"></i></div>
+          <h3>PWA, APK y apps móviles</h3>
+          <p>Convertimos tu plataforma en experiencia móvil tipo app, con instalación en teléfono, diseño responsive y enfoque práctico para negocios.</p>
+        </article>
+      </div>
+      <div class="col-md-6 col-xl-4">
+        <article class="service-card">
+          <div class="service-icon"><i class="bi bi-diagram-3-fill"></i></div>
+          <h3>Sistemas administrativos</h3>
+          <p>Paneles para usuarios, roles, reportes, ventas, suscripciones, pagos, membresías, inventario, historiales y operaciones internas.</p>
+        </article>
+      </div>
+      <div class="col-md-6 col-xl-4">
+        <article class="service-card">
+          <div class="service-icon"><i class="bi bi-robot"></i></div>
+          <h3>Automatizaciones e IA</h3>
+          <p>Flujos con WhatsApp, respuestas automáticas, lectura de documentos, recordatorios, notificaciones, generación de contenido y procesos inteligentes.</p>
+        </article>
+      </div>
+      <div class="col-md-6 col-xl-4">
+        <article class="service-card">
+          <div class="service-icon"><i class="bi bi-receipt-cutoff"></i></div>
+          <h3>Punto de venta y tickets</h3>
+          <p>Ventas de mostrador, tickets térmicos, historial, corte de caja, control de inventario, pagos en efectivo/digital y reportes por fecha.</p>
+        </article>
+      </div>
+      <div class="col-md-6 col-xl-4">
+        <article class="service-card">
+          <div class="service-icon"><i class="bi bi-patch-check-fill"></i></div>
+          <h3>Certificados digitales</h3>
+          <p>Sistemas para emitir certificados masivos, QR de validación, hash de seguridad, PDF, Word, carga por Excel y planes por institución.</p>
+        </article>
+      </div>
+      <div class="col-md-6 col-xl-4">
+        <article class="service-card">
+          <div class="service-icon"><i class="bi bi-cloud-arrow-up-fill"></i></div>
+          <h3>Deploy, soporte y mantenimiento</h3>
+          <p>Subimos tu proyecto a producción, conectamos dominio, configuramos base de datos, backups, mejoras, monitoreo y soporte técnico.</p>
+        </article>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SOLUCIONES -->
+<section id="soluciones" class="section-pad products-section">
+  <div class="container">
+    <div class="row align-items-end mb-5 g-4">
+      <div class="col-lg-8">
+        <span class="section-kicker"><i class="bi bi-grid-1x2-fill"></i> Soluciones Davani</span>
+        <h2 class="section-title">Creamos productos listos para usar y también sistemas totalmente a medida.</h2>
+      </div>
+      <div class="col-lg-4">
+        <p class="section-text mb-0">Elige una solución base o arma tu propio sistema según lo que necesite tu negocio.</p>
+      </div>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-md-6 col-xl-3">
+        <article class="product-card">
+          <div class="product-head">
+            <div class="service-icon"><i class="bi bi-building-fill"></i></div>
+            <h3>Global PYMES</h3>
+            <small>Tu sitio de negocio por suscripción</small>
+          </div>
+          <div class="product-body">
+            <p>Sitios para negocios con catálogo, servicios, reseñas, avisos, blog, WhatsApp, SEO y panel de administración.</p>
+            <ul class="check-list">
+              <li><i class="bi bi-check-circle-fill"></i> Para negocios locales</li>
+              <li><i class="bi bi-check-circle-fill"></i> Catálogo dinámico</li>
+              <li><i class="bi bi-check-circle-fill"></i> Pago mensual</li>
+            </ul>
+          </div>
+        </article>
+      </div>
+
+      <div class="col-md-6 col-xl-3">
+        <article class="product-card">
+          <div class="product-head" style="background:linear-gradient(135deg,#111827,#7c3aed)">
+            <div class="service-icon"><i class="bi bi-cart4"></i></div>
+            <h3>Ecommerce Pro</h3>
+            <small>Vende productos y gestiona pedidos</small>
+          </div>
+          <div class="product-body">
+            <p>Tienda online con productos, variantes, carrito, pagos, promociones, panel y diseño personalizado.</p>
+            <ul class="check-list">
+              <li><i class="bi bi-check-circle-fill"></i> Productos y categorías</li>
+              <li><i class="bi bi-check-circle-fill"></i> Integración de pagos</li>
+              <li><i class="bi bi-check-circle-fill"></i> Diseño responsive</li>
+            </ul>
+          </div>
+        </article>
+      </div>
+
+      <div class="col-md-6 col-xl-3">
+        <article class="product-card">
+          <div class="product-head" style="background:linear-gradient(135deg,#0f172a,#0891b2)">
+            <div class="service-icon"><i class="bi bi-upc-scan"></i></div>
+            <h3>POS & Inventario</h3>
+            <small>Control para ventas físicas</small>
+          </div>
+          <div class="product-body">
+            <p>Sistema para mostrador con tickets, historial, caja, inventario, devoluciones y reportes.</p>
+            <ul class="check-list">
+              <li><i class="bi bi-check-circle-fill"></i> Tickets térmicos</li>
+              <li><i class="bi bi-check-circle-fill"></i> Corte de caja</li>
+              <li><i class="bi bi-check-circle-fill"></i> Stock actualizado</li>
+            </ul>
+          </div>
+        </article>
+      </div>
+
+      <div class="col-md-6 col-xl-3">
+        <article class="product-card">
+          <div class="product-head" style="background:linear-gradient(135deg,#111827,#be185d)">
+            <div class="service-icon"><i class="bi bi-award-fill"></i></div>
+            <h3>Certificados QR</h3>
+            <small>Emisión masiva y validación segura</small>
+          </div>
+          <div class="product-body">
+            <p>Plataforma para crear certificados con PDF, Word, Excel masivo, QR, hash y validación pública.</p>
+            <ul class="check-list">
+              <li><i class="bi bi-check-circle-fill"></i> Carga masiva</li>
+              <li><i class="bi bi-check-circle-fill"></i> QR verificable</li>
+              <li><i class="bi bi-check-circle-fill"></i> Seguridad SHA-256</li>
+            </ul>
+          </div>
+        </article>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="section-pad-sm">
+  <div class="container">
+    <div class="cta-band">
+      <div class="row align-items-center g-4">
+        <div class="col-lg-8">
+          <h2>¿Tienes una idea rara, grande o diferente?</h2>
+          <p class="mb-0">La aterrizamos contigo. Podemos crear desde un MVP sencillo hasta una plataforma completa con usuarios, pagos, roles, paneles, reportes, app móvil y automatizaciones.</p>
+        </div>
+        <div class="col-lg-4 text-lg-end">
+          <a href="#contacto" class="btn btn-light btn-lg rounded-4 fw-black fw-bold px-4"><i class="bi bi-chat-dots-fill me-1"></i> Hablemos</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTORES -->
+<section class="section-pad-sm">
+  <div class="container">
+    <div class="row justify-content-center text-center mb-5">
+      <div class="col-lg-8">
+        <span class="section-kicker"><i class="bi bi-briefcase-fill"></i> Para quién trabajamos</span>
+        <h2 class="section-title">Soluciones para negocios de muchos giros.</h2>
+        <p class="section-text mt-3">Adaptamos diseño, contenido y funciones según el tipo de negocio: no es lo mismo una tienda gamer que una farmacia, una florería o una barbería.</p>
+      </div>
+    </div>
+
+    <div class="row g-3">
+      <div class="col-md-6 col-lg-4"><div class="sector-card"><div class="sector-icon"><i class="bi bi-cup-hot-fill"></i></div><div><h3>Cafeterías y restaurantes</h3><p>Menús, pedidos, reservas y promociones.</p></div></div></div>
+      <div class="col-md-6 col-lg-4"><div class="sector-card"><div class="sector-icon"><i class="bi bi-controller"></i></div><div><h3>Tiendas gamer y tecnología</h3><p>Catálogo, accesorios, setups y ecommerce.</p></div></div></div>
+      <div class="col-md-6 col-lg-4"><div class="sector-card"><div class="sector-icon"><i class="bi bi-flower1"></i></div><div><h3>Florerías y regalos</h3><p>Catálogos visuales, WhatsApp y paquetes.</p></div></div></div>
+      <div class="col-md-6 col-lg-4"><div class="sector-card"><div class="sector-icon"><i class="bi bi-scissors"></i></div><div><h3>Barberías y belleza</h3><p>Citas, servicios, galerías y reseñas.</p></div></div></div>
+      <div class="col-md-6 col-lg-4"><div class="sector-card"><div class="sector-icon"><i class="bi bi-heart-pulse-fill"></i></div><div><h3>Salud, farmacia y bienestar</h3><p>Servicios, productos, formularios y contacto.</p></div></div></div>
+      <div class="col-md-6 col-lg-4"><div class="sector-card"><div class="sector-icon"><i class="bi bi-mortarboard-fill"></i></div><div><h3>Escuelas e instituciones</h3><p>Certificados, membresías y paneles por rol.</p></div></div></div>
+      <div class="col-md-6 col-lg-4"><div class="sector-card"><div class="sector-icon"><i class="bi bi-bag-heart-fill"></i></div><div><h3>Tiendas y comercios</h3><p>Ventas, inventario, tickets y reportes.</p></div></div></div>
+      <div class="col-md-6 col-lg-4"><div class="sector-card"><div class="sector-icon"><i class="bi bi-tools"></i></div><div><h3>Servicios profesionales</h3><p>Portafolio, contacto, agenda y cotizaciones.</p></div></div></div>
+      <div class="col-md-6 col-lg-4"><div class="sector-card"><div class="sector-icon"><i class="bi bi-stars"></i></div><div><h3>Proyectos personalizados</h3><p>Ideas nuevas, SaaS, apps y plataformas.</p></div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- PROCESO -->
+<section id="proceso" class="section-pad products-section">
+  <div class="container">
+    <div class="row justify-content-center text-center mb-5">
+      <div class="col-lg-8">
+        <span class="section-kicker"><i class="bi bi-signpost-split-fill"></i> Nuestro proceso</span>
+        <h2 class="section-title">Trabajamos contigo de forma clara, visual y por etapas.</h2>
+        <p class="section-text mt-3">La idea es que no te pierdas en tecnicismos. Te guiamos para convertir tu idea en algo usable, bonito y funcional.</p>
+      </div>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-md-6 col-lg-3">
+        <article class="process-card">
+          <div class="process-number">01</div>
+          <h3>Diagnóstico</h3>
+          <p>Entendemos tu negocio, tus objetivos, tus clientes y qué problema quieres resolver.</p>
+        </article>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <article class="process-card">
+          <div class="process-number">02</div>
+          <h3>Diseño y estructura</h3>
+          <p>Definimos pantallas, secciones, flujo de usuarios, contenido y experiencia visual.</p>
+        </article>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <article class="process-card">
+          <div class="process-number">03</div>
+          <h3>Desarrollo</h3>
+          <p>Programamos frontend, backend, base de datos, panel, pagos, seguridad e integraciones.</p>
+        </article>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <article class="process-card">
+          <div class="process-number">04</div>
+          <h3>Lanzamiento</h3>
+          <p>Publicamos, probamos, conectamos dominio y te dejamos listo para operar.</p>
+        </article>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PLANES -->
+<section id="planes" class="section-pad pricing-section">
+  <div class="container">
+    <div class="row justify-content-center text-center mb-5">
+      <div class="col-lg-9">
+        <span class="section-kicker" style="background:rgba(255,255,255,.10);border-color:rgba(255,255,255,.16);color:#fff"><i class="bi bi-cash-coin"></i> Formas de trabajo</span>
+        <h2 class="section-title">Elige cómo quieres empezar.</h2>
+        <p class="section-text mt-3">Podemos trabajar por proyecto, por suscripción, por mantenimiento o construir una solución personalizada desde cero.</p>
+      </div>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-md-6 col-lg-4">
+        <article class="price-card">
+          <span class="price-label"><i class="bi bi-globe2"></i> Sitio web</span>
+          <h3>Landing o página de negocio</h3>
+          <div class="price-main">Cotización</div>
+          <p>Ideal para negocios que quieren verse profesionales, recibir clientes y mostrar servicios/productos.</p>
+          <ul class="check-list">
+            <li><i class="bi bi-check-circle-fill"></i> Diseño responsive</li>
+            <li><i class="bi bi-check-circle-fill"></i> Secciones informativas</li>
+            <li><i class="bi bi-check-circle-fill"></i> WhatsApp y formulario</li>
+            <li><i class="bi bi-check-circle-fill"></i> SEO básico</li>
+          </ul>
+        </article>
+      </div>
+
+      <div class="col-md-6 col-lg-4">
+        <article class="price-card" style="border-color:rgba(165,243,252,.36);transform:translateY(-4px)">
+          <span class="price-label"><i class="bi bi-stars"></i> Más pedido</span>
+          <h3>Sistema personalizado</h3>
+          <div class="price-main">A medida</div>
+          <p>Perfecto si necesitas usuarios, roles, dashboard, base de datos, pagos, reportes o automatizaciones.</p>
+          <ul class="check-list">
+            <li><i class="bi bi-check-circle-fill"></i> Frontend + backend</li>
+            <li><i class="bi bi-check-circle-fill"></i> Panel administrativo</li>
+            <li><i class="bi bi-check-circle-fill"></i> Base de datos</li>
+            <li><i class="bi bi-check-circle-fill"></i> Deploy y soporte</li>
+          </ul>
+        </article>
+      </div>
+
+      <div class="col-md-6 col-lg-4">
+        <article class="price-card">
+          <span class="price-label"><i class="bi bi-arrow-repeat"></i> Mensual</span>
+          <h3>Mantenimiento y mejoras</h3>
+          <div class="price-main">Mensual</div>
+          <p>Para negocios que ya tienen plataforma y necesitan cambios, soporte, contenido o nuevas funciones.</p>
+          <ul class="check-list">
+            <li><i class="bi bi-check-circle-fill"></i> Ajustes visuales</li>
+            <li><i class="bi bi-check-circle-fill"></i> Corrección de errores</li>
+            <li><i class="bi bi-check-circle-fill"></i> Nuevas secciones</li>
+            <li><i class="bi bi-check-circle-fill"></i> Acompañamiento</li>
+          </ul>
+        </article>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACTO -->
+<section id="contacto" class="section-pad contact-section">
+  <div class="container">
+    <div class="row g-4 align-items-stretch">
+      <div class="col-lg-5">
+        <div class="contact-info">
+          <span class="section-kicker" style="background:rgba(255,255,255,.10);border-color:rgba(255,255,255,.16);color:#fff"><i class="bi bi-send-fill"></i> Contacto</span>
+          <h2 class="section-title text-white">Cuéntanos tu idea y la convertimos en sistema.</h2>
+          <p class="mt-3">Escríbenos qué necesitas: una página, una tienda, una app, un sistema interno, automatización o una plataforma completa. Te ayudamos a aterrizarlo.</p>
+
+          <div class="mt-4">
+            <a class="contact-link" href="mailto:technologydavani@gmail.com"><i class="bi bi-envelope-fill"></i> technologydavani@gmail.com</a>
+            <a class="contact-link" href="https://www.facebook.com/profile.php?id=61561619890202" target="_blank"><i class="bi bi-facebook"></i> Facebook Davani Technology</a>
+            <a class="contact-link" href="https://www.tiktok.com/@technologydavani" target="_blank"><i class="bi bi-tiktok"></i> TikTok @technologydavani</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-7">
+        <div class="contact-card">
+          <h3 class="fw-black fw-bold mb-2">Solicita una cotización</h3>
+          <p class="text-muted mb-4">Entre más detalles nos compartas, más claro podemos proponerte una solución.</p>
+
+          {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            <div class="alert alert-info alert-dismissible fade show" role="alert">
+              {{ messages[0] }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          {% endif %}
+          {% endwith %}
+
+          <form class="row g-3" method="POST" action="/enviar">
+            <div class="col-md-6">
+              <label for="nombre" class="form-label fw-bold">Nombre o empresa</label>
+              <input type="text" name="nombre" id="nombre" class="form-control" placeholder="Ej. Mi Negocio MX" required>
+            </div>
+            <div class="col-md-6">
+              <label for="correo" class="form-label fw-bold">Correo</label>
+              <input type="email" name="correo" id="correo" class="form-control" placeholder="correo@empresa.com" required>
+            </div>
+            <div class="col-md-6">
+              <label for="tipo" class="form-label fw-bold">¿Qué necesitas?</label>
+              <select name="tipo" id="tipo" class="form-select" required>
+                <option value="">Selecciona una opción</option>
+                <option value="Página web">Página web</option>
+                <option value="Tienda online / ecommerce">Tienda online / ecommerce</option>
+                <option value="Shopify / WordPress">Shopify / WordPress</option>
+                <option value="Sistema personalizado">Sistema personalizado</option>
+                <option value="PWA / APK / App móvil">PWA / APK / App móvil</option>
+                <option value="POS / Inventario">POS / Inventario</option>
+                <option value="Certificados digitales">Certificados digitales</option>
+                <option value="Automatización / IA">Automatización / IA</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label for="presupuesto" class="form-label fw-bold">Presupuesto estimado</label>
+              <select name="presupuesto" id="presupuesto" class="form-select">
+                <option value="Por definir">Por definir</option>
+                <option value="Básico">Básico</option>
+                <option value="Medio">Medio</option>
+                <option value="Proyecto completo">Proyecto completo</option>
+                <option value="Mensualidad / soporte">Mensualidad / soporte</option>
+              </select>
+            </div>
+            <div class="col-12">
+              <label for="mensaje" class="form-label fw-bold">Mensaje</label>
+              <textarea name="mensaje" id="mensaje" class="form-control" rows="5" placeholder="Cuéntanos qué quieres crear, qué funciones necesitas y para qué tipo de negocio será..." required></textarea>
+            </div>
+
+            {% if RECAPTCHA_SITE_KEY %}
+              <div class="col-12">
+                <div class="g-recaptcha" data-sitekey="{{ RECAPTCHA_SITE_KEY }}"></div>
+              </div>
+            {% endif %}
+
+            <div class="col-12 d-flex flex-wrap gap-3 align-items-center justify-content-between">
+              <small class="text-muted fw-semibold">Responderemos tu solicitud lo antes posible.</small>
+              <button type="submit" class="btn btn-davani btn-lg"><i class="bi bi-send-fill me-1"></i> Enviar solicitud</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section id="faq" class="section-pad-sm">
+  <div class="container">
+    <div class="row justify-content-center text-center mb-5">
+      <div class="col-lg-8">
+        <span class="section-kicker"><i class="bi bi-question-circle-fill"></i> Preguntas frecuentes</span>
+        <h2 class="section-title">Dudas comunes antes de empezar.</h2>
+      </div>
+    </div>
+
+    <div class="row justify-content-center">
+      <div class="col-lg-9">
+        <div class="accordion" id="faqDavani">
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">¿Pueden crear un proyecto desde cero?</button>
+            </h2>
+            <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#faqDavani">
+              <div class="accordion-body">Sí. Podemos ayudarte desde la idea inicial: estructura, diseño, base de datos, panel, pagos, usuarios, roles, deploy y mejoras.</div>
+            </div>
+          </div>
+
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">¿También mejoran sistemas que ya existen?</button>
+            </h2>
+            <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqDavani">
+              <div class="accordion-body">Sí. Podemos corregir errores, mejorar vistas, hacer responsive un diseño, agregar módulos, conectar pagos, mejorar seguridad o preparar tu proyecto para producción.</div>
+            </div>
+          </div>
+
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">¿Hacen tiendas en Shopify?</button>
+            </h2>
+            <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqDavani">
+              <div class="accordion-body">Sí. Trabajamos personalización visual, secciones Liquid, productos, colecciones, menús, blogs, metafields, variantes, PDP, diseño responsive y mejoras para ecommerce.</div>
+            </div>
+          </div>
+
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">¿Pueden convertir mi web en app?</button>
+            </h2>
+            <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqDavani">
+              <div class="accordion-body">Podemos crear experiencia PWA o empaquetar como APK según el caso. También podemos desarrollar app móvil si el proyecto lo requiere.</div>
+            </div>
+          </div>
+
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq5">¿Cuánto cuesta?</button>
+            </h2>
+            <div id="faq5" class="accordion-collapse collapse" data-bs-parent="#faqDavani">
+              <div class="accordion-body">Depende del alcance. Una landing, una tienda, una app o un sistema SaaS tienen necesidades distintas. Lo mejor es contarnos tu idea y te proponemos una cotización por etapas.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer-davani">
+  <div class="container">
+    <div class="row g-4 align-items-center">
+      <div class="col-md-6">
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <img src="{{ url_for('static', filename='images/logo.jpg') }}" alt="Davani Technology" class="brand-logo">
+          <div>
+            <strong class="text-white">Davani Technology</strong><br>
+            <small>Desarrollo web, apps, ecommerce y sistemas a medida.</small>
+          </div>
+        </div>
+        <small>&copy; 2026 Davani Technology. Todos los derechos reservados.</small>
+      </div>
+      <div class="col-md-6 text-md-end">
+        <a href="#servicios" class="me-3">Servicios</a>
+        <a href="#soluciones" class="me-3">Soluciones</a>
+        <a href="#contacto" class="me-3">Contacto</a>
+        <a href="https://www.facebook.com/profile.php?id=61561619890202" target="_blank" class="fs-4 me-2" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
+        <a href="https://www.tiktok.com/@technologydavani" target="_blank" class="fs-4" aria-label="TikTok"><i class="bi bi-tiktok"></i></a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+{% if RECAPTCHA_SITE_KEY %}
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
+{% endif %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
