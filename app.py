@@ -5889,6 +5889,7 @@ def enviar():
     nombre = (request.form.get('nombre') or '').strip()
     correo = (request.form.get('correo') or '').strip().lower()
     mensaje = (request.form.get('mensaje') or '').strip()
+    telefono = (request.form.get('telefono') or 'No especificado').strip()
 
     # Campos opcionales para la landing de Davani
     tipo = (request.form.get('tipo') or 'No especificado').strip()
@@ -5929,6 +5930,7 @@ def enviar():
     mongo.db.mensajes.insert_one({
         'nombre': nombre,
         'correo': correo,
+        'telefono': telefono,
         'tipo': tipo,
         'presupuesto': presupuesto,
         'mensaje': mensaje,
@@ -5948,6 +5950,7 @@ Has recibido una nueva solicitud desde el sitio web:
 
 Nombre / Empresa: {nombre}
 Correo: {correo}
+Teléfono / WhatsApp: {telefono}
 Tipo de proyecto: {tipo}
 Presupuesto: {presupuesto}
 
