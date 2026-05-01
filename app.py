@@ -5978,6 +5978,7 @@ Mensaje:
         """,
         nombre=nombre,
         correo=correo,
+        telefono=telefono,
         tipo=tipo,
         presupuesto=presupuesto,
         mensaje=mensaje)
