@@ -39,6 +39,7 @@ def utc_now():
     return datetime.now(timezone.utc)
 load_dotenv()
 RECAPTCHA_SECRET_KEY = os.getenv("RECAPTCHA_SECRET_KEY")
+RECAPTCHA_SITE_KEY = os.getenv("RECAPTCHA_SITE_KEY")
 
 
 
@@ -5885,70 +5886,108 @@ def list_ventas():
 
 @app.route('/enviar', methods=['POST'])
 def enviar():
-    nombre = request.form.get('nombre')
-    correo = request.form.get('correo')
-    mensaje = request.form.get('mensaje')
+    nombre = (request.form.get('nombre') or '').strip()
+    correo = (request.form.get('correo') or '').strip().lower()
+    mensaje = (request.form.get('mensaje') or '').strip()
+
+    # Campos opcionales para la landing de Davani
+    tipo = (request.form.get('tipo') or 'No especificado').strip()
+    presupuesto = (request.form.get('presupuesto') or 'No especificado').strip()
+
     captcha_response = request.form.get('g-recaptcha-response')
 
     if not nombre or not correo or not mensaje:
-        flash('Por favor completa todos los campos.', 'error')
+        flash('Por favor completa todos los campos.', 'danger')
         return redirect(request.referrer or url_for('index'))
 
-    # Validar reCAPTCHA
-    if not captcha_response:
-        flash('Por favor verifica que no eres un robot.', 'danger')
-        return redirect(request.referrer or url_for('index'))
+    # Validar reCAPTCHA solo si está configurado
+    if RECAPTCHA_SECRET_KEY:
+        if not captcha_response:
+            flash('Por favor verifica que no eres un robot.', 'danger')
+            return redirect(request.referrer or url_for('index'))
 
-    verify_url = 'https://www.google.com/recaptcha/api/siteverify'
-    payload = {'secret': RECAPTCHA_SECRET_KEY, 'response': captcha_response}
-    r = requests.post(verify_url, data=payload)
-    result = r.json()
+        try:
+            verify_url = 'https://www.google.com/recaptcha/api/siteverify'
+            payload = {
+                'secret': RECAPTCHA_SECRET_KEY,
+                'response': captcha_response
+            }
 
-    if not result.get('success'):
-        flash('Verificación de reCAPTCHA fallida. Intenta de nuevo.', 'danger')
-        return redirect(request.referrer or url_for('index'))
+            r = requests.post(verify_url, data=payload, timeout=10)
+            result = r.json()
 
-    # Guardar en la colección "mensajes"
+            if not result.get('success'):
+                flash('Verificación de reCAPTCHA fallida. Intenta de nuevo.', 'danger')
+                return redirect(request.referrer or url_for('index'))
+
+        except Exception as e:
+            print(f"Error validando reCAPTCHA: {e}")
+            flash('No se pudo validar el reCAPTCHA. Intenta de nuevo.', 'danger')
+            return redirect(request.referrer or url_for('index'))
+
+    # Guardar mensaje en MongoDB
     mongo.db.mensajes.insert_one({
         'nombre': nombre,
         'correo': correo,
-        'mensaje': mensaje
+        'tipo': tipo,
+        'presupuesto': presupuesto,
+        'mensaje': mensaje,
+        'origen': request.referrer or '',
+        'created_at': utc_now()
     })
 
     # Enviar correo
     try:
         msg = Message(
-            subject=f"📩 Nuevo mensaje de contacto - {nombre}",
+            subject=f"📩 Nueva solicitud de contacto - {nombre}",
             recipients=["technologydavani@gmail.com"]
         )
+
         msg.body = f"""
-        Has recibido un nuevo mensaje desde el sitio web:
+Has recibido una nueva solicitud desde el sitio web:
 
-        Nombre: {nombre}
-        Correo: {correo}
+Nombre / Empresa: {nombre}
+Correo: {correo}
+Tipo de proyecto: {tipo}
+Presupuesto: {presupuesto}
 
-        Mensaje:
-        {mensaje}
+Mensaje:
+{mensaje}
         """
+
         msg.html = render_template_string("""
-        <h3>📩 Nuevo mensaje de contacto</h3>
-        <p><strong>Nombre:</strong> {{ nombre }}</p>
-        <p><strong>Correo:</strong> {{ correo }}</p>
-        <p><strong>Mensaje:</strong></p>
-        <div style="background-color: #f7f7f7; padding: 10px; border-left: 3px solid #007BFF;">
-          {{ mensaje }}
+        <div style="font-family: Arial, sans-serif; background:#f6f8ff; padding:24px;">
+          <div style="max-width:680px; margin:auto; background:white; border-radius:18px; padding:24px; border:1px solid #e5e7eb;">
+            <h2 style="margin-top:0; color:#1f1a4f;">📩 Nueva solicitud de contacto</h2>
+
+            <p><strong>Nombre / Empresa:</strong> {{ nombre }}</p>
+            <p><strong>Correo:</strong> {{ correo }}</p>
+            <p><strong>Tipo de proyecto:</strong> {{ tipo }}</p>
+            <p><strong>Presupuesto:</strong> {{ presupuesto }}</p>
+
+            <p><strong>Mensaje:</strong></p>
+            <div style="background:#f8fafc; padding:14px; border-left:4px solid #5b54d6; border-radius:10px;">
+              {{ mensaje }}
+            </div>
+          </div>
         </div>
-        """, nombre=nombre, correo=correo, mensaje=mensaje)
+        """,
+        nombre=nombre,
+        correo=correo,
+        tipo=tipo,
+        presupuesto=presupuesto,
+        mensaje=mensaje)
 
         mail.send(msg)
-        flash('¡Mensaje enviado correctamente!', 'success')
+
+        flash('¡Mensaje enviado correctamente! Te contactaremos pronto.', 'success')
         return redirect(url_for('gracias'))
 
     except Exception as e:
         print(f"Error al enviar correo: {e}")
         flash('Hubo un problema al enviar tu mensaje. Intenta de nuevo más tarde.', 'danger')
         return redirect(request.referrer or url_for('index'))
-
+        
 from datetime import datetime, timezone
 
 def utc_now():
