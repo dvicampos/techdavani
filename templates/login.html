@@ -4,112 +4,613 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Iniciar sesión</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <title>Acceso al panel | Global PYMES</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+
+  <link rel="icon" href="{{ url_for('static', filename='images/logo.jpg') }}" type="image/png">
+
   <style>
-    body {
-      background: #08042b;
+    :root {
+      --gp-dark: #060716;
+      --gp-brand: #1f1a4f;
+      --gp-brand-2: #5b54d6;
+      --gp-purple: #8b5cf6;
+      --gp-cyan: #06b6d4;
+      --gp-green: #22c55e;
+      --gp-ink: #111827;
+      --gp-muted: #64748b;
+      --gp-border: rgba(255, 255, 255, .14);
+      --gp-card: rgba(255, 255, 255, .94);
     }
 
-    .login-container {
-      max-width: 400px;
-      margin: 0 auto;
-      padding: 30px;
-      background-color: #ffffff;
-      border-radius: 10px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      color: var(--gp-ink);
+      background:
+        radial-gradient(circle at 12% 10%, rgba(139, 92, 246, .65), transparent 28rem),
+        radial-gradient(circle at 88% 16%, rgba(6, 182, 212, .48), transparent 28rem),
+        radial-gradient(circle at 50% 100%, rgba(236, 72, 153, .22), transparent 24rem),
+        linear-gradient(135deg, #060716 0%, #11123a 52%, #1f1a4f 100%);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, .055) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, .055) 1px, transparent 1px);
+      background-size: 44px 44px;
+      mask-image: linear-gradient(to bottom, rgba(0, 0, 0, .95), rgba(0, 0, 0, .18));
+      pointer-events: none;
+    }
+
+    a {
+      text-decoration: none;
+    }
+
+    .auth-shell {
+      min-height: 100vh;
+      position: relative;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      padding: 32px 0;
+    }
+
+    .brand-logo {
+      width: 48px;
+      height: 48px;
+      object-fit: cover;
+      border-radius: 16px;
+      box-shadow: 0 14px 34px rgba(91, 84, 214, .35);
+    }
+
+    .left-panel {
+      color: #fff;
+      padding: 28px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .55rem .9rem;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .12);
+      border: 1px solid rgba(255, 255, 255, .20);
+      color: #fff;
+      font-weight: 900;
+      font-size: .88rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .hero-title {
+      font-family: 'Playfair Display', serif;
+      font-weight: 800;
+      letter-spacing: -.055em;
+      line-height: .96;
+      font-size: clamp(2.45rem, 5vw, 4.8rem);
+      margin-bottom: 1.2rem;
+    }
+
+    .hero-title span {
+      background: linear-gradient(135deg, #fff, #a5f3fc 40%, #c4b5fd 75%, #fbcfe8);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .hero-text {
+      max-width: 620px;
+      color: #dbeafe;
+      font-size: 1.08rem;
+      line-height: 1.75;
+      margin-bottom: 1.5rem;
+    }
+
+    .feature-list {
+      display: grid;
+      gap: .85rem;
+      max-width: 560px;
+    }
+
+    .feature-item {
+      display: flex;
+      align-items: flex-start;
+      gap: .75rem;
+      padding: .85rem;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, .09);
+      border: 1px solid rgba(255, 255, 255, .14);
+      backdrop-filter: blur(12px);
+    }
+
+    .feature-icon {
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, .15);
+      color: #a5f3fc;
+      flex: 0 0 auto;
+    }
+
+    .feature-item strong {
+      display: block;
+      color: #fff;
+      font-weight: 900;
+      line-height: 1.2;
+    }
+
+    .feature-item small {
+      color: #cbd5e1;
+      font-weight: 600;
+    }
+
+    .login-card {
+      width: 100%;
+      max-width: 480px;
+      margin-left: auto;
+      border-radius: 32px;
+      padding: 26px;
+      background: var(--gp-card);
+      border: 1px solid rgba(255, 255, 255, .65);
+      box-shadow: 0 34px 90px rgba(0, 0, 0, .34);
+      backdrop-filter: blur(18px);
+    }
+
+    .login-card-inner {
+      border-radius: 24px;
+      background: #fff;
+      padding: 28px;
+      border: 1px solid rgba(15, 23, 42, .08);
     }
 
     .login-header {
       text-align: center;
-      margin-bottom: 30px;
+      margin-bottom: 24px;
     }
 
-    .login-header h2 {
-      font-size: 2rem;
-      font-weight: bold;
-      color: #08042b;
+    .login-header h1 {
+      font-size: 1.8rem;
+      font-weight: 950;
+      letter-spacing: -.04em;
+      color: var(--gp-brand);
+      margin-bottom: .45rem;
     }
 
-    .form-label {
-      font-weight: 500;
-    }
-
-    .form-control {
-      border-radius: 8px;
-      padding: 10px;
-    }
-
-    .btn-custom {
-      background-color: #392f64;
-      border-color: #392f64;
-      color: #fff;
-      border-radius: 8px;
-      padding: 10px;
-      width: 100%;
-    }
-
-    .btn-custom:hover {
-      background-color: #2c254d;
-      border-color: #2c254d;
-    }
-
-    .forgot-password {
-      text-align: center;
-      margin-top: 15px;
-    }
-
-    .forgot-password a {
-      color: #392f64;
+    .login-header p {
+      margin: 0;
+      color: var(--gp-muted);
+      line-height: 1.55;
       font-weight: 600;
     }
 
-    .forgot-password a:hover {
-      text-decoration: underline;
+    .access-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: .45rem;
+      padding: .45rem .75rem;
+      border-radius: 999px;
+      background: rgba(91, 84, 214, .08);
+      border: 1px solid rgba(91, 84, 214, .16);
+      color: #312e81;
+      font-size: .82rem;
+      font-weight: 900;
+      margin-bottom: 1rem;
+    }
+
+    .form-label {
+      font-weight: 850;
+      color: #1f2937;
+      margin-bottom: .45rem;
+    }
+
+    .form-control {
+      border-radius: 16px;
+      padding: .9rem 1rem;
+      border: 1px solid rgba(15, 23, 42, .14);
+      font-weight: 700;
+      color: #111827;
+      background: #fff;
+    }
+
+    .form-control:focus {
+      border-color: rgba(91, 84, 214, .65);
+      box-shadow: 0 0 0 .25rem rgba(91, 84, 214, .12);
+    }
+
+    .password-wrap {
+      position: relative;
+    }
+
+    .toggle-password {
+      position: absolute;
+      top: 50%;
+      right: 12px;
+      transform: translateY(-50%);
+      border: 0;
+      background: transparent;
+      color: #64748b;
+      font-size: 1.1rem;
+      padding: 4px 8px;
+    }
+
+    .btn-login {
+      width: 100%;
+      border: 0;
+      border-radius: 17px;
+      padding: .95rem 1rem;
+      font-weight: 950;
+      color: #fff;
+      background: linear-gradient(135deg, var(--gp-brand), var(--gp-brand-2));
+      box-shadow: 0 18px 38px rgba(91, 84, 214, .30);
+      transition: transform .22s ease, box-shadow .22s ease;
+    }
+
+    .btn-login:hover {
+      color: #fff;
+      transform: translateY(-2px);
+      box-shadow: 0 24px 50px rgba(91, 84, 214, .38);
+    }
+
+    .support-box {
+      border-radius: 20px;
+      background: #f8fafc;
+      border: 1px solid rgba(15, 23, 42, .08);
+      padding: 1rem;
+      margin-top: 1.2rem;
+    }
+
+    .support-box p {
+      color: #64748b;
+      font-weight: 650;
+      font-size: .92rem;
+      margin-bottom: .8rem;
+    }
+
+    .quick-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .6rem;
+      justify-content: center;
+      margin-top: 1.1rem;
+    }
+
+    .quick-links a {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      color: #312e81;
+      background: rgba(91, 84, 214, .08);
+      border: 1px solid rgba(91, 84, 214, .14);
+      padding: .52rem .75rem;
+      border-radius: 999px;
+      font-weight: 850;
+      font-size: .86rem;
+    }
+
+    .quick-links a:hover {
+      background: #1f1a4f;
+      color: #fff;
     }
 
     .alert {
-      border-radius: 8px;
-      font-size: 1rem;
+      border-radius: 18px;
+      font-weight: 700;
+      border: 0;
+    }
+
+    .back-home {
+      position: fixed;
+      top: 18px;
+      left: 18px;
+      z-index: 10;
+      display: inline-flex;
+      align-items: center;
+      gap: .45rem;
+      color: #fff;
+      padding: .65rem .9rem;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .10);
+      border: 1px solid rgba(255, 255, 255, .18);
+      backdrop-filter: blur(14px);
+      font-weight: 850;
+    }
+
+    .back-home:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, .16);
+    }
+
+    .floating-help {
+      position: fixed;
+      right: 22px;
+      bottom: 22px;
+      z-index: 20;
+      display: inline-flex;
+      align-items: center;
+      gap: .55rem;
+      color: #fff;
+      background: #25D366;
+      padding: .8rem 1rem;
+      border-radius: 999px;
+      font-weight: 950;
+      box-shadow: 0 18px 44px rgba(37, 211, 102, .38);
+      border: 3px solid rgba(255, 255, 255, .85);
+    }
+
+    .floating-help:hover {
+      color: #fff;
+      transform: translateY(-2px);
+    }
+
+    @media (max-width: 991px) {
+      .auth-shell {
+        align-items: flex-start;
+        padding-top: 82px;
+      }
+
+      .left-panel {
+        text-align: center;
+        padding: 10px 0 28px;
+      }
+
+      .hero-text,
+      .feature-list {
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      .login-card {
+        margin: 0 auto;
+      }
+
+      .back-home {
+        top: 14px;
+        left: 14px;
+      }
+    }
+
+    @media (max-width: 575px) {
+      .auth-shell {
+        padding-left: 10px;
+        padding-right: 10px;
+      }
+
+      .login-card {
+        padding: 12px;
+        border-radius: 26px;
+      }
+
+      .login-card-inner {
+        padding: 22px;
+      }
+
+      .hero-title {
+        font-size: 2.55rem;
+      }
+
+      .floating-help {
+        right: 14px;
+        bottom: 14px;
+        padding: .7rem .85rem;
+        font-size: .88rem;
+      }
     }
   </style>
 </head>
 
 <body>
-  <div class="container mt-5">
-    <div class="login-container">
-      <div class="login-header">
-        <h2>Iniciar sesión</h2>
+
+  <a href="{{ url_for('index') }}" class="back-home">
+    <i class="bi bi-arrow-left"></i>
+    Volver al inicio
+  </a>
+
+  <main class="auth-shell">
+    <div class="container">
+      <div class="row align-items-center g-5">
+
+        <div class="col-lg-7">
+          <section class="left-panel">
+            <div class="d-flex align-items-center gap-3 mb-4 justify-content-center justify-content-lg-start">
+              <img src="{{ url_for('static', filename='images/logo.jpg') }}" alt="Global PYMES" class="brand-logo">
+              <div class="text-start">
+                <div class="fw-black fw-bold fs-4">Global PYMES</div>
+                <div class="text-white-50 fw-bold">Tu negocio digital</div>
+              </div>
+            </div>
+
+            <span class="eyebrow">
+              <i class="bi bi-shield-lock-fill"></i>
+              Acceso seguro al sistema
+            </span>
+
+            <h2 class="hero-title">
+              Entra al panel donde <span>administras tu negocio digital.</span>
+            </h2>
+
+            <p class="hero-text">
+              Este acceso es para dueños, administradores y colaboradores que ya tienen una cuenta en Global PYMES.
+              Desde aquí podrás gestionar tu página, catálogo, servicios, publicaciones, reseñas, ventas, citas y configuración del sitio.
+            </p>
+
+            <div class="feature-list">
+              <div class="feature-item">
+                <div class="feature-icon"><i class="bi bi-window-stack"></i></div>
+                <div>
+                  <strong>Administra tu página</strong>
+                  <small>Edita la información pública de tu negocio, imágenes, horarios, ubicación y secciones.</small>
+                </div>
+              </div>
+
+              <div class="feature-item">
+                <div class="feature-icon"><i class="bi bi-bag-heart-fill"></i></div>
+                <div>
+                  <strong>Controla productos, servicios y avisos</strong>
+                  <small>Actualiza tu catálogo, promociones, blog, publicaciones y contenido para tus clientes.</small>
+                </div>
+              </div>
+
+              <div class="feature-item">
+                <div class="feature-icon"><i class="bi bi-graph-up-arrow"></i></div>
+                <div>
+                  <strong>Revisa actividad y oportunidades</strong>
+                  <small>Consulta contactos, reseñas, citas, ventas y métricas importantes para tu negocio.</small>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div class="col-lg-5">
+          <section class="login-card">
+            <div class="login-card-inner">
+
+              <div class="login-header">
+                <span class="access-badge">
+                  <i class="bi bi-person-badge-fill"></i>
+                  Panel administrativo
+                </span>
+
+                <h1>Iniciar sesión</h1>
+                <p>
+                  Accede con el correo y contraseña que usaste al crear tu página en Global PYMES.
+                </p>
+              </div>
+
+              {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                {% for category, message in messages %}
+                  <div class="alert alert-{{ 'warning' if category == 'message' else category }} mb-3">
+                    <i class="bi bi-info-circle-fill me-1"></i>
+                    {{ message }}
+                  </div>
+                {% endfor %}
+              {% endif %}
+              {% endwith %}
+
+              <form method="POST" autocomplete="on">
+                <div class="mb-3">
+                  <label for="email" class="form-label">Correo electrónico</label>
+                  <input
+                    type="email"
+                    class="form-control"
+                    id="email"
+                    name="email"
+                    placeholder="correo@empresa.com"
+                    autocomplete="email"
+                    required>
+                </div>
+
+                <div class="mb-3">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <label for="password" class="form-label">Contraseña</label>
+                    <a href="{{ url_for('reset_password') }}" class="small fw-bold text-primary">
+                      ¿Olvidaste?
+                    </a>
+                  </div>
+
+                  <div class="password-wrap">
+                    <input
+                      type="password"
+                      class="form-control pe-5"
+                      id="password"
+                      name="password"
+                      placeholder="Tu contraseña"
+                      autocomplete="current-password"
+                      required>
+
+                    <button type="button" class="toggle-password" id="togglePassword" aria-label="Mostrar contraseña">
+                      <i class="bi bi-eye"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <button type="submit" class="btn btn-login mt-2">
+                  <i class="bi bi-box-arrow-in-right me-1"></i>
+                  Entrar a mi panel
+                </button>
+
+                <div class="support-box">
+                  <p>
+                    ¿Aún no tienes una página? Crea tu sitio para comenzar a usar el panel de Global PYMES.
+                  </p>
+
+                  <div class="d-grid gap-2">
+                    <a href="{{ url_for('create_page') }}" class="btn btn-outline-primary rounded-4 fw-bold">
+                      <i class="bi bi-rocket-takeoff me-1"></i>
+                      Crear mi página
+                    </a>
+
+                    <a href="https://wa.me/522461038844?text=Hola%20Global%20PYMES%2C%20necesito%20ayuda%20para%20entrar%20a%20mi%20panel"
+                       target="_blank"
+                       class="btn btn-outline-success rounded-4 fw-bold">
+                      <i class="bi bi-whatsapp me-1"></i>
+                      Necesito ayuda
+                    </a>
+                  </div>
+                </div>
+
+                <div class="quick-links">
+                  <a href="{{ url_for('index') }}">
+                    <i class="bi bi-house-door-fill"></i>
+                    Inicio
+                  </a>
+
+                  <a href="{{ url_for('reset_password') }}">
+                    <i class="bi bi-key-fill"></i>
+                    Recuperar acceso
+                  </a>
+                </div>
+              </form>
+            </div>
+          </section>
+        </div>
+
       </div>
-
-      {% with messages = get_flashed_messages() %}
-      {% if messages %}
-      <div class="alert alert-warning">
-        {{ messages[0] }}
-      </div>
-      {% endif %}
-      {% endwith %}
-
-      <form method="POST">
-        <div class="mb-3">
-          <label for="email" class="form-label">Correo electrónico</label>
-          <input type="email" class="form-control" id="email" name="email" required>
-        </div>
-        <div class="mb-3">
-          <label for="password" class="form-label">Contraseña</label>
-          <input type="password" class="form-control" id="password" name="password" required>
-        </div>
-        <button type="submit" class="btn btn-custom">Iniciar sesión</button>
-
-        <div class="forgot-password">
-          <p><a href="{{ url_for('reset_password') }}">¿Olvidaste tu contraseña?</a></p>
-          <p><a href="{{ url_for('index') }}">Regresar al inicio</a></p>
-        </div>
-      </form>
     </div>
-  </div>
+  </main>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <a
+    href="https://wa.me/522461038844?text=Hola%20Global%20PYMES%2C%20necesito%20ayuda%20para%20iniciar%20sesi%C3%B3n"
+    class="floating-help"
+    target="_blank"
+    aria-label="Ayuda por WhatsApp">
+    <i class="bi bi-whatsapp"></i>
+    Ayuda
+  </a>
+
+  <script>
+    const togglePassword = document.getElementById('togglePassword');
+    const passwordInput = document.getElementById('password');
+
+    if (togglePassword && passwordInput) {
+      togglePassword.addEventListener('click', function () {
+        const isPassword = passwordInput.getAttribute('type') === 'password';
+        passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
+
+        this.innerHTML = isPassword
+          ? '<i class="bi bi-eye-slash"></i>'
+          : '<i class="bi bi-eye"></i>';
+      });
+    }
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 
 </html>
