@@ -5965,6 +5965,7 @@ Mensaje:
 
             <p><strong>Nombre / Empresa:</strong> {{ nombre }}</p>
             <p><strong>Correo:</strong> {{ correo }}</p>
+            <p><strong>Telefono:</strong> {{ telefono }}</p>
             <p><strong>Tipo de proyecto:</strong> {{ tipo }}</p>
             <p><strong>Presupuesto:</strong> {{ presupuesto }}</p>
 
