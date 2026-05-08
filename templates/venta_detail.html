@@ -27,16 +27,22 @@
   }
 
   .sale-detail-page{
+    width:100%;
     max-width:1320px;
     margin:0 auto;
-    padding:28px 0 90px;
+    padding:clamp(16px, 2.5vw, 28px) 0 clamp(36px, 7vw, 90px);
+  }
+
+  .sale-detail-page,
+  .sale-detail-page *{
+    min-width:0;
   }
 
   .sale-hero{
     position:relative;
     overflow:hidden;
-    border-radius:28px;
-    padding:28px;
+    border-radius:clamp(20px, 2.5vw, 28px);
+    padding:clamp(18px, 3vw, 28px);
     background:
       radial-gradient(circle at top right, rgba(94,160,255,.22), transparent 28%),
       radial-gradient(circle at bottom left, rgba(124,58,237,.16), transparent 24%),
@@ -44,19 +50,19 @@
     border:1px solid rgba(255,255,255,.08);
     box-shadow:var(--vd-shadow);
     color:var(--vd-text);
-    margin-bottom:22px;
+    margin-bottom:clamp(16px, 2.5vw, 22px);
   }
 
   .sale-hero__row{
     display:flex;
     justify-content:space-between;
     align-items:flex-start;
-    gap:18px;
+    gap:clamp(16px, 2.5vw, 22px);
     flex-wrap:wrap;
   }
 
   .sale-hero__title{
-    flex:1 1 560px;
+    flex:1 1 540px;
   }
 
   .sale-hero__title h2{
@@ -64,13 +70,16 @@
     display:flex;
     align-items:center;
     gap:12px;
-    font-size:clamp(1.8rem, 3vw, 2.5rem);
+    font-size:clamp(1.55rem, 5vw, 2.5rem);
     font-weight:900;
-    letter-spacing:-.03em;
+    letter-spacing:-.04em;
+    line-height:1.08;
+    overflow-wrap:anywhere;
   }
 
   .sale-hero__title h2 i{
     color:#8ec5ff;
+    flex-shrink:0;
   }
 
   .sale-hero__title p{
@@ -78,7 +87,7 @@
     color:var(--vd-muted);
     max-width:780px;
     line-height:1.68;
-    font-size:.98rem;
+    font-size:clamp(.9rem, 2.5vw, .98rem);
   }
 
   .sale-hero__meta{
@@ -92,16 +101,20 @@
   .hero-date{
     color:var(--vd-muted);
     font-size:.92rem;
+    line-height:1.4;
+    overflow-wrap:anywhere;
   }
 
   .sale-detail-actions{
-    display:flex;
+    display:grid;
+    grid-template-columns:repeat(2, minmax(150px, 1fr));
     gap:10px;
-    flex-wrap:wrap;
-    align-items:center;
+    align-items:stretch;
+    flex:0 1 390px;
   }
 
   .btn-detail{
+    min-height:46px;
     border-radius:14px;
     padding:11px 16px;
     font-weight:800;
@@ -109,9 +122,12 @@
     text-decoration:none;
     display:inline-flex;
     align-items:center;
+    justify-content:center;
     gap:8px;
     transition:all .22s ease;
     border:1px solid transparent;
+    text-align:center;
+    line-height:1.15;
   }
 
   .btn-detail:hover{
@@ -174,6 +190,7 @@
     font-weight:800;
     border:1px solid transparent;
     white-space:nowrap;
+    line-height:1.1;
   }
 
   .pill-source-pos{
@@ -232,27 +249,28 @@
 
   .detail-grid{
     display:grid;
-    grid-template-columns:minmax(0,1.15fr) minmax(360px,.85fr);
-    gap:20px;
+    grid-template-columns:minmax(0,1.15fr) minmax(320px,.85fr);
+    gap:clamp(16px, 2.5vw, 20px);
+    align-items:start;
   }
 
   .detail-stack{
     display:flex;
     flex-direction:column;
-    gap:18px;
+    gap:clamp(16px, 2vw, 18px);
   }
 
   .detail-card{
     background:linear-gradient(180deg, rgba(17,24,45,.96), rgba(11,16,32,.96));
     border:1px solid var(--vd-line);
-    border-radius:24px;
+    border-radius:clamp(20px, 2vw, 24px);
     box-shadow:var(--vd-shadow);
     color:var(--vd-text);
     overflow:hidden;
   }
 
   .detail-card__head{
-    padding:18px 20px;
+    padding:clamp(16px, 2.5vw, 20px);
     border-bottom:1px solid var(--vd-line);
   }
 
@@ -261,18 +279,20 @@
     display:flex;
     align-items:center;
     gap:10px;
-    font-size:1.05rem;
+    font-size:clamp(1rem, 2.5vw, 1.05rem);
     font-weight:800;
+    line-height:1.3;
   }
 
   .detail-card__head p{
     margin:6px 0 0;
     color:var(--vd-muted);
     font-size:.92rem;
+    line-height:1.5;
   }
 
   .detail-card__body{
-    padding:18px 20px 20px;
+    padding:clamp(16px, 2.5vw, 20px);
   }
 
   .info-grid{
@@ -292,18 +312,19 @@
     display:block;
     color:var(--vd-muted);
     margin-bottom:5px;
-    font-size:.8rem;
+    font-size:.78rem;
     text-transform:uppercase;
     letter-spacing:.06em;
     font-weight:700;
   }
 
   .info-box .value{
+    display:block;
     color:#fff;
-    font-size:.97rem;
+    font-size:.96rem;
     font-weight:800;
     line-height:1.4;
-    word-break:break-word;
+    overflow-wrap:anywhere;
   }
 
   .quote-box{
@@ -327,6 +348,7 @@
     font-size:.98rem;
     font-weight:800;
     color:#dbeafe;
+    line-height:1.35;
   }
 
   .quote-box p{
@@ -342,7 +364,10 @@
   }
 
   .items-table-wrap{
+    width:100%;
     overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    border-radius:18px;
   }
 
   .items-table{
@@ -394,11 +419,13 @@
 
   .item-title strong{
     color:#fff;
+    overflow-wrap:anywhere;
   }
 
   .item-title span{
     color:var(--vd-muted);
     font-size:.84rem;
+    overflow-wrap:anywhere;
   }
 
   .empty-items{
@@ -435,6 +462,8 @@
   .summary-line strong{
     color:#fff;
     font-size:1rem;
+    text-align:right;
+    white-space:nowrap;
   }
 
   .summary-total{
@@ -442,7 +471,7 @@
     justify-content:space-between;
     align-items:center;
     gap:12px;
-    padding:16px 16px;
+    padding:16px;
     border-radius:18px;
     background:linear-gradient(135deg, rgba(34,197,94,.12), rgba(94,160,255,.12));
     border:1px solid rgba(34,197,94,.18);
@@ -458,9 +487,11 @@
 
   .summary-total .value{
     color:#dcfce7;
-    font-size:1.35rem;
+    font-size:clamp(1.25rem, 4vw, 1.55rem);
     font-weight:900;
     letter-spacing:-.03em;
+    text-align:right;
+    white-space:nowrap;
   }
 
   .notes-box{
@@ -473,6 +504,7 @@
     line-height:1.7;
     font-size:.93rem;
     white-space:pre-line;
+    overflow-wrap:anywhere;
   }
 
   .notes-box.is-empty{
@@ -481,39 +513,219 @@
     border:1px dashed var(--vd-line-2);
   }
 
-  @media (max-width: 1080px){
+  @media (max-width: 1180px){
     .detail-grid{
       grid-template-columns:1fr;
     }
+
+    .sale-detail-actions{
+      flex:1 1 100%;
+      grid-template-columns:repeat(4, minmax(0, 1fr));
+    }
   }
 
-  @media (max-width: 768px){
-    .sale-detail-page{
-      padding:18px 0 24px;
+  @media (max-width: 991.98px){
+    .sale-hero__row{
+      flex-direction:column;
     }
 
-    .sale-hero{
-      padding:20px 18px;
-      border-radius:22px;
+    .sale-hero__title{
+      flex:1 1 auto;
+      width:100%;
     }
 
     .sale-detail-actions{
       width:100%;
+      grid-template-columns:repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 767.98px){
+    .sale-detail-page{
+      padding-top:12px;
     }
 
-    .btn-detail{
+    .sale-hero{
+      padding:18px;
+    }
+
+    .sale-hero__title h2{
+      align-items:flex-start;
+    }
+
+    .sale-hero__meta{
+      gap:8px;
+    }
+
+    .pill{
+      padding:7px 10px;
+      font-size:.75rem;
+    }
+
+    .hero-date{
       width:100%;
-      justify-content:center;
+      margin-top:2px;
+      font-size:.85rem;
     }
 
     .info-grid{
       grid-template-columns:1fr;
     }
 
-    .detail-card__body,
-    .detail-card__head{
-      padding-left:16px;
-      padding-right:16px;
+    .quote-box__top{
+      flex-direction:column;
+    }
+
+    .quote-box .btn{
+      width:100%;
+    }
+
+    .summary-line,
+    .summary-total{
+      align-items:flex-start;
+    }
+
+    .summary-line strong,
+    .summary-total .value{
+      white-space:normal;
+      overflow-wrap:anywhere;
+    }
+  }
+
+  @media (max-width: 640px){
+    .items-table-wrap{
+      overflow:visible;
+    }
+
+    .items-table{
+      min-width:0;
+      width:100%;
+      display:block;
+      border-spacing:0;
+    }
+
+    .items-table thead{
+      display:none;
+    }
+
+    .items-table tbody{
+      display:grid;
+      gap:12px;
+    }
+
+    .items-table tbody tr{
+      display:block;
+      border:1px solid var(--vd-line);
+      border-radius:18px;
+      background:rgba(255,255,255,.035);
+      overflow:hidden;
+    }
+
+    .items-table tbody td{
+      display:grid;
+      grid-template-columns:minmax(95px, .8fr) minmax(0, 1.2fr);
+      gap:12px;
+      align-items:start;
+      padding:12px 14px;
+      border:0;
+      border-bottom:1px solid var(--vd-line);
+      text-align:right;
+    }
+
+    .items-table tbody td::before{
+      content:attr(data-label);
+      color:var(--vd-muted);
+      font-size:.74rem;
+      font-weight:900;
+      text-transform:uppercase;
+      letter-spacing:.06em;
+      text-align:left;
+    }
+
+    .items-table tbody td:first-child,
+    .items-table tbody td:last-child{
+      border-radius:0;
+      border-left:0;
+      border-right:0;
+      border-top:0;
+    }
+
+    .items-table tbody td:last-child{
+      border-bottom:0;
+    }
+
+    .item-title{
+      align-items:flex-end;
+      text-align:right;
+    }
+  }
+
+  @media (max-width: 575.98px){
+    .sale-detail-actions{
+      grid-template-columns:1fr;
+    }
+
+    .btn-detail{
+      width:100%;
+      min-height:48px;
+    }
+
+    .detail-card__head h3{
+      align-items:flex-start;
+    }
+
+    .summary-line{
+      flex-direction:column;
+      gap:4px;
+    }
+
+    .summary-line strong{
+      width:100%;
+      text-align:left;
+    }
+
+    .summary-total{
+      flex-direction:column;
+      gap:4px;
+    }
+
+    .summary-total .value{
+      width:100%;
+      text-align:left;
+    }
+  }
+
+  @media (max-width: 420px){
+    .sale-hero{
+      padding:16px;
+      border-radius:20px;
+    }
+
+    .detail-card{
+      border-radius:20px;
+    }
+
+    .detail-card__head,
+    .detail-card__body{
+      padding:15px;
+    }
+
+    .info-box,
+    .quote-box,
+    .notes-box{
+      border-radius:16px;
+      padding:13px;
+    }
+
+    .items-table tbody td{
+      grid-template-columns:1fr;
+      text-align:left;
+      gap:5px;
+    }
+
+    .item-title{
+      align-items:flex-start;
+      text-align:left;
     }
   }
 </style>
@@ -706,7 +918,7 @@
                 <tbody>
                   {% for item in ITEMS %}
                     <tr>
-                      <td>
+                      <td data-label="Producto">
                         <div class="item-title">
                           <strong>{{ item.get('title') or 'Producto' }}</strong>
                           <span>
@@ -715,10 +927,10 @@
                           </span>
                         </div>
                       </td>
-                      <td>{{ item.get('qty', 0) }}</td>
-                      <td>$ {{ '%.2f'|format(item.get('unit_price', 0)|float) }}</td>
-                      <td>$ {{ '%.2f'|format(item.get('discount', 0)|float) }}</td>
-                      <td><strong>$ {{ '%.2f'|format(item.get('subtotal', 0)|float) }}</strong></td>
+                      <td data-label="Cant.">{{ item.get('qty', 0) }}</td>
+                      <td data-label="P. unitario">$ {{ '%.2f'|format(item.get('unit_price', 0)|float) }}</td>
+                      <td data-label="Desc.">$ {{ '%.2f'|format(item.get('discount', 0)|float) }}</td>
+                      <td data-label="Importe"><strong>$ {{ '%.2f'|format(item.get('subtotal', 0)|float) }}</strong></td>
                     </tr>
                   {% endfor %}
                 </tbody>

@@ -3,41 +3,365 @@
 {% block title %}Editar Usuario{% endblock %}
 
 {% block content %}
-<div style="max-width: 500px; margin: 0 auto; padding: 20px; background-color: #fafafa; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
-    <h2 style="text-align: center; margin-bottom: 20px;">Editar Usuario</h2>
+<style>
+  .edit-user-page {
+    display: grid;
+    gap: var(--content-gap);
+    max-width: 920px;
+    margin: 0 auto;
+  }
 
-    <form method="POST">
-        <div style="margin-bottom: 15px;">
-            <label style="font-weight: bold;">Email:</label>
-            <p style="margin: 5px 0;">{{ user.email }}</p>
-        </div>
+  .edit-user-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: .55rem;
+    padding: .45rem .75rem;
+    border-radius: 999px;
+    background: rgba(59, 130, 246, .10);
+    border: 1px solid rgba(59, 130, 246, .18);
+    color: var(--brand-2);
+    font-weight: 850;
+    font-size: .78rem;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    margin-bottom: .75rem;
+  }
 
-        <div style="margin-bottom: 15px;">
-            <label for="role" style="font-weight: bold;">Rol:</label>
-            <select id="role" name="role" style="width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #ccc;">
-                <option value="user" {% if user.role == 'user' %}selected{% endif %}>Usuario</option>
-                <option value="moderador" {% if user.role == 'moderador' %}selected{% endif %}>Moderador</option>
-                <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Admin</option>
-            </select>
-        </div>
+  .edit-user-card {
+    border-radius: var(--card-radius);
+    border: 1px solid var(--border-soft);
+    background:
+      radial-gradient(circle at top right, rgba(59, 130, 246, .13), transparent 34%),
+      linear-gradient(180deg, rgba(255,255,255,.035), transparent 45%),
+      var(--surface-2);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+  }
 
-        <div style="margin-bottom: 20px;">
-            <label style="font-weight: bold;">
-                <input type="checkbox" name="confirmed" {% if user.confirmed %}checked{% endif %} style="margin-right: 5px;">
-                Confirmado
-            </label>
-        </div>
+  .edit-user-card-header {
+    padding: clamp(1rem, 2vw, 1.35rem);
+    border-bottom: 1px solid var(--border-soft);
+    display: flex;
+    align-items: center;
+    gap: .9rem;
+  }
 
-        <div style="text-align: center;">
-            <button type="submit" style="padding: 10px 20px; background-color: #007BFF; color: white; border: none; border-radius: 5px; cursor: pointer;">
-                Guardar Cambios
-            </button>
-        </div>
-    </form>
-    <div class="mt-4 text-center">
-        <a href="{{ url_for('dashboard')}}" class="btn btn-outline-dark">
-            <i class="bi bi-arrow-left-circle"></i> Regresar
-        </a>
+  .edit-user-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background:
+      linear-gradient(135deg, rgba(59, 130, 246, .22), rgba(34, 197, 94, .12));
+    border: 1px solid var(--border-soft);
+    color: var(--brand-2);
+    font-size: 1.35rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .edit-user-card-header h2 {
+    margin: 0;
+    font-size: clamp(1.25rem, 2.4vw, 1.75rem);
+    font-weight: 900;
+    letter-spacing: -.04em;
+  }
+
+  .edit-user-card-header p {
+    margin: .2rem 0 0;
+    color: var(--ink-muted);
+    font-weight: 650;
+    word-break: break-word;
+  }
+
+  .edit-user-card-body {
+    padding: clamp(1rem, 2vw, 1.5rem);
+  }
+
+  .edit-user-grid {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .edit-user-field {
+    grid-column: span 12;
+  }
+
+  .edit-user-info-box {
+    border: 1px solid var(--border-soft);
+    border-radius: 20px;
+    padding: 1rem;
+    background: var(--surface-soft);
+  }
+
+  .edit-user-info-label {
+    display: flex;
+    align-items: center;
+    gap: .45rem;
+    color: var(--ink-muted);
+    font-size: .78rem;
+    font-weight: 850;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    margin-bottom: .45rem;
+  }
+
+  .edit-user-info-value {
+    color: var(--ink);
+    font-weight: 850;
+    word-break: break-word;
+  }
+
+  .edit-user-check {
+    display: flex;
+    align-items: flex-start;
+    gap: .85rem;
+    padding: 1rem;
+    border-radius: 20px;
+    border: 1px solid var(--border-soft);
+    background: var(--surface-soft);
+    cursor: pointer;
+    transition: var(--ease);
+  }
+
+  .edit-user-check:hover {
+    border-color: var(--border-strong);
+    background: rgba(59, 130, 246, .07);
+  }
+
+  .edit-user-check input {
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-top: .15rem;
+    flex-shrink: 0;
+    accent-color: var(--brand);
+  }
+
+  .edit-user-check strong {
+    display: block;
+    color: var(--ink);
+    font-weight: 900;
+    margin-bottom: .15rem;
+  }
+
+  .edit-user-check small {
+    display: block;
+    color: var(--ink-muted);
+    font-weight: 650;
+    line-height: 1.4;
+  }
+
+  .role-preview {
+    display: flex;
+    gap: .65rem;
+    flex-wrap: wrap;
+    margin-top: .8rem;
+  }
+
+  .role-pill-preview {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    border-radius: 999px;
+    padding: .45rem .7rem;
+    font-size: .78rem;
+    font-weight: 850;
+    border: 1px solid var(--border-soft);
+    background: var(--surface-soft);
+    color: var(--ink-soft);
+  }
+
+  .role-pill-preview.admin {
+    background: rgba(59, 130, 246, .12);
+    color: var(--brand-2);
+    border-color: rgba(59, 130, 246, .22);
+  }
+
+  .role-pill-preview.moderador {
+    background: rgba(245, 158, 11, .12);
+    color: var(--warning);
+    border-color: rgba(245, 158, 11, .20);
+  }
+
+  .role-pill-preview.user {
+    background: rgba(34, 197, 94, .12);
+    color: var(--success);
+    border-color: rgba(34, 197, 94, .20);
+  }
+
+  .edit-user-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .85rem;
+    flex-wrap: wrap;
+    padding-top: 1.25rem;
+    margin-top: 1.25rem;
+    border-top: 1px solid var(--border-soft);
+  }
+
+  .edit-user-actions-left,
+  .edit-user-actions-right {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    flex-wrap: wrap;
+  }
+
+  @media (max-width: 767.98px) {
+    .edit-user-card-header {
+      align-items: flex-start;
+    }
+
+    .edit-user-actions,
+    .edit-user-actions-left,
+    .edit-user-actions-right {
+      width: 100%;
+    }
+
+    .edit-user-actions .btn {
+      width: 100%;
+    }
+  }
+</style>
+
+<section class="edit-user-page">
+
+  <div class="page-header">
+    <div>
+      <div class="edit-user-kicker">
+        <i class="bi bi-person-gear"></i>
+        Administración de usuario
+      </div>
+
+      <h1 class="page-title mb-2">Editar usuario</h1>
+
+      <p class="page-subtitle mb-0">
+        Actualiza el rol, permisos y estado de confirmación de esta cuenta dentro del panel.
+      </p>
     </div>
-</div>
+
+    <div class="users-header-actions">
+      <a href="{{ url_for('manage_users') }}" class="btn btn-outline-primary">
+        <i class="bi bi-people"></i>
+        Ver usuarios
+      </a>
+    </div>
+  </div>
+
+  <div class="edit-user-card">
+    <div class="edit-user-card-header">
+      <div class="edit-user-avatar">
+        {{ (user.email or 'U')[:1] }}
+      </div>
+
+      <div class="min-w-0">
+        <h2>Datos de la cuenta</h2>
+        <p>{{ user.email }}</p>
+      </div>
+    </div>
+
+    <div class="edit-user-card-body">
+      <form method="POST">
+        <div class="edit-user-grid">
+
+          <div class="edit-user-field">
+            <div class="edit-user-info-box">
+              <div class="edit-user-info-label">
+                <i class="bi bi-envelope"></i>
+                Email registrado
+              </div>
+
+              <div class="edit-user-info-value">
+                {{ user.email }}
+              </div>
+            </div>
+          </div>
+
+          <div class="edit-user-field">
+            <label for="role" class="form-label">
+              <i class="bi bi-shield-check me-1"></i>
+              Rol del usuario
+            </label>
+
+            <select id="role" name="role" class="form-select">
+              <option value="user" {% if user.role == 'user' %}selected{% endif %}>
+                Usuario
+              </option>
+              <option value="moderador" {% if user.role == 'moderador' %}selected{% endif %}>
+                Moderador
+              </option>
+              <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>
+                Admin
+              </option>
+            </select>
+
+            <div class="role-preview">
+              <span class="role-pill-preview user">
+                <i class="bi bi-person"></i>
+                Usuario
+              </span>
+
+              <span class="role-pill-preview moderador">
+                <i class="bi bi-person-check"></i>
+                Moderador
+              </span>
+
+              <span class="role-pill-preview admin">
+                <i class="bi bi-shield-lock"></i>
+                Admin
+              </span>
+            </div>
+          </div>
+
+          <div class="edit-user-field">
+            <label class="edit-user-check" for="confirmed">
+              <input
+                type="checkbox"
+                id="confirmed"
+                name="confirmed"
+                {% if user.confirmed %}checked{% endif %}
+              >
+
+              <span>
+                <strong>Cuenta confirmada</strong>
+                <small>
+                  Activa esta opción si el usuario ya verificó su cuenta o deseas marcarlo manualmente como confirmado.
+                </small>
+              </span>
+            </label>
+          </div>
+
+        </div>
+
+        <div class="edit-user-actions">
+          <div class="edit-user-actions-left">
+            <a href="{{ url_for('manage_users') }}" class="btn btn-outline-primary">
+              <i class="bi bi-arrow-left-circle"></i>
+              Regresar a usuarios
+            </a>
+
+            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+              <i class="bi bi-house-door"></i>
+              Dashboard
+            </a>
+          </div>
+
+          <div class="edit-user-actions-right">
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-save2-fill"></i>
+              Guardar cambios
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</section>
 {% endblock %}

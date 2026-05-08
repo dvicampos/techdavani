@@ -1,53 +1,520 @@
 {% extends "layout.html" %}
 
-{% block title %}Global PYMES{% endblock %}
+{% block title %}Registrar Usuario{% endblock %}
 
 {% block content %}
-<div class="container mt-5" style="max-width: 500px;">
-  <h2 class="mb-4 text-center">Registrar nuevo usuario</h2>
-  
-  <div class="alert alert-info text-center" role="alert">
-    Después de registrarse, el usuario debe <strong>confirmar su correo electrónico</strong> para activar la cuenta.
+<style>
+  .register-user-page {
+    max-width: 980px;
+    margin: 0 auto;
+    display: grid;
+    gap: var(--content-gap);
+  }
+
+  .register-user-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: .55rem;
+    padding: .45rem .75rem;
+    border-radius: 999px;
+    background: rgba(34, 197, 94, .11);
+    border: 1px solid rgba(34, 197, 94, .20);
+    color: var(--success);
+    font-weight: 850;
+    font-size: .78rem;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    margin-bottom: .75rem;
+  }
+
+  .register-user-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(280px, .75fr);
+    gap: var(--content-gap);
+    align-items: start;
+  }
+
+  .register-user-card,
+  .roles-card {
+    border-radius: var(--card-radius);
+    border: 1px solid var(--border-soft);
+    background:
+      radial-gradient(circle at top right, rgba(59, 130, 246, .12), transparent 34%),
+      linear-gradient(180deg, rgba(255,255,255,.035), transparent 45%),
+      var(--surface-2);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+  }
+
+  .register-user-card-header,
+  .roles-card-header {
+    padding: clamp(1rem, 2vw, 1.35rem);
+    border-bottom: 1px solid var(--border-soft);
+    display: flex;
+    align-items: center;
+    gap: .85rem;
+  }
+
+  .register-user-icon,
+  .roles-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: rgba(59, 130, 246, .12);
+    color: var(--brand-2);
+    border: 1px solid rgba(59, 130, 246, .18);
+    font-size: 1.25rem;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .register-user-icon.success {
+    background: rgba(34, 197, 94, .12);
+    color: var(--success);
+    border-color: rgba(34, 197, 94, .20);
+  }
+
+  .register-user-card-header h2,
+  .roles-card-header h2 {
+    margin: 0;
+    font-size: clamp(1.15rem, 2.2vw, 1.55rem);
+    font-weight: 900;
+    letter-spacing: -.04em;
+  }
+
+  .register-user-card-header p,
+  .roles-card-header p {
+    margin: .15rem 0 0;
+    color: var(--ink-muted);
+    font-weight: 650;
+    line-height: 1.35;
+  }
+
+  .register-user-card-body,
+  .roles-card-body {
+    padding: clamp(1rem, 2vw, 1.5rem);
+  }
+
+  .info-box {
+    display: flex;
+    gap: .85rem;
+    padding: 1rem;
+    border-radius: 20px;
+    border: 1px solid rgba(59, 130, 246, .18);
+    background: rgba(59, 130, 246, .08);
+    color: var(--ink);
+    margin-bottom: 1.25rem;
+  }
+
+  .info-box i {
+    color: var(--brand-2);
+    font-size: 1.25rem;
+    margin-top: .1rem;
+  }
+
+  .info-box strong {
+    color: var(--ink);
+  }
+
+  .info-box p {
+    margin: 0;
+    color: var(--ink-muted);
+    font-weight: 650;
+    line-height: 1.45;
+  }
+
+  .form-section {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .input-help {
+    display: block;
+    margin-top: .35rem;
+    color: var(--ink-muted);
+    font-size: .8rem;
+    font-weight: 650;
+  }
+
+  .password-input-wrap {
+    position: relative;
+  }
+
+  .password-input-wrap .form-control {
+    padding-right: 3.25rem;
+  }
+
+  .password-toggle {
+    position: absolute;
+    right: .45rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    min-height: 40px;
+    border-radius: 999px;
+    border: 1px solid var(--border-soft);
+    background: var(--surface-soft);
+    color: var(--ink-muted);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--ease);
+  }
+
+  .password-toggle:hover {
+    color: var(--ink);
+    border-color: var(--border-strong);
+    background: rgba(59, 130, 246, .08);
+  }
+
+  .role-option-list {
+    display: grid;
+    gap: .85rem;
+  }
+
+  .role-option {
+    display: flex;
+    gap: .8rem;
+    padding: 1rem;
+    border-radius: 20px;
+    border: 1px solid var(--border-soft);
+    background: var(--surface-soft);
+  }
+
+  .role-option-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 15px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border: 1px solid var(--border-soft);
+    background: rgba(59, 130, 246, .10);
+    color: var(--brand-2);
+  }
+
+  .role-option-icon.admin {
+    background: rgba(59, 130, 246, .12);
+    color: var(--brand-2);
+    border-color: rgba(59, 130, 246, .22);
+  }
+
+  .role-option-icon.moderador {
+    background: rgba(245, 158, 11, .12);
+    color: var(--warning);
+    border-color: rgba(245, 158, 11, .22);
+  }
+
+  .role-option-icon.user {
+    background: rgba(34, 197, 94, .12);
+    color: var(--success);
+    border-color: rgba(34, 197, 94, .22);
+  }
+
+  .role-option strong {
+    display: block;
+    color: var(--ink);
+    font-weight: 900;
+    margin-bottom: .15rem;
+  }
+
+  .role-option small {
+    display: block;
+    color: var(--ink-muted);
+    font-weight: 650;
+    line-height: 1.4;
+  }
+
+  .register-user-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .85rem;
+    flex-wrap: wrap;
+    padding-top: 1.25rem;
+    margin-top: 1.25rem;
+    border-top: 1px solid var(--border-soft);
+  }
+
+  .register-user-actions-left,
+  .register-user-actions-right {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    flex-wrap: wrap;
+  }
+
+  @media (max-width: 991.98px) {
+    .register-user-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 767.98px) {
+    .register-user-card-header,
+    .roles-card-header {
+      align-items: flex-start;
+    }
+
+    .register-user-actions,
+    .register-user-actions-left,
+    .register-user-actions-right {
+      width: 100%;
+    }
+
+    .register-user-actions .btn {
+      width: 100%;
+    }
+  }
+</style>
+
+<section class="register-user-page">
+
+  <div class="page-header">
+    <div>
+      <div class="register-user-kicker">
+        <i class="bi bi-person-plus-fill"></i>
+        Nuevo acceso
+      </div>
+
+      <h1 class="page-title mb-2">Registrar nuevo usuario</h1>
+
+      <p class="page-subtitle mb-0">
+        Crea una cuenta para que otra persona pueda acceder al panel administrativo de Global PYMES.
+      </p>
+    </div>
+
+    <div class="users-header-actions">
+      <a href="{{ url_for('manage_users') }}" class="btn btn-outline-primary">
+        <i class="bi bi-people"></i>
+        Ver usuarios
+      </a>
+    </div>
   </div>
 
-  <form method="POST" action="{{ url_for('admin_register_user') }}">
-    <div class="mb-3">
-      <label for="nombre" class="form-label">Nombre completo</label>
-      <input type="text" class="form-control" id="nombre" name="nombre" placeholder="Nombre completo" required>
+  <div class="register-user-grid">
+
+    <div class="register-user-card">
+      <div class="register-user-card-header">
+        <div class="register-user-icon success">
+          <i class="bi bi-person-vcard"></i>
+        </div>
+
+        <div>
+          <h2>Datos del usuario</h2>
+          <p>Completa la información básica y asigna el rol correspondiente.</p>
+        </div>
+      </div>
+
+      <div class="register-user-card-body">
+        <div class="info-box">
+          <i class="bi bi-info-circle-fill"></i>
+          <p>
+            Después del registro, el usuario debe <strong>confirmar su correo electrónico</strong>
+            para activar correctamente su cuenta.
+          </p>
+        </div>
+
+        <form method="POST" action="{{ url_for('admin_register_user') }}">
+          <div class="form-section">
+
+            <div>
+              <label for="nombre" class="form-label">
+                <i class="bi bi-person me-1"></i>
+                Nombre completo
+              </label>
+              <input
+                type="text"
+                class="form-control"
+                id="nombre"
+                name="nombre"
+                placeholder="Ej. Amairani Cuaquentzi"
+                required
+              >
+              <small class="input-help">
+                Este nombre puede usarse para identificar al usuario dentro del panel.
+              </small>
+            </div>
+
+            <div>
+              <label for="email" class="form-label">
+                <i class="bi bi-envelope me-1"></i>
+                Correo electrónico
+              </label>
+              <input
+                type="email"
+                class="form-control"
+                id="email"
+                name="email"
+                placeholder="usuario@correo.com"
+                autocomplete="email"
+                required
+              >
+              <small class="input-help">
+                Se enviará la confirmación a este correo.
+              </small>
+            </div>
+
+            <div>
+              <label for="password" class="form-label">
+                <i class="bi bi-lock me-1"></i>
+                Contraseña
+              </label>
+
+              <div class="password-input-wrap">
+                <input
+                  type="password"
+                  class="form-control"
+                  id="password"
+                  name="password"
+                  placeholder="Contraseña segura"
+                  autocomplete="new-password"
+                  required
+                >
+
+                <button
+                  type="button"
+                  class="password-toggle"
+                  id="togglePassword"
+                  aria-label="Mostrar u ocultar contraseña"
+                >
+                  <i class="bi bi-eye"></i>
+                </button>
+              </div>
+
+              <small class="input-help">
+                Recomendado: mínimo 8 caracteres, combinando letras, números y símbolos.
+              </small>
+            </div>
+
+            <div>
+              <label for="role" class="form-label">
+                <i class="bi bi-shield-check me-1"></i>
+                Rol de usuario
+              </label>
+
+              <select class="form-select" id="role" name="role" required>
+                <option value="" selected disabled>Selecciona un rol</option>
+                <option value="admin">Administrador</option>
+                <option value="moderador">Moderador</option>
+                <option value="user">Usuario</option>
+              </select>
+
+              <small class="input-help">
+                El rol define qué acciones podrá realizar esta cuenta dentro del sistema.
+              </small>
+            </div>
+
+          </div>
+
+          <div class="register-user-actions">
+            <div class="register-user-actions-left">
+              <a href="{{ url_for('manage_users') }}" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left-circle"></i>
+                Regresar a usuarios
+              </a>
+
+              <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-house-door"></i>
+                Dashboard
+              </a>
+            </div>
+
+            <div class="register-user-actions-right">
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-person-plus-fill"></i>
+                Registrar usuario
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
     </div>
 
-    <div class="mb-3">
-      <label for="email" class="form-label">Correo electrónico</label>
-      <input type="email" class="form-control" id="email" name="email" placeholder="Correo electrónico" required>
-    </div>
+    <aside class="roles-card">
+      <div class="roles-card-header">
+        <div class="roles-icon">
+          <i class="bi bi-shield-lock"></i>
+        </div>
 
-    <div class="mb-3">
-      <label for="password" class="form-label">Contraseña</label>
-      <input type="password" class="form-control" id="password" name="password" placeholder="Contraseña" required>
-    </div>
+        <div>
+          <h2>Roles y permisos</h2>
+          <p>Guía rápida para elegir el acceso correcto.</p>
+        </div>
+      </div>
 
-    <div class="mb-4">
-      <label for="role" class="form-label">Rol de usuario</label>
-      <select class="form-select" id="role" name="role" required>
-        <option value="" selected disabled>Selecciona rol</option>
-        <option value="admin">Administrador</option>
-        <option value="moderador">Moderador</option>
-        <option value="usuario">Usuario</option>
-      </select>
-    </div>
-    <div class="alert alert-info" role="alert" style="white-space: pre-line;">
-        <strong>Roles y permisos:</strong>
-        <strong>Administrador:</strong> Acceso total a todo, incluyendo edición de página y usuarios.
-        <strong>Moderador:</strong> Puede hacer casi todo, excepto editar la página principal y gestionar usuarios.
-        <strong>Usuario:</strong> Solo puede ver la información creada, sin permisos para editar o crear contenido.
-    </div>
+      <div class="roles-card-body">
+        <div class="role-option-list">
 
-    <button type="submit" class="btn btn-primary w-100">Registrar usuario</button>
-  </form>
-  <div class="mt-4 text-center">
-        <a href="{{ url_for('dashboard')}}" class="btn btn-outline-dark">
-            <i class="bi bi-arrow-left-circle"></i> Regresar
-        </a>
-    </div>
-</div>
+          <div class="role-option">
+            <div class="role-option-icon admin">
+              <i class="bi bi-shield-check"></i>
+            </div>
+
+            <div>
+              <strong>Administrador</strong>
+              <small>
+                Acceso total al sistema, incluyendo edición de página, contenido,
+                configuración y gestión de usuarios.
+              </small>
+            </div>
+          </div>
+
+          <div class="role-option">
+            <div class="role-option-icon moderador">
+              <i class="bi bi-person-check"></i>
+            </div>
+
+            <div>
+              <strong>Moderador</strong>
+              <small>
+                Puede administrar la mayoría del contenido, pero no puede editar
+                la página principal ni gestionar usuarios.
+              </small>
+            </div>
+          </div>
+
+          <div class="role-option">
+            <div class="role-option-icon user">
+              <i class="bi bi-person"></i>
+            </div>
+
+            <div>
+              <strong>Usuario</strong>
+              <small>
+                Acceso limitado para consultar información creada, sin permisos
+                para editar, eliminar o crear contenido.
+              </small>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </aside>
+
+  </div>
+</section>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const togglePassword = document.getElementById("togglePassword");
+    const passwordInput = document.getElementById("password");
+
+    if (!togglePassword || !passwordInput) return;
+
+    togglePassword.addEventListener("click", function () {
+      const isPassword = passwordInput.type === "password";
+      passwordInput.type = isPassword ? "text" : "password";
+
+      togglePassword.innerHTML = isPassword
+        ? '<i class="bi bi-eye-slash"></i>'
+        : '<i class="bi bi-eye"></i>';
+    });
+  });
+</script>
 {% endblock %}

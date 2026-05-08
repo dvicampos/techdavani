@@ -3,45 +3,627 @@
 {% block title %}Gestión de Usuarios{% endblock %}
 
 {% block content %}
-<h1 style="text-align: center; margin-bottom: 20px;">Usuarios registrados</h1>
-<a href="/admin/register_user" class="btn btn-sm btn-outline-success top-0 end-0 mb-2">Registro</a>
-<table style="width: 100%; border-collapse: collapse; margin: auto; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
-    <thead style="background-color: #f2f2f2;">
-        <tr>
-            <th style="padding: 10px; border: 1px solid #ccc;">Email</th>
-            <th style="padding: 10px; border: 1px solid #ccc;">Rol</th>
-            <th style="padding: 10px; border: 1px solid #ccc;">Confirmado</th>
-            {% if current_user.role == 'admin' %}
-            <th style="padding: 10px; border: 1px solid #ccc;">Acciones</th>
-            {% endif %}
-        </tr>
-    </thead>
-    <tbody>
-        {% for user in users %}
-        <tr>
-            <td style="padding: 10px; border: 1px solid #ccc;">{{ user.email }}</td>
-            <td style="padding: 10px; border: 1px solid #ccc;">{{ user.role }}</td>
-            <td style="padding: 10px; border: 1px solid #ccc;">
-                {% if user.confirmed %}
-                    <span style="color: green;">Sí</span>
-                {% else %}
-                    <span style="color: red;">No</span>
-                {% endif %}
-            </td>
-            {% if current_user.role == 'admin' %}
-            <td style="padding: 10px; border: 1px solid #ccc;">
-                <a href="{{ url_for('edit_user', user_id=user._id) }}" style="color: #007BFF; text-decoration: none;">Editar</a> |
-                <a href="{{ url_for('delete_user', user_id=user._id) }}" style="color: #dc3545; text-decoration: none;" onclick="return confirm('¿Estás seguro de que quieres eliminar este usuario?');">Eliminar</a>
-            </td>
-            {% endif %}
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+{% set users_list = users|list %}
+{% set total_users = users_list|length %}
+{% set confirmed_users = users_list|selectattr('confirmed')|list|length %}
+{% set pending_users = total_users - confirmed_users %}
+{% set admin_users = users_list|selectattr('role', 'equalto', 'admin')|list|length %}
 
-<div class="mt-4 text-center">
-    <a href="{{ url_for('dashboard')}}" class="btn btn-outline-dark">
-        <i class="bi bi-arrow-left-circle"></i> Regresar
-    </a>
-</div>
+<style>
+  .users-page {
+    display: grid;
+    gap: var(--content-gap);
+  }
+
+  .users-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: .55rem;
+    padding: .45rem .75rem;
+    border-radius: 999px;
+    background: rgba(59, 130, 246, .10);
+    border: 1px solid rgba(59, 130, 246, .18);
+    color: var(--brand-2);
+    font-weight: 850;
+    font-size: .78rem;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    margin-bottom: .75rem;
+  }
+
+  .users-header-actions {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    flex-wrap: wrap;
+  }
+
+  .users-stats {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: var(--content-gap);
+  }
+
+  .users-stat-card {
+    grid-column: span 3;
+    padding: clamp(1rem, 2vw, 1.2rem);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .users-stat-card::after {
+    content: "";
+    position: absolute;
+    width: 130px;
+    height: 130px;
+    right: -55px;
+    top: -55px;
+    border-radius: 999px;
+    background: rgba(59, 130, 246, .10);
+    pointer-events: none;
+  }
+
+  .users-stat-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: .85rem;
+    border: 1px solid var(--border-soft);
+    background: rgba(59, 130, 246, .11);
+    color: var(--brand-2);
+    font-size: 1.15rem;
+  }
+
+  .users-stat-icon.success {
+    background: rgba(34, 197, 94, .12);
+    color: var(--success);
+  }
+
+  .users-stat-icon.warning {
+    background: rgba(245, 158, 11, .12);
+    color: var(--warning);
+  }
+
+  .users-stat-icon.danger {
+    background: rgba(239, 68, 68, .10);
+    color: var(--danger);
+  }
+
+  .users-stat-value {
+    font-size: clamp(1.65rem, 3vw, 2.25rem);
+    line-height: 1;
+    font-weight: 900;
+    letter-spacing: -.05em;
+    color: var(--ink);
+    margin-bottom: .25rem;
+  }
+
+  .users-stat-label {
+    color: var(--ink-muted);
+    font-size: .88rem;
+    font-weight: 750;
+  }
+
+  .users-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding: 1rem;
+    border-radius: var(--card-radius);
+    border: 1px solid var(--border-soft);
+    background: var(--surface-2);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .users-toolbar-title {
+    display: flex;
+    align-items: center;
+    gap: .7rem;
+    min-width: 0;
+  }
+
+  .users-toolbar-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 15px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(59, 130, 246, .10);
+    color: var(--brand-2);
+    border: 1px solid rgba(59, 130, 246, .16);
+    flex-shrink: 0;
+  }
+
+  .users-search {
+    width: min(100%, 360px);
+  }
+
+  .user-email {
+    display: flex;
+    align-items: center;
+    gap: .7rem;
+    min-width: 230px;
+  }
+
+  .user-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background:
+      linear-gradient(135deg, rgba(59, 130, 246, .18), rgba(34, 197, 94, .10));
+    border: 1px solid var(--border-soft);
+    color: var(--brand-2);
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  .user-email-text {
+    min-width: 0;
+  }
+
+  .user-email-text strong {
+    display: block;
+    color: var(--ink);
+    font-size: .95rem;
+    font-weight: 850;
+    word-break: break-word;
+  }
+
+  .user-email-text small {
+    color: var(--ink-muted);
+    font-weight: 700;
+  }
+
+  .role-pill,
+  .confirm-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    border-radius: 999px;
+    padding: .48rem .72rem;
+    font-size: .78rem;
+    font-weight: 850;
+    border: 1px solid var(--border-soft);
+    white-space: nowrap;
+  }
+
+  .role-pill.admin {
+    background: rgba(59, 130, 246, .12);
+    color: var(--brand-2);
+    border-color: rgba(59, 130, 246, .22);
+  }
+
+  .role-pill.user,
+  .role-pill.default {
+    background: var(--surface-soft);
+    color: var(--ink-soft);
+  }
+
+  .confirm-pill.ok {
+    background: rgba(34, 197, 94, .12);
+    color: var(--success);
+    border-color: rgba(34, 197, 94, .20);
+  }
+
+  .confirm-pill.no {
+    background: rgba(239, 68, 68, .10);
+    color: var(--danger);
+    border-color: rgba(239, 68, 68, .18);
+  }
+
+  .table-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: .5rem;
+    flex-wrap: wrap;
+  }
+
+  .btn-icon-action {
+    width: 40px;
+    height: 40px;
+    min-height: 40px;
+    padding: 0;
+  }
+
+  .users-mobile-list {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .user-mobile-card {
+    padding: 1rem;
+    border-radius: var(--card-radius);
+    border: 1px solid var(--border-soft);
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.035), transparent 45%),
+      var(--surface-2);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .user-mobile-head {
+    display: flex;
+    align-items: flex-start;
+    gap: .8rem;
+    margin-bottom: 1rem;
+  }
+
+  .user-mobile-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .user-mobile-info strong {
+    display: block;
+    word-break: break-word;
+    color: var(--ink);
+    font-weight: 850;
+  }
+
+  .user-mobile-meta {
+    display: flex;
+    gap: .5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+
+  .empty-users {
+    padding: clamp(2rem, 5vw, 3.5rem);
+    text-align: center;
+    border-radius: var(--card-radius);
+    border: 1px dashed var(--border-soft);
+    background: var(--surface-2);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .empty-users-icon {
+    width: 68px;
+    height: 68px;
+    border-radius: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+    background: rgba(59, 130, 246, .10);
+    color: var(--brand-2);
+    font-size: 1.8rem;
+  }
+
+  @media (max-width: 1199.98px) {
+    .users-stat-card {
+      grid-column: span 6;
+    }
+  }
+
+  @media (max-width: 767.98px) {
+    .users-stat-card {
+      grid-column: span 12;
+    }
+
+    .users-toolbar {
+      align-items: stretch;
+    }
+
+    .users-toolbar-title,
+    .users-search {
+      width: 100%;
+    }
+
+    .users-header-actions {
+      width: 100%;
+    }
+
+    .users-header-actions .btn {
+      width: 100%;
+    }
+  }
+</style>
+
+<section class="users-page">
+
+  <div class="page-header">
+    <div>
+      <div class="users-kicker">
+        <i class="bi bi-shield-lock"></i>
+        Administración
+      </div>
+
+      <h1 class="page-title mb-2">Gestión de usuarios</h1>
+
+      <p class="page-subtitle mb-0">
+        Consulta los usuarios registrados, revisa su estado de confirmación y administra permisos dentro del panel.
+      </p>
+    </div>
+
+    <div class="users-header-actions">
+      <a href="/admin/register_user" class="btn btn-primary">
+        <i class="bi bi-person-plus-fill"></i>
+        Registrar usuario
+      </a>
+
+      <a href="{{ url_for('dashboard') }}" class="btn btn-outline-primary">
+        <i class="bi bi-arrow-left-circle"></i>
+        Regresar
+      </a>
+    </div>
+  </div>
+
+  <div class="users-stats">
+    <div class="admin-card users-stat-card">
+      <div class="users-stat-icon">
+        <i class="bi bi-people-fill"></i>
+      </div>
+      <div class="users-stat-value">{{ total_users }}</div>
+      <div class="users-stat-label">Usuarios registrados</div>
+    </div>
+
+    <div class="admin-card users-stat-card">
+      <div class="users-stat-icon success">
+        <i class="bi bi-check-circle-fill"></i>
+      </div>
+      <div class="users-stat-value">{{ confirmed_users }}</div>
+      <div class="users-stat-label">Cuentas confirmadas</div>
+    </div>
+
+    <div class="admin-card users-stat-card">
+      <div class="users-stat-icon warning">
+        <i class="bi bi-clock-history"></i>
+      </div>
+      <div class="users-stat-value">{{ pending_users }}</div>
+      <div class="users-stat-label">Pendientes de confirmar</div>
+    </div>
+
+    <div class="admin-card users-stat-card">
+      <div class="users-stat-icon danger">
+        <i class="bi bi-person-gear"></i>
+      </div>
+      <div class="users-stat-value">{{ admin_users }}</div>
+      <div class="users-stat-label">Administradores</div>
+    </div>
+  </div>
+
+  <div class="users-toolbar">
+    <div class="users-toolbar-title">
+      <div class="users-toolbar-icon">
+        <i class="bi bi-list-check"></i>
+      </div>
+      <div>
+        <h2 class="h5 mb-1">Listado de usuarios</h2>
+        <p class="text-muted mb-0 small">
+          Total visible: {{ total_users }} usuario{% if total_users != 1 %}s{% endif %}
+        </p>
+      </div>
+    </div>
+
+    <div class="users-search">
+      <div class="input-group">
+        <span class="input-group-text border-end-0">
+          <i class="bi bi-search"></i>
+        </span>
+        <input
+          type="search"
+          id="userSearch"
+          class="form-control border-start-0 ps-0"
+          placeholder="Buscar por email o rol..."
+          autocomplete="off"
+        >
+      </div>
+    </div>
+  </div>
+
+  {% if users_list %}
+    <div class="table-responsive d-none d-md-block">
+      <table class="table align-middle" id="usersTable">
+        <thead>
+          <tr>
+            <th>Usuario</th>
+            <th>Rol</th>
+            <th>Confirmado</th>
+            {% if current_user.role == 'admin' %}
+              <th class="text-end">Acciones</th>
+            {% endif %}
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for user in users_list %}
+            {% set role_lower = (user.role or '')|lower %}
+            <tr class="user-row" data-user-search="{{ (user.email ~ ' ' ~ user.role)|lower }}">
+              <td>
+                <div class="user-email">
+                  <div class="user-avatar">
+                    {{ (user.email or 'U')[:1] }}
+                  </div>
+
+                  <div class="user-email-text">
+                    <strong>{{ user.email }}</strong>
+                    <small>ID: {{ user._id }}</small>
+                  </div>
+                </div>
+              </td>
+
+              <td>
+                <span class="role-pill {% if role_lower == 'admin' %}admin{% else %}default{% endif %}">
+                  {% if role_lower == 'admin' %}
+                    <i class="bi bi-shield-check"></i>
+                    Administrador
+                  {% else %}
+                    <i class="bi bi-person"></i>
+                    {{ user.role }}
+                  {% endif %}
+                </span>
+              </td>
+
+              <td>
+                {% if user.confirmed %}
+                  <span class="confirm-pill ok">
+                    <i class="bi bi-check-circle-fill"></i>
+                    Sí, confirmado
+                  </span>
+                {% else %}
+                  <span class="confirm-pill no">
+                    <i class="bi bi-x-circle-fill"></i>
+                    No confirmado
+                  </span>
+                {% endif %}
+              </td>
+
+              {% if current_user.role == 'admin' %}
+                <td>
+                  <div class="table-actions">
+                    <a
+                      href="{{ url_for('edit_user', user_id=user._id) }}"
+                      class="btn btn-outline-primary btn-icon-action"
+                      title="Editar usuario"
+                    >
+                      <i class="bi bi-pencil-square"></i>
+                    </a>
+
+                    <a
+                      href="{{ url_for('delete_user', user_id=user._id) }}"
+                      class="btn btn-outline-danger btn-icon-action"
+                      title="Eliminar usuario"
+                      onclick="return confirm('¿Estás seguro de que quieres eliminar este usuario?');"
+                    >
+                      <i class="bi bi-trash3"></i>
+                    </a>
+                  </div>
+                </td>
+              {% endif %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="users-mobile-list d-md-none" id="usersMobileList">
+      {% for user in users_list %}
+        {% set role_lower = (user.role or '')|lower %}
+        <article class="user-mobile-card user-row" data-user-search="{{ (user.email ~ ' ' ~ user.role)|lower }}">
+          <div class="user-mobile-head">
+            <div class="user-avatar">
+              {{ (user.email or 'U')[:1] }}
+            </div>
+
+            <div class="user-mobile-info">
+              <strong>{{ user.email }}</strong>
+              <small class="text-muted">ID: {{ user._id }}</small>
+            </div>
+          </div>
+
+          <div class="user-mobile-meta">
+            <span class="role-pill {% if role_lower == 'admin' %}admin{% else %}default{% endif %}">
+              {% if role_lower == 'admin' %}
+                <i class="bi bi-shield-check"></i>
+                Administrador
+              {% else %}
+                <i class="bi bi-person"></i>
+                {{ user.role }}
+              {% endif %}
+            </span>
+
+            {% if user.confirmed %}
+              <span class="confirm-pill ok">
+                <i class="bi bi-check-circle-fill"></i>
+                Confirmado
+              </span>
+            {% else %}
+              <span class="confirm-pill no">
+                <i class="bi bi-x-circle-fill"></i>
+                No confirmado
+              </span>
+            {% endif %}
+          </div>
+
+          {% if current_user.role == 'admin' %}
+            <div class="action-buttons">
+              <a
+                href="{{ url_for('edit_user', user_id=user._id) }}"
+                class="btn btn-outline-primary"
+              >
+                <i class="bi bi-pencil-square"></i>
+                Editar
+              </a>
+
+              <a
+                href="{{ url_for('delete_user', user_id=user._id) }}"
+                class="btn btn-outline-danger"
+                onclick="return confirm('¿Estás seguro de que quieres eliminar este usuario?');"
+              >
+                <i class="bi bi-trash3"></i>
+                Eliminar
+              </a>
+            </div>
+          {% endif %}
+        </article>
+      {% endfor %}
+    </div>
+
+    <div class="empty-users d-none" id="emptySearchState">
+      <div class="empty-users-icon">
+        <i class="bi bi-search"></i>
+      </div>
+      <h3 class="h5 mb-2">Sin resultados</h3>
+      <p class="text-muted mb-0">
+        No encontramos usuarios con ese email o rol.
+      </p>
+    </div>
+  {% else %}
+    <div class="empty-users">
+      <div class="empty-users-icon">
+        <i class="bi bi-person-plus"></i>
+      </div>
+
+      <h3 class="h4 mb-2">Aún no hay usuarios registrados</h3>
+
+      <p class="text-muted mb-4">
+        Crea el primer usuario para comenzar a administrar accesos dentro del sistema.
+      </p>
+
+      <a href="/admin/register_user" class="btn btn-primary">
+        <i class="bi bi-person-plus-fill"></i>
+        Registrar usuario
+      </a>
+    </div>
+  {% endif %}
+
+</section>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const input = document.getElementById("userSearch");
+    const rows = Array.from(document.querySelectorAll(".user-row"));
+    const emptyState = document.getElementById("emptySearchState");
+
+    if (!input || !rows.length) return;
+
+    input.addEventListener("input", function () {
+      const term = input.value.trim().toLowerCase();
+      let visibleCount = 0;
+
+      rows.forEach(function (row) {
+        const text = row.dataset.userSearch || "";
+        const match = text.includes(term);
+
+        row.classList.toggle("d-none", !match);
+
+        if (match) visibleCount++;
+      });
+
+      if (emptyState) {
+        emptyState.classList.toggle("d-none", visibleCount !== 0);
+      }
+    });
+  });
+</script>
 {% endblock %}
