@@ -13,7 +13,6 @@ from itsdangerous import URLSafeTimedSerializer
 from werkzeug.utils import secure_filename
 from werkzeug.security import check_password_hash, generate_password_hash
 from dotenv import load_dotenv
-from datetime import datetime, date, timedelta
 from bson.objectid import ObjectId
 from functools import wraps
 from jinja2 import TemplateNotFound
@@ -33,7 +32,43 @@ from reportlab.lib import colors
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfbase.pdfmetrics import stringWidth
 from urllib.parse import quote_plus
-from datetime import datetime, timezone
+from datetime import datetime, date, timedelta, timezone
+
+def utc_now():
+    """
+    Fecha actual en UTC con timezone.
+    """
+    return datetime.now(timezone.utc)
+
+
+def to_utc_aware(value):
+    """
+    Convierte cualquier fecha a datetime aware en UTC.
+
+    Soporta:
+    - datetime naive de MongoDB
+    - datetime aware
+    - strings ISO tipo '2026-05-07T12:00:00Z'
+    - None
+    """
+    if not value:
+        return None
+
+    if isinstance(value, datetime):
+        if value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+        return value.astimezone(timezone.utc)
+
+    if isinstance(value, str):
+        try:
+            dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
+            if dt.tzinfo is None:
+                return dt.replace(tzinfo=timezone.utc)
+            return dt.astimezone(timezone.utc)
+        except Exception:
+            return None
+
+    return None
 
 def utc_now():
     return datetime.now(timezone.utc)
@@ -323,32 +358,62 @@ def site_trial_info(page_id: ObjectId) -> dict:
         {"_id": ObjectId(page_id)},
         {"trial_until": 1, "plan": 1}
     )
+
     if not page:
-        return {"active": False, "trial_until": None, "days_left": None}
+        return {
+            "active": False,
+            "trial_until": None,
+            "days_left": None
+        }
 
-    tu = page.get("trial_until")
-    if tu and isinstance(tu, datetime):
-        now = utc_now()
-        active = now <= tu
-        seconds_left = max((tu - now).total_seconds(), 0)
-        days_left = int((seconds_left + 86400 - 1) // 86400)  # ceil a días
-        return {"active": active, "trial_until": tu, "days_left": days_left}
+    trial_until = to_utc_aware(page.get("trial_until"))
 
-    return {"active": False, "trial_until": None, "days_left": None}
+    if not trial_until:
+        return {
+            "active": False,
+            "trial_until": None,
+            "days_left": None
+        }
+
+    now = utc_now()
+
+    active = now <= trial_until
+    seconds_left = max((trial_until - now).total_seconds(), 0)
+    days_left = int((seconds_left + 86400 - 1) // 86400)
+
+    return {
+        "active": active,
+        "trial_until": trial_until,
+        "days_left": days_left
+    }
 
 def ensure_trial_on_page(page_id: ObjectId):
     """
-    Backfill para páginas viejas: si no tienen trial_until, se les asigna.
+    Backfill para páginas viejas:
+    si no tienen trial_until, se les asigna una prueba gratis.
     """
-    page = mongo.db.page_data.find_one({"_id": ObjectId(page_id)}, {"trial_until": 1, "plan": 1})
+    page = mongo.db.page_data.find_one(
+        {"_id": ObjectId(page_id)},
+        {"trial_until": 1, "plan": 1}
+    )
+
     if not page:
         return
 
-    if not page.get("trial_until"):
+    trial_until = to_utc_aware(page.get("trial_until"))
+
+    if not trial_until:
         tu = utc_now() + timedelta(days=get_trial_days())
+
         mongo.db.page_data.update_one(
             {"_id": ObjectId(page_id)},
-            {"$set": {"trial_until": tu, "plan": "trial"}}
+            {
+                "$set": {
+                    "trial_until": tu,
+                    "plan": "trial",
+                    "trial_created_at": utc_now()
+                }
+            }
         )
 
 @login_manager.user_loader
@@ -543,20 +608,21 @@ def user_has_subscription_override(user_id: str) -> bool:
     ) or {}
 
     ov = u.get("subscription_override") or {}
+
     if not ov.get("active"):
         return False
 
     until = ov.get("until")
+
     if not until:
         return True
 
-    # until como ISO string: "2099-01-01T00:00:00Z"
-    try:
-        dt = datetime.fromisoformat(str(until).replace("Z", "+00:00"))
-        return dt > datetime.now(timezone.utc)
-    except Exception:
-        # si viene raro, mejor no bloquear
+    dt = to_utc_aware(until)
+
+    if not dt:
         return True
+
+    return dt > utc_now()
 
 @app.route('/switch/slug/<slug>')
 @login_required
@@ -611,12 +677,22 @@ def billing_portal():
     page = mongo.db.page_data.find_one({'_id': page_id}) if page_id else None
     sub = mongo.db.subscriptions.find_one({"page_id": page_id}) if page_id else None
 
-    trial = {"active": False, "trial_until": None, "days_left": None}
+    trial = {
+        "active": False,
+        "trial_until": None,
+        "days_left": None
+    }
+
     if page_id:
         ensure_trial_on_page(page_id)
         trial = site_trial_info(page_id)
 
-    return render_template('billing.html', page=page, sub=sub, trial=trial)
+    return render_template(
+        'billing.html',
+        page=page,
+        sub=sub,
+        trial=trial
+    )
 
 MP_PREAPPROVALS_URL = "https://api.mercadopago.com/preapproval"
 
@@ -655,38 +731,43 @@ def inject_subscription_plan():
 @app.route('/pay/subscription')
 @login_required
 def pay_subscription():
-    import json, logging
+    import logging
     logging.basicConfig(level=logging.INFO)
 
     cfg = get_subscription_config()
 
     page_id = get_current_page_id()
     if not page_id:
-        flash('Selecciona un sitio para continuar.')
+        flash('Selecciona un sitio para continuar.', 'warning')
         return redirect(url_for('billing_portal'))
 
-    # Evitar duplicar si ya tiene lifetime o suscripción activa
     if page_has_purchase(str(page_id), "lifetime"):
-        flash('Tu sitio ya tiene licencia de por vida activa.')
+        flash('Tu sitio ya tiene licencia de por vida activa.', 'info')
         return redirect(url_for('dashboard'))
 
     if site_has_active_subscription(page_id):
-        flash('Tu suscripción ya está activa.')
+        flash('Tu suscripción ya está activa.', 'info')
         return redirect(url_for('dashboard'))
 
-    # URLs de retorno
-    back_url = cfg["success_url"] or url_for('billing_portal', _external=True)
+    token = get_mp_access_token()
+    test_mode = token.startswith("TEST-")
 
-    # Motivo que verá el usuario en MP
-    reason = f'{cfg["name"]} — ${int(cfg["price"])} {cfg["currency"]}/mes'
+    back_url = (
+        cfg.get("success_url")
+        or os.getenv("MP_SUCCESS_URL")
+        or url_for('billing_portal', _external=True)
+    )
+
+    # Evita caracteres raros en el checkout
+    reason = f'{cfg["name"]} - {float(cfg["price"]):.2f} {cfg["currency"]}/mes'
 
     payload = {
         "reason": reason,
-        "payer_email": current_user.email,   # 👈 recomendado por MP
+        "payer_email": current_user.email,
         "auto_recurring": {
-            "frequency": cfg["frequency"],
-            "frequency_type": cfg["frequency_type"],  # "months" o "days"
-            "transaction_amount": cfg["price"],
+            "frequency": int(cfg["frequency"]),
+            "frequency_type": cfg["frequency_type"],
+            "transaction_amount": float(cfg["price"]),
             "currency_id": cfg["currency"]
         },
         "back_url": back_url,
@@ -695,46 +776,62 @@ def pay_subscription():
     }
 
     try:
+        logging.info("==== Mercado Pago Subscription Debug ====")
+        logging.info("MP mode: %s", "TEST" if test_mode else "PROD")
+        logging.info("payer_email: %s", current_user.email)
+        logging.info("back_url: %s", back_url)
+        logging.info("payload: %s", payload)
+
         r = requests.post(
             MP_PREAPPROVALS_URL,
             headers=mp_headers(),
             json=payload,
             timeout=20
         )
-        data = r.json() if r.headers.get('Content-Type','').startswith('application/json') else {}
-        init_point = (
-            data.get("init_point")
-            or data.get("sandbox_init_point")
-            or data.get("preapproval_url")
-            or data.get("preapproval_link")
-        )
+
+        try:
+            data = r.json()
+        except Exception:
+            data = {}
+
+        logging.info("MP status_code: %s", r.status_code)
+        logging.info("MP response: %s", data)
+
+        init_point = get_mp_checkout_url(data)
+
+        logging.info("MP selected checkout url: %s", init_point)
 
         if r.status_code >= 400 or not init_point:
-            logging.error("MP preapproval error %s: %s", r.status_code, data)
             msg = data.get("message") or "Respuesta inválida de Mercado Pago."
             cause = data.get("cause")
+
             if isinstance(cause, list) and cause:
-                msg += f" ({cause[0].get('code')} - {cause[0].get('description')})"
+                first = cause[0]
+                msg += f" ({first.get('code')} - {first.get('description')})"
+
             flash(f"No se pudo iniciar la suscripción: {msg}", "danger")
             return redirect(url_for('billing_portal'))
 
         mongo.db.subscriptions.update_one(
             {"page_id": page_id},
-            {"$set": {
-                "page_id": page_id,
-                "user_id": ObjectId(current_user.id),
-                "provider": "mercado_pago",
-                "preapproval_id": data.get("id"),
-                "status": data.get("status", "pending"),
-                "raw": data,
-                "last_event": utc_now()
-            }},
+            {
+                "$set": {
+                    "page_id": page_id,
+                    "user_id": ObjectId(current_user.id),
+                    "provider": "mercado_pago",
+                    "preapproval_id": data.get("id"),
+                    "status": data.get("status", "pending"),
+                    "raw": data,
+                    "last_event": utc_now()
+                }
+            },
             upsert=True
         )
+
         return redirect(init_point)
 
     except Exception as e:
-        logging.exception("Excepción creando preapproval")
+        logging.exception("Excepción creando preapproval de Mercado Pago")
         flash(f"Error creando la suscripción: {e}", "danger")
         return redirect(url_for('billing_portal'))
 
@@ -3429,12 +3526,58 @@ import json
 MP_PREFS_URL = "https://api.mercadopago.com/checkout/preferences"
 MP_PAYMENTS_URL = "https://api.mercadopago.com/v1/payments/"
 
+def get_mp_access_token():
+    """
+    Soporta ambos nombres para evitar confusión entre proyectos:
+    - MP_ACCESS_TOKEN
+    - MERCADOPAGO_ACCESS_TOKEN
+    """
+    token = (
+        os.getenv("MP_ACCESS_TOKEN")
+        or os.getenv("MERCADOPAGO_ACCESS_TOKEN")
+        or ""
+    ).strip()
+
+    if not token:
+        raise RuntimeError(
+            "No se encontró MP_ACCESS_TOKEN ni MERCADOPAGO_ACCESS_TOKEN en el .env"
+        )
+
+    return token
+
+
+def is_mp_test_mode():
+    token = get_mp_access_token()
+    return token.startswith("TEST-")
+
+
 def mp_headers():
-    token = os.getenv('MP_ACCESS_TOKEN')
+    token = get_mp_access_token()
     return {
         "Authorization": f"Bearer {token}",
         "Content-Type": "application/json"
     }
+
+
+def get_mp_checkout_url(data):
+    """
+    Si el token es TEST, prioriza sandbox_init_point.
+    Si el token es producción, prioriza init_point.
+    """
+    if is_mp_test_mode():
+        return (
+            data.get("sandbox_init_point")
+            or data.get("init_point")
+            or data.get("preapproval_url")
+            or data.get("preapproval_link")
+        )
+
+    return (
+        data.get("init_point")
+        or data.get("sandbox_init_point")
+        or data.get("preapproval_url")
+        or data.get("preapproval_link")
+    )
 
 
 def mp_patch_preapproval_status(preapproval_id: str, new_status: str):
